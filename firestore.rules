@@ -1,0 +1,187 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── FONCTIONS UTILITAIRES ──
+    function estConnecte() {
+      return request.auth != null;
+    }
+
+    function monUID() {
+      return request.auth.uid;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function estAdmin() {
+      return estConnecte() && getRole() == 'admin';
+    }
+
+    function estVendeur() {
+      return estConnecte() && getRole() == 'vendeur';
+    }
+
+    function estClient() {
+      return estConnecte() && getRole() == 'client';
+    }
+
+    function estLivreur() {
+      return estConnecte() && getRole() == 'livreur';
+    }
+
+    function estProprietaire(userId) {
+      return estConnecte() && monUID() == userId;
+    }
+
+    // ── UTILISATEURS ──
+    match /users/{userId} {
+      allow read: if estConnecte();
+      allow create: if estConnecte() && monUID() == userId;
+      allow update: if estProprietaire(userId) || estAdmin();
+      allow delete: if estAdmin();
+    }
+
+    // ── PRODUITS ──
+    match /products/{produitId} {
+      allow read: if true; // Public
+      allow create: if estVendeur() &&
+        request.resource.data.vendeurId == monUID();
+      allow update: if estAdmin() ||
+        (estVendeur() && resource.data.vendeurId == monUID());
+      allow delete: if estAdmin() ||
+        (estVendeur() && resource.data.vendeurId == monUID());
+    }
+
+    // ── COMMANDES ──
+    match /orders/{commandeId} {
+      allow read: if estAdmin() ||
+        (estConnecte() && (
+          resource.data.clientId == monUID() ||
+          resource.data.livreurId == monUID() ||
+          resource.data.produits.hasAny([{vendeurId: monUID()}])
+        ));
+      allow create: if estConnecte();
+      allow update: if estAdmin() ||
+        (estConnecte() && (
+          resource.data.clientId == monUID() ||
+          resource.data.livreurId == monUID()
+        ));
+      allow delete: if estAdmin();
+    }
+
+    // ── MESSAGES ──
+    match /messages/{messageId} {
+      allow read: if estConnecte() && (
+        resource.data.expediteurId == monUID() ||
+        resource.data.destinataireId == monUID() ||
+        estAdmin()
+      );
+      allow create: if estConnecte() &&
+        request.resource.data.expediteurId == monUID();
+      allow update: if estConnecte() &&
+        resource.data.destinataireId == monUID();
+      allow delete: if estAdmin();
+    }
+
+    // ── WALLETS ──
+    match /wallets/{userId} {
+      allow read: if estProprietaire(userId) || estAdmin();
+      allow create: if estProprietaire(userId);
+      allow update: if estAdmin(); // Seul le backend met à jour les wallets
+      allow delete: if false;
+    }
+
+    // ── PAIEMENTS ──
+    match /payments/{paiementId} {
+      allow read: if estAdmin() ||
+        (estConnecte() && resource.data.clientId == monUID());
+      allow create: if estConnecte();
+      allow update: if estAdmin();
+      allow delete: if false;
+    }
+
+    // ── LIVRAISONS ──
+    match /deliveries/{livraisonId} {
+      allow read: if estConnecte();
+      allow create: if estAdmin() || estLivreur();
+      allow update: if estAdmin() ||
+        (estLivreur() && resource.data.livreurId == monUID());
+      allow delete: if estAdmin();
+    }
+
+    // ── LITIGES ──
+    match /disputes/{litigeId} {
+      allow read: if estAdmin() ||
+        (estConnecte() && (
+          resource.data.clientId == monUID() ||
+          resource.data.vendeurId == monUID()
+        ));
+      allow create: if estConnecte() &&
+        request.resource.data.clientId == monUID();
+      allow update: if estAdmin();
+      allow delete: if false;
+    }
+
+    // ── AVIS ──
+    match /reviews/{avisId} {
+      allow read: if true;
+      allow create: if estConnecte() &&
+        request.resource.data.clientId == monUID();
+      allow update: if estAdmin();
+      allow delete: if estAdmin();
+    }
+
+    // ── NOTIFICATIONS ──
+    match /notifications/{notifId} {
+      allow read: if estConnecte() &&
+        resource.data.userId == monUID();
+      allow create: if estAdmin();
+      allow update: if estConnecte() &&
+        resource.data.userId == monUID();
+      allow delete: if estAdmin();
+    }
+
+    // ── FRAUDE LOGS ──
+    match /fraud_logs/{logId} {
+      allow read: if estAdmin();
+      allow create: if estConnecte(); // Le backend crée les logs
+      allow update: if estAdmin();
+      allow delete: if false; // Jamais supprimé
+    }
+
+    // ── TRACKING ──
+    match /tracking/{trackId} {
+      allow read: if estAdmin();
+      allow create: if estConnecte();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── PROMOTIONS ──
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow create: if estVendeur();
+      allow update: if estAdmin();
+      allow delete: if estAdmin();
+    }
+
+    // ── TRANSACTIONS ──
+    match /transactions/{txId} {
+      allow read: if estAdmin() ||
+        (estConnecte() && resource.data.userId == monUID());
+      allow create: if estConnecte();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── LOGS SYSTÈME ──
+    match /logs/{logId} {
+      allow read: if estAdmin();
+      allow create: if estConnecte();
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
