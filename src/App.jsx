@@ -21,7 +21,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
-const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
+const UPLOAD_PRESET = "yorix_upload";
 const YORIX_WA_NUMBER   = "237696565654";
 const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
