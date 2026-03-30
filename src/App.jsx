@@ -1285,15 +1285,10 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                 {mesProduits.map(p => (
                   <div key={p.id} className="prod-card">
                     <div className="prod-img-wrap">
-{(p.image_urls || p.image) ? (
-  <img
-   src={
-  p.image?.startsWith("http")
-    ? p.image
-    : `https://msrymchhhxitdevthvdi.supabase.co/storage/v1/object/public/publicbucket/${p.image}`
-}
-    alt={p.name_fr}
-  />
+<img
+  src={p.image}
+  alt={p.name_fr}
+/>
 ) : (
   <div className="prod-img-placeholder">📦</div>
 )}
