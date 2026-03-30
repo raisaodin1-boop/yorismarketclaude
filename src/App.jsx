@@ -145,11 +145,14 @@ async function getUserProfile(uid) {
 }
 
 function getUserRole(profileData) {
-  const valid = ["buyer","seller","delivery","provider"];
+  const valid = ["buyer", "seller", "delivery", "provider"];
   const role  = profileData?.role;
-  const final = valid.includes(role) ? role : "seller";
-  console.log("ROLE FINAL:", final);
-  return final;
+  if (role && valid.includes(role)) {
+    console.log("ROLE FINAL:", role);
+    return role;
+  }
+  console.log("ROLE FINAL: buyer (fallback — aucun rôle défini)");
+  return "buyer"; // fallback : acheteur par défaut
 }
 
 /** Filtre anti-contournement messages */
@@ -593,8 +596,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .fbb{background:rgba(255,255,255,.05);padding:2px 7px;border-radius:4px;font-size:.62rem;}
 
 /* MOBILE NAV */
-.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 12px;z-index:400;box-shadow:0 -4px 20px var(--shadow);}
-.mn-inner{display:flex;justify-content:space-around;align-items:center;}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:6px 0 0;z-index:400;box-shadow:0 -4px 20px var(--shadow);}
+.mn-inner{display:flex;justify-content:space-around;align-items:center;padding-bottom:6px;}
 .mn-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 12px;border-radius:8px;transition:all .2s;position:relative;}
 .mn-item.active .mn-icon,.mn-item.active .mn-label{color:var(--green);}
 .mn-icon{font-size:1.25rem;color:var(--gray);}
@@ -607,11 +610,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .tag{background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:3px 9px;font-size:.68rem;font-weight:600;color:var(--gray);}
 .divider-h{height:1px;background:var(--border);margin:16px 0;}
 
-/* TRUST BANNER (mobile-first) */
+/* VENDOR BADGES */
+.vendor-badge{padding:2px 7px;border-radius:4px;font-size:.6rem;font-weight:700;white-space:nowrap;}
+.badge-top{background:#fff9e6;color:#b8860b;}
+.badge-verif{background:#e6fff0;color:#1a6b3a;}
+.badge-promo{background:#fff0e6;color:#d4520a;}
+.badge-flash{background:#ffe6e6;color:#c0392b;}
+.badge-best{background:#e6f0ff;color:#1a4a9a;}
+
+/* FLASH CARD */
+.prod-card-flash{border-color:#ff4444;box-shadow:0 0 0 1.5px rgba(255,68,68,.2);}
+.prod-card-flash .prod-img-wrap::after{content:"⚡ FLASH";position:absolute;top:0;left:0;right:0;background:rgba(255,68,68,.85);color:#fff;font-size:.62rem;font-weight:800;text-align:center;padding:2px;letter-spacing:.5px;}
+.pbadge-flash{position:absolute;top:7px;left:7px;background:#ff4444;color:#fff;font-size:.58rem;font-weight:800;padding:3px 7px;border-radius:50px;z-index:2;animation:flashPulse 1.5s infinite;}
+@keyframes flashPulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+.pbadge-promo{position:absolute;top:7px;left:7px;background:#ff6b35;color:#fff;font-size:.62rem;font-weight:800;padding:3px 8px;border-radius:50px;z-index:2;}
+
+/* TRUST BANNER */
 .trust-banner{background:${dark?"#0f1f16":"#f0faf4"};border-bottom:1px solid ${dark?"#2a4030":"#c8f0d8"};padding:8px 20px;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
 .tb-item{display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:${dark?"#7aca94":"#1a6b3a"};}
 
-/* HERO BADGES (confiance) */
+/* HERO BADGES */
 .hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
 .hbadge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);color:#fff;padding:5px 10px;border-radius:50px;font-size:.72rem;font-weight:600;}
 .hbadge-green{background:rgba(79,209,125,.15);border-color:rgba(79,209,125,.3);color:#4fd17d;}
@@ -624,7 +642,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .pb-truck{background:#e6f4ff;color:#0066cc;}
 .pb-cash{background:#e6fff0;color:#1a6b3a;}
 
-/* WHY YORIX SECTION */
+/* WHY SECTION */
 .why-section{background:${dark?"#0f1a14":"#f8fbf9"};border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:28px 24px;}
 .why-inner{max-width:1200px;margin:0 auto;}
 .why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px;}
@@ -633,12 +651,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .why-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;color:var(--ink);margin-bottom:4px;}
 .why-desc{font-size:.72rem;color:var(--gray);line-height:1.55;}
 
-/* SOCIAL PROOF BANNER */
+/* SOCIAL PROOF */
 .proof-bar{background:linear-gradient(135deg,#0d1f14,#1a3a24);padding:12px 24px;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;}
 .proof-item{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);font-size:.75rem;font-weight:600;}
 .proof-num{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--yellow);}
 
-/* WA STICKY BAR (mobile) */
+/* WA STICKY */
 .wa-sticky{display:none;position:fixed;bottom:0;left:0;right:0;z-index:450;background:var(--wa);padding:10px 16px;gap:8px;align-items:center;justify-content:center;box-shadow:0 -3px 16px rgba(0,0,0,.2);}
 .wa-sticky-btn{background:#fff;color:#1a5c38;border:none;padding:8px 20px;border-radius:50px;font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;flex:1;max-width:260px;}
 .wa-sticky-text{color:#fff;font-size:.75rem;font-weight:600;}
@@ -663,13 +681,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .dash-content{padding-left:0;}
   .dash-stats{grid-template-columns:repeat(2,1fr);}
   .mobile-nav{display:block;}
-  .wa-float{bottom:70px;}
+  .wa-float{bottom:100px;}
   .wa-sticky{display:flex;}
   .form-row{grid-template-columns:1fr;}
   .hero-badges{gap:6px;}
   .hbadge{font-size:.68rem;padding:4px 8px;}
   .trust-banner{gap:12px;padding:8px 14px;}
   .tb-item{font-size:.68rem;}
+  .prod-badge-row{gap:3px;}
+  .pb{font-size:.55rem;}
 }
 `;
 
@@ -982,17 +1002,58 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// COMPOSANT : COMPTE À REBOURS OFFRE FLASH
+// ─────────────────────────────────────────────────────────────
+function FlashCountdown() {
+  const getSecondsLeft = () => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(23, 59, 59, 999);
+    return Math.floor((midnight - now) / 1000);
+  };
+  const [secs, setSecs] = useState(getSecondsLeft);
+  useEffect(() => {
+    const t = setInterval(() => setSecs(s => s > 0 ? s - 1 : getSecondsLeft()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const h = String(Math.floor(secs / 3600)).padStart(2, "0");
+  const m = String(Math.floor((secs % 3600) / 60)).padStart(2, "0");
+  const s = String(secs % 60).padStart(2, "0");
+  return (
+    <div style={{display:"flex",gap:4,alignItems:"center"}}>
+      {[h,m,s].map((v,i) => (
+        <span key={i} style={{display:"flex",alignItems:"center",gap:4}}>
+          <span style={{background:"var(--red)",color:"#fff",padding:"2px 7px",borderRadius:5,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".82rem",minWidth:30,textAlign:"center"}}>{v}</span>
+          {i < 2 && <span style={{fontWeight:800,color:"var(--red)",fontSize:".82rem"}}>:</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // COMPOSANT : GRILLE PRODUITS
 // ─────────────────────────────────────────────────────────────
 function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
   const [ficheOpen, setFicheOpen] = useState(null);
   const [cmdOpen, setCmdOpen]     = useState(null);
 
-  // ── Image sécurisée : priorité p.image > p.image_urls[0] > null
+  // ── Image sécurisée
   const getSafeImg = (p) => {
     if (p.image && p.image.startsWith("http")) return p.image;
     if (p.image_urls && p.image_urls[0] && p.image_urls[0].startsWith("http")) return p.image_urls[0];
     return null;
+  };
+
+  // ── Badges vendeur (simulés selon données produit)
+  const getVendeurBadges = (p) => {
+    const badges = [];
+    if (p.sponsorise)                      badges.push({label:"⭐ Top Vendeur",   cls:"badge-top"});
+    if (p.verifie || p.vendeur_verifie)    badges.push({label:"✅ Vérifié",        cls:"badge-verif"});
+    if (p.promo)                            badges.push({label:"🔥 Promo du jour", cls:"badge-promo"});
+    if (p.flash)                            badges.push({label:"⚡ Offre flash",   cls:"badge-flash"});
+    if (p.vente_total > 50)                 badges.push({label:"🏆 Best seller",   cls:"badge-best"});
+    return badges;
   };
 
   return (
@@ -1001,9 +1062,11 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
         {prods.map(p => {
           const safeImg    = getSafeImg(p);
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
+          const vendBadges = getVendeurBadges(p);
+          const prixPromo  = p.promo_pct ? Math.round(p.prix * (1 - p.promo_pct / 100)) : null;
 
           return (
-            <div key={p.id} className="prod-card">
+            <div key={p.id} className={`prod-card${p.flash?" prod-card-flash":""}`}>
 
               {/* ── IMAGE ── */}
               <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
@@ -1011,17 +1074,20 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                   <img
                     src={safeImg}
                     alt={p.name_fr}
-                    onError={e => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = "https://via.placeholder.com/300?text=📦";
-                    }}
+                    onError={e => { e.currentTarget.onerror=null; e.currentTarget.src="https://via.placeholder.com/300?text=📦"; }}
                   />
                 ) : (
                   <div className="prod-img-placeholder">📦</div>
                 )}
-                {p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
-                {p.local      && <span className="pbadge-y">🇨🇲</span>}
-                {p.escrow     && <span className="escrow-badge">🔐</span>}
+                {/* Badge haut gauche */}
+                {p.flash    && <span className="pbadge-flash">⚡ Flash</span>}
+                {!p.flash && p.promo && <span className="pbadge-promo">-{p.promo_pct||20}%</span>}
+                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
+                {/* Badge haut droit */}
+                {p.local && <span className="pbadge-y">🇨🇲</span>}
+                {/* Escrow bas gauche */}
+                {p.escrow && <span className="escrow-badge">🔐</span>}
+                {/* Wishlist */}
                 <button className="wish-btn" onClick={e => { e.stopPropagation(); onWish(p.id); }}>
                   {wishlist.has(p.id) ? "❤️" : "🤍"}
                 </button>
@@ -1029,12 +1095,21 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
 
               {/* ── INFOS ── */}
               <div className="prod-info" onClick={() => setFicheOpen(p)}>
+                {/* Badges vendeur */}
+                {vendBadges.length > 0 && (
+                  <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>
+                    {vendBadges.map(b=>(
+                      <span key={b.label} className={`vendor-badge ${b.cls}`}>{b.label}</span>
+                    ))}
+                  </div>
+                )}
+
                 <div className="prod-name">{p.name_fr}</div>
                 <div className="prod-loc">📍 {p.ville || "Cameroun"} · {p.vendeur_nom || ""}</div>
 
                 {/* Badges conversion */}
                 <div className="prod-badge-row">
-                  <span className="pb pb-fire">🔥 Stock limité</span>
+                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire">🔥 Stock limité</span>}
                   <span className="pb pb-truck">🚚 Livraison rapide</span>
                   <span className="pb pb-cash">💰 Paiement livraison</span>
                 </div>
@@ -1053,12 +1128,21 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 </div>
 
                 <div className="prod-price-row">
-                  <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
+                  <div>
+                    {prixPromo ? (
+                      <>
+                        <span className="price">{prixPromo.toLocaleString()} <span className="price-unit">FCFA</span></span>
+                        <span style={{fontSize:".65rem",color:"var(--gray)",textDecoration:"line-through",marginLeft:5}}>{p.prix?.toLocaleString()}</span>
+                      </>
+                    ) : (
+                      <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
+                    )}
+                  </div>
                   <button className="add-btn" onClick={e => { e.stopPropagation(); onAddToCart(p); }}>+</button>
                 </div>
               </div>
 
-              {/* ── BOUTONS ACTION ── */}
+              {/* ── BOUTON WA ── */}
               <div className="prod-actions" style={{ padding:"0 11px 11px" }}>
                 <button
                   className="btn-wa-sm"
@@ -1580,26 +1664,105 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
 }
 
 // ─────────────────────────────────────────────────────────────
-// DASHBOARD DELIVERY
+// DASHBOARD DELIVERY — Système Uber Yorix Ride
 // ─────────────────────────────────────────────────────────────
-function DeliveryDashboard({ user, userData, dashTab }) {
+function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
   const [livraisons, setLivraisons] = useState([
-    { id:"YX-2847", client:"Amina T.", adresse:"Akwa, Douala", produit:"iPhone 14 128GB", montant:287500, status:"available", distance:"2.4 km" },
-    { id:"YX-2835", client:"Bertrand K.", adresse:"Bastos, Yaoundé", produit:"Robe Pagne Wax", montant:20500, status:"available", distance:"5.1 km" },
-    { id:"YX-2801", client:"Célestine M.", adresse:"Bonanjo, Douala", produit:"Ventilateur 40cm", montant:25000, status:"in_progress", distance:"1.2 km" },
+    { id:"YX-2847", client:"Amina T.", telephone:"655112233", adresse_collecte:"Marché Central, Douala", adresse_livraison:"Akwa, Douala", produit:"iPhone 14 128GB", montant:287500, commission_livreur:2500, status:"available", distance:"2.4 km", temps_estime:"~15 min" },
+    { id:"YX-2835", client:"Bertrand K.", telephone:"677884455", adresse_collecte:"Boutique Ngoa-Ekélé, Yaoundé", adresse_livraison:"Bastos, Yaoundé", produit:"Robe Pagne Wax", montant:20500, commission_livreur:1500, status:"available", distance:"5.1 km", temps_estime:"~25 min" },
+    { id:"YX-2801", client:"Célestine M.", telephone:"699001122", adresse_collecte:"Mall de Douala", adresse_livraison:"Bonanjo, Douala", produit:"Ventilateur 40cm", montant:25000, commission_livreur:1200, status:"in_progress", distance:"1.2 km", temps_estime:"~8 min" },
+    { id:"YX-2799", client:"Rodrigue E.", telephone:"670223344", adresse_collecte:"Centre Ville, Bafoussam", adresse_livraison:"Quartier Mtcheu, Bafoussam", produit:"Sac à main cuir", montant:15000, commission_livreur:800, status:"delivered", distance:"3.0 km", temps_estime:"Livré" },
   ]);
+  const [gainsTotal]  = useState(47500);
+  const [gainsMois]   = useState(127000);
 
-  const action = (id, status) => setLivraisons(prev => prev.map(l => l.id === id ? {...l, status} : l));
+  const actionLivraison = async (id, newStatus) => {
+    try {
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).catch(console.error);
+      setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+    } catch (err) {
+      console.error("actionLivraison:", err);
+      setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+    }
+  };
+
+  const dispo     = livraisons.filter(l => l.status === "available");
+  const enCours   = livraisons.filter(l => l.status === "in_progress");
+  const livrees   = livraisons.filter(l => l.status === "delivered");
+
+  const LivraisonCard = ({ l, showActions = true }) => (
+    <div style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:12,padding:16,marginBottom:12}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:36,height:36,background:"var(--green-pale)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem"}}>📦</div>
+          <div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",color:"var(--ink)"}}>#{l.id}</div>
+            <div style={{fontSize:".68rem",color:"var(--gray)"}}>👤 {l.client} · 📞 {l.telephone}</div>
+          </div>
+        </div>
+        <span className={`status-badge s-${l.status==="available"?"pending":l.status==="in_progress"?"en_cours":l.status}`}>
+          {l.status==="available"?"🟡 Disponible":l.status==="in_progress"?"🚚 En cours":"✅ Livré"}
+        </span>
+      </div>
+      {/* Trajet */}
+      <div style={{background:"var(--surface2)",borderRadius:8,padding:"10px 12px",marginBottom:10,fontSize:".75rem"}}>
+        <div style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:6}}>
+          <span style={{color:"var(--green)",fontWeight:700,flexShrink:0}}>📍</span>
+          <div><span style={{fontWeight:600,color:"var(--gray)",fontSize:".67rem"}}>COLLECTE</span><br/><span style={{color:"var(--ink)"}}>{l.adresse_collecte}</span></div>
+        </div>
+        <div style={{borderLeft:"2px dashed var(--border)",marginLeft:6,height:10,marginBottom:6}}/>
+        <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{color:"var(--red)",fontWeight:700,flexShrink:0}}>🏠</span>
+          <div><span style={{fontWeight:600,color:"var(--gray)",fontSize:".67rem"}}>LIVRAISON</span><br/><span style={{color:"var(--ink)"}}>{l.adresse_livraison}</span></div>
+        </div>
+      </div>
+      {/* Infos commande */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:showActions?10:0}}>
+        <span style={{background:"var(--surface2)",borderRadius:6,padding:"3px 8px",fontSize:".68rem",fontWeight:600,color:"var(--ink)"}}>📦 {l.produit}</span>
+        <span style={{background:"var(--surface2)",borderRadius:6,padding:"3px 8px",fontSize:".68rem",fontWeight:600,color:"var(--ink)"}}>📏 {l.distance}</span>
+        <span style={{background:"var(--surface2)",borderRadius:6,padding:"3px 8px",fontSize:".68rem",fontWeight:600,color:"var(--ink)"}}>⏱ {l.temps_estime}</span>
+        <span style={{background:"var(--green-pale)",borderRadius:6,padding:"3px 8px",fontSize:".68rem",fontWeight:700,color:"var(--green)"}}>💰 Gain: {l.commission_livreur?.toLocaleString()} FCFA</span>
+      </div>
+      {/* Actions */}
+      {showActions && l.status === "available" && (
+        <div style={{display:"flex",gap:8}}>
+          <button
+            style={{flex:2,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
+            onClick={() => actionLivraison(l.id, "in_progress")}
+          >✅ Accepter la livraison</button>
+          <button
+            style={{flex:1,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)",padding:"9px",borderRadius:8,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".78rem",cursor:"pointer"}}
+            onClick={() => actionLivraison(l.id, "refused")}
+          >❌ Refuser</button>
+        </div>
+      )}
+      {showActions && l.status === "in_progress" && (
+        <div style={{display:"flex",gap:8}}>
+          <button
+            style={{flex:1,background:"#1565c0",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
+            onClick={() => window.open(`https://wa.me/${l.telephone?.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${l.client} ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans ${l.temps_estime}.`)}`, "_blank")}
+          >📱 Contacter client</button>
+          <button
+            style={{flex:1,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
+            onClick={() => actionLivraison(l.id, "delivered")}
+          >✅ Confirmer livraison</button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
-      <div className="dash-page-title">Bonjour {userData?.nom} 🏍️</div>
+      <div className="dash-page-title">Bonjour {userData?.nom} 🏍️ <span style={{fontSize:".75rem",color:"var(--gray)",fontFamily:"'DM Sans',sans-serif",fontWeight:400}}>— Yorix Ride</span></div>
+
+      {/* Stats */}
       <div className="dash-stats">
         {[
-          { icon:"📦", val:livraisons.filter(l=>l.status==="available").length,  lbl:"Disponibles" },
-          { icon:"🚚", val:livraisons.filter(l=>l.status==="in_progress").length, lbl:"En cours" },
-          { icon:"✅", val:livraisons.filter(l=>l.status==="delivered").length,   lbl:"Livrées" },
-          { icon:"💰", val:"12 500 F", lbl:"Gains aujourd'hui", trend:"+3 500 F" },
+          { icon:"🟡", val:dispo.length,           lbl:"Disponibles",      trend:"Nouvelles missions" },
+          { icon:"🚚", val:enCours.length,          lbl:"En cours",         trend:"" },
+          { icon:"✅", val:livrees.length,           lbl:"Livrées",          trend:"+" },
+          { icon:"💰", val:`${gainsTotal.toLocaleString()} F`, lbl:"Gains disponibles", trend:`${gainsMois.toLocaleString()} F ce mois` },
         ].map(s => (
           <div key={s.lbl} className="dstat">
             <div className="dstat-icon">{s.icon}</div>
@@ -1610,47 +1773,73 @@ function DeliveryDashboard({ user, userData, dashTab }) {
         ))}
       </div>
 
-      {(dashTab === "overview" || dashTab === "disponibles") && (
+      {/* Onglets dashboard livraison */}
+      {dashTab === "overview" && (
         <>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>Livraisons disponibles</div>
-          {livraisons.filter(l => l.status === "available").map(l => (
-            <div key={l.id} className="order-card" style={{ flexDirection:"column", alignItems:"stretch" }}>
-              <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                <div className="oc-icon">📍</div>
-                <div className="oc-info">
-                  <div className="oc-name">#{l.id} · {l.client}</div>
-                  <div className="oc-meta">📍 {l.adresse} · {l.distance}<br/>📦 {l.produit} · 💰 {l.montant?.toLocaleString()} FCFA</div>
-                </div>
-                <span className="status-badge s-pending">Disponible</span>
-              </div>
-              <div style={{ display:"flex", gap:8, marginTop:10 }}>
-                <button className="btn-cmd-sm" onClick={() => action(l.id, "in_progress")}>✅ Accepter</button>
-                <button className="btn-ghost" style={{ flex:1, fontSize:".78rem" }} onClick={() => action(l.id, "refused")}>❌ Refuser</button>
-              </div>
-            </div>
-          ))}
+          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",marginBottom:12}}>
+            🟡 Missions disponibles ({dispo.length})
+          </div>
+          {dispo.length === 0
+            ? <div className="empty-state"><div className="empty-icon">🛵</div><p>Aucune mission disponible pour l'instant</p><p style={{fontSize:".78rem",marginTop:6}}>Revenez dans quelques minutes !</p></div>
+            : dispo.map(l => <LivraisonCard key={l.id} l={l}/>)
+          }
+          {enCours.length > 0 && (
+            <>
+              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",margin:"18px 0 12px"}}>🚚 En cours ({enCours.length})</div>
+              {enCours.map(l => <LivraisonCard key={l.id} l={l}/>)}
+            </>
+          )}
+        </>
+      )}
+
+      {dashTab === "disponibles" && (
+        <>
+          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",marginBottom:12}}>🟡 Missions disponibles</div>
+          {dispo.length === 0
+            ? <div className="empty-state"><div className="empty-icon">🛵</div><p>Aucune mission disponible</p></div>
+            : dispo.map(l => <LivraisonCard key={l.id} l={l}/>)
+          }
         </>
       )}
 
       {dashTab === "enCours" && (
         <>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>Livraisons en cours</div>
-          {livraisons.filter(l => l.status === "in_progress").length === 0
+          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",marginBottom:12}}>🚚 Livraisons en cours</div>
+          {enCours.length === 0
             ? <div className="empty-state"><div className="empty-icon">🚚</div><p>Aucune livraison en cours</p></div>
-            : livraisons.filter(l => l.status === "in_progress").map(l => (
-                <div key={l.id} className="order-card" style={{ flexDirection:"column", alignItems:"stretch" }}>
-                  <div style={{ display:"flex", gap:12 }}>
-                    <div className="oc-icon">🚚</div>
-                    <div className="oc-info">
-                      <div className="oc-name">#{l.id} · {l.client}</div>
-                      <div className="oc-meta">📍 {l.adresse} · 📦 {l.produit}</div>
-                    </div>
-                    <span className="status-badge s-en_cours">🏍️ En cours</span>
-                  </div>
-                  <button className="btn-cmd-sm" style={{ marginTop:10 }} onClick={() => action(l.id, "delivered")}>✅ Marquer comme livré</button>
-                </div>
-              ))
+            : enCours.map(l => <LivraisonCard key={l.id} l={l}/>)
           }
+        </>
+      )}
+
+      {dashTab === "historique" && (
+        <>
+          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",marginBottom:12}}>✅ Historique ({livrees.length})</div>
+          {livrees.length === 0
+            ? <div className="empty-state"><div className="empty-icon">📋</div><p>Aucune livraison terminée</p></div>
+            : livrees.map(l => <LivraisonCard key={l.id} l={l} showActions={false}/>)
+          }
+        </>
+      )}
+
+      {dashTab === "wallet" && (
+        <>
+          <div className="dash-page-title">💰 Mes Gains</div>
+          <div className="wallet-card">
+            <div className="wc-label">Gains disponibles</div>
+            <div className="wc-amount">{gainsTotal.toLocaleString()} FCFA</div>
+            <div className="wc-sub">Ce mois : {gainsMois.toLocaleString()} FCFA · {livrees.length} livraisons effectuées</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+            {[{label:"Aujourd'hui",val:"12 500 FCFA",ic:"📅"},{label:"Cette semaine",val:"47 500 FCFA",ic:"📆"},{label:"Ce mois",val:`${gainsMois.toLocaleString()} FCFA`,ic:"🗓️"},{label:"Total livraisons",val:livrees.length,ic:"✅"}].map(s=>(
+              <div key={s.label} style={{background:"var(--surface2)",borderRadius:10,padding:"12px 14px",border:"1px solid var(--border)"}}>
+                <div style={{fontSize:"1.1rem",marginBottom:4}}>{s.ic}</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".88rem",color:"var(--ink)"}}>{s.val}</div>
+                <div style={{fontSize:".68rem",color:"var(--gray)"}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="info-box"><div className="info-icon">📱</div><p>Retrait MTN MoMo et Orange Money — bientôt disponible.</p></div>
         </>
       )}
     </>
@@ -1854,15 +2043,41 @@ export default function Yorix() {
     setAuthError(""); setAuthLoading(true);
     try {
       if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
-      const { data, error } = await supabase.auth.signUp({ email:authForm.email, password:authForm.password, options:{ data:{ display_name:authForm.nom } } });
+      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
+
+      const { data, error } = await supabase.auth.signUp({
+        email: authForm.email,
+        password: authForm.password,
+        options: { data: { display_name: authForm.nom } },
+      });
       if (error) throw error;
+
       const uid = data.user?.id;
       if (!uid) throw new Error("Erreur création compte.");
-      await supabase.from("users").insert({ uid, nom:authForm.nom, email:authForm.email, telephone:authForm.tel, role:selectedRole, langue:"fr", actif:true, verifie:false, note:0, nombre_avis:0 });
+
+      const { error: profileError } = await supabase.from("users").insert({
+        uid,
+        nom:          authForm.nom,
+        email:        authForm.email,
+        telephone:    authForm.tel,
+        role:         selectedRole,   // ← rôle EXACTEMENT choisi par l'utilisateur
+        langue:       "fr",
+        actif:        true,
+        verifie:      false,
+        note:         0,
+        nombre_avis:  0,
+        total_commandes: 0,
+      });
+      if (profileError) console.error("Profile insert error:", profileError);
+
       await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(console.error);
       await chargerProfil(uid);
       setAuthOpen(false);
-    } catch (err) { setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message); }
+      setAuthForm({ nom:"", email:"", tel:"", password:"" });
+    } catch (err) {
+      console.error("Register error:", err);
+      setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message);
+    }
     setAuthLoading(false);
   };
 
@@ -1950,7 +2165,7 @@ export default function Yorix() {
 
   const getDashNav = () => {
     if (userRole === "seller")   return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🏪",id:"mesProduits",label:"Mes produits"},{icon:"➕",id:"ajouterProduit",label:"Ajouter produit"},{icon:"📦",id:"commandes",label:"Commandes"},{icon:"💰",id:"wallet",label:"Wallet"}];
-    if (userRole === "delivery") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📦",id:"disponibles",label:"Disponibles"},{icon:"🚚",id:"enCours",label:"En cours"},{icon:"💰",id:"wallet",label:"Gains"}];
+    if (userRole === "delivery") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🟡",id:"disponibles",label:"Disponibles"},{icon:"🚚",id:"enCours",label:"En cours"},{icon:"✅",id:"historique",label:"Historique"},{icon:"💰",id:"wallet",label:"Gains"}];
     if (userRole === "provider") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📋",id:"demandes",label:"Demandes"},{icon:"➕",id:"ajouterService",label:"Ajouter service"}];
     return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📦",id:"commandes",label:"Mes commandes"},{icon:"❤️",id:"favoris",label:"Favoris"},{icon:"🌟",id:"loyalty",label:"Fidélité"}];
   };
@@ -1977,38 +2192,76 @@ export default function Yorix() {
       {/* ── AUTH MODAL ── */}
       {authOpen && (
         <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setAuthOpen(false)}>
-          <div className="modal">
+          <div className="modal" style={{width:"100%",maxWidth:480,margin:"0 auto"}}>
             <button className="modal-close" onClick={() => setAuthOpen(false)}>✕</button>
-            <div className="modal-title">{authTab==="login" ? "Bon retour !" : "Créer un compte"}</div>
-            <p className="modal-sub">Votre marketplace camerounaise de confiance 🇨🇲</p>
+            <div className="modal-title">{authTab==="login" ? "Bon retour ! 👋" : "Rejoindre Yorix 🇨🇲"}</div>
+            <p className="modal-sub">Votre marketplace camerounaise de confiance</p>
             <div className="auth-tabs">
-              <button className={`auth-tab${authTab==="login"?" active":""}`} onClick={() => setAuthTab("login")}>Connexion</button>
-              <button className={`auth-tab${authTab==="register"?" active":""}`} onClick={() => setAuthTab("register")}>Inscription</button>
+              <button className={`auth-tab${authTab==="login"?" active":""}`} onClick={() => { setAuthTab("login"); setAuthError(""); }}>🔑 Connexion</button>
+              <button className={`auth-tab${authTab==="register"?" active":""}`} onClick={() => { setAuthTab("register"); setAuthError(""); }}>🚀 Inscription</button>
             </div>
             {authError && <div className="error-msg">⚠️ {authError}</div>}
+
             {authTab === "register" && (
               <>
-                <p style={{ fontSize:".73rem", fontWeight:700, color:"var(--ink)", marginBottom:8 }}>Je m'inscris en tant que :</p>
-                <div className="role-selector">
-                  {[{id:"buyer",icon:"🛍️",label:"Acheteur",desc:"Acheter des produits"},
-                    {id:"seller",icon:"🏪",label:"Vendeur",desc:"Vendre mes produits"},
-                    {id:"delivery",icon:"🚚",label:"Livreur",desc:"Effectuer des livraisons"},
-                    {id:"provider",icon:"👷",label:"Prestataire",desc:"Proposer mes services"}
+                <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:9,padding:"10px 12px",marginBottom:12,fontSize:".78rem",color:"var(--green)",fontWeight:600}}>
+                  👇 Choisissez votre profil pour commencer
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+                  {[
+                    {id:"buyer",   icon:"🛍️", label:"Acheteur",    desc:"J'achète des produits"},
+                    {id:"seller",  icon:"🏪", label:"Vendeur",     desc:"Je vends mes produits"},
+                    {id:"delivery",icon:"🚚", label:"Livreur",     desc:"J'effectue des livraisons"},
+                    {id:"provider",icon:"👷", label:"Prestataire", desc:"Je propose des services"},
                   ].map(r => (
-                    <div key={r.id} className={`role-card${selectedRole===r.id?" selected":""}`} onClick={() => setSelectedRole(r.id)}>
-                      <div className="rc-icon">{r.icon}</div><h4>{r.label}</h4><p>{r.desc}</p>
+                    <div
+                      key={r.id}
+                      onClick={() => setSelectedRole(r.id)}
+                      style={{
+                        border:`2px solid ${selectedRole===r.id?"var(--green)":"var(--border)"}`,
+                        borderRadius:10,padding:"12px 10px",cursor:"pointer",
+                        background:selectedRole===r.id?"var(--green-pale)":"var(--surface)",
+                        textAlign:"center",transition:"all .2s",
+                      }}
+                    >
+                      <div style={{fontSize:"1.8rem",marginBottom:4}}>{r.icon}</div>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--ink)"}}>{r.label}</div>
+                      <div style={{fontSize:".67rem",color:"var(--gray)",marginTop:2}}>{r.desc}</div>
+                      {selectedRole===r.id && <div style={{marginTop:5,fontSize:".62rem",fontWeight:700,color:"var(--green)"}}>✅ Sélectionné</div>}
                     </div>
                   ))}
                 </div>
-                <div className="form-group"><label className="form-label">Nom complet <span>*</span></label><input className="form-input" placeholder="Votre nom" value={authForm.nom} onChange={e => setAuthForm(f=>({...f,nom:e.target.value}))}/></div>
-                <div className="form-group"><label className="form-label">Téléphone <span>*</span></label><input className="form-input" placeholder="+237 6XX XXX XXX" value={authForm.tel} onChange={e => setAuthForm(f=>({...f,tel:e.target.value}))}/></div>
+                <div className="form-group">
+                  <label className="form-label">Nom complet <span>*</span></label>
+                  <input className="form-input" placeholder="Ex: Amina Bello" value={authForm.nom} onChange={e => setAuthForm(f=>({...f,nom:e.target.value}))}/>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Téléphone <span>*</span></label>
+                  <input className="form-input" type="tel" placeholder="+237 6XX XXX XXX" value={authForm.tel} onChange={e => setAuthForm(f=>({...f,tel:e.target.value}))}/>
+                </div>
               </>
             )}
-            <div className="form-group"><label className="form-label">Email <span>*</span></label><input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/></div>
-            <div className="form-group"><label className="form-label">Mot de passe <span>*</span></label><input className="form-input" type="password" placeholder="••••••••" value={authForm.password} onChange={e => setAuthForm(f=>({...f,password:e.target.value}))}/></div>
-            <button className="form-submit" onClick={authTab==="login" ? doLogin : doRegister} disabled={authLoading}>
-              {authLoading ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Chargement...</> : authTab==="login" ? "🔑 Se connecter" : "🚀 Créer mon compte"}
+            <div className="form-group">
+              <label className="form-label">Email <span>*</span></label>
+              <input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Mot de passe <span>*</span></label>
+              <input className="form-input" type="password" placeholder="••••••••" value={authForm.password} onChange={e => setAuthForm(f=>({...f,password:e.target.value}))}/>
+            </div>
+            <button className="form-submit" onClick={authTab==="login" ? doLogin : doRegister} disabled={authLoading} style={{fontSize:".9rem",padding:"13px"}}>
+              {authLoading
+                ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Chargement...</>
+                : authTab==="login"
+                  ? "🔑 Se connecter"
+                  : `🚀 Créer mon compte ${selectedRole==="buyer"?"Acheteur":selectedRole==="seller"?"Vendeur":selectedRole==="delivery"?"Livreur":"Prestataire"}`
+              }
             </button>
+            {authTab==="register" && (
+              <p style={{fontSize:".68rem",color:"var(--gray)",textAlign:"center",marginTop:8}}>
+                En vous inscrivant, vous acceptez nos conditions d'utilisation
+              </p>
+            )}
             <div className="divider">ou</div>
             <button className="social-btn" onClick={doGoogle}><span>🇬</span> Continuer avec Google</button>
           </div>
@@ -2106,7 +2359,7 @@ export default function Yorix() {
       <div className="pay-strip">
         <b style={{color:"var(--ink)"}}>Paiement :</b>
         <div className="pay-methods"><span className="pm mtn-b">📱 MTN MoMo</span><span className="pm ora-b">🔶 Orange Money</span><span className="pm">💳 Carte</span><span className="pm">💵 Cash</span></div>
-        <div className="strip-right"><span>🚚 J+1 Douala & Yaoundé</span><span>🔐 Escrow</span><span>Commission Yorix {Math.round(COMMISSION_RATE*100)}%</span>{user&&<span style={{color:"var(--gold)"}}>👤 {userData?.nom||user.email}</span>}</div>
+        <div className="strip-right"><span>🚚 J+1 Douala & Yaoundé</span><span>🔐 Escrow sécurisé</span>{user&&<span style={{color:"var(--gold)"}}>👤 {userData?.nom||user.email}</span>}</div>
       </div>
 
       {/* ════════ PAGE : ACCUEIL ════════ */}
@@ -2188,6 +2441,43 @@ export default function Yorix() {
             <div className="proof-item"><span className="proof-num">98%</span> satisfaction client</div>
             <div className="proof-item"><span className="proof-num">J+1</span> livraison Yaoundé</div>
           </div>
+
+          {/* ── OFFRES FLASH DU JOUR ── */}
+          <section className="sec" style={{paddingBottom:0}}>
+            <div className="sec-head">
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <h2 className="sec-title">⚡ Offres Flash</h2>
+                <span style={{background:"#ff4444",color:"#fff",padding:"3px 10px",borderRadius:50,fontSize:".68rem",fontWeight:800,animation:"flashPulse 1.5s infinite"}}>AUJOURD'HUI SEULEMENT</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:".75rem",color:"var(--gray)"}}>Se termine dans :</span>
+                <FlashCountdown/>
+              </div>
+            </div>
+            {/* Bandeau promo */}
+            <div style={{background:"linear-gradient(135deg,#ff4444,#ff6b35)",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+              <div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"#fff",marginBottom:3}}>🔥 Promo du jour — jusqu'à -30% sur tous les téléphones !</div>
+                <div style={{fontSize:".78rem",color:"rgba(255,255,255,.75)"}}>Offre valable uniquement aujourd'hui · Paiement MTN MoMo accepté</div>
+              </div>
+              <button
+                style={{background:"#fff",color:"#ff4444",border:"none",padding:"9px 18px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".82rem",cursor:"pointer",whiteSpace:"nowrap"}}
+                onClick={()=>{ setFilterCat("Téléphones"); goPage("produits"); }}
+              >🛍️ Voir les promos</button>
+            </div>
+            {/* Grille flash : les 4 premiers produits avec badge flash simulé */}
+            {!produitsLoading && produits.length > 0 && (
+              <ProdGrid
+                prods={produits.slice(0,4).map((p,i) => ({
+                  ...p,
+                  flash: i < 2,
+                  promo: i >= 2 && i < 4,
+                  promo_pct: i === 2 ? 20 : i === 3 ? 15 : 0,
+                }))}
+                user={user} userData={userData} onAddToCart={addToCart} onWish={toggleWish} wishlist={wishlist}
+              />
+            )}
+          </section>
 
           {/* ── PRODUITS RÉCENTS ── */}
           <section className="sec">
@@ -2314,23 +2604,143 @@ export default function Yorix() {
 
       {/* ════════ PAGE : LIVRAISON ════════ */}
       {page==="livraison"&&(
-        <section className="sec anim">
-          <div style={{background:"#0d1f14",borderRadius:14,padding:28,color:"#fff",marginBottom:20}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🚀 Yorix Ride — Livraison Express</div>
-            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.4rem",fontWeight:800,marginBottom:8}}>Des livreurs indépendants, partout au Cameroun</h2>
-            <p style={{color:"rgba(255,255,255,.5)",fontSize:".86rem",lineHeight:1.75,marginBottom:20}}>Tracking GPS en temps réel · Chat sécurisé · Notation après livraison</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:11}}>
-              {[{emoji:"🏍️",name:"Jean-Pierre M.",sub:"Moto · Douala",liv:342,note:4.9,dispo:true},{emoji:"🚐",name:"Augustin N.",sub:"Minibus · Yaoundé",liv:218,note:4.8,dispo:true},{emoji:"🚚",name:"Fabrice K.",sub:"Camionnette · Bafoussam",liv:189,note:4.7,dispo:false}].map(d=>(
-                <div key={d.name} style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.09)",borderRadius:11,padding:15}}>
-                  <div style={{display:"flex",gap:9,marginBottom:9}}><div style={{width:40,height:40,borderRadius:"50%",background:"var(--green)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem"}}>{d.emoji}</div><div><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".86rem",color:"#fff"}}>{d.name}</div><div style={{fontSize:".67rem",color:"rgba(255,255,255,.42)"}}>{d.sub}</div></div></div>
-                  <div style={{display:"flex",gap:10,marginBottom:10}}><div><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"#4fd17d"}}>{d.liv}</div><div style={{fontSize:".6rem",color:"rgba(255,255,255,.3)"}}>Livraisons</div></div><div><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"#4fd17d"}}>⭐{d.note}</div><div style={{fontSize:".6rem",color:"rgba(255,255,255,.3)"}}>Note</div></div></div>
-                  <div style={{fontSize:".67rem",color:"rgba(255,255,255,.44)",marginBottom:8}}>{d.dispo?<><span style={{width:6,height:6,background:"#4fd17d",borderRadius:"50%",display:"inline-block",marginRight:3}}/>Disponible</>:"⏸️ Indisponible"}</div>
-                  <button style={{width:"100%",background:"rgba(79,209,125,.13)",color:"#4fd17d",border:"1px solid rgba(79,209,125,.25)",padding:"7px",borderRadius:8,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".73rem",cursor:"pointer"}}>{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
-                </div>
-              ))}
+        <div className="anim">
+          <section className="sec">
+
+            {/* ── HERO LIVRAISON ── */}
+            <div style={{background:"linear-gradient(135deg,#0a1410,#1a3a24,#0d3320)",borderRadius:16,padding:28,color:"#fff",marginBottom:20,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:-20,right:-20,width:160,height:160,background:"rgba(79,209,125,.06)",borderRadius:"50%"}}/>
+              <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.28)",padding:"4px 12px",borderRadius:50,fontSize:".72rem",fontWeight:700,marginBottom:14}}>
+                🛵 Yorix Ride — Livraison Express Cameroun
+              </div>
+              <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.5rem",fontWeight:800,marginBottom:8,lineHeight:1.2}}>
+                Livraison à domicile<br/><span style={{color:"#4fd17d"}}>comme Uber, partout au Cameroun</span>
+              </h2>
+              <p style={{color:"rgba(255,255,255,.6)",fontSize:".85rem",lineHeight:1.75,marginBottom:20,maxWidth:480}}>
+                Commandez un produit, un livreur proche de vous accepte la mission en quelques secondes. Suivi GPS en temps réel, paiement à la livraison.
+              </p>
+
+              {/* Stats livraison */}
+              <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:20}}>
+                {[["🏍️","850+","Livreurs actifs"],["⏱️","~25 min","Temps moyen"],["⭐","4.8/5","Note moyenne"],["📦","12K+","Livraisons/mois"]].map(([ic,val,lbl])=>(
+                  <div key={lbl}>
+                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
+                      <span style={{fontSize:"1rem"}}>{ic}</span>
+                      <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--yellow)"}}>{val}</span>
+                    </div>
+                    <div style={{fontSize:".62rem",color:"rgba(255,255,255,.35)"}}>{lbl}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA commander livraison */}
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button
+                  style={{background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"11px 20px",borderRadius:9,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",cursor:"pointer"}}
+                  onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix Ride ! Je veux une livraison 📦\n\n📍 Adresse de collecte : \n📍 Adresse de livraison : \n📦 Contenu du colis : ")}`, "_blank")}
+                >📦 Demander une livraison</button>
+                <button
+                  style={{background:"rgba(255,255,255,.09)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",padding:"11px 20px",borderRadius:9,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",cursor:"pointer"}}
+                  onClick={()=>{ setAuthTab("register"); setSelectedRole("delivery"); setAuthOpen(true); }}
+                >🏍️ Devenir livreur Yorix</button>
+              </div>
             </div>
-          </div>
-        </section>
+
+            {/* ── COMMENT ÇA MARCHE ── */}
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:22,marginBottom:20}}>
+              <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.3px"}}>🗺️ Comment fonctionne Yorix Ride ?</h3>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+                {[
+                  {n:1,icon:"🛍️",t:"Vous commandez",d:"Passez commande sur Yorix ou via WhatsApp"},
+                  {n:2,icon:"🏍️",t:"Livreur assigné",d:"Un livreur proche accepte votre mission en quelques secondes"},
+                  {n:3,icon:"📍",t:"Suivi en direct",d:"Suivez votre livreur sur la carte en temps réel"},
+                  {n:4,icon:"✅",t:"Livraison confirmée",d:"Réceptionnez et confirmez. Paiement libéré au livreur."},
+                ].map(s=>(
+                  <div key={s.n} style={{textAlign:"center",padding:"14px 10px",background:"var(--surface2)",borderRadius:10}}>
+                    <div style={{width:28,height:28,background:"var(--green)",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".78rem",margin:"0 auto 8px"}}>{s.n}</div>
+                    <div style={{fontSize:"1.4rem",marginBottom:5}}>{s.icon}</div>
+                    <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",color:"var(--ink)",marginBottom:3}}>{s.t}</div>
+                    <div style={{fontSize:".68rem",color:"var(--gray)",lineHeight:1.5}}>{s.d}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── TARIFS ── */}
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:22,marginBottom:20}}>
+              <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:14}}>💰 Tarifs de livraison</h3>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                {[
+                  {zone:"🏙️ Intra-ville",prix:"500 – 1 500 FCFA",delai:"20 – 45 min",dispo:"Douala, Yaoundé"},
+                  {zone:"🌆 Inter-quartiers",prix:"1 500 – 3 000 FCFA",delai:"1h – 2h",dispo:"Bafoussam, Bamenda"},
+                  {zone:"🗺️ Inter-villes",prix:"3 000 – 8 000 FCFA",delai:"J+1",dispo:"Tout le Cameroun"},
+                ].map(t=>(
+                  <div key={t.zone} style={{background:"var(--surface2)",borderRadius:10,padding:14,border:"1px solid var(--border)"}}>
+                    <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".84rem",color:"var(--ink)",marginBottom:5}}>{t.zone}</div>
+                    <div style={{fontFamily:"'Syne',sans-serif",fontSize:"1rem",fontWeight:800,color:"var(--green)",marginBottom:3}}>{t.prix}</div>
+                    <div style={{fontSize:".69rem",color:"var(--gray)",marginBottom:2}}>⏱ {t.delai}</div>
+                    <div style={{fontSize:".65rem",color:"var(--gray)"}}>{t.dispo}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── LIVREURS DISPONIBLES ── */}
+            <div>
+              <div className="sec-head"><h3 className="sec-title">🏍️ Livreurs disponibles maintenant</h3></div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+                {[
+                  {emoji:"🏍️",name:"Jean-Pierre M.",sub:"Moto · Douala · Akwa",livraisons:342,note:4.9,dispo:true,temps:"~15 min",vehicule:"Moto"},
+                  {emoji:"🚐",name:"Augustin N.",sub:"Minibus · Yaoundé · Bastos",livraisons:218,note:4.8,dispo:true,temps:"~20 min",vehicule:"Minibus"},
+                  {emoji:"🚗",name:"Grace T.",sub:"Voiture · Douala · Bonanjo",livraisons:156,note:5.0,dispo:true,temps:"~10 min",vehicule:"Voiture"},
+                  {emoji:"🚚",name:"Fabrice K.",sub:"Camionnette · Bafoussam",livraisons:189,note:4.7,dispo:false,temps:null,vehicule:"Camionnette"},
+                  {emoji:"🏍️",name:"Bertrand A.",sub:"Moto · Yaoundé · Mvan",livraisons:271,note:4.8,dispo:true,temps:"~18 min",vehicule:"Moto"},
+                  {emoji:"🚐",name:"Carine M.",sub:"Minibus · Douala · Bonapriso",livraisons:98,note:4.9,dispo:false,temps:null,vehicule:"Minibus"},
+                ].map(d=>(
+                  <div key={d.name} style={{background:d.dispo?"var(--surface)":"var(--surface2)",border:`1.5px solid ${d.dispo?"var(--green-light)":"var(--border)"}`,borderRadius:12,padding:15,opacity:d.dispo?1:.7,transition:"all .2s"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:d.dispo?"var(--green)":"var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.3rem",flexShrink:0}}>{d.emoji}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".86rem",color:"var(--ink)"}}>{d.name}</div>
+                        <div style={{fontSize:".65rem",color:"var(--gray)",lineHeight:1.4}}>{d.sub}</div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:8,marginBottom:8}}>
+                      <div style={{background:"var(--surface2)",borderRadius:7,padding:"4px 8px",fontSize:".67rem",fontWeight:600,color:"var(--ink)"}}>⭐ {d.note}</div>
+                      <div style={{background:"var(--surface2)",borderRadius:7,padding:"4px 8px",fontSize:".67rem",fontWeight:600,color:"var(--ink)"}}>📦 {d.livraisons} livraisons</div>
+                    </div>
+                    <div style={{fontSize:".67rem",marginBottom:10,fontWeight:600,color:d.dispo?"#27a85a":"var(--gray)"}}>
+                      {d.dispo
+                        ? <><span style={{width:6,height:6,background:"#4fd17d",borderRadius:"50%",display:"inline-block",marginRight:4}}/>Disponible · {d.temps}</>
+                        : "⏸️ Non disponible pour le moment"
+                      }
+                    </div>
+                    <button
+                      style={{width:"100%",background:d.dispo?"var(--green)":"var(--border)",color:d.dispo?"#fff":"var(--gray)",border:"none",padding:"8px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",cursor:d.dispo?"pointer":"default"}}
+                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour ! Je veux une livraison avec ${d.name} (${d.vehicule}) 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : `)}`, "_blank")}
+                    >{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── REJOINDRE COMME LIVREUR ── */}
+            <div style={{background:"linear-gradient(135deg,#1a3a24,#0d3320)",borderRadius:14,padding:24,marginTop:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+              <div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"#fff",marginBottom:5}}>🏍️ Devenez livreur Yorix</div>
+                <div style={{color:"rgba(255,255,255,.6)",fontSize:".82rem",lineHeight:1.6,maxWidth:360}}>Gagnez 15 000 – 80 000 FCFA/mois selon votre activité. Horaires libres, votre propre véhicule, paiement quotidien.</div>
+                <div style={{display:"flex",gap:10,marginTop:10,flexWrap:"wrap"}}>
+                  {["✅ Paiement quotidien","🕐 Horaires libres","🏍️ Votre véhicule"].map(t=><span key={t} style={{background:"rgba(255,255,255,.1)",color:"rgba(255,255,255,.8)",padding:"3px 9px",borderRadius:50,fontSize:".67rem"}}>{t}</span>)}
+                </div>
+              </div>
+              <button
+                style={{background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"12px 22px",borderRadius:10,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",cursor:"pointer",whiteSpace:"nowrap"}}
+                onClick={()=>{ setAuthTab("register"); setSelectedRole("delivery"); setAuthOpen(true); }}
+              >🚀 S'inscrire comme livreur</button>
+            </div>
+
+          </section>
+        </div>
       )}
 
       {/* ════════ PAGE : ESCROW ════════ */}
@@ -2339,7 +2749,7 @@ export default function Yorix() {
           <div style={{background:dark?"#152118":"#f0faf4",border:`1.5px solid ${dark?"#2a4030":"#c0ecd0"}`,borderRadius:14,padding:28,marginBottom:20}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"var(--green)",color:"#fff",padding:"4px 12px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🔐 Escrow Yorix</div>
             <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.4rem",fontWeight:800,color:"var(--ink)",marginBottom:10,letterSpacing:"-.5px"}}>Votre argent protégé jusqu'à la livraison</h2>
-            <p style={{color:"var(--gray)",fontSize:".86rem",lineHeight:1.75,marginBottom:20}}>Commission Yorix de {Math.round(COMMISSION_RATE*100)}% prélevée automatiquement à chaque transaction.</p>
+            <p style={{color:"var(--gray)",fontSize:".86rem",lineHeight:1.75,marginBottom:20}}>Votre argent reste bloqué chez Yorix jusqu'à ce que vous confirmiez la réception. En cas de litige, nous vous remboursons.</p>
             <div className="escrow-steps">
               {[{n:1,t:"Vous commandez",d:"Votre paiement est bloqué · statut : pending"},{n:2,t:"Vendeur expédie",d:"Les fonds passent au statut : sécurisé 🔐"},{n:3,t:"Vous confirmez",d:"Fonds libérés au vendeur · statut : libéré ✅"},{n:4,t:"Litige ? Yorix arbitre",d:"Remboursement sous 48h · statut : remboursé ↩️"}].map(s=>(
                 <div key={s.n} className="estep"><div className="estep-num">{s.n}</div><div className="estep-text"><h4>{s.t}</h4><p>{s.d}</p></div></div>
@@ -2497,7 +2907,7 @@ export default function Yorix() {
 
               {/* Dashboards par rôle */}
               {dashTab!=="messages"&&userRole==="seller"&&<SellerDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
-              {dashTab!=="messages"&&userRole==="delivery"&&<DeliveryDashboard user={user} userData={userData} dashTab={dashTab}/>}
+              {dashTab!=="messages"&&userRole==="delivery"&&<DeliveryDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
               {dashTab!=="messages"&&userRole==="provider"&&<ProviderDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
               {dashTab!=="messages"&&(userRole==="buyer"||!userRole)&&<BuyerDashboard user={user} userData={userData} wishlist={wishlist} totalQty={totalQty} loyaltyPts={loyaltyPts} setLoyaltyPts={setLoyaltyPts} dashTab={dashTab} goPage={goPage}/>}
             </div>
@@ -2539,12 +2949,49 @@ export default function Yorix() {
       {/* MOBILE NAV */}
       <div className="mobile-nav">
         <div className="mn-inner">
-          {[{icon:"🏠",label:"Accueil",p:"home"},{icon:"🛍️",label:"Produits",p:"produits"},{icon:"👷",label:"Prestataires",p:"prestataires"},{icon:"📊",label:"Mon espace",p:"dashboard"},{icon:"🌟",label:"Fidélité",p:"loyalty"}].map(item=>(
-            <div key={item.label} className={`mn-item${page===item.p?" active":""}`} onClick={()=>item.p==="dashboard"&&!user?setAuthOpen(true):goPage(item.p)}>
-              <div className="mn-icon">{item.icon}</div><div className="mn-label">{item.label}</div>
+          {[
+            {icon:"🏠",label:"Accueil",p:"home"},
+            {icon:"🛍️",label:"Produits",p:"produits"},
+            {icon:"🚚",label:"Livraison",p:"livraison"},
+            {icon:"📊",label:"Mon espace",p:"dashboard"},
+            {icon:"💬",label:"WhatsApp",p:"wa"},
+          ].map(item => (
+            <div
+              key={item.label}
+              className={`mn-item${page===item.p?" active":""}`}
+              onClick={() => {
+                if (item.p === "wa") {
+                  window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! J'ai besoin d'aide.")}`, "_blank");
+                } else if (item.p === "dashboard" && !user) {
+                  setAuthTab("register");
+                  setAuthOpen(true);
+                } else {
+                  goPage(item.p);
+                }
+              }}
+            >
+              <div className="mn-icon">{item.icon}</div>
+              <div className="mn-label">{item.label}</div>
+              {item.p==="dashboard" && !user && (
+                <div style={{position:"absolute",top:0,right:2,background:"var(--green)",color:"#fff",fontSize:".45rem",fontWeight:700,padding:"1px 3px",borderRadius:3}}>S'inscrire</div>
+              )}
+              {item.p==="dashboard" && unread>0 && user && <div className="mn-badge">{unread}</div>}
             </div>
           ))}
         </div>
+        {/* Barre inscription rapide mobile si non connecté */}
+        {!user && (
+          <div style={{borderTop:"1px solid var(--border)",padding:"8px 16px",display:"flex",gap:8}}>
+            <button
+              onClick={() => { setAuthTab("login"); setAuthOpen(true); }}
+              style={{flex:1,padding:"9px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface)",fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".78rem",cursor:"pointer",color:"var(--ink)"}}
+            >🔑 Connexion</button>
+            <button
+              onClick={() => { setAuthTab("register"); setSelectedRole("buyer"); setAuthOpen(true); }}
+              style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:"var(--green)",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer",color:"#fff"}}
+            >🚀 S'inscrire gratuitement</button>
+          </div>
+        )}
       </div>
 
       {/* FOOTER */}
@@ -2560,7 +3007,7 @@ export default function Yorix() {
           <div className="footer-col"><h4>Aide</h4><ul>{["Centre d'aide","Payer avec MoMo","Suivi commande","Nous contacter"].map(i=><li key={i}>{i}</li>)}</ul></div>
         </div>
         <div className="footer-bottom">
-          <span>© 2026 Yorix Cameroun — RC: DOUALA/2026/B237 · Commission {Math.round(COMMISSION_RATE*100)}%</span>
+          <span>© 2026 Yorix Cameroun — RC: DOUALA/2026/B237</span>
           <div className="fb-badges"><span className="fbb">📱 MTN MoMo</span><span className="fbb">🔶 Orange Money</span><span className="fbb">🔐 Escrow</span><span className="fbb">🇨🇲 Made in CM</span></div>
         </div>
       </footer>
