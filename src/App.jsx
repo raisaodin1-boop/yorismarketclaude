@@ -14,6 +14,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(
+  "https://msrymchhhxitdevthvdi.supabase.co",
+  "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA"
+)
 
 // ─────────────────────────────────────────────────────────────
 // CONFIG
