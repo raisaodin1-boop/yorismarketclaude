@@ -1286,7 +1286,14 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                   <div key={p.id} className="prod-card">
                     <div className="prod-img-wrap">
                       {(p.image_urls?.[0] || p.image)
-                        ? <img src={p.image_urls?.[0] || p.image} alt={p.name_fr}/>
+                        <img 
+  src={
+    Array.isArray(p.image_urls)
+      ? p.image_urls[0]
+      : (p.image_urls ? JSON.parse(p.image_urls)[0] : p.image)
+  } 
+  alt={p.name_fr}
+/>
                         : <div className="prod-img-placeholder">📦</div>
                       }
                       {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
