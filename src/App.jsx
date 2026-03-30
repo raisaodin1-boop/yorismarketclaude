@@ -1290,9 +1290,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     alt={p.name_fr}
   />
 </div>
-  <div className="prod-img-placeholder">📦</div>
-)}
-                      {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
+                    {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
                     </div>
                     <div className="prod-info">
                       <div className="prod-name">{p.name_fr}</div>
