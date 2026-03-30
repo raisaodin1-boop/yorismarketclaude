@@ -606,6 +606,43 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .anim{animation:fadeUp .35s ease both;}
 .tag{background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:3px 9px;font-size:.68rem;font-weight:600;color:var(--gray);}
 .divider-h{height:1px;background:var(--border);margin:16px 0;}
+
+/* TRUST BANNER (mobile-first) */
+.trust-banner{background:${dark?"#0f1f16":"#f0faf4"};border-bottom:1px solid ${dark?"#2a4030":"#c8f0d8"};padding:8px 20px;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
+.tb-item{display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:${dark?"#7aca94":"#1a6b3a"};}
+
+/* HERO BADGES (confiance) */
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.hbadge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);color:#fff;padding:5px 10px;border-radius:50px;font-size:.72rem;font-weight:600;}
+.hbadge-green{background:rgba(79,209,125,.15);border-color:rgba(79,209,125,.3);color:#4fd17d;}
+.hbadge-yellow{background:rgba(252,209,22,.12);border-color:rgba(252,209,22,.28);color:var(--yellow);}
+
+/* PROD CARD BADGES */
+.prod-badge-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;}
+.pb{padding:2px 6px;border-radius:4px;font-size:.58rem;font-weight:700;white-space:nowrap;}
+.pb-fire{background:#fff0e6;color:#d4520a;}
+.pb-truck{background:#e6f4ff;color:#0066cc;}
+.pb-cash{background:#e6fff0;color:#1a6b3a;}
+
+/* WHY YORIX SECTION */
+.why-section{background:${dark?"#0f1a14":"#f8fbf9"};border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:28px 24px;}
+.why-inner{max-width:1200px;margin:0 auto;}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px;}
+.why-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;}
+.why-icon{font-size:2rem;margin-bottom:8px;}
+.why-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;color:var(--ink);margin-bottom:4px;}
+.why-desc{font-size:.72rem;color:var(--gray);line-height:1.55;}
+
+/* SOCIAL PROOF BANNER */
+.proof-bar{background:linear-gradient(135deg,#0d1f14,#1a3a24);padding:12px 24px;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;}
+.proof-item{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);font-size:.75rem;font-weight:600;}
+.proof-num{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--yellow);}
+
+/* WA STICKY BAR (mobile) */
+.wa-sticky{display:none;position:fixed;bottom:0;left:0;right:0;z-index:450;background:var(--wa);padding:10px 16px;gap:8px;align-items:center;justify-content:center;box-shadow:0 -3px 16px rgba(0,0,0,.2);}
+.wa-sticky-btn{background:#fff;color:#1a5c38;border:none;padding:8px 20px;border-radius:50px;font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;flex:1;max-width:260px;}
+.wa-sticky-text{color:#fff;font-size:.75rem;font-weight:600;}
+
 @media(max-width:768px){
   .topbar{display:none;}
   .navbar{padding:0 14px;height:56px;}
@@ -618,6 +655,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .prest-grid,.blog-grid,.courses-grid{grid-template-columns:1fr;}
   .rewards-grid{grid-template-columns:repeat(2,1fr);}
   .biz-feats{grid-template-columns:1fr;}
+  .why-grid{grid-template-columns:repeat(2,1fr);}
+  .proof-bar{gap:14px;}
   .footer-grid{grid-template-columns:1fr 1fr;}
   .dash-layout{grid-template-columns:1fr;padding:0 14px;}
   .dash-sidebar{display:none;}
@@ -625,7 +664,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .dash-stats{grid-template-columns:repeat(2,1fr);}
   .mobile-nav{display:block;}
   .wa-float{bottom:70px;}
+  .wa-sticky{display:flex;}
   .form-row{grid-template-columns:1fr;}
+  .hero-badges{gap:6px;}
+  .hbadge{font-size:.68rem;padding:4px 8px;}
+  .trust-banner{gap:12px;padding:8px 14px;}
+  .tb-item{font-size:.68rem;}
 }
 `;
 
@@ -803,7 +847,11 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const [activeImg, setActiveImg]   = useState(0);
   const [avis, setAvis]             = useState([]);
   const [showCmdModal, setShowCmdModal] = useState(false);
-  const images = product.image_urls?.length ? product.image_urls : product.image ? [product.image] : [];
+  // Priorité : p.image en premier, puis image_urls[], filtrer les URL non-http
+  const rawImgs = product.image && product.image.startsWith("http")
+    ? [product.image, ...(product.image_urls || []).filter(u => u && u.startsWith("http") && u !== product.image)]
+    : (product.image_urls || []).filter(u => u && u.startsWith("http"));
+  const images = rawImgs.length > 0 ? rawImgs : [];
 
   useEffect(() => {
     supabase.from("reviews").select("*").eq("product_id", product.id).order("created_at", { ascending: false }).then(({ data }) => setAvis(data || []));
@@ -817,19 +865,30 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
         <button className="modal-close" onClick={onClose}>✕</button>
 
         {/* Images */}
-        {images.length > 0 && (
+        {images.length > 0 ? (
           <div style={{ marginBottom:16 }}>
-            <img src={images[activeImg]} alt={product.name_fr} className="img-main" />
+            <img
+              src={images[activeImg]}
+              alt={product.name_fr}
+              className="img-main"
+              onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = "https://via.placeholder.com/300?text=Yorix"; }}
+            />
             {images.length > 1 && (
               <div className="img-gallery">
                 {images.map((url, i) => (
-                  <img key={i} src={url} alt="" className={`img-gallery-thumb${i === activeImg ? " active" : ""}`} onClick={() => setActiveImg(i)} />
+                  <img
+                    key={i}
+                    src={url}
+                    alt=""
+                    className={`img-gallery-thumb${i === activeImg ? " active" : ""}`}
+                    onClick={() => setActiveImg(i)}
+                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = "https://via.placeholder.com/80?text=📦"; }}
+                  />
                 ))}
               </div>
             )}
           </div>
-        )}
-        {images.length === 0 && (
+        ) : (
           <div style={{ height:140, background:"var(--surface2)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"4rem", marginBottom:16 }}>📦</div>
         )}
 
@@ -929,21 +988,37 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
   const [ficheOpen, setFicheOpen] = useState(null);
   const [cmdOpen, setCmdOpen]     = useState(null);
 
+  // ── Image sécurisée : priorité p.image > p.image_urls[0] > null
+  const getSafeImg = (p) => {
+    if (p.image && p.image.startsWith("http")) return p.image;
+    if (p.image_urls && p.image_urls[0] && p.image_urls[0].startsWith("http")) return p.image_urls[0];
+    return null;
+  };
+
   return (
     <>
       <div className="prod-grid">
         {prods.map(p => {
-          const images = p.image_urls?.length ? p.image_urls : p.image ? [p.image] : [];
-          const firstImg = images[0];
+          const safeImg    = getSafeImg(p);
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
 
           return (
             <div key={p.id} className="prod-card">
+
+              {/* ── IMAGE ── */}
               <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
-                {firstImg
-                  ? <img src={firstImg} alt={p.name_fr} />
-                  : <div className="prod-img-placeholder">📦</div>
-                }
+                {safeImg ? (
+                  <img
+                    src={safeImg}
+                    alt={p.name_fr}
+                    onError={e => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "https://via.placeholder.com/300?text=📦";
+                    }}
+                  />
+                ) : (
+                  <div className="prod-img-placeholder">📦</div>
+                )}
                 {p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
                 {p.local      && <span className="pbadge-y">🇨🇲</span>}
                 {p.escrow     && <span className="escrow-badge">🔐</span>}
@@ -952,45 +1027,55 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 </button>
               </div>
 
+              {/* ── INFOS ── */}
               <div className="prod-info" onClick={() => setFicheOpen(p)}>
                 <div className="prod-name">{p.name_fr}</div>
                 <div className="prod-loc">📍 {p.ville || "Cameroun"} · {p.vendeur_nom || ""}</div>
+
+                {/* Badges conversion */}
+                <div className="prod-badge-row">
+                  <span className="pb pb-fire">🔥 Stock limité</span>
+                  <span className="pb pb-truck">🚚 Livraison rapide</span>
+                  <span className="pb pb-cash">💰 Paiement livraison</span>
+                </div>
+
                 {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
+
                 {p.stock !== undefined && p.stock !== null && (
                   <div className={`prod-stock ${stockClass}`} style={{ fontSize:".65rem" }}>
                     {p.stock > 5 ? `✅ ${p.stock} en stock` : p.stock > 0 ? `⚠️ ${p.stock} restant(s)` : "❌ Rupture"}
                   </div>
                 )}
+
                 <div className="prod-rating">
                   <Stars value={Math.round(p.note || 0)} />
                   <span className="rcount">({p.nombre_avis || 0})</span>
                 </div>
+
                 <div className="prod-price-row">
                   <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
                   <button className="add-btn" onClick={e => { e.stopPropagation(); onAddToCart(p); }}>+</button>
                 </div>
               </div>
 
-              {/* Boutons d'action */}
+              {/* ── BOUTONS ACTION ── */}
               <div className="prod-actions" style={{ padding:"0 11px 11px" }}>
-                <button className="btn-wa-sm" onClick={e => { e.stopPropagation(); commanderWhatsApp(p, userData?.nom); }}>
-                  📱 WhatsApp
-                </button>
-                <button className="btn-cmd-sm" onClick={e => { e.stopPropagation(); setCmdOpen(p); }}>
-                  ✅ Commander
+                <button
+                  className="btn-wa-sm"
+                  onClick={e => { e.stopPropagation(); commanderWhatsApp(p, userData?.nom); }}
+                >
+                  📱 Commander via WhatsApp
                 </button>
               </div>
+
             </div>
           );
         })}
       </div>
 
-      {/* Fiche détail */}
       {ficheOpen && (
         <FicheProduit product={ficheOpen} user={user} userData={userData} onClose={() => setFicheOpen(null)} onAddToCart={onAddToCart} />
       )}
-
-      {/* Modal commande rapide */}
       {cmdOpen && (
         <ModalCommander product={cmdOpen} user={user} userData={userData} onClose={() => setCmdOpen(null)} />
       )}
@@ -1163,7 +1248,7 @@ function FormulaireProduit({ user, userData, onSaved }) {
             <div className="img-previews">
               {previews.map((url, i) => (
                 <div key={i} className="img-preview-item">
-                  <img src={url} alt={`preview ${i}`} />
+                  <img src={url} alt={`preview ${i}`} onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/70?text=📦";}} />
                   <button className="img-preview-del" onClick={() => removeImage(i)}>×</button>
                   {i === 0 && <span style={{ position:"absolute", bottom:2, left:2, background:"var(--green)", color:"#fff", fontSize:".5rem", fontWeight:700, padding:"1px 4px", borderRadius:3 }}>PRINCIPALE</span>}
                 </div>
@@ -1285,15 +1370,19 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                 {mesProduits.map(p => (
                   <div key={p.id} className="prod-card">
                     <div className="prod-img-wrap">
-                      {(p.image_urls?.[0] || p.image)
-                        ? <img src={p.image_urls?.[0] || p.image} alt={p.name_fr}/>
+                      {(p.image && p.image.startsWith("http")) || (p.image_urls?.[0] && p.image_urls[0].startsWith("http"))
+                        ? <img
+                            src={p.image && p.image.startsWith("http") ? p.image : p.image_urls[0]}
+                            alt={p.name_fr}
+                            onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/300?text=📦";}}
+                          />
                         : <div className="prod-img-placeholder">📦</div>
                       }
                       {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
                     </div>
                     <div className="prod-info">
                       <div className="prod-name">{p.name_fr}</div>
-                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock??"-"}</div>
+                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock != null ? p.stock : "-"}</div>
                       <div className="prod-price-row">
                         <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
                         <button
@@ -1935,7 +2024,7 @@ export default function Yorix() {
             ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}><div style={{fontSize:"2.4rem"}}>🛒</div><p>Panier vide</p></div>
             : cartItems.map(item => (
                 <div key={item.id} className="cart-item">
-                  <div className="ci-img">{item.image ? <img src={item.image} alt={item.name}/> : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--surface2)",fontSize:"1.4rem"}}>📦</div>}</div>
+                  <div className="ci-img">{item.image && item.image.startsWith("http") ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/42?text=📦";}}/> : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--surface2)",fontSize:"1.4rem"}}>📦</div>}</div>
                   <div className="ci-info">
                     <div className="ci-name">{item.name}</div>
                     <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
@@ -2023,62 +2112,182 @@ export default function Yorix() {
       {/* ════════ PAGE : ACCUEIL ════════ */}
       {page==="home"&&(
         <div className="anim">
+
+          {/* ── TRUST BANNER ── */}
+          <div className="trust-banner">
+            <div className="tb-item">🚚 Livraison rapide à Yaoundé &amp; Douala</div>
+            <div className="tb-item">🔒 Paiement 100% sécurisé</div>
+            <div className="tb-item">✅ Produits vérifiés</div>
+            <div className="tb-item">📱 Support WhatsApp 7j/7</div>
+          </div>
+
+          {/* ── HERO ── */}
           <section className="hero">
             <div className="hero-inner">
               <div>
                 <div className="hero-tag">🇨🇲 Marketplace #1 au Cameroun</div>
-                <h1>Achetez, vendez,<br/><em>faites-vous servir</em><br/>avec Yorix</h1>
-                <p className="hero-sub">Produits locaux & importés, prestataires vérifiés, livraison express, MTN MoMo & Orange Money.</p>
+                <h1>Achetez et faites-vous<br/>livrer à <em>Yaoundé</em></h1>
+                <p className="hero-sub">Produits locaux & importés · Prestataires vérifiés · Livraison express · MTN MoMo & Orange Money</p>
+
+                {/* Badges confiance */}
+                <div className="hero-badges">
+                  <span className="hbadge hbadge-yellow">⭐ +2 000 avis clients</span>
+                  <span className="hbadge hbadge-green">📦 +100 produits vendus</span>
+                  <span className="hbadge">🔒 Paiement sécurisé</span>
+                  <span className="hbadge">🚚 Livraison rapide</span>
+                </div>
+
                 <div className="hero-ctas">
                   <button className="cta-y" onClick={()=>goPage("produits")}>🛍️ Voir les produits</button>
-                  <button className="btn-wa" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux acheter un produit 🛍️")}`)}>📱 Commander via WhatsApp</button>
+                  <button
+                    className="btn-wa"
+                    onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux commander un produit 🛍️")}`, "_blank")}
+                  >📱 Commander via WhatsApp</button>
                 </div>
-                <div className="hero-stats">{[["85K+","Produits"],["12K","Vendeurs"],["3K","Prestataires"],["10","Régions"]].map(([n,l])=><div key={l}><div className="stat-num">{n}</div><div className="stat-lbl">{l}</div></div>)}</div>
+
+                <div className="hero-stats">
+                  {[["85K+","Produits"],["12K","Vendeurs"],["3K","Prestataires"],["10","Régions"]].map(([n,l])=>(
+                    <div key={l}><div className="stat-num">{n}</div><div className="stat-lbl">{l}</div></div>
+                  ))}
+                </div>
               </div>
+
               <div className="hero-card">
                 <div className="hc-title">🔍 Recherche rapide</div>
-                <div className="sf"><select value={filterCat} onChange={e=>setFilterCat(e.target.value)}><option value="">Tout</option>{CATS.map(c=><option key={c}>{c}</option>)}</select><input placeholder="Produit, marque..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-                <div className="sf"><select>{CITIES.map(c=><option key={c}>{c}</option>)}</select><input placeholder="Budget max (FCFA)"/></div>
+                <div className="sf">
+                  <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}>
+                    <option value="">Tout</option>{CATS.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                  <input placeholder="Produit, marque..." value={search} onChange={e=>setSearch(e.target.value)}/>
+                </div>
+                <div className="sf">
+                  <select>{CITIES.map(c=><option key={c}>{c}</option>)}</select>
+                  <input placeholder="Budget max (FCFA)"/>
+                </div>
                 <button className="sbtn" onClick={()=>goPage("produits")}>🔍 Rechercher</button>
-                <div className="pop-row"><span className="pop-lbl">Tendances :</span>{["Pagne wax","iPhone","Karité","BTP"].map(s=><span key={s} className="pop-tag" onClick={()=>{setSearch(s);goPage("produits");}}>{s}</span>)}</div>
+                <div className="pop-row">
+                  <span className="pop-lbl">Tendances :</span>
+                  {["Pagne wax","iPhone","Karité","BTP"].map(s=>(
+                    <span key={s} className="pop-tag" onClick={()=>{setSearch(s);goPage("produits");}}>{s}</span>
+                  ))}
+                </div>
+                {/* Mini trust dans hero card */}
+                <div style={{marginTop:12,paddingTop:10,borderTop:"1px solid rgba(255,255,255,.1)",display:"flex",flexDirection:"column",gap:4}}>
+                  {["✅ Paiement sécurisé MTN MoMo","🚚 Livraison Yaoundé & Douala","🔐 Remboursement garanti Escrow"].map(t=>(
+                    <div key={t} style={{fontSize:".68rem",color:"rgba(255,255,255,.65)",display:"flex",alignItems:"center",gap:5}}>{t}</div>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
 
+          {/* ── SOCIAL PROOF BAR ── */}
+          <div className="proof-bar">
+            <div className="proof-item"><span className="proof-num">2 400+</span> commandes passées</div>
+            <div className="proof-item"><span className="proof-num">850+</span> vendeurs actifs</div>
+            <div className="proof-item"><span className="proof-num">98%</span> satisfaction client</div>
+            <div className="proof-item"><span className="proof-num">J+1</span> livraison Yaoundé</div>
+          </div>
+
+          {/* ── PRODUITS RÉCENTS ── */}
           <section className="sec">
-            <div className="sec-head"><h2 className="sec-title">🔥 Produits récents</h2><span className="sec-link" onClick={()=>goPage("produits")}>Voir tout →</span></div>
-            {produitsLoading?<div className="loading"><div className="spinner"/>Chargement...</div>
-              :produits.length===0?<div className="empty-state"><div className="empty-icon">🛍️</div><p>Aucun produit pour l'instant</p></div>
-              :<ProdGrid prods={produits.slice(0,10)} user={user} userData={userData} onAddToCart={addToCart} onWish={toggleWish} wishlist={wishlist}/>}
+            <div className="sec-head">
+              <h2 className="sec-title">🔥 Produits populaires</h2>
+              <span className="sec-link" onClick={()=>goPage("produits")}>Voir tout →</span>
+            </div>
+            {produitsLoading
+              ? <div className="loading"><div className="spinner"/>Chargement...</div>
+              : produits.length===0
+                ? <div className="empty-state"><div className="empty-icon">🛍️</div><p>Aucun produit pour l'instant</p></div>
+                : <ProdGrid prods={produits.slice(0,10)} user={user} userData={userData} onAddToCart={addToCart} onWish={toggleWish} wishlist={wishlist}/>
+            }
           </section>
 
+          {/* ── TRUST BAND ── */}
           <div className="trust">
             <div className="trust-inner">
-              {[{icon:"📱",t:"MTN MoMo & Orange",p:"Paiement mobile sécurisé"},{icon:"🔐",t:"Escrow Yorix",p:"Fonds protégés"},{icon:"🚚",t:"Livraison J+1",p:"Douala & Yaoundé"},{icon:"🌟",t:"Vendeurs vérifiés",p:"Boutiques certifiées"}].map(t=>(
+              {[
+                {icon:"📱",t:"MTN MoMo & Orange",p:"Paiement mobile sécurisé"},
+                {icon:"🔐",t:"Escrow Yorix",p:"Fonds protégés jusqu'à livraison"},
+                {icon:"🚚",t:"Livraison J+1",p:"Yaoundé & Douala"},
+                {icon:"🌟",t:"Vendeurs vérifiés",p:"Boutiques certifiées"},
+              ].map(t=>(
                 <div key={t.t} className="ti"><div className="ti-icon">{t.icon}</div><div><h4>{t.t}</h4><p>{t.p}</p></div></div>
               ))}
             </div>
           </div>
 
+          {/* ── POURQUOI CHOISIR YORIX ── */}
+          <div className="why-section">
+            <div className="why-inner">
+              <div style={{textAlign:"center",marginBottom:4}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"var(--green-pale)",color:"var(--green)",padding:"4px 12px",borderRadius:50,fontSize:".72rem",fontWeight:700,marginBottom:8}}>🏆 Pourquoi nous choisissons Yorix ?</div>
+                <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.3rem",fontWeight:800,color:"var(--ink)",letterSpacing:"-.5px"}}>La marketplace la plus fiable du Cameroun</h2>
+              </div>
+              <div className="why-grid">
+                {[
+                  {icon:"🚚",title:"Livraison rapide",desc:"Livraison le jour même ou J+1 sur Yaoundé et Douala. Suivi GPS en temps réel."},
+                  {icon:"✅",title:"Produits vérifiés",desc:"Chaque vendeur est contrôlé. Produits authentiques garantis ou remboursés."},
+                  {icon:"🔒",title:"Paiement sécurisé",desc:"MTN MoMo, Orange Money, Escrow Yorix. Votre argent libéré à la réception."},
+                  {icon:"📱",title:"Support WhatsApp",desc:"Notre équipe répond 7j/7 sur WhatsApp pour vous aider à chaque étape."},
+                ].map(w=>(
+                  <div key={w.title} className="why-card">
+                    <div className="why-icon">{w.icon}</div>
+                    <div className="why-title">{w.title}</div>
+                    <div className="why-desc">{w.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── PRESTATAIRES ── */}
           <section className="sec">
-            <div className="sec-head"><h2 className="sec-title">👷 Prestataires de confiance</h2><span className="sec-link" onClick={()=>goPage("prestataires")}>Voir tous →</span></div>
+            <div className="sec-head">
+              <h2 className="sec-title">👷 Prestataires de confiance</h2>
+              <span className="sec-link" onClick={()=>goPage("prestataires")}>Voir tous →</span>
+            </div>
             <div className="prest-grid">
               {PREST_DATA.slice(0,3).map(p=>(
                 <div key={p.name} className="prest-card">
-                  <div className="prest-top"><div className="prest-av">{p.emoji}</div><div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div></div>
+                  <div className="prest-top">
+                    <div className="prest-av">{p.emoji}</div>
+                    <div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div>
+                  </div>
                   <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
-                  <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire : ${p.name}`)}`)}>Contacter</button></div>
+                  <div className="prest-footer">
+                    <div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div>
+                    <button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire : ${p.name}`)}`, "_blank")}>📱 Contacter</button>
+                  </div>
                 </div>
               ))}
             </div>
           </section>
 
+          {/* ── NEWSLETTER ── */}
           <div className="newsletter">
             <div className="nl-title">📬 Restez informé(e)</div>
-            <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
-            {nlSent?<div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
-              :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(console.error);setNlSent(true);}}}>S'abonner 🚀</button></div>}
+            <p className="nl-sub">Les meilleures offres Yorix directement dans votre boîte mail.</p>
+            {nlSent
+              ? <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Vous êtes abonné(e) !</div>
+              : <div className="nl-form">
+                  <input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/>
+                  <button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(console.error);setNlSent(true);}}}>S'abonner 🚀</button>
+                </div>
+            }
           </div>
+
+          {/* ── WA STICKY MOBILE ── */}
+          <div className="wa-sticky">
+            <span className="wa-sticky-text">📱 Commander maintenant</span>
+            <button
+              className="wa-sticky-btn"
+              onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux commander 🛍️")}`, "_blank")}
+            >
+              Commander via WhatsApp
+            </button>
+          </div>
+
         </div>
       )}
 
