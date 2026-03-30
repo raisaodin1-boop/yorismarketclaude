@@ -1287,7 +1287,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     <div className="prod-img-wrap">
 {(p.image_urls || p.image) ? (
   <img
-    src={
+    src={p.image || (Array.isArray(p.image_urls) ? p.image_urls[0] : null)}
       Array.isArray(p.image_urls)
         ? p.image_urls[0]
         : (typeof p.image_urls === "string"
