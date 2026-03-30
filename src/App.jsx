@@ -6,13 +6,7 @@
 // ═══════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-// ── SUPABASE CONFIG ──
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+import { supabase } from "../lib/supabaseClient";
 // ── CLOUDINARY CONFIG ──
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
@@ -542,7 +536,7 @@ export default function Yorix() {
 
   const chargerProfil = async (uid) => {
     try {
-      const { data, error } = await supabase.from("users").select("*").eq("uid", uid).single();
+      const { data, error } = await supabase.from("users").select("*").eq("uid", uid).maybeSingle();
       if (error) { console.error("Profil error:", error); return; }
       setUserData(data);
       chargerNotifications(uid);
@@ -631,7 +625,7 @@ export default function Yorix() {
       if (!authForm.nom || !authForm.email || !authForm.password || !authForm.tel) throw new Error("Tous les champs sont obligatoires.");
       const { data, error } = await supabase.auth.signUp({ email: authForm.email, password: authForm.password, options: { data: { display_name: authForm.nom } } });
       if (error) throw error;
-      const { error: profileError } = await supabase.from("users").insert({ uid: data.user.id, nom: authForm.nom, email: authForm.email, telephone: authForm.tel, role, langue: "fr", actif: true, verifie: false, note: 0, nombre_avis: 0, total_commandes: 0 });
+      const { error: profileError } = await supabase.from("users").upsert({ uid: data.user.id, nom: authForm.nom, email: authForm.email, telephone: authForm.tel, role, langue: "fr", actif: true, verifie: false, note: 0, nombre_avis: 0, total_commandes: 0 });
       if (profileError) console.error("Profile insert error:", profileError);
       const { error: walletError } = await supabase.from("wallets").insert({ user_id: data.user.id, solde: 0, total_gagne: 0, devise: "FCFA" });
       if (walletError) console.error("Wallet insert error:", walletError);
