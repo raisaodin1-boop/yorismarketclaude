@@ -1285,13 +1285,12 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                 {mesProduits.map(p => (
                   <div key={p.id} className="prod-card">
                     <div className="prod-img-wrap">
-<img
-  src={p.image}
-  alt={p.name_fr}
-/>
-) : (
-  <div className="prod-img-placeholder">📦</div>
-)}
+<div className="prod-img-wrap">
+  <img
+    src={p.image}
+    alt={p.name_fr}
+  />
+</div>
             : p.image)
     }
     alt={p.name_fr}
