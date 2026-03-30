@@ -1678,7 +1678,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
   const actionLivraison = async (id, newStatus) => {
     try {
-      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).catch(console.error);
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id)(console.error);
       setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
     } catch (err) {
       console.error("actionLivraison:", err);
@@ -2070,7 +2070,7 @@ export default function Yorix() {
       });
       if (profileError) console.error("Profile insert error:", profileError);
 
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(console.error);
+      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" })(console.error);
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
