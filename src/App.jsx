@@ -21,7 +21,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
-const UPLOAD_PRESET = "yorix_upload";
+const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
 const YORIX_WA_NUMBER   = "237696565654";
 const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
@@ -1284,13 +1284,12 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
             : <div className="prod-grid">
                 {mesProduits.map(p => (
                   <div key={p.id} className="prod-card">
-                  <div className="prod-img-wrap">
-  <img
-    src={p.image}
-    alt={p.name_fr}
-  />
-</div>
-                    {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
+                    <div className="prod-img-wrap">
+                      {(p.image_urls?.[0] || p.image)
+                        ? <img src={p.image_urls?.[0] || p.image} alt={p.name_fr}/>
+                        : <div className="prod-img-placeholder">📦</div>
+                      }
+                      {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
                     </div>
                     <div className="prod-info">
                       <div className="prod-name">{p.name_fr}</div>
