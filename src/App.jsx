@@ -29,7 +29,7 @@ const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yori
 const YORIX_WA_NUMBER   = "237696565654";
 const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTES
