@@ -986,6 +986,53 @@ export default function Yorix() {
                   {[["85K+","Produits"],["12K","Vendeurs"],["3K","Prestataires"],["10","Régions"]].map(([n,l]) => (
                     <div key={l}><div className="stat-num">{n}</div><div className="stat-lbl">{l}</div></div>
                   ))}
+                  {/* PAGE LIVRAISON */}
+{page === "livraison" && (
+  <div className="sec">
+    <h2>🚚 Suivi de livraison</h2>
+    <p>Suivez vos commandes en temps réel.</p>
+  </div>
+)}
+
+{/* PAGE PRESTATAIRES */}
+{page === "prestataires" && (
+  <div className="sec">
+    <h2>👷 Prestataires</h2>
+    <p>Trouvez des professionnels vérifiés.</p>
+  </div>
+)}
+
+{/* PAGE BLOG */}
+{page === "blog" && (
+  <div className="sec">
+    <h2>📰 Blog</h2>
+    <p>Conseils et actualités Yorix.</p>
+  </div>
+)}
+
+{/* PAGE FIDÉLITÉ */}
+{page === "loyalty" && (
+  <div className="sec">
+    <h2>🌟 Programme fidélité</h2>
+    <p>Gagnez des points et récompenses.</p>
+  </div>
+)}
+
+{/* PAGE ACADEMY */}
+{page === "academy" && (
+  <div className="sec">
+    <h2>🎓 Yorix Academy</h2>
+    <p>Apprenez à vendre et réussir.</p>
+  </div>
+)}
+
+{/* PAGE BUSINESS */}
+{page === "business" && (
+  <div className="sec">
+    <h2>💼 Yorix Business</h2>
+    <p>Développez votre business avec Yorix.</p>
+  </div>
+)}
                 </div>
               </div>
               <div className="hero-card">
