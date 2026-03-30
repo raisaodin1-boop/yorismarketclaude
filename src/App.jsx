@@ -1287,7 +1287,11 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     <div className="prod-img-wrap">
 {(p.image_urls || p.image) ? (
   <img
-    src={p.image || (Array.isArray(p.image_urls) ? p.image_urls[0] : null)}
+   src={
+  p.image?.startsWith("http")
+    ? p.image
+    : `https://msrymchhhxitdevthvdi.supabase.co/storage/v1/object/public/publicbucket/${p.image}`
+}
     alt={p.name_fr}
   />
 ) : (
