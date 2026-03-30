@@ -1,61 +1,41 @@
 // ═══════════════════════════════════════════════════════
-//  YORIX CM — APP COMPLÈTE CONNECTÉE À FIREBASE
-//  Copie ce fichier dans src/App.jsx de ton projet React
+//  YORIX CM — MIGRATION SUPABASE + CLOUDINARY
+//  ✅ Zéro Firebase — 100% Supabase + Cloudinary
+//  ✅ Toutes les pages fonctionnelles
+//  ✅ Navigation corrigée
 // ═══════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-// ── FIREBASE ──
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile
-} from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  doc,
-  addDoc,
-  setDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  serverTimestamp,
-  increment
-} from "firebase/firestore";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "firebase/storage";
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── CONFIG FIREBASE YORIX ──
-const firebaseConfig = {
-  apiKey: "AIzaSyB8OoAoT7u0qbQWkWbISJ6vId9W2TV8PXE",
-  authDomain: "yorix-74030.firebaseapp.com",
-  projectId: "yorix-74030",
-  storageBucket: "yorix-74030.firebasestorage.app",
-  messagingSenderId: "942631804989",
-  appId: "1:942631804989:web:b068e95deed0d5a927ca54"
-};
+// ── CLOUDINARY CONFIG ──
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
-const storage = getStorage(firebaseApp);
+// ── UPLOAD IMAGE CLOUDINARY ──
+async function uploadImage(file) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      { method: "POST", body: formData }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.secure_url;
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    alert("Erreur upload image: " + error.message);
+    return null;
+  }
+}
 
 // ── CONSTANTES ──
 const COMMISSION = 0.10;
@@ -69,7 +49,7 @@ const FORBIDDEN = [
 
 function filtrerMsg(texte) {
   for (const p of FORBIDDEN) {
-    if (p.test(texte)) return { bloque: true };
+    if (new RegExp(p.source, p.flags).test(texte)) return { bloque: true };
   }
   return { bloque: false };
 }
@@ -336,6 +316,68 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .mn-icon{font-size:1.25rem;color:var(--gray);}
 .mn-label{font-size:.6rem;color:var(--gray);font-weight:500;}
 .mn-badge{position:absolute;top:2px;right:6px;background:var(--red);color:#fff;border-radius:50%;width:14px;height:14px;font-size:.5rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.prest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.prest-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px;cursor:pointer;transition:all .25s;}
+.prest-card:hover{transform:translateY(-3px);box-shadow:0 7px 20px rgba(26,107,58,.09);border-color:var(--green-light);}
+.prest-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.prest-av{width:46px;height:46px;border-radius:11px;background:var(--green-pale);display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.prest-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--ink);}
+.prest-meta{font-size:.69rem;color:var(--gray);}
+.prest-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px;}
+.ptag{background:var(--green-pale);color:var(--green);padding:2px 7px;border-radius:50px;font-size:.63rem;font-weight:600;}
+.prest-footer{display:flex;align-items:center;justify-content:space-between;}
+.prest-price{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--green);}
+.btn-hire{background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.7rem;cursor:pointer;}
+.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.blog-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .25s;}
+.blog-card:hover{transform:translateY(-3px);box-shadow:0 7px 20px var(--shadow);}
+.blog-img{height:120px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--surface2);}
+.blog-body{padding:13px;}
+.blog-cat{font-size:.63rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.blog-title{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.35;}
+.blog-excerpt{font-size:.73rem;color:var(--gray);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.blog-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-top:1px solid var(--border);font-size:.67rem;color:var(--gray);}
+.courses-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+.course-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .25s;}
+.course-card:hover{transform:translateY(-3px);}
+.course-img{height:95px;display:flex;align-items:center;justify-content:center;font-size:2.7rem;}
+.course-body{padding:12px;}
+.course-level{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.level-deb{color:#27a85a;}.level-int{color:#e67e22;}.level-adv{color:var(--red);}
+.course-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.course-meta{font-size:.69rem;color:var(--gray);margin-bottom:8px;}
+.course-footer{display:flex;align-items:center;justify-content:space-between;}
+.course-price{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--green);}
+.course-btn{background:var(--green);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:.7rem;font-weight:600;cursor:pointer;}
+.rewards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.reward-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.reward-icon{font-size:1.8rem;margin-bottom:5px;}
+.reward-name{font-size:.78rem;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.reward-pts{font-size:.71rem;color:var(--gold);font-weight:600;}
+.reward-btn{background:var(--green);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.71rem;font-weight:600;cursor:pointer;margin-top:8px;width:100%;}
+.escrow-steps{display:flex;flex-direction:column;gap:10px;}
+.estep{display:flex;align-items:flex-start;gap:10px;}
+.estep-num{width:24px;height:24px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.69rem;font-weight:700;flex-shrink:0;margin-top:1px;}
+.estep-text h4{font-size:.8rem;font-weight:600;color:var(--ink);margin-bottom:2px;}
+.estep-text p{font-size:.73rem;color:var(--gray);line-height:1.5;}
+.biz-hero{background:linear-gradient(135deg,#0a1410,#1a3a24);border-radius:14px;padding:28px;margin-bottom:16px;}
+.biz-title{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:8px;}
+.biz-sub{color:rgba(255,255,255,.5);font-size:.84rem;line-height:1.7;margin-bottom:16px;}
+.biz-feats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:14px;}
+.biz-feat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:12px;}
+.biz-feat h4{font-size:.79rem;font-weight:600;color:#fff;margin-bottom:2px;}
+.biz-feat p{font-size:.69rem;color:rgba(255,255,255,.4);line-height:1.5;}
+.drivers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+.driver-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:15px;}
+.driver-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.driver-av{width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+.driver-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.86rem;color:#fff;}
+.driver-sub{font-size:.67rem;color:rgba(255,255,255,.42);}
+.driver-stats{display:flex;gap:10px;margin-bottom:10px;}
+.ds-num{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:#4fd17d;}
+.ds-lbl{font-size:.6rem;color:rgba(255,255,255,.3);}
+.online-dot{width:6px;height:6px;background:#4fd17d;border-radius:50%;display:inline-block;margin-right:3px;}
+.btn-track{width:100%;background:rgba(79,209,125,.13);color:#4fd17d;border:1px solid rgba(79,209,125,.25);padding:7px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.73rem;cursor:pointer;margin-top:9px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 .anim{animation:fadeUp .35s ease both;}
 @media(max-width:768px){
@@ -347,6 +389,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .hero-card{display:none;}
   .prod-grid{grid-template-columns:repeat(2,1fr);}
   .trust-inner{grid-template-columns:repeat(2,1fr);}
+  .prest-grid{grid-template-columns:1fr 1fr;}
+  .blog-grid,.courses-grid{grid-template-columns:1fr;}
+  .rewards-grid{grid-template-columns:repeat(2,1fr);}
+  .biz-feats{grid-template-columns:1fr;}
+  .drivers-grid{grid-template-columns:1fr;}
   .footer-grid{grid-template-columns:1fr 1fr;}
   .dash-layout{grid-template-columns:1fr;padding:0 14px;}
   .dash-sidebar{display:none;}
@@ -358,10 +405,52 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 }
 `;
 
+// ── DONNÉES STATIQUES ──
 const CATS = ["Téléphones","Mode","Alimentation","Maison","Agricole","Beauté","BTP","Automobile","Éducation"];
 const CITIES = ["Toutes les villes","Douala","Yaoundé","Bafoussam","Bamenda","Garoua","Kribi","Ngaoundéré"];
 const WA_URL = `https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix ! J'ai besoin d'aide.")}`;
 
+const PREST_DATA = [
+  {emoji:"🔨",name:"Claude Mbassi",meta:"Plombier · Douala",tags:["Plomberie","Sanitaire","Urgence 24h"],prix:"15 000 FCFA/h",note:4.9,avis:87},
+  {emoji:"⚡",name:"Électro Bertrand",meta:"Électricien · Yaoundé",tags:["Électricité","Installation","Dépannage"],prix:"12 000 FCFA/h",note:4.8,avis:124},
+  {emoji:"🎨",name:"Raissa Design",meta:"Graphiste · Douala",tags:["Logo","Flyer","Social Media"],prix:"25 000 FCFA/projet",note:5.0,avis:56},
+  {emoji:"📸",name:"PhotoCam Pro",meta:"Photographe · Kribi",tags:["Mariage","Portrait","Événement"],prix:"50 000 FCFA/jour",note:4.9,avis:203},
+  {emoji:"🧹",name:"CleanPro237",meta:"Nettoyage · Douala",tags:["Ménage","Bureaux","Post-chantier"],prix:"8 000 FCFA/h",note:4.6,avis:312},
+  {emoji:"💻",name:"DevCam Tech",meta:"Développeur · Yaoundé",tags:["Site web","App","React"],prix:"200 000 FCFA/projet",note:4.8,avis:41},
+];
+const BLOG_DATA = [
+  {emoji:"📈",cat:"Business",title:"Comment vendre sur Yorix en 2026",excerpt:"Tout ce qu'il faut savoir pour démarrer votre boutique et vendre vos premiers produits.",date:"22 mars",read:"5 min"},
+  {emoji:"🌿",cat:"Local",title:"Les 10 produits camerounais les plus vendus",excerpt:"Beurre de karité, pagne wax, cacao... ce que les Camerounais achètent le plus.",date:"19 mars",read:"3 min"},
+  {emoji:"💳",cat:"Paiement",title:"MTN MoMo vs Orange Money : lequel choisir ?",excerpt:"Comparatif complet des deux systèmes de paiement mobile pour vos achats.",date:"16 mars",read:"4 min"},
+  {emoji:"🚚",cat:"Livraison",title:"Suivi de commande en temps réel",excerpt:"Yorix Ride vous permet de suivre votre livreur à la minute près.",date:"12 mars",read:"2 min"},
+  {emoji:"🔐",cat:"Sécurité",title:"Escrow Yorix : votre argent est-il protégé ?",excerpt:"On répond à toutes vos questions sur notre système de paiement sécurisé.",date:"8 mars",read:"6 min"},
+  {emoji:"👷",cat:"Prestataires",title:"Trouver un électricien fiable à Douala",excerpt:"Comment choisir le bon prestataire, vérifier ses avis et négocier le meilleur prix.",date:"5 mars",read:"4 min"},
+];
+const COURSES_DATA = [
+  {emoji:"🏪",title:"Créer sa boutique en 1h",level:"Débutant",lc:"level-deb",duree:"1h30",apprenants:"2.4K",prix:"Gratuit",bg:"#e8f7ee"},
+  {emoji:"📸",title:"Photographier ses produits",level:"Débutant",lc:"level-deb",duree:"2h",apprenants:"1.8K",prix:"Gratuit",bg:"#fff3e0"},
+  {emoji:"📊",title:"Analyser ses ventes",level:"Intermédiaire",lc:"level-int",duree:"3h",apprenants:"920",prix:"5 000 FCFA",bg:"#e3f2fd"},
+  {emoji:"💡",title:"Marketing digital Cameroun",level:"Intermédiaire",lc:"level-int",duree:"4h",apprenants:"640",prix:"8 000 FCFA",bg:"#fce4ec"},
+  {emoji:"🤝",title:"Négocier avec les fournisseurs",level:"Avancé",lc:"level-adv",duree:"2h30",apprenants:"380",prix:"10 000 FCFA",bg:"#ede7f6"},
+  {emoji:"🚀",title:"Scaler vers le B2B",level:"Avancé",lc:"level-adv",duree:"5h",apprenants:"210",prix:"15 000 FCFA",bg:"#e0f2f1"},
+];
+const REWARDS_DATA = [
+  {icon:"🎁",name:"Bon 5 000 FCFA",pts:"500 pts"},
+  {icon:"🚚",name:"Livraison gratuite x3",pts:"300 pts"},
+  {icon:"⭐",name:"Statut VIP Yorix",pts:"1 000 pts"},
+  {icon:"📱",name:"-20% téléphones",pts:"400 pts"},
+  {icon:"☕",name:"Pack café 500g",pts:"200 pts"},
+  {icon:"🎓",name:"Cours Academy offert",pts:"350 pts"},
+];
+const DRIVERS_DATA = [
+  {emoji:"🏍️",name:"Jean-Pierre M.",sub:"Moto · Douala",livraisons:342,note:4.9,dispo:true},
+  {emoji:"🚐",name:"Augustin N.",sub:"Minibus · Yaoundé",livraisons:218,note:4.8,dispo:true},
+  {emoji:"🚚",name:"Fabrice K.",sub:"Camionnette · Bafoussam",livraisons:189,note:4.7,dispo:false},
+];
+
+// ════════════════════════════════════════
+// COMPOSANT PRINCIPAL
+// ════════════════════════════════════════
 export default function Yorix() {
   const [dark, setDark] = useState(false);
   const [page, setPage] = useState("home");
@@ -398,7 +487,7 @@ export default function Yorix() {
   const [wallet, setWallet] = useState({ solde: 0, totalGagne: 0 });
 
   // Formulaire produit
-  const [prodForm, setProdForm] = useState({ name_fr:"", description_fr:"", prix:"", stock:"", categorie:"", ville:"", escrow:true });
+  const [prodForm, setProdForm] = useState({ name_fr:"", name_en:"", description_fr:"", prix:"", stock:"", categorie:"", ville:"", escrow:true });
   const [prodImage, setProdImage] = useState(null);
   const [prodImagePreview, setProdImagePreview] = useState(null);
   const [prodSaving, setProdSaving] = useState(false);
@@ -412,118 +501,124 @@ export default function Yorix() {
   const [chatBlocked, setChatBlocked] = useState(false);
   const chatEndRef = useRef(null);
 
-  // WhatsApp
+  // Divers
   const [waOpen, setWaOpen] = useState(false);
-
-  // Newsletter
   const [nlEmail, setNlEmail] = useState("");
   const [nlSent, setNlSent] = useState(false);
-
-  // Wishlist
   const [wishlist, setWishlist] = useState(new Set());
+  const [loyaltyPts, setLoyaltyPts] = useState(320);
+  const [inscriptionForm, setInscriptionForm] = useState({ nom:"", prenom:"", tel:"", email:"", metier:"", ville:"", experience:"", tarif:"", bio:"" });
+  const [inscriptionSent, setInscriptionSent] = useState(false);
 
-  // ── OBSERVER CONNEXION ──
+  // ── NAVIGATION ──
+  const goPage = (p) => {
+    setPage(p);
+    window.scrollTo(0, 0);
+    setCartOpen(false);
+    setNotifOpen(false);
+  };
+
+  // ── SESSION SUPABASE ──
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      if (u) {
-        const userDoc = await getDoc(doc(db, "users", u.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
-        }
-        // Charger notifications
-        const nq = query(
-          collection(db, "notifications"),
-          where("userId", "==", u.uid),
-          orderBy("createdAt", "desc"),
-          limit(10)
-        );
-        onSnapshot(nq, (snap) => {
-          const n = [];
-          snap.forEach(d => n.push({ id: d.id, ...d.data() }));
-          setNotifs(n);
-        });
-      } else {
-        setUserData(null);
-        setNotifs([]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        chargerProfil(session.user.id);
       }
       setLoading(false);
     });
-    return () => unsub();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        chargerProfil(session.user.id);
+      } else {
+        setUser(null);
+        setUserData(null);
+        setNotifs([]);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  // ── CHARGER PRODUITS FIREBASE ──
+  const chargerProfil = async (uid) => {
+    try {
+      const { data, error } = await supabase.from("users").select("*").eq("uid", uid).single();
+      if (error) { console.error("Profil error:", error); return; }
+      setUserData(data);
+      chargerNotifications(uid);
+    } catch (error) { console.error("chargerProfil:", error); }
+  };
+
+  const chargerNotifications = async (uid) => {
+    try {
+      const { data, error } = await supabase.from("notifications").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(10);
+      if (error) { console.error("Notifs error:", error); return; }
+      setNotifs(data || []);
+    } catch (error) { console.error("chargerNotifications:", error); }
+  };
+
+  // ── CHARGER PRODUITS SUPABASE ──
   useEffect(() => {
     setProduitsLoading(true);
-    const q = query(
-      collection(db, "products"),
-      where("actif", "==", true),
-      orderBy("createdAt", "desc"),
-      limit(20)
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      const p = [];
-      snap.forEach(d => p.push({ id: d.id, ...d.data() }));
-      setProduits(p);
-      setProduitsLoading(false);
-    }, () => {
-      setProduitsLoading(false);
-    });
-    return () => unsub();
+    const charger = async () => {
+      try {
+        const { data, error } = await supabase.from("products").select("*").eq("actif", true).order("created_at", { ascending: false }).limit(20);
+        if (error) { console.error("Produits error:", error); return; }
+        setProduits(data || []);
+      } catch (error) {
+        console.error("chargerProduits:", error);
+        alert("Erreur chargement produits: " + error.message);
+      } finally { setProduitsLoading(false); }
+    };
+    charger();
+    const channel = supabase.channel("products_realtime").on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => charger()).subscribe();
+    return () => supabase.removeChannel(channel);
   }, []);
 
   // ── CHARGER COMMANDES & PRODUITS VENDEUR ──
   useEffect(() => {
     if (!user || !userData) return;
-    // Mes commandes
-    const cq = query(
-      collection(db, "orders"),
-      where("clientId", "==", user.uid),
-      orderBy("createdAt", "desc"),
-      limit(10)
-    );
-    const unsub1 = onSnapshot(cq, (snap) => {
-      const c = [];
-      snap.forEach(d => c.push({ id: d.id, ...d.data() }));
-      setMesCommandes(c);
-    });
-    // Mes produits (si vendeur)
-    if (userData.role === "vendeur") {
-      const pq = query(
-        collection(db, "products"),
-        where("vendeurId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-      const unsub2 = onSnapshot(pq, (snap) => {
-        const p = [];
-        snap.forEach(d => p.push({ id: d.id, ...d.data() }));
-        setMesProduits(p);
-      });
-      // Wallet
-      getDoc(doc(db, "wallets", user.uid)).then(d => {
-        if (d.exists()) setWallet(d.data());
-      });
-      return () => { unsub1(); unsub2(); };
+    const chargerCommandes = async () => {
+      try {
+        const { data, error } = await supabase.from("orders").select("*").eq("client_id", user.id).order("created_at", { ascending: false }).limit(10);
+        if (error) { console.error("Commandes error:", error); return; }
+        setMesCommandes(data || []);
+      } catch (error) { console.error("chargerCommandes:", error); }
+    };
+    chargerCommandes();
+    if (userData.role === "vendeur" || userData.role === "admin") {
+      const chargerMesProduits = async () => {
+        try {
+          const { data, error } = await supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false });
+          if (error) { console.error("MesProduits error:", error); return; }
+          setMesProduits(data || []);
+        } catch (error) { console.error("chargerMesProduits:", error); }
+      };
+      const chargerWallet = async () => {
+        try {
+          const { data, error } = await supabase.from("wallets").select("*").eq("user_id", user.id).single();
+          if (error) { console.error("Wallet error:", error); return; }
+          if (data) setWallet(data);
+        } catch (error) { console.error("chargerWallet:", error); }
+      };
+      chargerMesProduits();
+      chargerWallet();
     }
-    return () => unsub1();
   }, [user, userData]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  // ── NAVIGATION ──
-  const goPage = (p) => { setPage(p); window.scrollTo(0, 0); setCartOpen(false); setNotifOpen(false); };
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
 
   // ── CONNEXION ──
   const doLogin = async () => {
     setAuthError(""); setAuthLoading(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth, authForm.email, authForm.password);
-      const d = await getDoc(doc(db, "users", cred.user.uid));
-      setUserData(d.data());
+      const { data, error } = await supabase.auth.signInWithPassword({ email: authForm.email, password: authForm.password });
+      if (error) throw error;
+      setUser(data.user);
+      await chargerProfil(data.user.id);
       setAuthOpen(false);
-    } catch (e) {
+    } catch (error) {
+      console.error("Login error:", error);
       setAuthError("Email ou mot de passe incorrect.");
     }
     setAuthLoading(false);
@@ -533,123 +628,78 @@ export default function Yorix() {
   const doRegister = async () => {
     setAuthError(""); setAuthLoading(true);
     try {
-      if (!authForm.nom || !authForm.email || !authForm.password || !authForm.tel) {
-        throw new Error("Tous les champs sont obligatoires.");
-      }
-      const cred = await createUserWithEmailAndPassword(auth, authForm.email, authForm.password);
-      await updateProfile(cred.user, { displayName: authForm.nom });
-      await setDoc(doc(db, "users", cred.user.uid), {
-        uid: cred.user.uid,
-        nom: authForm.nom,
-        email: authForm.email,
-        telephone: authForm.tel,
-        role,
-        langue: "fr",
-        actif: true,
-        verifie: false,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
-        note: 0,
-        nombreAvis: 0,
-        totalCommandes: 0,
-      });
-      await setDoc(doc(db, "wallets", cred.user.uid), {
-        userId: cred.user.uid,
-        solde: 0,
-        totalGagne: 0,
-        devise: "FCFA",
-        createdAt: serverTimestamp()
-      });
-      const d = await getDoc(doc(db, "users", cred.user.uid));
-      setUserData(d.data());
+      if (!authForm.nom || !authForm.email || !authForm.password || !authForm.tel) throw new Error("Tous les champs sont obligatoires.");
+      const { data, error } = await supabase.auth.signUp({ email: authForm.email, password: authForm.password, options: { data: { display_name: authForm.nom } } });
+      if (error) throw error;
+      const { error: profileError } = await supabase.from("users").insert({ uid: data.user.id, nom: authForm.nom, email: authForm.email, telephone: authForm.tel, role, langue: "fr", actif: true, verifie: false, note: 0, nombre_avis: 0, total_commandes: 0 });
+      if (profileError) console.error("Profile insert error:", profileError);
+      const { error: walletError } = await supabase.from("wallets").insert({ user_id: data.user.id, solde: 0, total_gagne: 0, devise: "FCFA" });
+      if (walletError) console.error("Wallet insert error:", walletError);
+      await chargerProfil(data.user.id);
       setAuthOpen(false);
-    } catch (e) {
-      setAuthError(e.message.includes("email-already-in-use") ? "Cet email est déjà utilisé." : e.message);
+    } catch (error) {
+      console.error("Register error:", error);
+      setAuthError(error.message.includes("already registered") ? "Cet email est déjà utilisé." : error.message);
     }
     setAuthLoading(false);
   };
 
-  // ── CONNEXION GOOGLE ──
+  // ── GOOGLE ──
   const doGoogle = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const u = result.user;
-      const d = await getDoc(doc(db, "users", u.uid));
-      if (!d.exists()) {
-        await setDoc(doc(db, "users", u.uid), {
-          uid: u.uid, nom: u.displayName, email: u.email,
-          telephone: null, role: "client", langue: "fr",
-          actif: true, verifie: true,
-          createdAt: serverTimestamp(), lastLogin: serverTimestamp(),
-          note: 0, nombreAvis: 0, totalCommandes: 0,
-        });
-        await setDoc(doc(db, "wallets", u.uid), {
-          userId: u.uid, solde: 0, totalGagne: 0,
-          devise: "FCFA", createdAt: serverTimestamp()
-        });
-      }
-      const ud = await getDoc(doc(db, "users", u.uid));
-      setUserData(ud.data());
-      setAuthOpen(false);
-    } catch (e) {
-      setAuthError(e.message);
-    }
+      const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+      if (error) throw error;
+    } catch (error) { console.error("Google error:", error); setAuthError(error.message); }
   };
 
   // ── DÉCONNEXION ──
   const doLogout = async () => {
-    await signOut(auth);
-    setUserData(null);
+    await supabase.auth.signOut();
+    setUser(null); setUserData(null);
     goPage("home");
   };
 
-  // ── AJOUTER PRODUIT (VENDEUR) ──
+  // ── AJOUTER PRODUIT + CLOUDINARY ──
   const sauvegarderProduit = async () => {
-    if (!user || userData?.role !== "vendeur") return;
-    if (!prodForm.name_fr || !prodForm.prix) {
-      alert("Nom et prix sont obligatoires !"); return;
-    }
+    if (!user || (userData?.role !== "vendeur" && userData?.role !== "admin")) return;
+    if (!prodForm.name_fr || !prodForm.prix) { alert("Nom et prix sont obligatoires !"); return; }
     setProdSaving(true);
     try {
       let imageUrl = null;
       if (prodImage) {
-        const imgRef = ref(storage, `produits/${user.uid}/${Date.now()}_${prodImage.name}`);
-        const snap = await uploadBytes(imgRef, prodImage);
-        imageUrl = await getDownloadURL(snap.ref);
+        imageUrl = await uploadImage(prodImage);
+        if (!imageUrl) { setProdSaving(false); return; }
       }
-      await addDoc(collection(db, "products"), {
-        name_fr: prodForm.name_fr,
-        name_en: prodForm.name_en || prodForm.name_fr,
-        description_fr: prodForm.description_fr || "",
-        prix: Number(prodForm.prix),
-        stock: Number(prodForm.stock || 0),
-        categorie: prodForm.categorie || "Autre",
-        ville: prodForm.ville || "Douala",
-        image: imageUrl,
-        vendeurId: user.uid,
-        vendeurNom: userData.nom,
-        actif: true,
-        sponsorise: false,
-        escrow: prodForm.escrow !== false,
-        local: true,
-        vues: 0,
-        clics: 0,
-        venteTotal: 0,
-        note: 0,
-        nombreAvis: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      const { error } = await supabase.from("products").insert({
+        name_fr: prodForm.name_fr, name_en: prodForm.name_en || prodForm.name_fr,
+        description_fr: prodForm.description_fr || "", prix: Number(prodForm.prix),
+        stock: Number(prodForm.stock || 0), categorie: prodForm.categorie || "Autre",
+        ville: prodForm.ville || "Douala", image: imageUrl,
+        vendeur_id: user.id, vendeur_nom: userData.nom,
+        actif: true, sponsorise: false, escrow: prodForm.escrow !== false,
+        local: true, vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
-      setProdForm({ name_fr:"", description_fr:"", prix:"", stock:"", categorie:"", ville:"", escrow:true });
-      setProdImage(null);
-      setProdImagePreview(null);
-      setProdSaved(true);
-      setTimeout(() => setProdSaved(false), 3000);
-    } catch (e) {
-      alert("Erreur : " + e.message);
+      if (error) throw error;
+      setProdForm({ name_fr:"", name_en:"", description_fr:"", prix:"", stock:"", categorie:"", ville:"", escrow:true });
+      setProdImage(null); setProdImagePreview(null);
+      setProdSaved(true); setTimeout(() => setProdSaved(false), 3000);
+      const { data: updated } = await supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false });
+      setMesProduits(updated || []);
+    } catch (error) {
+      console.error("sauvegarderProduit:", error);
+      alert("Erreur : " + error.message);
     }
     setProdSaving(false);
+  };
+
+  // ── SUPPRIMER PRODUIT ──
+  const supprimerProduit = async (produitId) => {
+    if (!window.confirm("Supprimer ce produit ?")) return;
+    try {
+      const { error } = await supabase.from("products").update({ actif: false }).eq("id", produitId);
+      if (error) throw error;
+      setMesProduits(prev => prev.filter(p => p.id !== produitId));
+    } catch (error) { console.error("supprimerProduit:", error); alert("Erreur : " + error.message); }
   };
 
   // ── PANIER ──
@@ -657,7 +707,7 @@ export default function Yorix() {
     setCartItems(prev => {
       const ex = prev.find(i => i.id === p.id);
       if (ex) return prev.map(i => i.id === p.id ? {...i, qty: i.qty+1} : i);
-      return [...prev, { id:p.id, name:p.name_fr, image:p.image, prix:p.prix, qty:1, vendeurId:p.vendeurId }];
+      return [...prev, { id:p.id, name:p.name_fr, image:p.image, prix:p.prix, qty:1, vendeur_id:p.vendeur_id }];
     });
     setCartOpen(true);
   };
@@ -671,103 +721,106 @@ export default function Yorix() {
     if (!user) { setAuthOpen(true); setCartOpen(false); return; }
     if (cartItems.length === 0) return;
     try {
-      const commande = {
-        clientId: user.uid,
-        clientNom: userData?.nom || user.displayName,
-        produits: cartItems.map(i => ({
-          produitId: i.id, nom: i.name,
-          prix: i.prix, quantite: i.qty,
-          vendeurId: i.vendeurId
-        })),
-        total: totalPrice + 2500,
-        sousTotal: totalPrice,
-        fraisLivraison: 2500,
-        commission: totalPrice * COMMISSION,
-        status: "pending",
-        paiementStatus: "en_attente",
-        escrowActif: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-      await addDoc(collection(db, "orders"), commande);
-      setCartItems([]);
-      setCartOpen(false);
-      alert("✅ Commande créée ! Procédez au paiement MTN MoMo.");
-    } catch (e) {
-      alert("Erreur : " + e.message);
-    }
+      const { error } = await supabase.from("orders").insert({
+        client_id: user.id, client_nom: userData?.nom || user.email,
+        produits: cartItems, total: totalPrice + 2500, sous_total: totalPrice,
+        frais_livraison: 2500, commission: totalPrice * COMMISSION,
+        status: "pending", paiement_status: "en_attente", escrow_actif: true,
+      });
+      if (error) throw error;
+      setCartItems([]); setCartOpen(false);
+      alert("✅ Commande créée ! Procédez au paiement MTN MoMo ou Orange Money.");
+      goPage("dashboard");
+    } catch (error) { console.error("passerCommande:", error); alert("Erreur : " + error.message); }
   };
 
   // ── CHAT ──
-  const sendChat = () => {
+  const sendChat = async () => {
     if (!chatMsg.trim()) return;
     const filtre = filtrerMsg(chatMsg);
     const now = new Date();
     const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
     if (filtre.bloque) {
-      setChatBlocked(true);
-      setTimeout(() => setChatBlocked(false), 4000);
-      setChatMsg("");
-      return;
+      setChatBlocked(true); setTimeout(() => setChatBlocked(false), 4000);
+      if (user) await supabase.from("fraud_logs").insert({ type:"tentative_contournement", user_id:user.id, message:chatMsg, raison:"Contact externe détecté" }).catch(e => console.error(e));
+      setChatMsg(""); return;
     }
-    // Sauvegarder dans Firestore si connecté
-    if (user) {
-      addDoc(collection(db, "messages"), {
-        expediteurId: user.uid,
-        destinataireId: "support",
-        texte: chatMsg,
-        conversationId: `${user.uid}_support`,
-        lu: false,
-        createdAt: serverTimestamp()
-      });
-    }
+    if (user) await supabase.from("messages").insert({ expediteur_id:user.id, destinataire_id:"support", texte:chatMsg, conversation_id:`${user.id}_support`, lu:false }).catch(e => console.error(e));
     setChatMessages(prev => [...prev, { text:chatMsg, me:true, time }]);
     setChatMsg("");
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        text: "Merci pour votre message ! Un conseiller Yorix vous répond dans quelques minutes. ⚡",
-        me: false, time
-      }]);
-    }, 1200);
+    setTimeout(() => { setChatMessages(prev => [...prev, { text:"Merci ! Un conseiller Yorix vous répond dans quelques minutes. ⚡", me:false, time }]); }, 1200);
   };
 
   // ── WISHLIST ──
-  const toggleWish = (id) => setWishlist(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
-  });
+  const toggleWish = (id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  // ── SUPPRIMER PRODUIT VENDEUR ──
-  const supprimerProduit = async (produitId) => {
-    if (!confirm("Supprimer ce produit ?")) return;
-    await updateDoc(doc(db, "products", produitId), { actif: false });
+  // ── NOTIFS ──
+  const marquerNotifLue = async (notifId) => {
+    try {
+      await supabase.from("notifications").update({ lu: true }).eq("id", notifId);
+      setNotifs(prev => prev.map(n => n.id === notifId ? {...n, lu: true} : n));
+    } catch (error) { console.error("marquerNotifLue:", error); }
+  };
+  const marquerToutesLues = async () => {
+    try {
+      const ids = notifs.filter(n => !n.lu).map(n => n.id);
+      if (ids.length > 0) {
+        await supabase.from("notifications").update({ lu: true }).in("id", ids);
+        setNotifs(prev => prev.map(n => ({...n, lu: true})));
+      }
+    } catch (error) { console.error("marquerToutesLues:", error); }
   };
 
   const unread = notifs.filter(n => !n.lu).length;
+  const produitsFiltres = produits.filter(p => !search || p.name_fr?.toLowerCase().includes(search.toLowerCase()));
 
-  // ── FILTRER PRODUITS ──
-  const produitsFiltres = produits.filter(p => {
-    if (search && !p.name_fr?.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  // ── ÉCRAN CHARGEMENT ──
+  if (loading) return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontFamily:"'DM Sans',sans-serif",color:"#1a6b3a",gap:12}}>
+      <div style={{width:40,height:40,border:"4px solid #e2ddd6",borderTopColor:"#1a6b3a",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>
+      Chargement de Yorix...
+      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
-        <div style={{ width:40, height:40, border:"4px solid #e2ddd6", borderTopColor:"#1a6b3a", borderRadius:"50%", animation:"spin .7s linear infinite" }}/>
-        Chargement de Yorix...
-        <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
-      </div>
-    );
-  }
-
+  // ── ONGLETS ──
   const TABS = [
     {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},
-    {l:"🚚 Livraison",p:"livraison"},{l:"🗺️ Suivi",p:"tracking"},
-    {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},
+    {l:"🚚 Livraison",p:"livraison"},{l:"🔐 Escrow",p:"escrow"},
+    {l:"👷 Prestataires",p:"prestataires"},{l:"📋 Devenir prestataire",p:"inscription"},
     {l:"💼 Business",p:"business"},{l:"🎓 Academy",p:"academy"},
     {l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
     ...(user ? [{l:"📊 Mon espace",p:"dashboard"}] : []),
   ];
+
+  // ── COMPOSANT GRILLE PRODUITS ──
+  const ProdGrid = ({ prods }) => (
+    <div className="prod-grid">
+      {prods.map(p => (
+        <div key={p.id} className="prod-card">
+          <div className="prod-img">
+            {p.image ? <img src={p.image} alt={p.name_fr}/> : <span style={{fontSize:"3rem"}}>📦</span>}
+            {p.sponsorise && <span className="pbadge-r">⭐ Sponsorisé</span>}
+            {p.local && <span className="pbadge-y">🇨🇲</span>}
+            {p.escrow && <span className="escrow-badge">🔐</span>}
+            <button className="wish-btn" onClick={() => toggleWish(p.id)}>{wishlist.has(p.id)?"❤️":"🤍"}</button>
+          </div>
+          <div className="prod-info">
+            <div className="prod-name">{p.name_fr}</div>
+            <div className="prod-loc">📍 {p.ville||"Cameroun"} · {p.vendeur_nom||""}</div>
+            <div className="prod-rating">
+              <span className="stars">{"★".repeat(Math.round(p.note||4))}{"☆".repeat(5-Math.round(p.note||4))}</span>
+              <span className="rcount">({p.nombre_avis||0})</span>
+            </div>
+            <div className="prod-price-row">
+              <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
+              <button className="add-btn" onClick={() => addToCart(p)}>+</button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -778,7 +831,7 @@ export default function Yorix() {
         <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setAuthOpen(false)}>
           <div className="modal">
             <button className="modal-close" onClick={() => setAuthOpen(false)}>✕</button>
-            <div className="modal-title">{authTab==="login" ? "Bon retour !" : "Créer un compte"}</div>
+            <div className="modal-title">{authTab==="login"?"Bon retour !":"Créer un compte"}</div>
             <p className="modal-sub">Votre marketplace camerounaise de confiance</p>
             <div className="auth-tabs">
               <button className={`auth-tab${authTab==="login"?" active":""}`} onClick={() => setAuthTab("login")}>Connexion</button>
@@ -789,39 +842,23 @@ export default function Yorix() {
               <>
                 <p style={{fontSize:".73rem",fontWeight:600,color:"var(--ink)",marginBottom:8}}>Je suis :</p>
                 <div className="role-selector">
-                  {[{id:"client",icon:"🛍️",label:"Acheteur",desc:"Acheter des produits"},
-                    {id:"vendeur",icon:"🏪",label:"Vendeur",desc:"Vendre mes produits"},
-                    {id:"livreur",icon:"🚚",label:"Livreur",desc:"Livrer des commandes"}].map(r => (
+                  {[{id:"client",icon:"🛍️",label:"Acheteur",desc:"Acheter des produits"},{id:"vendeur",icon:"🏪",label:"Vendeur",desc:"Vendre mes produits"},{id:"livreur",icon:"🚚",label:"Livreur",desc:"Livrer des commandes"}].map(r => (
                     <div key={r.id} className={`role-card${role===r.id?" selected":""}`} onClick={() => setRole(r.id)}>
                       <div style={{fontSize:"1.6rem"}}>{r.icon}</div><h4>{r.label}</h4><p>{r.desc}</p>
                     </div>
                   ))}
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Nom complet *</label>
-                  <input className="form-input" placeholder="Votre nom" value={authForm.nom} onChange={e => setAuthForm(f=>({...f,nom:e.target.value}))}/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Téléphone *</label>
-                  <input className="form-input" placeholder="+237 6XX XXX XXX" value={authForm.tel} onChange={e => setAuthForm(f=>({...f,tel:e.target.value}))}/>
-                </div>
+                <div className="form-group"><label className="form-label">Nom complet *</label><input className="form-input" placeholder="Votre nom" value={authForm.nom} onChange={e => setAuthForm(f=>({...f,nom:e.target.value}))}/></div>
+                <div className="form-group"><label className="form-label">Téléphone *</label><input className="form-input" placeholder="+237 6XX XXX XXX" value={authForm.tel} onChange={e => setAuthForm(f=>({...f,tel:e.target.value}))}/></div>
               </>
             )}
-            <div className="form-group">
-              <label className="form-label">Email *</label>
-              <input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Mot de passe *</label>
-              <input className="form-input" type="password" placeholder="••••••••" value={authForm.password} onChange={e => setAuthForm(f=>({...f,password:e.target.value}))}/>
-            </div>
-            <button className="form-submit" onClick={authTab==="login" ? doLogin : doRegister} disabled={authLoading}>
-              {authLoading ? "⏳ Chargement..." : authTab==="login" ? "🔑 Se connecter" : "🚀 Créer mon compte"}
+            <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/></div>
+            <div className="form-group"><label className="form-label">Mot de passe *</label><input className="form-input" type="password" placeholder="••••••••" value={authForm.password} onChange={e => setAuthForm(f=>({...f,password:e.target.value}))}/></div>
+            <button className="form-submit" onClick={authTab==="login"?doLogin:doRegister} disabled={authLoading}>
+              {authLoading?"⏳ Chargement...":authTab==="login"?"🔑 Se connecter":"🚀 Créer mon compte"}
             </button>
             <div className="divider">ou</div>
-            <button className="social-btn" onClick={doGoogle}>
-              <span>🇬</span> Continuer avec Google
-            </button>
+            <button className="social-btn" onClick={doGoogle}><span>🇬</span> Continuer avec Google</button>
           </div>
         </div>
       )}
@@ -829,20 +866,13 @@ export default function Yorix() {
       {/* ── CART DRAWER ── */}
       <div className={`cart-overlay${cartOpen?" open":""}`} onClick={() => setCartOpen(false)}/>
       <div className={`cart-drawer${cartOpen?" open":""}`}>
-        <div className="cart-header">
-          <span className="cart-title">🛒 Panier ({totalQty})</span>
-          <button className="cart-close" onClick={() => setCartOpen(false)}>✕</button>
-        </div>
+        <div className="cart-header"><span className="cart-title">🛒 Panier ({totalQty})</span><button className="cart-close" onClick={() => setCartOpen(false)}>✕</button></div>
         <div className="cart-items">
           {cartItems.length === 0 ? (
-            <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}>
-              <div style={{fontSize:"2.4rem"}}>🛒</div><p>Panier vide</p>
-            </div>
+            <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}><div style={{fontSize:"2.4rem"}}>🛒</div><p>Panier vide</p></div>
           ) : cartItems.map(item => (
             <div key={item.id} className="cart-item">
-              <div className="ci-emoji">
-                {item.image ? <img src={item.image} alt={item.name}/> : "📦"}
-              </div>
+              <div className="ci-emoji">{item.image?<img src={item.image} alt={item.name}/>:"📦"}</div>
               <div className="ci-info">
                 <div className="ci-name">{item.name}</div>
                 <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
@@ -867,25 +897,17 @@ export default function Yorix() {
         )}
       </div>
 
-      {/* ── NOTIFS ── */}
+      {/* ── NOTIFICATIONS ── */}
       {notifOpen && (
         <div className="notif-drawer">
-          <div className="notif-header">
-            <span className="notif-title">🔔 Notifications ({unread})</span>
-            <span className="notif-clear" onClick={async () => {
-              for (const n of notifs.filter(x=>!x.lu)) {
-                await updateDoc(doc(db,"notifications",n.id), { lu:true });
-              }
-            }}>Tout lire</span>
-          </div>
+          <div className="notif-header"><span className="notif-title">🔔 Notifications ({unread})</span><span className="notif-clear" onClick={marquerToutesLues}>Tout lire</span></div>
           <div className="notif-list">
             {notifs.length === 0 ? (
               <div style={{padding:"20px",textAlign:"center",color:"var(--gray)",fontSize:".8rem"}}>Aucune notification</div>
             ) : notifs.map(n => (
-              <div key={n.id} className={`notif-item${!n.lu?" unread":""}`}
-                onClick={() => updateDoc(doc(db,"notifications",n.id),{lu:true})}>
+              <div key={n.id} className={`notif-item${!n.lu?" unread":""}`} onClick={() => marquerNotifLue(n.id)}>
                 <div className="notif-icon">{n.icon||"🔔"}</div>
-                <div className="notif-body"><h4>{n.title||n.type}</h4><p>{n.message}</p><div className="notif-time">{n.createdAt?.toDate?.()?.toLocaleString?.("fr-FR")||""}</div></div>
+                <div className="notif-body"><h4>{n.title||n.type}</h4><p>{n.message}</p><div className="notif-time">{n.created_at?new Date(n.created_at).toLocaleString("fr-FR"):""}</div></div>
               </div>
             ))}
           </div>
@@ -901,75 +923,48 @@ export default function Yorix() {
         <div className="topbar-r">
           <span onClick={() => goPage("academy")}>🎓 Academy</span><span>|</span>
           <span onClick={() => goPage("business")}>💼 Business</span><span>|</span>
+          <span onClick={() => goPage("inscription")}>Prestataire</span><span>|</span>
           <span onClick={() => goPage("blog")}>Blog</span>
         </div>
       </div>
 
       {/* ── NAVBAR ── */}
       <nav className="navbar">
-        <div className="logo-wrap" onClick={() => goPage("home")}>
-          <div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div>
-        </div>
+        <div className="logo-wrap" onClick={() => goPage("home")}><div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div></div>
         <div className="nav-search">
           <select><option>Tout</option>{CATS.map(c=><option key={c}>{c}</option>)}</select>
-          <input placeholder="Rechercher au Cameroun..." value={search} onChange={e => setSearch(e.target.value)}/>
+          <input placeholder="Rechercher au Cameroun..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key==="Enter"&&goPage("produits")}/>
           <button onClick={() => goPage("produits")}>🔍</button>
         </div>
         <div className="nav-actions">
-          <select style={{background:"var(--surface2)",border:"1.5px solid var(--border)",padding:"7px 9px",borderRadius:8,fontFamily:"'DM Sans',sans-serif",fontSize:".74rem",color:"var(--gray)",cursor:"pointer",outline:"none"}}
-            value={city} onChange={e => setCity(e.target.value)}>
+          <select style={{background:"var(--surface2)",border:"1.5px solid var(--border)",padding:"7px 9px",borderRadius:8,fontFamily:"'DM Sans',sans-serif",fontSize:".74rem",color:"var(--gray)",cursor:"pointer",outline:"none"}} value={city} onChange={e => setCity(e.target.value)}>
             {CITIES.map(c=><option key={c}>{c}</option>)}
           </select>
           <button className="dark-toggle" onClick={() => setDark(d=>!d)}>{dark?"☀️":"🌙"}</button>
-          <button className="icon-btn" onClick={() => { setNotifOpen(o=>!o); setCartOpen(false); }}>
-            🔔{unread>0 && <span className="ibadge">{unread}</span>}
-          </button>
-          <button className="icon-btn" onClick={() => { setCartOpen(o=>!o); setNotifOpen(false); }}>
-            🛒{totalQty>0 && <span className="ibadge">{totalQty}</span>}
-          </button>
+          <button className="icon-btn" onClick={() => { setNotifOpen(o=>!o); setCartOpen(false); }}>🔔{unread>0&&<span className="ibadge">{unread}</span>}</button>
+          <button className="icon-btn" onClick={() => { setCartOpen(o=>!o); setNotifOpen(false); }}>🛒{totalQty>0&&<span className="ibadge">{totalQty}</span>}</button>
           {user ? (
-            <>
-              <div className="user-av" onClick={() => goPage("dashboard")}>
-                {userData?.nom?.[0] || user.displayName?.[0] || "U"}
-              </div>
-              <button className="btn-ghost" onClick={doLogout}>Déco.</button>
-            </>
+            <><div className="user-av" onClick={() => goPage("dashboard")}>{userData?.nom?.[0]||user.email?.[0]?.toUpperCase()||"U"}</div><button className="btn-ghost" onClick={doLogout}>Déco.</button></>
           ) : (
-            <>
-              <button className="btn-ghost" onClick={() => { setAuthTab("login"); setAuthOpen(true); }}>Connexion</button>
-              <button className="btn-green" onClick={() => { setAuthTab("register"); setAuthOpen(true); }}>S'inscrire</button>
-            </>
+            <><button className="btn-ghost" onClick={() => { setAuthTab("login"); setAuthOpen(true); }}>Connexion</button><button className="btn-green" onClick={() => { setAuthTab("register"); setAuthOpen(true); }}>S'inscrire</button></>
           )}
           <button className="btn-red" onClick={() => goPage("inscription")}>+ Prestataire</button>
         </div>
       </nav>
 
-      {/* ── TABS ── */}
+      {/* ── ONGLETS ── */}
       <div className="nav-tabs">
-        {TABS.map(t => (
-          <div key={t.l} className={`tab${page===t.p?" active":""}`} onClick={() => goPage(t.p)}>{t.l}</div>
-        ))}
+        {TABS.map(t => <div key={t.p} className={`tab${page===t.p?" active":""}`} onClick={() => goPage(t.p)}>{t.l}</div>)}
       </div>
 
       {/* ── PAY STRIP ── */}
       <div className="pay-strip">
         <b style={{color:"var(--ink)"}}>Paiement :</b>
-        <div className="pay-methods">
-          <span className="pm mtn-b">📱 MTN MoMo</span>
-          <span className="pm ora-b">🔶 Orange Money</span>
-          <span className="pm">💳 Carte</span>
-          <span className="pm">💵 Cash</span>
-        </div>
-        <div className="strip-right">
-          <span>🚚 J+1 Douala & Yaoundé</span>
-          <span>🔐 Escrow disponible</span>
-          {user && <span style={{color:"var(--gold)"}}>👤 {userData?.nom || user.displayName}</span>}
-        </div>
+        <div className="pay-methods"><span className="pm mtn-b">📱 MTN MoMo</span><span className="pm ora-b">🔶 Orange Money</span><span className="pm">💳 Carte</span><span className="pm">💵 Cash</span></div>
+        <div className="strip-right"><span>🚚 J+1 Douala & Yaoundé</span><span>🔐 Escrow disponible</span>{user&&<span style={{color:"var(--gold)"}}>👤 {userData?.nom||user.email}</span>}</div>
       </div>
 
-      {/* ══════════════════════════════════
-          HOME
-      ══════════════════════════════════ */}
+      {/* ════════════════ PAGE : ACCUEIL ════════════════ */}
       {page === "home" && (
         <div className="anim">
           <section className="hero">
@@ -986,341 +981,315 @@ export default function Yorix() {
                   {[["85K+","Produits"],["12K","Vendeurs"],["3K","Prestataires"],["10","Régions"]].map(([n,l]) => (
                     <div key={l}><div className="stat-num">{n}</div><div className="stat-lbl">{l}</div></div>
                   ))}
-                  {/* PAGE LIVRAISON */}
-{page === "livraison" && (
-  <div className="sec">
-    <h2>🚚 Suivi de livraison</h2>
-    <p>Suivez vos commandes en temps réel.</p>
-  </div>
-)}
-
-{/* PAGE PRESTATAIRES */}
-{page === "prestataires" && (
-  <div className="sec">
-    <h2>👷 Prestataires</h2>
-    <p>Trouvez des professionnels vérifiés.</p>
-  </div>
-)}
-
-{/* PAGE BLOG */}
-{page === "blog" && (
-  <div className="sec">
-    <h2>📰 Blog</h2>
-    <p>Conseils et actualités Yorix.</p>
-  </div>
-)}
-
-{/* PAGE FIDÉLITÉ */}
-{page === "loyalty" && (
-  <div className="sec">
-    <h2>🌟 Programme fidélité</h2>
-    <p>Gagnez des points et récompenses.</p>
-  </div>
-)}
-
-{/* PAGE ACADEMY */}
-{page === "academy" && (
-  <div className="sec">
-    <h2>🎓 Yorix Academy</h2>
-    <p>Apprenez à vendre et réussir.</p>
-  </div>
-)}
-
-{/* PAGE BUSINESS */}
-{page === "business" && (
-  <div className="sec">
-    <h2>💼 Yorix Business</h2>
-    <p>Développez votre business avec Yorix.</p>
-  </div>
-)}
                 </div>
               </div>
               <div className="hero-card">
                 <div className="hc-title">🔍 Recherche rapide</div>
-                <div className="sf">
-                  <select><option>Tout</option>{CATS.map(c=><option key={c}>{c}</option>)}</select>
-                  <input placeholder="Produit, marque..." value={search} onChange={e=>setSearch(e.target.value)}/>
-                </div>
-                <div className="sf">
-                  <select>{CITIES.map(c=><option key={c}>{c}</option>)}</select>
-                  <input placeholder="Budget max (FCFA)"/>
-                </div>
+                <div className="sf"><select><option>Tout</option>{CATS.map(c=><option key={c}>{c}</option>)}</select><input placeholder="Produit, marque..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+                <div className="sf"><select>{CITIES.map(c=><option key={c}>{c}</option>)}</select><input placeholder="Budget max (FCFA)"/></div>
                 <button className="sbtn" onClick={() => goPage("produits")}>🔍 Rechercher</button>
                 <div className="pop-row">
                   <span className="pop-lbl">Tendances :</span>
-                  {["Pagne wax","iPhone","Karité","BTP"].map(s => (
-                    <span key={s} className="pop-tag" onClick={() => { setSearch(s); goPage("produits"); }}>{s}</span>
-                  ))}
+                  {["Pagne wax","iPhone","Karité","BTP"].map(s => <span key={s} className="pop-tag" onClick={() => { setSearch(s); goPage("produits"); }}>{s}</span>)}
                 </div>
               </div>
             </div>
           </section>
-
           <section className="sec">
             <div className="sec-head"><h2 className="sec-title">🔥 Produits récents</h2><span className="sec-link" onClick={() => goPage("produits")}>Voir tout →</span></div>
-            {produitsLoading ? (
-              <div className="loading"><div className="spinner"/>Chargement des produits...</div>
-            ) : produits.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">🛍️</div>
-                <p>Aucun produit pour l'instant</p>
-                {userData?.role === "vendeur" && <button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={() => { goPage("dashboard"); setDashTab("produits"); }}>+ Ajouter mon premier produit</button>}
-              </div>
-            ) : (
-              <div className="prod-grid">
-                {produits.slice(0,10).map(p => (
-                  <div key={p.id} className="prod-card">
-                    <div className="prod-img">
-                      {p.image ? <img src={p.image} alt={p.name_fr}/> : <span style={{fontSize:"3rem"}}>📦</span>}
-                      {p.sponsorise && <span className="pbadge-r">⭐ Sponsorisé</span>}
-                      {p.local && <span className="pbadge-y">🇨🇲</span>}
-                      {p.escrow && <span className="escrow-badge">🔐</span>}
-                      <button className="wish-btn" onClick={() => toggleWish(p.id)}>{wishlist.has(p.id)?"❤️":"🤍"}</button>
-                    </div>
-                    <div className="prod-info">
-                      <div className="prod-name">{p.name_fr}</div>
-                      <div className="prod-loc">📍 {p.ville || "Cameroun"}</div>
-                      <div className="prod-rating">
-                        <span className="stars">{"★".repeat(Math.round(p.note||4))}{"☆".repeat(5-Math.round(p.note||4))}</span>
-                        <span className="rcount">({p.nombreAvis||0})</span>
-                      </div>
-                      <div className="prod-price-row">
-                        <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
-                        <button className="add-btn" onClick={() => addToCart(p)}>+</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {produitsLoading ? <div className="loading"><div className="spinner"/>Chargement des produits...</div>
+              : produits.length === 0 ? <div className="empty-state"><div className="empty-icon">🛍️</div><p>Aucun produit pour l'instant</p></div>
+              : <ProdGrid prods={produits.slice(0,10)}/>}
           </section>
-
           <div className="trust">
             <div className="trust-inner">
-              {[{icon:"📱",t:"MTN MoMo & Orange",p:"Paiement mobile sécurisé"},
-                {icon:"🔐",t:"Escrow Yorix",p:"Fonds protégés"},
-                {icon:"🚚",t:"Livraison J+1",p:"Douala & Yaoundé"},
-                {icon:"🌟",t:"Vendeurs vérifiés",p:"Boutiques certifiées"}].map(t => (
+              {[{icon:"📱",t:"MTN MoMo & Orange",p:"Paiement mobile sécurisé"},{icon:"🔐",t:"Escrow Yorix",p:"Fonds protégés"},{icon:"🚚",t:"Livraison J+1",p:"Douala & Yaoundé"},{icon:"🌟",t:"Vendeurs vérifiés",p:"Boutiques certifiées"}].map(t => (
                 <div key={t.t} className="ti"><div className="ti-icon">{t.icon}</div><div><h4>{t.t}</h4><p>{t.p}</p></div></div>
               ))}
             </div>
           </div>
-
+          <section className="sec">
+            <div className="sec-head"><h2 className="sec-title">👷 Prestataires de confiance</h2><span className="sec-link" onClick={() => goPage("prestataires")}>Voir tous →</span></div>
+            <div className="prest-grid">
+              {PREST_DATA.slice(0,3).map(p => (
+                <div key={p.name} className="prest-card">
+                  <div className="prest-top"><div className="prest-av">{p.emoji}</div><div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div></div>
+                  <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
+                  <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire">Contacter</button></div>
+                </div>
+              ))}
+            </div>
+          </section>
           <div className="newsletter">
             <div className="nl-title">📬 Restez informé(e)</div>
             <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
-            {nlSent ? (
-              <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
-            ) : (
-              <div className="nl-form">
-                <input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/>
-                <button className="nl-btn" onClick={async () => {
-                  if (nlEmail) {
-                    await addDoc(collection(db,"newsletter"), { email:nlEmail, createdAt:serverTimestamp() });
-                    setNlSent(true);
-                  }
-                }}>S'abonner 🚀</button>
-              </div>
-            )}
+            {nlSent ? <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
+              : <div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e=>console.error(e));setNlSent(true);}}}>S'abonner 🚀</button></div>}
           </div>
         </div>
       )}
 
-      {/* ══════════════════════════════════
-          TOUS LES PRODUITS
-      ══════════════════════════════════ */}
+      {/* ════════════════ PAGE : PRODUITS ════════════════ */}
       {page === "produits" && (
         <section className="sec anim">
-          <div className="sec-head">
-            <h2 className="sec-title">🛍️ Tous les produits</h2>
-            <span style={{fontSize:".8rem",color:"var(--gray)"}}>{produitsFiltres.length} produits</span>
-          </div>
-          {produitsLoading ? (
-            <div className="loading"><div className="spinner"/>Chargement...</div>
-          ) : produitsFiltres.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🔍</div>
-              <p>Aucun produit trouvé{search ? ` pour "${search}"` : ""}</p>
-            </div>
-          ) : (
-            <div className="prod-grid">
-              {produitsFiltres.map(p => (
-                <div key={p.id} className="prod-card">
-                  <div className="prod-img">
-                    {p.image ? <img src={p.image} alt={p.name_fr}/> : <span style={{fontSize:"3rem"}}>📦</span>}
-                    {p.sponsorise && <span className="pbadge-r">⭐ Sponsorisé</span>}
-                    {p.local && <span className="pbadge-y">🇨🇲</span>}
-                    {p.escrow && <span className="escrow-badge">🔐</span>}
-                    <button className="wish-btn" onClick={() => toggleWish(p.id)}>{wishlist.has(p.id)?"❤️":"🤍"}</button>
-                  </div>
-                  <div className="prod-info">
-                    <div className="prod-name">{p.name_fr}</div>
-                    <div className="prod-loc">📍 {p.ville} · {p.vendeurNom}</div>
-                    <div className="prod-rating">
-                      <span className="stars">{"★".repeat(Math.round(p.note||4))}</span>
-                      <span className="rcount">({p.nombreAvis||0})</span>
-                    </div>
-                    <div className="prod-price-row">
-                      <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
-                      <button className="add-btn" onClick={() => addToCart(p)}>+</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="sec-head"><h2 className="sec-title">🛍️ Tous les produits</h2><span style={{fontSize:".8rem",color:"var(--gray)"}}>{produitsFiltres.length} produit(s)</span></div>
+          {produitsLoading ? <div className="loading"><div className="spinner"/>Chargement...</div>
+            : produitsFiltres.length === 0 ? <div className="empty-state"><div className="empty-icon">🔍</div><p>Aucun produit trouvé{search?` pour "${search}"`:""}.</p></div>
+            : <ProdGrid prods={produitsFiltres}/>}
         </section>
       )}
 
-      {/* ══════════════════════════════════
-          DASHBOARD
-      ══════════════════════════════════ */}
+      {/* ════════════════ PAGE : LIVRAISON ════════════════ */}
+      {page === "livraison" && (
+        <section className="sec anim">
+          <div style={{background:"#0d1f14",borderRadius:14,padding:28,marginBottom:20,color:"#fff"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🚀 Yorix Ride — Livraison Express</div>
+            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.4rem",fontWeight:800,marginBottom:8}}>Des livreurs indépendants, partout au Cameroun</h2>
+            <p style={{color:"rgba(255,255,255,.5)",fontSize:".86rem",lineHeight:1.75,marginBottom:24}}>Comme Uber mais pour vos colis ! Tracking GPS en temps réel, chat avec le livreur, notation après livraison.</p>
+            <div className="drivers-grid">
+              {DRIVERS_DATA.map(d => (
+                <div key={d.name} className="driver-card">
+                  <div className="driver-top"><div className="driver-av">{d.emoji}</div><div><div className="driver-name">{d.name}</div><div className="driver-sub">{d.sub}</div></div></div>
+                  <div className="driver-stats"><div><div className="ds-num">{d.livraisons}</div><div className="ds-lbl">Livraisons</div></div><div><div className="ds-num">⭐{d.note}</div><div className="ds-lbl">Note</div></div></div>
+                  <div style={{fontSize:".67rem",color:"rgba(255,255,255,.44)"}}>{d.dispo?<><span className="online-dot"/>Disponible</>:"⏸️ Indisponible"}</div>
+                  <button className="btn-track">{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : ESCROW ════════════════ */}
+      {page === "escrow" && (
+        <section className="sec anim">
+          <div style={{background:dark?"#152118":"#f0faf4",border:`1.5px solid ${dark?"#2a4030":"#c0ecd0"}`,borderRadius:14,padding:28,marginBottom:20}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"var(--green)",color:"#fff",padding:"4px 12px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🔐 Escrow Yorix</div>
+            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.4rem",fontWeight:800,color:"var(--ink)",marginBottom:10,letterSpacing:"-.5px"}}>Votre argent protégé jusqu'à la livraison</h2>
+            <p style={{color:"var(--gray)",fontSize:".86rem",lineHeight:1.75,marginBottom:20}}>Le système Escrow Yorix bloque votre paiement. Les fonds ne sont libérés qu'une fois la réception confirmée.</p>
+            <div className="escrow-steps">
+              {[{n:1,t:"Vous commandez",d:"Votre paiement MoMo est bloqué sur le compte Escrow Yorix."},{n:2,t:"Le vendeur expédie",d:"Le vendeur prépare et expédie votre commande. Les fonds restent bloqués."},{n:3,t:"Vous confirmez",d:"Vous confirmez la réception. Les fonds sont libérés immédiatement."},{n:4,t:"Litige ? Yorix arbitre",d:"En cas de problème, notre équipe intervient et rembourse sous 48h."}].map(s => (
+                <div key={s.n} className="estep"><div className="estep-num">{s.n}</div><div className="estep-text"><h4>{s.t}</h4><p>{s.d}</p></div></div>
+              ))}
+            </div>
+          </div>
+          <div className="sec-head"><h2 className="sec-title">Produits avec protection Escrow</h2></div>
+          {produitsLoading?<div className="loading"><div className="spinner"/>Chargement...</div>:<ProdGrid prods={produits.filter(p=>p.escrow).slice(0,10)}/>}
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : PRESTATAIRES ════════════════ */}
+      {page === "prestataires" && (
+        <section className="sec anim">
+          <div className="sec-head"><h2 className="sec-title">👷 Prestataires Yorix vérifiés</h2><button className="btn-green" onClick={() => goPage("inscription")}>+ Devenir prestataire</button></div>
+          <div className="prest-grid">
+            {PREST_DATA.map(p => (
+              <div key={p.name} className="prest-card">
+                <div className="prest-top"><div className="prest-av">{p.emoji}</div><div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div></div>
+                <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
+                <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire">Contacter</button></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : INSCRIPTION PRESTATAIRE ════════════════ */}
+      {page === "inscription" && (
+        <section className="sec anim">
+          <div style={{maxWidth:600,margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.6rem",fontWeight:800,color:"var(--ink)",marginBottom:7,letterSpacing:"-.5px"}}>👷 Devenir prestataire Yorix</h2>
+              <p style={{color:"var(--gray)",fontSize:".86rem",lineHeight:1.7}}>Développez votre activité et accédez à des milliers de clients au Cameroun.</p>
+            </div>
+            {inscriptionSent ? <div className="success-msg">🎉 Candidature envoyée ! L'équipe Yorix vous contacte sous 24h au {inscriptionForm.tel}.</div> : (
+              <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24}}>
+                <div className="form-row">
+                  <div className="form-group"><label className="form-label">Nom *</label><input className="form-input" value={inscriptionForm.nom} onChange={e=>setInscriptionForm(f=>({...f,nom:e.target.value}))} placeholder="Votre nom"/></div>
+                  <div className="form-group"><label className="form-label">Prénom</label><input className="form-input" value={inscriptionForm.prenom} onChange={e=>setInscriptionForm(f=>({...f,prenom:e.target.value}))} placeholder="Votre prénom"/></div>
+                  <div className="form-group"><label className="form-label">Téléphone *</label><input className="form-input" value={inscriptionForm.tel} onChange={e=>setInscriptionForm(f=>({...f,tel:e.target.value}))} placeholder="+237 696 56 56 54"/></div>
+                  <div className="form-group"><label className="form-label">Email</label><input className="form-input" value={inscriptionForm.email} onChange={e=>setInscriptionForm(f=>({...f,email:e.target.value}))} placeholder="email@mail.com"/></div>
+                  <div className="form-group"><label className="form-label">Métier *</label>
+                    <select className="form-select" value={inscriptionForm.metier} onChange={e=>setInscriptionForm(f=>({...f,metier:e.target.value}))}>
+                      <option value="">Choisir...</option>
+                      {["Plomberie","Électricité","Maçonnerie","Peinture","Menuiserie","Informatique","Graphisme","Photographie","Nettoyage","Transport","Cuisine","Autre"].map(m=><option key={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group"><label className="form-label">Ville</label>
+                    <select className="form-select" value={inscriptionForm.ville} onChange={e=>setInscriptionForm(f=>({...f,ville:e.target.value}))}>
+                      <option value="">Choisir...</option>{CITIES.filter(c=>c!=="Toutes les villes").map(c=><option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group"><label className="form-label">Expérience</label><input className="form-input" value={inscriptionForm.experience} onChange={e=>setInscriptionForm(f=>({...f,experience:e.target.value}))} placeholder="Ex: 5 ans"/></div>
+                  <div className="form-group"><label className="form-label">Tarif (FCFA)</label><input className="form-input" value={inscriptionForm.tarif} onChange={e=>setInscriptionForm(f=>({...f,tarif:e.target.value}))} placeholder="Ex: 15 000/h"/></div>
+                  <div className="form-group full"><label className="form-label">Présentation</label><textarea className="form-textarea" value={inscriptionForm.bio} onChange={e=>setInscriptionForm(f=>({...f,bio:e.target.value}))} placeholder="Décrivez vos compétences..."/></div>
+                </div>
+                <button className="form-submit" onClick={async()=>{
+                  if(!inscriptionForm.nom||!inscriptionForm.tel||!inscriptionForm.metier){alert("Nom, téléphone et métier obligatoires !");return;}
+                  await supabase.from("prestataires").insert(inscriptionForm).catch(e=>console.error(e));
+                  setInscriptionSent(true);
+                }}>🚀 Soumettre ma candidature</button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : BUSINESS ════════════════ */}
+      {page === "business" && (
+        <section className="sec anim">
+          <div className="biz-hero">
+            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>💼 Yorix Business</div>
+            <div className="biz-title">La solution B2B pour les entreprises camerounaises</div>
+            <p className="biz-sub">Achetez en gros, gérez vos fournisseurs et accédez à des tarifs professionnels exclusifs.</p>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="cta-y">Démarrer gratuitement</button><button className="cta-w">Voir une démo</button></div>
+            <div className="biz-feats">
+              {[{icon:"📦",t:"Achats en gros",p:"Tarifs dégressifs dès 10 unités"},{icon:"🤝",t:"Fournisseurs vérifiés",p:"500+ fournisseurs certifiés"},{icon:"📊",t:"Tableaux de bord",p:"Suivi des dépenses en temps réel"},{icon:"🔐",t:"Facturation pro",p:"Factures et reçus automatiques"}].map(f=>(
+                <div key={f.t} className="biz-feat"><div style={{fontSize:"1.25rem",marginBottom:4}}>{f.icon}</div><h4>{f.t}</h4><p>{f.p}</p></div>
+              ))}
+            </div>
+          </div>
+          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:22}}>
+            <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:4}}>📋 Demande d'accès Business</h3>
+            <p style={{fontSize:".78rem",color:"var(--gray)",marginBottom:16}}>Notre équipe B2B vous contacte sous 24h.</p>
+            <div className="form-row">
+              <div className="form-group"><label className="form-label">Entreprise *</label><input className="form-input" placeholder="Nom de l'entreprise"/></div>
+              <div className="form-group"><label className="form-label">Contact</label><input className="form-input" placeholder="Votre nom"/></div>
+              <div className="form-group"><label className="form-label">Email pro</label><input className="form-input" placeholder="contact@entreprise.cm"/></div>
+              <div className="form-group"><label className="form-label">Téléphone</label><input className="form-input" placeholder="+237 ..."/></div>
+              <div className="form-group full"><label className="form-label">Besoins principaux</label><textarea className="form-textarea" style={{minHeight:65}} placeholder="Décrivez vos besoins..."/></div>
+            </div>
+            <button className="form-submit">💼 Soumettre ma demande</button>
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : ACADEMY ════════════════ */}
+      {page === "academy" && (
+        <section className="sec anim">
+          <div style={{background:"linear-gradient(135deg,#1a3a24,#0a1410)",borderRadius:14,padding:28,marginBottom:20,textAlign:"center"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🎓 Yorix Academy</div>
+            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.45rem",fontWeight:800,color:"#fff",marginBottom:6,letterSpacing:"-.5px"}}>Formez-vous pour vendre mieux</h2>
+            <p style={{color:"rgba(255,255,255,.5)",fontSize:".85rem",marginBottom:18}}>Des cours créés par des experts camerounais pour booster votre activité sur Yorix et au-delà.</p>
+            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}><button className="cta-y">Commencer gratuitement</button><button className="cta-w">Voir le catalogue</button></div>
+          </div>
+          <div className="courses-grid">
+            {COURSES_DATA.map(c => (
+              <div key={c.title} className="course-card">
+                <div className="course-img" style={{background:c.bg}}>{c.emoji}</div>
+                <div className="course-body">
+                  <div className={`course-level ${c.lc}`}>{c.level}</div>
+                  <div className="course-title">{c.title}</div>
+                  <div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants}</div>
+                  <div className="course-footer"><div className="course-price">{c.prix}</div><button className="course-btn">Démarrer →</button></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : BLOG ════════════════ */}
+      {page === "blog" && (
+        <section className="sec anim">
+          <div className="sec-head"><h2 className="sec-title">📰 Blog Yorix — Actualités & Conseils</h2></div>
+          <div className="blog-grid">
+            {BLOG_DATA.map(p => (
+              <div key={p.title} className="blog-card">
+                <div className="blog-img">{p.emoji}</div>
+                <div className="blog-body"><div className="blog-cat">{p.cat}</div><div className="blog-title">{p.title}</div><div className="blog-excerpt">{p.excerpt}</div></div>
+                <div className="blog-footer"><span>{p.date}</span><span>⏱ {p.read}</span></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : FIDÉLITÉ ════════════════ */}
+      {page === "loyalty" && (
+        <section className="sec anim">
+          <div style={{background:"linear-gradient(135deg,#1a3a24,var(--green))",borderRadius:14,padding:22,color:"#fff",marginBottom:18}}>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",marginBottom:4}}>🌟 Mes points Yorix</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2rem",fontWeight:800,color:"var(--yellow)"}}>{loyaltyPts} pts</div>
+            <div style={{fontSize:".71rem",opacity:.62,marginBottom:12}}>Niveau Or · {1000-loyaltyPts} pts pour Platine</div>
+            <div style={{background:"rgba(255,255,255,.2)",borderRadius:50,height:7,marginBottom:4}}><div style={{background:"var(--yellow)",borderRadius:50,height:7,width:`${Math.min((loyaltyPts%1000)/10,100)}%`,transition:"width .6s"}}/></div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:".64rem",opacity:.55}}><span>Or ({loyaltyPts} pts)</span><span>Platine (1 000 pts)</span></div>
+          </div>
+          <div className="sec-head"><h2 className="sec-title">🎁 Récompenses disponibles</h2></div>
+          <div className="rewards-grid">
+            {REWARDS_DATA.map(r => (
+              <div key={r.name} className="reward-card">
+                <div className="reward-icon">{r.icon}</div><div className="reward-name">{r.name}</div><div className="reward-pts">{r.pts}</div>
+                <button className="reward-btn" onClick={() => setLoyaltyPts(p => Math.max(0,p-parseInt(r.pts)))}>Échanger</button>
+              </div>
+            ))}
+          </div>
+          {!user && <div style={{textAlign:"center",marginTop:24,padding:24,background:"var(--surface2)",borderRadius:12,border:"1px solid var(--border)"}}><div style={{fontSize:"2rem",marginBottom:10}}>🔐</div><p style={{color:"var(--gray)",marginBottom:16,fontSize:".86rem"}}>Connectez-vous pour accumuler des points</p><button className="form-submit" style={{width:"auto",padding:"10px 24px"}} onClick={()=>setAuthOpen(true)}>Se connecter</button></div>}
+        </section>
+      )}
+
+      {/* ════════════════ PAGE : DASHBOARD ════════════════ */}
       {page === "dashboard" && (
         user ? (
           <div className="dash-layout anim">
             <div className="dash-sidebar">
-              <div className="dash-avatar">{userData?.nom?.[0] || "U"}</div>
-              <div className="dash-name">{userData?.nom || user.displayName}</div>
-              <div className="dash-role">
-                {userData?.role === "vendeur" ? "🏪 Vendeur Yorix" :
-                 userData?.role === "admin" ? "⚙️ Administrateur" :
-                 userData?.role === "livreur" ? "🚚 Livreur" : "🛍️ Acheteur Yorix"}
-              </div>
+              <div className="dash-avatar">{userData?.nom?.[0]||"U"}</div>
+              <div className="dash-name">{userData?.nom||user.email}</div>
+              <div className="dash-role">{userData?.role==="vendeur"?"🏪 Vendeur Yorix":userData?.role==="admin"?"⚙️ Administrateur":userData?.role==="livreur"?"🚚 Livreur":"🛍️ Acheteur Yorix"}</div>
               <div className="dash-nav">
-                {[
-                  {icon:"📊",label:"Vue d'ensemble",id:"overview"},
-                  {icon:"📦",label:"Mes commandes",id:"commandes"},
-                  {icon:"💬",label:"Messages",id:"messages"},
-                  ...(userData?.role==="vendeur"||userData?.role==="admin" ? [
-                    {icon:"🏪",label:"Mes produits",id:"mesProduits"},
-                    {icon:"➕",label:"Ajouter produit",id:"ajouterProduit"},
-                    {icon:"💰",label:"Mon wallet",id:"wallet"},
-                  ] : []),
-                  ...(userData?.role==="admin" ? [
-                    {icon:"👥",label:"Utilisateurs",id:"utilisateurs"},
-                    {icon:"🚨",label:"Fraudes",id:"fraudes"},
-                  ] : []),
+                {[{icon:"📊",label:"Vue d'ensemble",id:"overview"},{icon:"📦",label:"Mes commandes",id:"commandes"},{icon:"💬",label:"Messages",id:"messages"},
+                  ...(userData?.role==="vendeur"||userData?.role==="admin"?[{icon:"🏪",label:"Mes produits",id:"mesProduits"},{icon:"➕",label:"Ajouter produit",id:"ajouterProduit"},{icon:"💰",label:"Mon wallet",id:"wallet"}]:[]),
+                  ...(userData?.role==="admin"?[{icon:"👥",label:"Utilisateurs",id:"utilisateurs"},{icon:"🚨",label:"Fraudes",id:"fraudes"}]:[]),
                 ].map(item => (
-                  <div key={item.id} className={`dash-nav-item${dashTab===item.id?" active":""}`}
-                    onClick={() => setDashTab(item.id)}>
-                    {item.icon} {item.label}
-                  </div>
+                  <div key={item.id} className={`dash-nav-item${dashTab===item.id?" active":""}`} onClick={() => setDashTab(item.id)}>{item.icon} {item.label}</div>
                 ))}
-                <div className="dash-nav-item" onClick={doLogout} style={{color:"var(--red)",marginTop:8}}>
-                  🚪 Déconnexion
-                </div>
+                <div className="dash-nav-item" onClick={doLogout} style={{color:"var(--red)",marginTop:8}}>🚪 Déconnexion</div>
               </div>
             </div>
-
             <div className="dash-content">
+
               {/* VUE D'ENSEMBLE */}
               {dashTab === "overview" && (
                 <>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.25rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>
-                    Bonjour {userData?.nom || user.displayName} 👋
-                  </div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>Bonjour {userData?.nom||user.email} 👋</div>
                   <div className="dash-stats">
-                    {[
-                      {icon:"📦",val:mesCommandes.length,lbl:"Commandes",trend:""},
-                      {icon:"❤️",val:wishlist.size,lbl:"Favoris",trend:""},
-                      ...(userData?.role==="vendeur" ? [
-                        {icon:"🏪",val:mesProduits.length,lbl:"Mes produits",trend:""},
-                        {icon:"💰",val:`${wallet.solde?.toLocaleString()||0} F`,lbl:"Wallet",trend:""},
-                      ] : [
-                        {icon:"🛒",val:totalQty,lbl:"Panier",trend:""},
-                        {icon:"🌟",val:"320 pts",lbl:"Fidélité",trend:""},
-                      ])
-                    ].map(s => (
-                      <div key={s.lbl} className="dstat">
-                        <div className="dstat-icon">{s.icon}</div>
-                        <div className="dstat-val">{s.val}</div>
-                        <div className="dstat-lbl">{s.lbl}</div>
+                    {[{icon:"📦",val:mesCommandes.length,lbl:"Commandes"},{icon:"❤️",val:wishlist.size,lbl:"Favoris"},
+                      ...(userData?.role==="vendeur"||userData?.role==="admin"?[{icon:"🏪",val:mesProduits.length,lbl:"Mes produits"},{icon:"💰",val:`${wallet.solde?.toLocaleString()||0} F`,lbl:"Wallet"}]:[{icon:"🛒",val:totalQty,lbl:"Panier"},{icon:"🌟",val:`${loyaltyPts} pts`,lbl:"Fidélité"}])
+                    ].map(s => <div key={s.lbl} className="dstat"><div className="dstat-icon">{s.icon}</div><div className="dstat-val">{s.val}</div><div className="dstat-lbl">{s.lbl}</div></div>)}
+                  </div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",marginBottom:12}}>Dernières commandes</div>
+                  {mesCommandes.length===0?<div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p></div>
+                    :mesCommandes.slice(0,5).map(c=>(
+                      <div key={c.id} className="order-card">
+                        <div className="oc-emoji">📦</div>
+                        <div className="oc-info"><div className="oc-name">Commande #{String(c.id).slice(-6)}</div><div className="oc-meta">{c.total?.toLocaleString()} FCFA · {c.produits?.length||0} produit(s)</div></div>
+                        <span className={`status-badge s-${c.status}`}>{c.status==="pending"?"⏳ En attente":c.status==="paid"?"✅ Payée":c.status==="shipped"?"🚚 Expédiée":c.status==="delivered"?"✅ Livrée":"❌ Litige"}</span>
                       </div>
                     ))}
-                  </div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",color:"var(--ink)",marginBottom:12}}>
-                    Dernières commandes
-                  </div>
-                  {mesCommandes.length === 0 ? (
-                    <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p></div>
-                  ) : mesCommandes.slice(0,5).map(c => (
-                    <div key={c.id} className="order-card">
-                      <div className="oc-emoji">📦</div>
-                      <div className="oc-info">
-                        <div className="oc-name">Commande #{c.id.slice(-6)}</div>
-                        <div className="oc-meta">{c.total?.toLocaleString()} FCFA · {c.produits?.length} produit(s)</div>
-                      </div>
-                      <span className={`status-badge s-${c.status}`}>
-                        {c.status==="pending"?"⏳ En attente":c.status==="paid"?"✅ Payée":c.status==="shipped"?"🚚 Expédiée":c.status==="delivered"?"✅ Livrée":"❌ Litige"}
-                      </span>
-                    </div>
-                  ))}
                 </>
               )}
 
-              {/* AJOUTER PRODUIT (VENDEUR) */}
+              {/* AJOUTER PRODUIT */}
               {dashTab === "ajouterProduit" && (userData?.role==="vendeur"||userData?.role==="admin") && (
                 <>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.25rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>
-                    ➕ Ajouter un produit
-                  </div>
-                  {prodSaved && <div className="success-msg" style={{marginBottom:16}}>✅ Produit ajouté avec succès ! Il est visible sur la plateforme.</div>}
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>➕ Ajouter un produit</div>
+                  {prodSaved && <div className="success-msg" style={{marginBottom:16}}>✅ Produit ajouté ! Il est visible sur la plateforme.</div>}
                   <div className="prod-form">
                     <div className="pf-title">📋 Informations du produit</div>
                     <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Nom du produit (FR) *</label>
-                        <input className="form-input" placeholder="Ex: iPhone 14 128GB" value={prodForm.name_fr} onChange={e=>setProdForm(f=>({...f,name_fr:e.target.value}))}/>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Nom du produit (EN)</label>
-                        <input className="form-input" placeholder="Ex: iPhone 14 128GB" value={prodForm.name_en||""} onChange={e=>setProdForm(f=>({...f,name_en:e.target.value}))}/>
-                      </div>
+                      <div className="form-group"><label className="form-label">Nom (FR) *</label><input className="form-input" placeholder="Ex: iPhone 14 128GB" value={prodForm.name_fr} onChange={e=>setProdForm(f=>({...f,name_fr:e.target.value}))}/></div>
+                      <div className="form-group"><label className="form-label">Nom (EN)</label><input className="form-input" placeholder="Ex: iPhone 14 128GB" value={prodForm.name_en} onChange={e=>setProdForm(f=>({...f,name_en:e.target.value}))}/></div>
+                      <div className="form-group full"><label className="form-label">Description</label><textarea className="form-textarea" placeholder="Décrivez votre produit..." value={prodForm.description_fr} onChange={e=>setProdForm(f=>({...f,description_fr:e.target.value}))}/></div>
+                      <div className="form-group"><label className="form-label">Prix (FCFA) *</label><input className="form-input" type="number" placeholder="Ex: 15000" value={prodForm.prix} onChange={e=>setProdForm(f=>({...f,prix:e.target.value}))}/></div>
+                      <div className="form-group"><label className="form-label">Stock</label><input className="form-input" type="number" placeholder="Ex: 10" value={prodForm.stock} onChange={e=>setProdForm(f=>({...f,stock:e.target.value}))}/></div>
+                      <div className="form-group"><label className="form-label">Catégorie</label><select className="form-select" value={prodForm.categorie} onChange={e=>setProdForm(f=>({...f,categorie:e.target.value}))}><option value="">Choisir...</option>{CATS.map(c=><option key={c}>{c}</option>)}</select></div>
+                      <div className="form-group"><label className="form-label">Ville</label><select className="form-select" value={prodForm.ville} onChange={e=>setProdForm(f=>({...f,ville:e.target.value}))}><option value="">Choisir...</option>{CITIES.filter(c=>c!=="Toutes les villes").map(c=><option key={c}>{c}</option>)}</select></div>
                       <div className="form-group full">
-                        <label className="form-label">Description</label>
-                        <textarea className="form-textarea" placeholder="Décrivez votre produit..." value={prodForm.description_fr} onChange={e=>setProdForm(f=>({...f,description_fr:e.target.value}))}/>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Prix (FCFA) *</label>
-                        <input className="form-input" type="number" placeholder="Ex: 15000" value={prodForm.prix} onChange={e=>setProdForm(f=>({...f,prix:e.target.value}))}/>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Stock disponible</label>
-                        <input className="form-input" type="number" placeholder="Ex: 10" value={prodForm.stock} onChange={e=>setProdForm(f=>({...f,stock:e.target.value}))}/>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Catégorie</label>
-                        <select className="form-select" value={prodForm.categorie} onChange={e=>setProdForm(f=>({...f,categorie:e.target.value}))}>
-                          <option value="">Choisir...</option>
-                          {CATS.map(c=><option key={c}>{c}</option>)}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Ville</label>
-                        <select className="form-select" value={prodForm.ville} onChange={e=>setProdForm(f=>({...f,ville:e.target.value}))}>
-                          <option value="">Choisir...</option>
-                          {CITIES.filter(c=>c!=="Toutes les villes").map(c=><option key={c}>{c}</option>)}
-                        </select>
-                      </div>
-                      <div className="form-group full">
-                        <label className="form-label">Photo du produit</label>
+                        <label className="form-label">📸 Photo du produit (Cloudinary)</label>
                         <div className="img-upload" onClick={() => document.getElementById("imgInput").click()}>
-                          {prodImagePreview ? (
-                            <img src={prodImagePreview} className="img-preview" alt="preview"/>
-                          ) : (
-                            <>
-                              <div style={{fontSize:"2rem",marginBottom:8}}>📸</div>
-                              <div style={{fontSize:".8rem",color:"var(--gray)"}}>Cliquer pour choisir une photo</div>
-                            </>
-                          )}
+                          {prodImagePreview?<img src={prodImagePreview} className="img-preview" alt="preview"/>:<><div style={{fontSize:"2rem",marginBottom:8}}>📸</div><div style={{fontSize:".8rem",color:"var(--gray)"}}>Cliquer pour choisir une photo</div></>}
                         </div>
-                        <input id="imgInput" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
-                          const file = e.target.files[0];
-                          if (file) {
-                            setProdImage(file);
-                            setProdImagePreview(URL.createObjectURL(file));
-                          }
-                        }}/>
+                        <input id="imgInput" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const file=e.target.files[0];if(file){setProdImage(file);setProdImagePreview(URL.createObjectURL(file));}}}/>
                       </div>
                       <div className="form-group full">
                         <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:".82rem",fontWeight:600,color:"var(--ink)"}}>
@@ -1329,9 +1298,7 @@ export default function Yorix() {
                         </label>
                       </div>
                     </div>
-                    <button className="form-submit" onClick={sauvegarderProduit} disabled={prodSaving}>
-                      {prodSaving ? "⏳ Sauvegarde en cours..." : "✅ Publier le produit"}
-                    </button>
+                    <button className="form-submit" onClick={sauvegarderProduit} disabled={prodSaving}>{prodSaving?"⏳ Sauvegarde...":"✅ Publier le produit"}</button>
                   </div>
                 </>
               )}
@@ -1339,31 +1306,16 @@ export default function Yorix() {
               {/* MES PRODUITS */}
               {dashTab === "mesProduits" && (
                 <>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.25rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>
-                    🏪 Mes produits ({mesProduits.length})
-                  </div>
-                  {mesProduits.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-icon">📦</div>
-                      <p>Aucun produit ajouté</p>
-                      <button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter un produit</button>
-                    </div>
-                  ) : (
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>🏪 Mes produits ({mesProduits.length})</div>
+                  {mesProduits.length===0?<div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit ajouté</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter un produit</button></div>:(
                     <div className="prod-grid">
-                      {mesProduits.map(p => (
+                      {mesProduits.map(p=>(
                         <div key={p.id} className="prod-card">
-                          <div className="prod-img">
-                            {p.image ? <img src={p.image} alt={p.name_fr}/> : <span style={{fontSize:"3rem"}}>📦</span>}
-                            {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
-                          </div>
+                          <div className="prod-img">{p.image?<img src={p.image} alt={p.name_fr}/>:<span style={{fontSize:"3rem"}}>📦</span>}</div>
                           <div className="prod-info">
                             <div className="prod-name">{p.name_fr}</div>
-                            <div className="prod-loc">👁 {p.vues||0} vues · 📦 Stock: {p.stock||0}</div>
-                            <div className="prod-price-row">
-                              <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
-                              <button style={{background:"var(--red)",color:"#fff",border:"none",width:25,height:25,borderRadius:6,fontSize:".85rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
-                                onClick={() => supprimerProduit(p.id)}>🗑</button>
-                            </div>
+                            <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock||0}</div>
+                            <div className="prod-price-row"><span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span><button style={{background:"var(--red)",color:"#fff",border:"none",width:25,height:25,borderRadius:6,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>supprimerProduit(p.id)}>🗑</button></div>
                           </div>
                         </div>
                       ))}
@@ -1375,33 +1327,18 @@ export default function Yorix() {
               {/* MESSAGES */}
               {dashTab === "messages" && (
                 <>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.25rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>
-                    💬 Messagerie Yorix
-                  </div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>💬 Messagerie Yorix</div>
                   <div style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:9,padding:"10px 14px",marginBottom:14,fontSize:".78rem",color:"var(--gray)"}}>
-                    🔐 La messagerie Yorix est sécurisée. Tout partage de numéro de téléphone, email ou contact externe est automatiquement bloqué.
+                    🔐 La messagerie Yorix est sécurisée. Tout partage de contact externe est automatiquement bloqué.
                   </div>
                   <div className="chat-container">
-                    <div className="chat-header">
-                      <div className="chat-header-info">
-                        <h4>Support Yorix</h4>
-                        <p><span style={{width:6,height:6,background:"#4fd17d",borderRadius:"50%",display:"inline-block",marginRight:4}}/>En ligne</p>
-                      </div>
-                    </div>
+                    <div className="chat-header"><div className="chat-header-info"><h4>Support Yorix</h4><p><span style={{width:6,height:6,background:"#4fd17d",borderRadius:"50%",display:"inline-block",marginRight:4}}/>En ligne</p></div></div>
                     <div className="chat-messages">
-                      {chatMessages.map((m,i) => (
-                        <div key={i} className={`chat-msg${m.me?" me":""}`}>
-                          <div className="chat-bubble">{m.text}</div>
-                          <div className="chat-time">{m.time}</div>
-                        </div>
-                      ))}
-                      {chatBlocked && <div className="chat-blocked">⚠️ Message bloqué : partage de contact externe interdit sur Yorix.</div>}
+                      {chatMessages.map((m,i)=><div key={i} className={`chat-msg${m.me?" me":""}`}><div className="chat-bubble">{m.text}</div><div className="chat-time">{m.time}</div></div>)}
+                      {chatBlocked&&<div className="chat-blocked">⚠️ Message bloqué : partage de contact externe interdit sur Yorix.</div>}
                       <div ref={chatEndRef}/>
                     </div>
-                    <div className="chat-input-row">
-                      <input className="chat-input" placeholder="Écrire un message..." value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendChat()}/>
-                      <button className="chat-send" onClick={sendChat}>➤</button>
-                    </div>
+                    <div className="chat-input-row"><input className="chat-input" placeholder="Écrire un message..." value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendChat()}/><button className="chat-send" onClick={sendChat}>➤</button></div>
                   </div>
                 </>
               )}
@@ -1409,90 +1346,80 @@ export default function Yorix() {
               {/* WALLET */}
               {dashTab === "wallet" && (
                 <>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.25rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>
-                    💰 Mon Wallet
-                  </div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.5px"}}>💰 Mon Wallet</div>
                   <div style={{background:"linear-gradient(135deg,#1a3a24,var(--green))",borderRadius:14,padding:22,color:"#fff",marginBottom:18}}>
                     <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".95rem",marginBottom:4}}>Solde disponible</div>
                     <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2.2rem",fontWeight:800,color:"var(--yellow)"}}>{wallet.solde?.toLocaleString()||0} FCFA</div>
-                    <div style={{fontSize:".75rem",opacity:.65,marginTop:4}}>Total gagné : {wallet.totalGagne?.toLocaleString()||0} FCFA</div>
+                    <div style={{fontSize:".75rem",opacity:.65,marginTop:4}}>Total gagné : {wallet.total_gagne?.toLocaleString()||0} FCFA</div>
                   </div>
                   <div style={{background:"var(--surface2)",border:"1.5px dashed var(--border)",borderRadius:11,padding:18,textAlign:"center",color:"var(--gray)"}}>
                     <div style={{fontSize:"1.6rem",marginBottom:8}}>📱</div>
-                    <p style={{fontSize:".82rem"}}>Retrait disponible vers MTN MoMo et Orange Money bientôt disponible.</p>
+                    <p style={{fontSize:".82rem"}}>Retrait MTN MoMo et Orange Money — bientôt disponible.</p>
                   </div>
                 </>
               )}
+
             </div>
           </div>
         ) : (
           <div className="empty-state anim" style={{padding:"60px 0"}}>
-            <div className="empty-icon">🔐</div>
-            <p>Connectez-vous pour accéder à votre espace</p>
-            <button className="form-submit" style={{width:"auto",padding:"11px 28px",marginTop:16}} onClick={()=>setAuthOpen(true)}>
-              Se connecter
-            </button>
+            <div className="empty-icon">🔐</div><p>Connectez-vous pour accéder à votre espace</p>
+            <button className="form-submit" style={{width:"auto",padding:"11px 28px",marginTop:16}} onClick={()=>setAuthOpen(true)}>Se connecter</button>
           </div>
         )
       )}
 
-      {/* WHATSAPP FLOAT */}
+      {/* ── NEWSLETTER (hors accueil) ── */}
+      {page !== "home" && (
+        <div className="newsletter">
+          <div className="nl-title">📬 Restez informé(e)</div>
+          <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
+          {nlSent?<div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
+            :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e=>console.error(e));setNlSent(true);}}}>S'abonner 🚀</button></div>}
+        </div>
+      )}
+
+      {/* ── WHATSAPP FLOAT ── */}
       <div className="wa-float">
-        {waOpen && (
-          <div className="wa-card">
-            <div className="wa-card-title">💬 Contacter Yorix</div>
-            <div className="wa-card-sub">Support 7j/7 · Réponse rapide</div>
-            <a href={WA_URL} target="_blank" rel="noreferrer" className="wa-link wa-link-green">📱 WhatsApp +237 696 56 56 54</a>
-            <a href="tel:+237696565654" className="wa-link wa-link-ghost">📞 Appeler</a>
-            <a href="mailto:support@yorix.cm" className="wa-link wa-link-ghost">✉️ support@yorix.cm</a>
-          </div>
-        )}
+        {waOpen&&<div className="wa-card">
+          <div className="wa-card-title">💬 Contacter Yorix</div>
+          <div className="wa-card-sub">Support 7j/7 · Réponse rapide</div>
+          <a href={WA_URL} target="_blank" rel="noreferrer" className="wa-link wa-link-green">📱 WhatsApp +237 696 56 56 54</a>
+          <a href="tel:+237696565654" className="wa-link wa-link-ghost">📞 Appeler</a>
+          <a href="mailto:support@yorix.cm" className="wa-link wa-link-ghost">✉️ support@yorix.cm</a>
+        </div>}
         <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <div className="wa-pulse"/>
-          <button className="wa-btn" onClick={() => setWaOpen(o=>!o)}>{waOpen?"✕":"💬"}</button>
+          <button className="wa-btn" onClick={()=>setWaOpen(o=>!o)}>{waOpen?"✕":"💬"}</button>
         </div>
       </div>
 
-      {/* MOBILE NAV */}
+      {/* ── MOBILE NAV ── */}
       <div className="mobile-nav">
         <div className="mn-inner">
-          {[{icon:"🏠",label:"Accueil",p:"home"},{icon:"🛍️",label:"Produits",p:"produits"},
-            {icon:"👷",label:"Prestataires",p:"prestataires"},
-            {icon:"📊",label:"Mon espace",p:"dashboard"},
-            {icon:"💬",label:"Chat",p:null}].map(item => (
-            <div key={item.label} className={`mn-item${page===item.p?" active":""}`}
-              onClick={() => item.p ? goPage(item.p) : setAuthOpen(true)}>
-              <div className="mn-icon">{item.icon}</div>
-              <div className="mn-label">{item.label}</div>
+          {[{icon:"🏠",label:"Accueil",p:"home"},{icon:"🛍️",label:"Produits",p:"produits"},{icon:"👷",label:"Prestataires",p:"prestataires"},{icon:"📊",label:"Mon espace",p:"dashboard"},{icon:"🌟",label:"Fidélité",p:"loyalty"}].map(item=>(
+            <div key={item.label} className={`mn-item${page===item.p?" active":""}`} onClick={()=>item.p==="dashboard"&&!user?setAuthOpen(true):goPage(item.p)}>
+              <div className="mn-icon">{item.icon}</div><div className="mn-label">{item.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer className="footer">
         <div className="footer-grid">
           <div>
             <div className="footer-logo">Yo<span>rix</span> CM</div>
             <p className="footer-desc">La marketplace camerounaise complète — produits, prestataires, livraison, paiement MoMo sécurisé Escrow.</p>
-            <div className="footer-contact">
-              <span>📞 +237 696 56 56 54</span>
-              <span>✉️ support@yorix.cm</span>
-              <span>🇨🇲 Douala · Yaoundé · Bafoussam · et partout</span>
-            </div>
+            <div className="footer-contact"><span>📞 +237 696 56 56 54</span><span>✉️ support@yorix.cm</span><span>🇨🇲 Douala · Yaoundé · Bafoussam · et partout</span></div>
           </div>
-          <div className="footer-col"><h4>Marketplace</h4><ul>{["Tous les produits","Produits locaux 🇨🇲","Offres du jour","Devenir vendeur"].map(i=><li key={i}>{i}</li>)}</ul></div>
-          <div className="footer-col"><h4>Services</h4><ul>{[{l:"Escrow 🔐",p:"escrow"},{l:"Livraison 🚚",p:"livraison"},{l:"Prestataires 👷",p:"prestataires"},{l:"Business 💼",p:"business"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
+          <div className="footer-col"><h4>Marketplace</h4><ul>{[{l:"Tous les produits",p:"produits"},{l:"Offres du jour",p:"produits"},{l:"Devenir vendeur",p:"inscription"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
+          <div className="footer-col"><h4>Services</h4><ul>{[{l:"Escrow 🔐",p:"escrow"},{l:"Livraison 🚚",p:"livraison"},{l:"Prestataires 👷",p:"prestataires"},{l:"Business 💼",p:"business"},{l:"Academy 🎓",p:"academy"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
           <div className="footer-col"><h4>Aide</h4><ul>{["Centre d'aide","Payer avec MoMo","Suivi commande","Nous contacter"].map(i=><li key={i}>{i}</li>)}</ul></div>
         </div>
         <div className="footer-bottom">
           <span>© 2026 Yorix Cameroun — RC: DOUALA/2026/B237</span>
-          <div className="fb-badges">
-            <span className="fbb">📱 MTN MoMo</span>
-            <span className="fbb">🔶 Orange Money</span>
-            <span className="fbb">🔐 Escrow</span>
-            <span className="fbb">🇨🇲 Made in CM</span>
-          </div>
+          <div className="fb-badges"><span className="fbb">📱 MTN MoMo</span><span className="fbb">🔶 Orange Money</span><span className="fbb">🔐 Escrow</span><span className="fbb">🇨🇲 Made in CM</span></div>
         </div>
       </footer>
     </>
