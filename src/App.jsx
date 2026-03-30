@@ -16,8 +16,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const CLOUD_NAME = "dulwb03nf";
-const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
-
+const UPLOAD_PRESET = "YORIX_upload";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ─────────────────────────────────────────────────────
