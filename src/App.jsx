@@ -1288,16 +1288,11 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 {(p.image_urls || p.image) ? (
   <img
     src={p.image || (Array.isArray(p.image_urls) ? p.image_urls[0] : null)}
-      Array.isArray(p.image_urls)
-        ? p.image_urls[0]
-        : (typeof p.image_urls === "string"
-            ? (() => {
-                try {
-                  return JSON.parse(p.image_urls)[0];
-                } catch {
-                  return p.image;
-                }
-              })()
+    alt={p.name_fr}
+  />
+) : (
+  <div className="prod-img-placeholder">📦</div>
+)}
             : p.image)
     }
     alt={p.name_fr}
