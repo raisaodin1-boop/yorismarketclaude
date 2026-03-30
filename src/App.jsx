@@ -142,7 +142,7 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
 
 /** Charger le profil utilisateur + son rôle depuis Supabase */
 async function getUserProfile(uid) {
-  const { data, error } = await supabase.from("users").select("*").eq("uid", uid).maybeSingle();
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
   if (error) { console.error("getUserProfile ERROR:", error); return null; }
   console.log("USER DATA:", data);
   return data;
