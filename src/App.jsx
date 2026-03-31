@@ -4,6 +4,7 @@
 //  ✅ Upload multiple Cloudinary
 //  ✅ Commandes Supabase (orders)
 //  ✅ Avis / Étoiles / Commentaires
+//  ✅ Avis / Étoiles / Commentaires
 //  ✅ Commission automatique 5%
 //  ✅ Livraison avec statuts
 //  ✅ Escrow simulé
@@ -14,19 +15,15 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-const supabase = createClient(
-  "https://msrymchhhxitdevthvdi.supabase.co",
-  "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA"
-)
-
 // ─────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────
-const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "https://msrymchhhxitdevthvdi.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA";
 const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
 const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
 const YORIX_WA_NUMBER   = "237696565654";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
 
@@ -392,9 +389,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 
 /* DASHBOARD */
 .dash-layout{display:grid;grid-template-columns:220px 1fr;gap:0;min-height:75vh;max-width:1200px;margin:22px auto;padding:0 24px;}
-.dash-sidebar{background:var(--surface);border-radius:13px;padding:18px;border:1px solid var(--border);height:fit-content;position:sticky;top:88px;}
+.dash-sidebar{background:var(--surface);border-radius:13px;padding:18px;border:1px solid var(--border);height:fit-content;position:sticky;top:88px;overflow:hidden;}
 .dash-avatar{width:60px;height:60px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 8px;}
-.dash-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.92rem;text-align:center;color:var(--ink);margin-bottom:4px;}
+.dash-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;text-align:center;color:var(--ink);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;word-break:break-all;}
 .dash-role-badge{text-align:center;margin-bottom:14px;}
 .dash-nav{display:flex;flex-direction:column;gap:2px;}
 .dash-nav-item{display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:8px;cursor:pointer;font-size:.8rem;color:var(--gray);font-weight:500;transition:all .2s;}
@@ -725,6 +722,7 @@ function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) {
 function ModalCommander({ product, user, userData, onClose, onSuccess }) {
   const [nom, setNom]         = useState(userData?.nom || "");
   const [tel, setTel]         = useState(userData?.telephone || "");
+  const [payMode, setPayMode] = useState(""); // "om" | "momo" | "visa"
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState({});
   const [done, setDone]       = useState(false);
@@ -759,7 +757,7 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
       <div className="modal">
         <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-title">📦 Commander ce produit</div>
-        <p className="modal-sub">{product.name_fr}</p>
+        <p className="modal-sub">{product?.name_fr || "Produit Yorix"}</p>
 
         {done ? (
           <div className="success-msg">✅ Commande créée avec succès ! Vous serez contacté(e) sous peu.</div>
@@ -767,17 +765,9 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
           <>
             {/* Résumé prix */}
             <div style={{ background:"var(--surface2)", borderRadius:10, padding:"12px 14px", marginBottom:16 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".82rem", marginBottom:4 }}>
-                <span style={{ color:"var(--gray)" }}>Prix produit</span>
-                <strong>{product.prix?.toLocaleString()} FCFA</strong>
-              </div>
-              <div className="commission-box" style={{ margin:0 }}>
-                <span>Commission Yorix ({Math.round(COMMISSION_RATE * 100)}%)</span>
-                <strong>−{commission.toLocaleString()} FCFA</strong>
-              </div>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".82rem", marginTop:4, fontWeight:700, color:"var(--green)" }}>
-                <span>Vendeur reçoit</span>
-                <span>{netVendeur.toLocaleString()} FCFA</span>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".88rem" }}>
+                <span style={{ color:"var(--gray)" }}>💰 Total à payer</span>
+                <strong style={{color:"var(--green)",fontFamily:"'Syne',sans-serif",fontSize:"1rem"}}>{product.prix?.toLocaleString()} FCFA</strong>
               </div>
             </div>
 
@@ -792,15 +782,92 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
               {errors.tel && <span className="form-error-text">{errors.tel}</span>}
             </div>
 
-            <button className="form-submit" onClick={handleCommander} disabled={loading}>
-              {loading ? <><div className="spinner" style={{ width:16, height:16, borderWidth:2 }}/>Enregistrement...</> : "✅ Confirmer la commande"}
-            </button>
+            {/* ── MODE DE PAIEMENT ── */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:".78rem",fontWeight:700,color:"var(--ink)",marginBottom:8}}>💳 Choisir un mode de paiement</div>
+              <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                {[
+                  {id:"om",   label:"Orange Money", icon:"🔶", color:"#ff6600"},
+                  {id:"momo", label:"MTN MoMo",     icon:"📱", color:"#ffcc00"},
+                  {id:"visa", label:"Carte Visa",   icon:"💳", color:"#1a6b9a"},
+                ].map(opt => (
+                  <div
+                    key={opt.id}
+                    onClick={() => setPayMode(opt.id)}
+                    style={{
+                      border:`2px solid ${payMode===opt.id?opt.color:"var(--border)"}`,
+                      borderRadius:9,padding:"10px 14px",cursor:"pointer",
+                      background:payMode===opt.id?"var(--surface2)":"var(--surface)",
+                      display:"flex",alignItems:"center",gap:10,transition:"all .2s",
+                    }}
+                  >
+                    <span style={{fontSize:"1.3rem"}}>{opt.icon}</span>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".83rem",color:"var(--ink)"}}>{opt.label}</span>
+                    {payMode===opt.id && <span style={{marginLeft:"auto",color:opt.color,fontWeight:700,fontSize:".75rem"}}>✅ Sélectionné</span>}
+                  </div>
+                ))}
+              </div>
 
-            <div className="divider">ou</div>
+              {/* Instructions par mode */}
+              {payMode==="om" && (
+                <div style={{marginTop:10,background:"#fff4e6",border:"1px solid #ffcc88",borderRadius:9,padding:"12px 14px"}}>
+                  <div style={{fontWeight:700,fontSize:".82rem",color:"#cc5500",marginBottom:4}}>🔶 Orange Money</div>
+                  <div style={{fontSize:".82rem",color:"#883300",marginBottom:6}}>Envoyez le paiement au numéro Orange Money :<br/><strong style={{fontSize:"1rem"}}>+237 696 56 56 54</strong></div>
+                  <div style={{fontSize:".75rem",color:"#666",display:"flex",alignItems:"center",gap:5}}>
+                    <span>📲</span>
+                    <span style={{color:"#1a6b3a",fontWeight:600}}>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
+                  </div>
+                  <a href="https://wa.me/237696565654?text=Preuve%20de%20paiement%20Orange%20Money" target="_blank" rel="noreferrer"
+                    style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:8,background:"#25D366",color:"#fff",padding:"6px 12px",borderRadius:6,fontSize:".73rem",fontWeight:700,textDecoration:"none"}}>
+                    📱 Envoyer la preuve WhatsApp
+                  </a>
+                </div>
+              )}
+              {payMode==="momo" && (
+                <div style={{marginTop:10,background:"#fffbe6",border:"1px solid #ffdd44",borderRadius:9,padding:"12px 14px"}}>
+                  <div style={{fontWeight:700,fontSize:".82rem",color:"#886600",marginBottom:4}}>📱 MTN MoMo</div>
+                  <div style={{fontSize:".82rem",color:"#664400",marginBottom:6}}>Envoyez le paiement au numéro MTN MoMo :<br/><strong style={{fontSize:"1rem"}}>+237 676 93 51 95</strong></div>
+                  <div style={{fontSize:".75rem",color:"#666",display:"flex",alignItems:"center",gap:5}}>
+                    <span>📲</span>
+                    <span style={{color:"#1a6b3a",fontWeight:600}}>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
+                  </div>
+                  <a href="https://wa.me/237696565654?text=Preuve%20de%20paiement%20MTN%20MoMo" target="_blank" rel="noreferrer"
+                    style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:8,background:"#25D366",color:"#fff",padding:"6px 12px",borderRadius:6,fontSize:".73rem",fontWeight:700,textDecoration:"none"}}>
+                    📱 Envoyer la preuve WhatsApp
+                  </a>
+                </div>
+              )}
+              {payMode==="visa" && (
+                <div style={{marginTop:10,background:"#e6f0ff",border:"1px solid #aaccff",borderRadius:9,padding:"12px 14px"}}>
+                  <div style={{fontWeight:700,fontSize:".82rem",color:"#003388",marginBottom:4}}>💳 Carte Visa</div>
+                  <div style={{fontSize:".82rem",color:"#334"}}>Paiement par carte indisponible pour le moment.<br/>Veuillez choisir Orange Money ou MTN MoMo.</div>
+                </div>
+              )}
+            </div>
 
             <button
+              className="form-submit"
+              onClick={handleCommander}
+              disabled={loading || !payMode || payMode==="visa"}
+              style={{opacity:(!payMode||payMode==="visa")?0.5:1}}
+            >
+              {loading
+                ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Enregistrement...</>
+                : !payMode
+                  ? "Choisissez un mode de paiement"
+                  : payMode==="visa"
+                    ? "Carte indisponible — choisir MoMo/OM"
+                    : "✅ Confirmer la commande"
+              }
+            </button>
+            <p style={{fontSize:".7rem",color:"var(--gray)",textAlign:"center",marginTop:6}}>
+              ⚡ Votre commande sera traitée après confirmation du paiement
+            </p>
+
+            <div className="divider">ou</div>
+            <button
               className="btn-wa"
-              style={{ width:"100%", justifyContent:"center", padding:"11px", borderRadius:9, fontSize:".85rem" }}
+              style={{width:"100%",justifyContent:"center",padding:"11px",borderRadius:9,fontSize:".85rem"}}
               onClick={() => commanderWhatsApp(product, nom)}
             >
               📱 Commander via WhatsApp
@@ -871,6 +938,21 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const [activeImg, setActiveImg]   = useState(0);
   const [avis, setAvis]             = useState([]);
   const [showCmdModal, setShowCmdModal] = useState(false);
+
+  // Guard contre product null/undefined → évite la page blanche
+  if (!product || !product.id) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal" style={{textAlign:"center",padding:40}}>
+          <div style={{fontSize:"2.5rem",marginBottom:12}}>⚠️</div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,color:"var(--ink)",marginBottom:8}}>Produit introuvable</div>
+          <p style={{color:"var(--gray)",fontSize:".82rem",marginBottom:16}}>Ce produit n'est plus disponible.</p>
+          <button className="form-submit" style={{width:"auto",padding:"9px 20px"}} onClick={onClose}>Fermer</button>
+        </div>
+      </div>
+    );
+  }
+
   // Priorité : p.image en premier, puis image_urls[], filtrer les URL non-http
   const rawImgs = product.image && product.image.startsWith("http")
     ? [product.image, ...(product.image_urls || []).filter(u => u && u.startsWith("http") && u !== product.image)]
@@ -1063,17 +1145,19 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
   return (
     <>
       <div className="prod-grid">
-        {prods.map(p => {
+        {prods.map((p, _idx) => {
           const safeImg    = getSafeImg(p);
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
           const vendBadges = getVendeurBadges(p);
           const prixPromo  = p.promo_pct ? Math.round(p.prix * (1 - p.promo_pct / 100)) : null;
+          const cardKey    = p.id ? `prod-${p.id}` : `prod-idx-${_idx}`;
+          const isLiked    = wishlist.has(p.id);
 
           return (
-            <div key={p.id} className={`prod-card${p.flash?" prod-card-flash":""}`}>
+            <div key={cardKey} className={`prod-card${p.flash?" prod-card-flash":""}`}>
 
               {/* ── IMAGE ── */}
-              <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
+              <div className="prod-img-wrap" onClick={() => { if(p && p.id) setFicheOpen(p); }}>
                 {safeImg ? (
                   <img
                     src={safeImg}
@@ -1092,13 +1176,13 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 {/* Escrow bas gauche */}
                 {p.escrow && <span className="escrow-badge">🔐</span>}
                 {/* Wishlist */}
-                <button className="wish-btn" onClick={e => { e.stopPropagation(); onWish(p.id); }}>
-                  {wishlist.has(p.id) ? "❤️" : "🤍"}
+                <button className="wish-btn" onClick={e => { e.stopPropagation(); if(p.id) onWish(p.id); }}>
+                  {isLiked ? "❤️" : "🤍"}
                 </button>
               </div>
 
               {/* ── INFOS ── */}
-              <div className="prod-info" onClick={() => setFicheOpen(p)}>
+              <div className="prod-info" onClick={() => { if(p && p.id) setFicheOpen(p); }}>
                 {/* Badges vendeur */}
                 {vendBadges.length > 0 && (
                   <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>
@@ -1115,7 +1199,7 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 <div className="prod-badge-row">
                   {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire">🔥 Stock limité</span>}
                   <span className="pb pb-truck">🚚 Livraison rapide</span>
-                  <span className="pb pb-cash">💰 Paiement livraison</span>
+                  <span className="pb pb-cash">💰 Paiement MoMo/OM</span>
                 </div>
 
                 {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
@@ -1935,6 +2019,133 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
 // ═══════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────
+// COMPOSANT : FOOTER PANIER AVEC OPTIONS DE PAIEMENT
+// ─────────────────────────────────────────────────────────────
+function CartPaymentFooter({ totalPrice, cartItems, onConfirm }) {
+  const [payMode, setPayMode] = useState(""); // "om" | "momo" | "visa"
+
+  const PAYMENT_OPTIONS = [
+    { id:"om",   icon:"🔶", label:"Orange Money", color:"#ff6600", bg:"#fff4e6", border:"#ffcc88" },
+    { id:"momo", icon:"📱", label:"MTN MoMo",     color:"#bb8800", bg:"#fffbe6", border:"#ffdd44" },
+    { id:"visa", icon:"💳", label:"Carte Visa",   color:"#1a6b9a", bg:"#e6f0ff", border:"#aaccff" },
+  ];
+
+  return (
+    <div className="cart-footer">
+      <div className="cart-note note-escrow">🔐 Paiement sécurisé · Confirmation après preuve</div>
+      <div className="cart-total-row"><span>Sous-total</span><span>{totalPrice.toLocaleString()} FCFA</span></div>
+      <div className="cart-total-row"><span>Livraison estimée</span><span>2 500 FCFA</span></div>
+      <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
+
+      {/* ── CHOIX DU MODE DE PAIEMENT ── */}
+      <div style={{marginTop:12,marginBottom:10}}>
+        <div style={{fontSize:".74rem",fontWeight:700,color:"var(--ink)",marginBottom:7}}>
+          💳 Mode de paiement
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {PAYMENT_OPTIONS.map(opt => (
+            <div
+              key={opt.id}
+              onClick={() => setPayMode(opt.id)}
+              style={{
+                border:`2px solid ${payMode===opt.id ? opt.color : "var(--border)"}`,
+                borderRadius:8, padding:"9px 12px", cursor:"pointer",
+                background: payMode===opt.id ? opt.bg : "var(--surface)",
+                display:"flex", alignItems:"center", gap:9, transition:"all .2s",
+              }}
+            >
+              <span style={{fontSize:"1.2rem"}}>{opt.icon}</span>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".8rem",color:"var(--ink)",flex:1}}>{opt.label}</span>
+              {payMode===opt.id && (
+                <span style={{fontSize:".68rem",fontWeight:700,color:opt.color}}>✅</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── INSTRUCTIONS SELON LE CHOIX ── */}
+      {payMode==="om" && (
+        <div style={{background:"#fff4e6",border:"1px solid #ffcc88",borderRadius:8,padding:"10px 12px",marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:".78rem",color:"#cc5500",marginBottom:3}}>🔶 Orange Money</div>
+          <div style={{fontSize:".8rem",color:"#883300",marginBottom:5}}>
+            Envoyez le paiement au :<br/>
+            <strong style={{fontSize:".95rem"}}>+237 696 56 56 54</strong>
+          </div>
+          <div style={{fontSize:".72rem",color:"#1a6b3a",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+            <span>📲</span>
+            <span>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
+          </div>
+          <a
+            href="https://wa.me/237696565654?text=Bonjour%20Yorix%20!%20Voici%20ma%20preuve%20de%20paiement%20Orange%20Money%20%F0%9F%A7%BE"
+            target="_blank" rel="noreferrer"
+            style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:7,background:"#25D366",color:"#fff",padding:"6px 11px",borderRadius:6,fontSize:".71rem",fontWeight:700,textDecoration:"none"}}
+          >
+            📱 Envoyer la preuve WhatsApp
+          </a>
+        </div>
+      )}
+
+      {payMode==="momo" && (
+        <div style={{background:"#fffbe6",border:"1px solid #ffdd44",borderRadius:8,padding:"10px 12px",marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:".78rem",color:"#886600",marginBottom:3}}>📱 MTN MoMo</div>
+          <div style={{fontSize:".8rem",color:"#664400",marginBottom:5}}>
+            Envoyez le paiement au :<br/>
+            <strong style={{fontSize:".95rem"}}>+237 676 93 51 95</strong>
+          </div>
+          <div style={{fontSize:".72rem",color:"#1a6b3a",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+            <span>📲</span>
+            <span>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
+          </div>
+          <a
+            href="https://wa.me/237696565654?text=Bonjour%20Yorix%20!%20Voici%20ma%20preuve%20de%20paiement%20MTN%20MoMo%20%F0%9F%93%B1"
+            target="_blank" rel="noreferrer"
+            style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:7,background:"#25D366",color:"#fff",padding:"6px 11px",borderRadius:6,fontSize:".71rem",fontWeight:700,textDecoration:"none"}}
+          >
+            📱 Envoyer la preuve WhatsApp
+          </a>
+        </div>
+      )}
+
+      {payMode==="visa" && (
+        <div style={{background:"#e6f0ff",border:"1px solid #aaccff",borderRadius:8,padding:"10px 12px",marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:".78rem",color:"#003388",marginBottom:3}}>💳 Carte Visa</div>
+          <div style={{fontSize:".8rem",color:"#334"}}>
+            Paiement par carte indisponible pour le moment.<br/>
+            <span style={{color:"#1a6b3a",fontWeight:600}}>Veuillez utiliser Orange Money ou MTN MoMo.</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── BOUTON CONFIRMER ── */}
+      <button
+        className="cart-checkout"
+        onClick={onConfirm}
+        disabled={!payMode || payMode==="visa"}
+        style={{
+          opacity: (!payMode || payMode==="visa") ? 0.5 : 1,
+          cursor: (!payMode || payMode==="visa") ? "not-allowed" : "pointer",
+        }}
+      >
+        {!payMode
+          ? "Choisissez un mode de paiement"
+          : payMode==="visa"
+            ? "💳 Carte indisponible — choisir MoMo/OM"
+            : "✅ Confirmer la commande"
+        }
+      </button>
+
+      {payMode && payMode!=="visa" && (
+        <p style={{fontSize:".69rem",color:"var(--gray)",textAlign:"center",marginTop:6}}>
+          ⚡ Votre commande sera traitée après confirmation du paiement
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function Yorix() {
   const [dark, setDark]           = useState(false);
   const [page, setPage]           = useState("home");
@@ -2151,7 +2362,7 @@ export default function Yorix() {
     setTimeout(() => setChatMessages(prev => [...prev, { text:"Merci ! Un conseiller Yorix vous répond dans quelques minutes. ⚡", me:false, time }]), 1200);
   };
 
-  const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
+  const toggleWish = useCallback((id) => { if (!id) return; setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); }, []);
 
   const marquerNotifLue = async (id) => {
     await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(console.error);
@@ -2293,17 +2504,11 @@ export default function Yorix() {
           }
         </div>
         {cartItems.length > 0 && (
-          <div className="cart-footer">
-            <div className="cart-note note-escrow">🔐 Paiement protégé Escrow Yorix</div>
-            <div className="cart-total-row"><span>Sous-total</span><span>{totalPrice.toLocaleString()} FCFA</span></div>
-            <div className="cart-total-row"><span>Livraison</span><span>2 500 FCFA</span></div>
-            <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
-            <button className="cart-checkout" onClick={passerCommande}>✅ Confirmer la commande</button>
-            <button className="cart-wa" onClick={() => {
-              const msg = cartItems.map(i => `• ${i.name} x${i.qty} = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-              window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`🛍️ Bonjour Yorix ! Je veux commander :\n\n${msg}\n\nTotal : ${(totalPrice+2500).toLocaleString()} FCFA`)}`, "_blank");
-            }}>📱 Commander tout via WhatsApp</button>
-          </div>
+          <CartPaymentFooter
+            totalPrice={totalPrice}
+            cartItems={cartItems}
+            onConfirm={passerCommande}
+          />
         )}
       </div>
 
@@ -2621,7 +2826,7 @@ export default function Yorix() {
                 Livraison à domicile<br/><span style={{color:"#4fd17d"}}>comme Uber, partout au Cameroun</span>
               </h2>
               <p style={{color:"rgba(255,255,255,.6)",fontSize:".85rem",lineHeight:1.75,marginBottom:20,maxWidth:480}}>
-                Commandez un produit, un livreur proche de vous accepte la mission en quelques secondes. Suivi GPS en temps réel, paiement à la livraison.
+                Commandez un produit, un livreur proche de vous accepte la mission en quelques secondes. Suivi GPS en temps réel, paiement sécurisé MTN MoMo / Orange Money.
               </p>
 
               {/* Stats livraison */}
@@ -2876,7 +3081,7 @@ export default function Yorix() {
           <div className="dash-layout anim">
             <div className="dash-sidebar">
               <div className="dash-avatar">{userData?.nom?.[0]||"U"}</div>
-              <div className="dash-name">{userData?.nom||user.email}</div>
+              <div className="dash-name" title={userData?.nom||user.email}>{userData?.nom || (user.email ? user.email.split("@")[0] : "Utilisateur")}</div>
               <div className="dash-role-badge"><span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole||"buyer"]}</span></div>
               <div className="dash-nav">
                 {getDashNav().map(item=>(
