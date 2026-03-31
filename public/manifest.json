@@ -1,0 +1,120 @@
+{
+  "name": "Yorix CM — Marketplace Cameroun",
+  "short_name": "Yorix CM",
+  "description": "La marketplace #1 au Cameroun. Achetez, vendez, faites livrer. MTN MoMo & Orange Money.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0d1f14",
+  "theme_color": "#1a6b3a",
+  "lang": "fr",
+  "dir": "ltr",
+  "scope": "/",
+  "categories": ["shopping", "business", "finance"],
+  "iarc_rating_id": "",
+
+  "icons": [
+    {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "/screenshots/home.jpg",
+      "sizes": "390x844",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Accueil Yorix CM"
+    },
+    {
+      "src": "/screenshots/produits.jpg",
+      "sizes": "390x844",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Catalogue produits"
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Voir les produits",
+      "short_name": "Produits",
+      "description": "Parcourir tous les produits disponibles",
+      "url": "/?page=produits",
+      "icons": [{ "src": "/icons/shortcut-produits.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Demander une livraison",
+      "short_name": "Livraison",
+      "description": "Commander une livraison express",
+      "url": "/?page=livraison",
+      "icons": [{ "src": "/icons/shortcut-livraison.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mon espace",
+      "short_name": "Dashboard",
+      "description": "Accéder à mon tableau de bord",
+      "url": "/?page=dashboard",
+      "icons": [{ "src": "/icons/shortcut-dashboard.png", "sizes": "96x96" }]
+    }
+  ],
+
+  "related_applications": [],
+  "prefer_related_applications": false,
+
+  "share_target": {
+    "action": "/?share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
