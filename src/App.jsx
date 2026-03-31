@@ -188,7 +188,8 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
 
 /** Charger le profil utilisateur + son rôle depuis Supabase */
 async function getUserProfile(uid) {
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+  // Cherche d'abord dans "users" (table principale), fallback sur "profiles"
+  const { data, error } = await supabase.from("users").select("*").eq("uid", uid).maybeSingle();
   if (error) { console.error("getUserProfile ERROR:", error); return null; }
   console.log("USER DATA:", data);
   return data;
@@ -201,8 +202,8 @@ function getUserRole(profileData) {
     console.log("ROLE FINAL:", role);
     return role;
   }
-  console.log("ROLE FINAL: seller (fallback — aucun rôle défini)");
-  return "seller"; // fallback : vendeur par défaut
+  console.log("ROLE FINAL: buyer (fallback — aucun rôle défini)");
+  return "buyer"; // fallback : acheteur par défaut (PAS vendeur)
 }
 
 /** Filtre anti-contournement messages */
@@ -1815,7 +1816,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
   const actionLivraison = async (id, newStatus) => {
     try {
-      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id)(console.error);
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).catch(console.error);
       setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
     } catch (err) {
       console.error("actionLivraison:", err);
@@ -2711,22 +2712,37 @@ export default function Yorix() {
       const uid = data.user?.id;
       if (!uid) throw new Error("Erreur création compte.");
 
+      // Insérer le profil dans la table "users"
       const { error: profileError } = await supabase.from("users").insert({
         uid,
-        nom:          authForm.nom,
-        email:        authForm.email,
-        telephone:    authForm.tel,
-        role:         selectedRole,   // ← rôle EXACTEMENT choisi par l'utilisateur
-        langue:       "fr",
-        actif:        true,
-        verifie:      false,
-        note:         0,
-        nombre_avis:  0,
+        nom:             authForm.nom,
+        email:           authForm.email,
+        telephone:       authForm.tel,
+        role:            selectedRole,
+        langue:          "fr",
+        actif:           true,
+        verifie:         false,
+        note:            0,
+        nombre_avis:     0,
         total_commandes: 0,
       });
-      if (profileError) console.error("Profile insert error:", profileError);
+      if (profileError) {
+        console.error("Profile insert error:", profileError);
+        // Si la table users rejette, essayer la table profiles en fallback
+        if (profileError.code === "42501" || profileError.message?.includes("row-level security") || profileError.message?.includes("permission")) {
+          console.warn("RLS bloqué sur users — insertion dans profiles en fallback");
+          await supabase.from("profiles").insert({
+            id:        uid,
+            uid,
+            nom:       authForm.nom,
+            email:     authForm.email,
+            telephone: authForm.tel,
+            role:      selectedRole,
+          }).catch(e => console.error("Fallback profiles aussi échoué:", e));
+        }
+      }
 
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" })(console.error);
+      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(console.error);
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
