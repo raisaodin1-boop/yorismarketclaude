@@ -1,0 +1,35 @@
+# Yorix CM — robots.txt
+# ─────────────────────────────────────────────
+
+# Autoriser tous les moteurs de recherche
+User-agent: *
+Allow: /
+
+# Bloquer l'accès aux API et pages sensibles
+Disallow: /api/
+Disallow: /.env
+Disallow: /node_modules/
+Disallow: /src/
+
+# Sitemap
+Sitemap: https://yorix.cm/sitemap.xml
+
+# ─────────────────────────────────────────────
+# Instructions spécifiques par moteur
+
+# Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Bloquer les bots malveillants connus
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Crawl-delay: 10
