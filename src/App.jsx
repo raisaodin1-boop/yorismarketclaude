@@ -38,6 +38,55 @@ const DELIVERY_STATUSES = { pending:"⏳ En attente", en_cours:"🚚 En cours", 
 const ESCROW_STATUSES   = { pending:"⏳ En attente", securise:"🔐 Sécurisé", libere:"✅ Libéré", rembourse:"↩️ Remboursé" };
 
 // ─────────────────────────────────────────────────────────────
+// CONSTANTES LIVRAISON GOZEM-STYLE
+// ─────────────────────────────────────────────────────────────
+const QUARTIERS = {
+  "Douala": [
+    "Akwa","Bonanjo","Bonapriso","Bali","Deido","Makepe","Kotto",
+    "Ndokotti","Logpom","Bépanda","PK 8","PK 10","PK 12","PK 14",
+    "Bonabéri","Nyalla","Bonamoussadi","Cité des palmiers","Autre"
+  ],
+  "Yaoundé": [
+    "Bastos","Centre-ville","Mvan","Mvog-Ada","Nlongkak","Obili",
+    "Mendong","Biyem-Assi","Mfandena","Elig-Essono","Damas",
+    "Ngousso","Emombo","Mokolo","Tsinga","Autre"
+  ],
+  "Bafoussam": ["Centre","Banengo","Tougang","Famla","Tamdja","Autre"],
+  "Bamenda": ["Commercial Avenue","Up Station","Nkwen","Mile 4","Autre"],
+  "Garoua":  ["Centre","Plateau","Marché central","Lopéré","Autre"],
+  "Kribi":   ["Centre","Kribi Plage","Dombé","Autre"],
+  "Ngaoundéré": ["Centre","Djalingo","Mbideng","Autre"],
+};
+
+// Tarifs en FCFA selon la combinaison ville/type de zone
+const TARIFS_LIVRAISON = {
+  intra_quartier:  { min: 500,  max: 1000, label:"Même quartier",       delai:"20–30 min" },
+  intra_ville:     { min: 1000, max: 2000, label:"Même ville",           delai:"30–60 min" },
+  inter_ville_proche: { min: 2500, max: 5000, label:"Villes proches",    delai:"2–4h"      },
+  inter_ville:     { min: 5000, max: 10000, label:"Inter-villes",        delai:"J+1"       },
+};
+
+// Types de colis
+const TYPES_COLIS = [
+  { id:"enveloppe", label:"📄 Enveloppe / Documents",  desc:"Moins de 500g",  bonus:0 },
+  { id:"petit",     label:"📦 Petit colis",             desc:"0.5 – 5 kg",    bonus:500 },
+  { id:"moyen",     label:"🗃️ Colis moyen",             desc:"5 – 20 kg",     bonus:1000 },
+  { id:"grand",     label:"📫 Grand colis / Palette",  desc:"Plus de 20 kg", bonus:2000 },
+  { id:"fragile",   label:"🥚 Colis fragile",           desc:"Électronique, verre", bonus:1500 },
+];
+
+// Livreurs disponibles (données statiques enrichies)
+const LIVREURS_DATA = [
+  { id:"L1", emoji:"🏍️", name:"Jean-Pierre M.", sub:"Moto · Douala",  ville:"Douala",  livraisons:342, note:4.9, dispo:true,  temps:"~15 min", vehicule:"Moto",        tel:"655001122", types:["enveloppe","petit","moyen"] },
+  { id:"L2", emoji:"🚐", name:"Augustin N.",    sub:"Minibus · Yaoundé", ville:"Yaoundé", livraisons:218, note:4.8, dispo:true,  temps:"~20 min", vehicule:"Minibus",     tel:"677882244", types:["petit","moyen","grand"] },
+  { id:"L3", emoji:"🚗", name:"Grace T.",       sub:"Voiture · Douala",  ville:"Douala",  livraisons:156, note:5.0, dispo:true,  temps:"~10 min", vehicule:"Voiture",     tel:"699334455", types:["enveloppe","petit","moyen","fragile"] },
+  { id:"L4", emoji:"🚚", name:"Fabrice K.",     sub:"Camionnette · Bafoussam", ville:"Bafoussam", livraisons:189, note:4.7, dispo:false, temps:null, vehicule:"Camionnette", tel:"670556677", types:["moyen","grand"] },
+  { id:"L5", emoji:"🏍️", name:"Bertrand A.",    sub:"Moto · Yaoundé",  ville:"Yaoundé", livraisons:271, note:4.8, dispo:true,  temps:"~18 min", vehicule:"Moto",        tel:"655778899", types:["enveloppe","petit"] },
+  { id:"L6", emoji:"🚐", name:"Carine M.",      sub:"Minibus · Douala",  ville:"Douala",  livraisons:98,  note:4.9, dispo:false, temps:null, vehicule:"Minibus",     tel:"677001234", types:["petit","moyen","grand"] },
+];
+
+
+// ─────────────────────────────────────────────────────────────
 // DONNÉES STATIQUES
 // ─────────────────────────────────────────────────────────────
 const PREST_DATA = [
@@ -2146,9 +2195,402 @@ function CartPaymentFooter({ totalPrice, cartItems, onConfirm }) {
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// COMPOSANT : FORMULAIRE LIVRAISON GOZEM-STYLE
+// ─────────────────────────────────────────────────────────────
+function FormulaireLivraison({ user, userData, onClose }) {
+  const [etape, setEtape] = useState(1); // 1=infos | 2=livreur | 3=confirmation
+
+  // Étape 1 — Informations du colis
+  const [villeCollecte, setVilleCollecte]       = useState("Douala");
+  const [quartierCollecte, setQuartierCollecte] = useState("");
+  const [adresseCollecte, setAdresseCollecte]   = useState("");
+  const [quartierLivraison, setQuartierLivraison] = useState("");
+  const [adresseLivraison, setAdresseLivraison] = useState("");
+  const [typeColis, setTypeColis]               = useState("");
+  const [descColis, setDescColis]               = useState("");
+  const [valeurColis, setValeurColis]           = useState("");
+  const [nomDestinataire, setNomDestinataire]   = useState("");
+  const [telDestinataire, setTelDestinataire]   = useState("");
+  const [heuresSouhaitee, setHeureSouhaitee]    = useState("Le plus tôt possible");
+  const [errors, setErrors]                     = useState({});
+
+  // Étape 2 — Livreur choisi
+  const [livreurChoisi, setLivreurChoisi] = useState(null);
+
+  // Calcul automatique du tarif
+  const calculerTarif = () => {
+    const typeMeta = TYPES_COLIS.find(t => t.id === typeColis);
+    const bonus    = typeMeta?.bonus || 0;
+
+    // Déterminer la zone selon la combinaison quartiers
+    let zone;
+    if (!quartierCollecte || !quartierLivraison) return null;
+    if (quartierCollecte === quartierLivraison) {
+      zone = TARIFS_LIVRAISON.intra_quartier;
+    } else {
+      zone = TARIFS_LIVRAISON.intra_ville;
+    }
+
+    const base = Math.round((zone.min + zone.max) / 2);
+    const total = base + bonus;
+    return { min: zone.min + bonus, max: zone.max + bonus, total, zone, delai: zone.delai, label: zone.label };
+  };
+
+  const tarif = calculerTarif();
+
+  // Message WhatsApp complet pré-rempli
+  const genererMessageWA = (livreur) => {
+    const t = calculerTarif();
+    const numCmd = "YX-" + Date.now().toString().slice(-6);
+    const nomExp = userData?.nom || user?.email?.split("@")[0] || "Client";
+    const telExp = userData?.telephone || "+237 XXX XXX XXX";
+
+    return [
+      `🛵 *YORIX RIDE — Demande de livraison*`,
+      `──────────────────────────`,
+      `📋 *Mission :* #${numCmd}`,
+      `📦 *Colis :* ${descColis || typeColis}`,
+      `🗃️ *Type :* ${TYPES_COLIS.find(x=>x.id===typeColis)?.label || typeColis}`,
+      valeurColis ? `💎 *Valeur déclarée :* ${Number(valeurColis).toLocaleString()} FCFA` : "",
+      ``,
+      `📍 *COLLECTE :*`,
+      `👤 Expéditeur : ${nomExp}`,
+      `📌 Quartier : ${quartierCollecte}, ${villeCollecte}`,
+      adresseCollecte ? `🏠 Adresse : ${adresseCollecte}` : "",
+      `📞 Tél : ${telExp}`,
+      ``,
+      `🏠 *LIVRAISON :*`,
+      `👤 Destinataire : ${nomDestinataire}`,
+      `📌 Quartier : ${quartierLivraison}, ${villeCollecte}`,
+      adresseLivraison ? `🏠 Adresse : ${adresseLivraison}` : "",
+      `📞 Tél : ${telDestinataire}`,
+      ``,
+      `⏰ *Heure souhaitée :* ${heuresSouhaitee}`,
+      t ? `💰 *Tarif estimé :* ${t.min.toLocaleString()} – ${t.max.toLocaleString()} FCFA` : "",
+      t ? `⏱️ *Délai :* ${t.delai}` : "",
+      livreur ? `🏍️ *Livreur :* ${livreur.name} (${livreur.vehicule})` : "",
+      ``,
+      `──────────────────────────`,
+      `✅ Confirmation par Yorix sous 5 min`,
+    ].filter(Boolean).join("
+");
+  };
+
+  const validerEtape1 = () => {
+    const e = {};
+    if (!quartierCollecte) e.quartierCollecte = "Quartier de collecte requis";
+    if (!quartierLivraison) e.quartierLivraison = "Quartier de livraison requis";
+    if (!typeColis) e.typeColis = "Type de colis requis";
+    if (!nomDestinataire.trim()) e.nomDestinataire = "Nom du destinataire requis";
+    if (!telDestinataire.trim()) e.telDestinataire = "Téléphone destinataire requis";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const livreursFiltres = LIVREURS_DATA.filter(l =>
+    l.dispo &&
+    (l.ville === villeCollecte || !villeCollecte) &&
+    (!typeColis || l.types.includes(typeColis))
+  );
+
+  const confirmerLivraison = (livreur) => {
+    const msg = genererMessageWA(livreur);
+    const tel = livreur ? livreur.tel : "237696565654";
+    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, "_blank");
+    setEtape(3);
+  };
+
+  // Styles inline réutilisables (respecte le design existant)
+  const S = {
+    label: { fontSize:".73rem", fontWeight:600, color:"var(--ink)", marginBottom:4, display:"block" },
+    input: { border:"1.5px solid var(--border)", borderRadius:8, padding:"9px 10px", fontFamily:"'DM Sans',sans-serif", fontSize:".81rem", color:"var(--ink)", outline:"none", background:"var(--surface)", width:"100%" },
+    inputErr: { border:"1.5px solid var(--red)", borderRadius:8, padding:"9px 10px", fontFamily:"'DM Sans',sans-serif", fontSize:".81rem", color:"var(--ink)", outline:"none", background:"var(--surface)", width:"100%" },
+    errTxt: { fontSize:".68rem", color:"var(--red)", marginTop:2 },
+    select: { border:"1.5px solid var(--border)", borderRadius:8, padding:"9px 10px", fontFamily:"'DM Sans',sans-serif", fontSize:".81rem", color:"var(--ink)", outline:"none", background:"var(--surface)", width:"100%" },
+    row2: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:11, marginBottom:11 },
+    grp: { display:"flex", flexDirection:"column", gap:4, marginBottom:11 },
+    btnVert: { background:"var(--green)", color:"#fff", border:"none", padding:"11px", borderRadius:9, fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".85rem", cursor:"pointer", width:"100%" },
+    btnGhost: { background:"var(--surface2)", color:"var(--ink)", border:"1.5px solid var(--border)", padding:"9px", borderRadius:8, fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".81rem", cursor:"pointer" },
+    card: { background:"var(--surface2)", border:"1.5px solid var(--border)", borderRadius:11, padding:14, marginBottom:10 },
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal modal-lg" style={{ maxHeight:"92vh", overflowY:"auto" }}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+
+        {/* ── EN-TÊTE ── */}
+        <div style={{ marginBottom:18 }}>
+          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1.1rem", color:"var(--ink)", marginBottom:3 }}>
+            🛵 Demander une livraison
+          </div>
+          <p style={{ fontSize:".78rem", color:"var(--gray)" }}>
+            Remplissez les informations — le message WhatsApp sera généré automatiquement pour le livreur
+          </p>
+          {/* Barre de progression */}
+          <div style={{ display:"flex", gap:6, marginTop:12, alignItems:"center" }}>
+            {[{n:1,l:"📦 Infos colis"},{n:2,l:"🏍️ Livreur"},{n:3,l:"✅ Confirmé"}].map(s => (
+              <div key={s.n} style={{ display:"flex", alignItems:"center", gap:6, flex:1 }}>
+                <div style={{
+                  width:24, height:24, borderRadius:"50%", flexShrink:0,
+                  background: etape >= s.n ? "var(--green)" : "var(--surface2)",
+                  border: `2px solid ${etape >= s.n ? "var(--green)" : "var(--border)"}`,
+                  color: etape >= s.n ? "#fff" : "var(--gray)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:".72rem",
+                }}>{s.n}</div>
+                <div style={{ fontSize:".68rem", fontWeight: etape===s.n ? 700 : 400, color: etape===s.n ? "var(--ink)" : "var(--gray)", whiteSpace:"nowrap" }}>{s.l}</div>
+                {s.n < 3 && <div style={{ flex:1, height:2, background: etape > s.n ? "var(--green)" : "var(--border)", borderRadius:2 }}/>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ═══ ÉTAPE 1 — INFORMATIONS DU COLIS ═══ */}
+        {etape === 1 && (
+          <>
+            {/* Ville */}
+            <div style={S.grp}>
+              <label style={S.label}>🌍 Ville de livraison <span style={{color:"var(--red)"}}>*</span></label>
+              <select style={S.select} value={villeCollecte} onChange={e => { setVilleCollecte(e.target.value); setQuartierCollecte(""); setQuartierLivraison(""); }}>
+                {Object.keys(QUARTIERS).map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+
+            {/* Collecte + Livraison */}
+            <div style={{ background:"var(--surface2)", borderRadius:10, padding:"13px 14px", marginBottom:11, border:"1px solid var(--border)" }}>
+              <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", color:"var(--ink)", marginBottom:10 }}>📍 Adresses</div>
+              <div style={S.row2}>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <label style={S.label}>Quartier de collecte <span style={{color:"var(--red)"}}>*</span></label>
+                  <select style={errors.quartierCollecte ? S.inputErr : S.select} value={quartierCollecte} onChange={e => setQuartierCollecte(e.target.value)}>
+                    <option value="">Choisir...</option>
+                    {(QUARTIERS[villeCollecte] || []).map(q => <option key={q} value={q}>{q}</option>)}
+                  </select>
+                  {errors.quartierCollecte && <span style={S.errTxt}>{errors.quartierCollecte}</span>}
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <label style={S.label}>Quartier de livraison <span style={{color:"var(--red)"}}>*</span></label>
+                  <select style={errors.quartierLivraison ? S.inputErr : S.select} value={quartierLivraison} onChange={e => setQuartierLivraison(e.target.value)}>
+                    <option value="">Choisir...</option>
+                    {(QUARTIERS[villeCollecte] || []).map(q => <option key={q} value={q}>{q}</option>)}
+                  </select>
+                  {errors.quartierLivraison && <span style={S.errTxt}>{errors.quartierLivraison}</span>}
+                </div>
+              </div>
+              <div style={S.row2}>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <label style={S.label}>Adresse exacte collecte</label>
+                  <input style={S.input} placeholder="Ex: Immeuble Total, Apt 3A" value={adresseCollecte} onChange={e => setAdresseCollecte(e.target.value)} />
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <label style={S.label}>Adresse exacte livraison</label>
+                  <input style={S.input} placeholder="Ex: Carrefour Zéphyr, face pharmacie" value={adresseLivraison} onChange={e => setAdresseLivraison(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Type de colis */}
+            <div style={S.grp}>
+              <label style={S.label}>📦 Type de colis <span style={{color:"var(--red)"}}>*</span></label>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {TYPES_COLIS.map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => setTypeColis(t.id)}
+                    style={{
+                      border: `2px solid ${typeColis===t.id ? "var(--green)" : "var(--border)"}`,
+                      borderRadius:8, padding:"9px 12px", cursor:"pointer",
+                      background: typeColis===t.id ? "var(--green-pale)" : "var(--surface)",
+                      display:"flex", alignItems:"center", justifyContent:"space-between",
+                      transition:"all .15s",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".82rem", color:"var(--ink)" }}>{t.label}</div>
+                      <div style={{ fontSize:".68rem", color:"var(--gray)", marginTop:2 }}>{t.desc}</div>
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end" }}>
+                      {t.bonus > 0 && <span style={{ fontSize:".65rem", color:"var(--green)", fontWeight:600 }}>+{t.bonus.toLocaleString()} F</span>}
+                      {typeColis===t.id && <span style={{ fontSize:".65rem", color:"var(--green)", fontWeight:700 }}>✅</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {errors.typeColis && <span style={S.errTxt}>{errors.typeColis}</span>}
+            </div>
+
+            {/* Description + valeur */}
+            <div style={S.row2}>
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                <label style={S.label}>Description du colis</label>
+                <input style={S.input} placeholder="Ex: Chaussures + vêtements" value={descColis} onChange={e => setDescColis(e.target.value)} />
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                <label style={S.label}>Valeur déclarée (FCFA)</label>
+                <input style={S.input} type="number" placeholder="Ex: 25000" value={valeurColis} onChange={e => setValeurColis(e.target.value)} />
+              </div>
+            </div>
+
+            {/* Destinataire */}
+            <div style={{ background:"var(--surface2)", borderRadius:10, padding:"13px 14px", marginBottom:11, border:"1px solid var(--border)" }}>
+              <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", color:"var(--ink)", marginBottom:10 }}>👤 Destinataire</div>
+              <div style={S.row2}>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <label style={S.label}>Nom du destinataire <span style={{color:"var(--red)"}}>*</span></label>
+                  <input style={errors.nomDestinataire ? S.inputErr : S.input} placeholder="Amina Bello" value={nomDestinataire} onChange={e => setNomDestinataire(e.target.value)} />
+                  {errors.nomDestinataire && <span style={S.errTxt}>{errors.nomDestinataire}</span>}
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                  <label style={S.label}>Téléphone <span style={{color:"var(--red)"}}>*</span></label>
+                  <input style={errors.telDestinataire ? S.inputErr : S.input} type="tel" placeholder="+237 6XX XXX XXX" value={telDestinataire} onChange={e => setTelDestinataire(e.target.value)} />
+                  {errors.telDestinataire && <span style={S.errTxt}>{errors.telDestinataire}</span>}
+                </div>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                <label style={S.label}>Heure souhaitée</label>
+                <select style={S.select} value={heuresSouhaitee} onChange={e => setHeureSouhaitee(e.target.value)}>
+                  {["Le plus tôt possible","Dans 1h","Dans 2h","Ce soir","Demain matin","Demain après-midi"].map(h => <option key={h}>{h}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Estimation tarif */}
+            {tarif && (
+              <div style={{ background:"var(--green-pale)", border:"1.5px solid var(--green-light)", borderRadius:10, padding:"12px 14px", marginBottom:14 }}>
+                <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:".88rem", color:"var(--green)", marginBottom:5 }}>
+                  💰 Tarif estimé : {tarif.min.toLocaleString()} – {tarif.max.toLocaleString()} FCFA
+                </div>
+                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+                  <span style={{ fontSize:".72rem", color:"var(--green)" }}>⏱ {tarif.delai}</span>
+                  <span style={{ fontSize:".72rem", color:"var(--green)" }}>📍 {tarif.label}</span>
+                </div>
+              </div>
+            )}
+
+            <button
+              style={S.btnVert}
+              onClick={() => { if (validerEtape1()) setEtape(2); }}
+            >
+              🏍️ Choisir un livreur →
+            </button>
+          </>
+        )}
+
+        {/* ═══ ÉTAPE 2 — CHOISIR UN LIVREUR ═══ */}
+        {etape === 2 && (
+          <>
+            <div style={{ marginBottom:14 }}>
+              <button style={S.btnGhost} onClick={() => setEtape(1)}>← Retour</button>
+            </div>
+            <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:12 }}>
+              🏍️ Livreurs disponibles ({livreursFiltres.length}) — {villeCollecte}
+            </div>
+            {livreursFiltres.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">🛵</div>
+                <p>Aucun livreur disponible pour cette ville/type de colis.</p>
+                <p style={{ fontSize:".78rem", marginTop:6, color:"var(--gray)" }}>Essayez WhatsApp pour une demande manuelle.</p>
+                <button className="btn-wa" style={{ marginTop:12 }} onClick={() => confirmerLivraison(null)}>
+                  📱 Demander via WhatsApp
+                </button>
+              </div>
+            )}
+            {livreursFiltres.map(l => (
+              <div key={l.id} style={{
+                background:"var(--surface)", border:`1.5px solid ${livreurChoisi?.id===l.id?"var(--green)":"var(--border)"}`,
+                borderRadius:12, padding:15, marginBottom:10, cursor:"pointer", transition:"all .2s",
+                ...(livreurChoisi?.id===l.id ? { background:"var(--green-pale)" } : {}),
+              }} onClick={() => setLivreurChoisi(l)}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                  <div style={{ width:44, height:44, borderRadius:"50%", background:"var(--green)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.2rem", flexShrink:0 }}>
+                    {l.emoji}
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)" }}>{l.name}</div>
+                    <div style={{ fontSize:".68rem", color:"var(--gray)" }}>{l.sub}</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:".88rem", color:"var(--green)" }}>
+                      ⭐ {l.note}
+                    </div>
+                    <div style={{ fontSize:".62rem", color:"var(--gray)" }}>{l.livraisons} livraisons</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:7, flexWrap:"wrap", marginBottom:10 }}>
+                  <span style={{ background:"var(--surface2)", borderRadius:6, padding:"3px 8px", fontSize:".67rem", fontWeight:600, color:"var(--ink)" }}>🏍️ {l.vehicule}</span>
+                  <span style={{ background:"var(--surface2)", borderRadius:6, padding:"3px 8px", fontSize:".67rem", fontWeight:600, color:"#27a85a" }}>
+                    <span style={{ width:6, height:6, background:"#4fd17d", borderRadius:"50%", display:"inline-block", marginRight:4 }}/>
+                    Dispo · {l.temps}
+                  </span>
+                  {tarif && <span style={{ background:"var(--green-pale)", borderRadius:6, padding:"3px 8px", fontSize:".67rem", fontWeight:700, color:"var(--green)" }}>💰 {tarif.min.toLocaleString()} – {tarif.max.toLocaleString()} FCFA</span>}
+                </div>
+                <button
+                  style={{ ...S.btnVert, background: livreurChoisi?.id===l.id ? "var(--green)" : "var(--surface2)", color: livreurChoisi?.id===l.id ? "#fff" : "var(--ink)" }}
+                  onClick={e => { e.stopPropagation(); setLivreurChoisi(l); }}
+                >
+                  {livreurChoisi?.id===l.id ? "✅ Sélectionné" : "Choisir ce livreur"}
+                </button>
+              </div>
+            ))}
+
+            {livreursFiltres.length > 0 && (
+              <button
+                style={{ ...S.btnVert, marginTop:8, opacity: livreurChoisi ? 1 : 0.5 }}
+                disabled={!livreurChoisi}
+                onClick={() => { if (livreurChoisi) confirmerLivraison(livreurChoisi); }}
+              >
+                📱 Confirmer et contacter {livreurChoisi ? livreurChoisi.name.split(" ")[0] : "le livreur"} via WhatsApp
+              </button>
+            )}
+          </>
+        )}
+
+        {/* ═══ ÉTAPE 3 — CONFIRMATION ═══ */}
+        {etape === 3 && (
+          <div style={{ textAlign:"center", padding:"24px 0" }}>
+            <div style={{ fontSize:"3rem", marginBottom:12 }}>🎉</div>
+            <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1.1rem", color:"var(--ink)", marginBottom:8 }}>
+              Demande envoyée !
+            </div>
+            <p style={{ fontSize:".82rem", color:"var(--gray)", marginBottom:18, lineHeight:1.7 }}>
+              Votre message a été envoyé à {livreurChoisi?.name || "un livreur"} via WhatsApp.<br/>
+              Il vous confirmera dans les 5 prochaines minutes.
+            </p>
+            {/* Récap */}
+            <div style={{ background:"var(--surface2)", borderRadius:10, padding:"13px 14px", textAlign:"left", marginBottom:18, border:"1px solid var(--border)" }}>
+              <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", color:"var(--ink)", marginBottom:8 }}>📋 Récapitulatif</div>
+              {[
+                ["📍 Collecte", `${quartierCollecte}, ${villeCollecte}`],
+                ["🏠 Livraison", `${quartierLivraison}, ${villeCollecte}`],
+                ["📦 Colis", TYPES_COLIS.find(t=>t.id===typeColis)?.label || typeColis],
+                ["👤 Destinataire", nomDestinataire],
+                ["📞 Tél", telDestinataire],
+                tarif ? ["💰 Tarif estimé", `${tarif.min.toLocaleString()} – ${tarif.max.toLocaleString()} FCFA`] : null,
+                tarif ? ["⏱ Délai", tarif.delai] : null,
+              ].filter(Boolean).map(([k,v]) => (
+                <div key={k} style={{ display:"flex", justifyContent:"space-between", fontSize:".78rem", padding:"4px 0", borderBottom:"1px solid var(--border)" }}>
+                  <span style={{ color:"var(--gray)" }}>{k}</span>
+                  <span style={{ fontWeight:600, color:"var(--ink)" }}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <button className="form-submit" style={{ width:"auto", padding:"10px 28px" }} onClick={onClose}>
+              ✅ Fermer
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Yorix() {
   const [dark, setDark]           = useState(false);
   const [page, setPage]           = useState("home");
+  const [showLivraisonForm, setShowLivraisonForm] = useState(false); // Modal formulaire livraison
   const [user, setUser]           = useState(null);
   const [userData, setUserData]   = useState(null);
   const [userRole, setUserRole]   = useState(null);
@@ -2403,6 +2845,15 @@ export default function Yorix() {
   return (
     <>
       <style>{makeCSS(dark)}</style>
+
+      {/* ── MODAL FORMULAIRE LIVRAISON ── */}
+      {showLivraisonForm && (
+        <FormulaireLivraison
+          user={user}
+          userData={userData}
+          onClose={() => setShowLivraisonForm(false)}
+        />
+      )}
 
       {/* ── AUTH MODAL ── */}
       {authOpen && (
@@ -2846,7 +3297,7 @@ export default function Yorix() {
               <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                 <button
                   style={{background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"11px 20px",borderRadius:9,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",cursor:"pointer"}}
-                  onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix Ride ! Je veux une livraison 📦\n\n📍 Adresse de collecte : \n📍 Adresse de livraison : \n📦 Contenu du colis : ")}`, "_blank")}
+                  onClick={() => setShowLivraisonForm(true)}
                 >📦 Demander une livraison</button>
                 <button
                   style={{background:"rgba(255,255,255,.09)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",padding:"11px 20px",borderRadius:9,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",cursor:"pointer"}}
@@ -2926,7 +3377,7 @@ export default function Yorix() {
                     </div>
                     <button
                       style={{width:"100%",background:d.dispo?"var(--green)":"var(--border)",color:d.dispo?"#fff":"var(--gray)",border:"none",padding:"8px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",cursor:d.dispo?"pointer":"default"}}
-                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour ! Je veux une livraison avec ${d.name} (${d.vehicule}) 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : `)}`, "_blank")}
+                      onClick={() => d.dispo && setShowLivraisonForm(true)}
                     >{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
                   </div>
                 ))}
@@ -3140,6 +3591,133 @@ export default function Yorix() {
         </div>
       )}
 
+
+      {/* ════════ PAGE : CGV ════════ */}
+      {page==="cgv"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:800,margin:"0 auto"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
+              <button className="btn-ghost" style={{padding:"6px 12px",fontSize:".78rem"}} onClick={()=>goPage("home")}>← Retour</button>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)",letterSpacing:"-.5px"}}>📜 Conditions Générales de Vente</h1>
+            </div>
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:28,lineHeight:1.9,fontSize:".84rem",color:"var(--ink)"}}>
+              <p style={{color:"var(--gray)",marginBottom:20}}>Dernière mise à jour : 31 mars 2026 · Yorix CM — DOUALA/2026/B237</p>
+
+              {[
+                {title:"1. Objet et champ d'application",body:`Les présentes Conditions Générales de Vente (CGV) régissent les transactions réalisées sur la plateforme Yorix CM (yorix.cm), marketplace en ligne au Cameroun. En passant une commande, vous acceptez sans réserve les présentes CGV.`},
+                {title:"2. Identification du vendeur de la plateforme",body:`Yorix CM est exploité par Yorix Cameroun SARL, société immatriculée à Douala (RC : DOUALA/2026/B237). Siège social : Douala, Cameroun. Email : support@yorix.cm — Tél : +237 696 56 56 54`},
+                {title:"3. Produits et services",body:`Yorix CM est une marketplace qui met en relation des vendeurs indépendants et des acheteurs. Chaque vendeur est seul responsable de la conformité, de la qualité et de la légalité des produits qu'il publie. Yorix CM vérifie les vendeurs mais ne garantit pas chaque produit individuellement.`},
+                {title:"4. Prix et paiement",body:`Tous les prix sont exprimés en Francs CFA (FCFA) toutes taxes comprises. Les paiements sont acceptés via MTN Mobile Money, Orange Money, et virement bancaire. La commission Yorix est prélevée automatiquement sur chaque transaction et n'est pas remboursable.`},
+                {title:"5. Système Escrow Yorix",body:`Le système Escrow Yorix bloque les fonds de l'acheteur jusqu'à confirmation de réception. En cas de litige, Yorix CM arbitre dans un délai de 48h ouvrables. Les décisions d'arbitrage sont définitives. Le remboursement s'effectue via le même mode de paiement initial.`},
+                {title:"6. Livraison",body:`Les délais de livraison sont indicatifs. Yorix CM ne peut être tenu responsable des retards liés aux livreurs indépendants, aux conditions météorologiques ou à des événements de force majeure. En cas de colis perdu, une enquête est ouverte sous 24h.`},
+                {title:"7. Droit de rétractation",body:`Conformément à la réglementation camerounaise, tout acheteur dispose d'un délai de 48 heures après réception pour signaler un problème (produit non conforme, endommagé, ou non reçu). Au-delà de ce délai, la transaction est considérée comme validée.`},
+                {title:"8. Responsabilités",body:`Yorix CM ne peut être tenu responsable des dommages indirects liés à l'utilisation de la plateforme. Yorix CM se réserve le droit de suspendre tout compte en cas de comportement frauduleux ou de violation des présentes CGV.`},
+                {title:"9. Litiges",body:`Tout litige relatif à l'interprétation ou à l'exécution des présentes CGV sera soumis à la compétence exclusive des tribunaux de Douala, Cameroun.`},
+              ].map(s=>(
+                <div key={s.title} style={{marginBottom:20}}>
+                  <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".92rem",color:"var(--ink)",marginBottom:7}}>{s.title}</h3>
+                  <p style={{color:"var(--gray)",lineHeight:1.8}}>{s.body}</p>
+                </div>
+              ))}
+
+              <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:9,padding:"12px 16px",marginTop:16}}>
+                <p style={{color:"var(--green)",fontWeight:600,fontSize:".82rem"}}>📞 Questions ? Contactez-nous : support@yorix.cm ou WhatsApp +237 696 56 56 54</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════ PAGE : MENTIONS LÉGALES ════════ */}
+      {page==="mentions"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:800,margin:"0 auto"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
+              <button className="btn-ghost" style={{padding:"6px 12px",fontSize:".78rem"}} onClick={()=>goPage("home")}>← Retour</button>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)",letterSpacing:"-.5px"}}>⚖️ Mentions Légales</h1>
+            </div>
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:28,lineHeight:1.9,fontSize:".84rem",color:"var(--ink)"}}>
+              <p style={{color:"var(--gray)",marginBottom:20}}>Conformément aux lois camerounaises en vigueur et à la réglementation de l'ANTIC.</p>
+
+              {[
+                {title:"Éditeur du site",items:[
+                  "Nom de la société : Yorix Cameroun SARL",
+                  "Numéro RC : DOUALA/2026/B237",
+                  "Siège social : Douala, Cameroun",
+                  "Email : support@yorix.cm",
+                  "Téléphone : +237 696 56 56 54",
+                  "WhatsApp : +237 696 56 56 54",
+                ]},
+                {title:"Hébergement",items:[
+                  "Hébergeur : Vercel Inc.",
+                  "Adresse : 340 S Lemon Ave #4133, Walnut, CA 91789, USA",
+                  "Site : https://vercel.com",
+                  "Base de données : Supabase Inc.",
+                  "Images : Cloudinary Inc.",
+                ]},
+                {title:"Propriété intellectuelle",items:[
+                  "Le nom Yorix CM, le logo et l'ensemble des éléments constituant la plateforme sont la propriété exclusive de Yorix Cameroun SARL.",
+                  "Toute reproduction, représentation ou diffusion non autorisée est strictement interdite.",
+                  "Les contenus publiés par les vendeurs restent leur propriété — Yorix CM dispose d'une licence d'utilisation pour les afficher.",
+                ]},
+                {title:"Données personnelles (RGPD/ANTIC)",items:[
+                  "Responsable du traitement : Yorix Cameroun SARL",
+                  "Les données collectées (nom, email, téléphone) sont utilisées uniquement pour la gestion des commandes et la relation client.",
+                  "Aucune donnée n'est vendue à des tiers.",
+                  "Droit d'accès, rectification et suppression : support@yorix.cm",
+                  "Conservation des données : 3 ans après la dernière transaction.",
+                ]},
+                {title:"Cookies",items:[
+                  "Yorix CM utilise des cookies techniques essentiels au fonctionnement du site (authentification, préférences).",
+                  "Aucun cookie publicitaire n'est utilisé.",
+                  "En continuant à naviguer, vous acceptez l'utilisation de ces cookies techniques.",
+                ]},
+              ].map(s=>(
+                <div key={s.title} style={{marginBottom:20}}>
+                  <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".92rem",color:"var(--ink)",marginBottom:10}}>{s.title}</h3>
+                  <ul style={{paddingLeft:16,listStyle:"disc",color:"var(--gray)",lineHeight:1.9}}>
+                    {s.items.map(item=><li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════ PAGE : POLITIQUE DE CONFIDENTIALITÉ ════════ */}
+      {page==="privacy"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:800,margin:"0 auto"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
+              <button className="btn-ghost" style={{padding:"6px 12px",fontSize:".78rem"}} onClick={()=>goPage("home")}>← Retour</button>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)",letterSpacing:"-.5px"}}>🔐 Politique de Confidentialité</h1>
+            </div>
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:28,lineHeight:1.9,fontSize:".84rem",color:"var(--ink)"}}>
+              <p style={{color:"var(--gray)",marginBottom:20}}>Dernière mise à jour : 31 mars 2026. Yorix CM s'engage à protéger vos données personnelles.</p>
+
+              {[
+                {title:"1. Données collectées",body:"Lors de votre inscription : nom complet, adresse email, numéro de téléphone, rôle choisi (acheteur/vendeur/livreur/prestataire). Lors d'une commande : adresse de livraison, historique des achats. Automatiquement : adresse IP, type d'appareil, pages visitées."},
+                {title:"2. Utilisation des données",body:"Vos données sont utilisées pour : (1) Gérer votre compte et vos commandes, (2) Vous envoyer des confirmations et notifications, (3) Améliorer la plateforme, (4) Prévenir la fraude et respecter nos obligations légales. Nous ne vendons jamais vos données à des tiers."},
+                {title:"3. Partage des données",body:"Vos données peuvent être partagées uniquement avec : (1) Les vendeurs impliqués dans votre commande (nom, téléphone uniquement), (2) Les livreurs assignés à votre livraison, (3) Nos prestataires techniques (Supabase, Cloudinary) soumis à des accords de confidentialité stricts."},
+                {title:"4. Sécurité",body:"Vos données sont stockées de façon chiffrée sur des serveurs sécurisés (Supabase/PostgreSQL). Les mots de passe sont hashés et jamais stockés en clair. Les communications sont chiffrées via HTTPS/TLS."},
+                {title:"5. Vos droits",body:"Conformément à la loi camerounaise sur la protection des données et au RGPD : droit d'accès, de rectification, de suppression, de portabilité. Pour exercer ces droits : support@yorix.cm. Réponse sous 30 jours."},
+                {title:"6. Durée de conservation",body:"Données de compte : 3 ans après la dernière connexion. Historique des commandes : 5 ans (obligations comptables). Logs de sécurité : 12 mois. Après expiration, les données sont supprimées ou anonymisées."},
+              ].map(s=>(
+                <div key={s.title} style={{marginBottom:20}}>
+                  <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".92rem",color:"var(--ink)",marginBottom:7}}>{s.title}</h3>
+                  <p style={{color:"var(--gray)",lineHeight:1.8}}>{s.body}</p>
+                </div>
+              ))}
+
+              <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:9,padding:"12px 16px",marginTop:16}}>
+                <p style={{color:"var(--green)",fontWeight:600,fontSize:".82rem"}}>🔐 Questions sur vos données ? support@yorix.cm ou WhatsApp +237 696 56 56 54</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* WA FLOAT */}
       <div className="wa-float">
         {waOpen&&<div className="wa-card">
@@ -3213,7 +3791,20 @@ export default function Yorix() {
           </div>
           <div className="footer-col"><h4>Marketplace</h4><ul>{[{l:"Tous les produits",p:"produits"},{l:"Offres du jour",p:"produits"},{l:"Devenir vendeur",p:"inscription"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
           <div className="footer-col"><h4>Services</h4><ul>{[{l:"Escrow 🔐",p:"escrow"},{l:"Livraison 🚚",p:"livraison"},{l:"Prestataires 👷",p:"prestataires"},{l:"Business 💼",p:"business"},{l:"Academy 🎓",p:"academy"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
-          <div className="footer-col"><h4>Aide</h4><ul>{["Centre d'aide","Payer avec MoMo","Suivi commande","Nous contacter"].map(i=><li key={i}>{i}</li>)}</ul></div>
+          <div className="footer-col"><h4>Aide</h4><ul>
+            {[
+              {l:"Centre d'aide",     p:null},
+              {l:"Payer avec MoMo",    p:null},
+              {l:"Suivi commande",     p:"dashboard"},
+              {l:"Nous contacter",     p:null},
+            ].map(i=><li key={i.l} onClick={()=>i.p&&goPage(i.p)} style={{cursor:i.p?"pointer":"default"}}>{i.l}</li>)}
+          </ul>
+          <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
+            <span onClick={()=>goPage("cgv")}      style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>📜 CGV</span>
+            <span onClick={()=>goPage("mentions")} style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>⚖️ Mentions légales</span>
+            <span onClick={()=>goPage("privacy")}  style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>🔐 Confidentialité</span>
+          </div>
+          </div>
         </div>
         <div className="footer-bottom">
           <span>© 2026 Yorix Cameroun — RC: DOUALA/2026/B237</span>
