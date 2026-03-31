@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- PAGE PRINCIPALE -->
+  <url>
+    <loc>https://yorix.cm/</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://yorix.cm/"/>
+  </url>
+
+  <!-- PRODUITS -->
+  <url>
+    <loc>https://yorix.cm/?page=produits</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- LIVRAISON -->
+  <url>
+    <loc>https://yorix.cm/?page=livraison</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ESCROW -->
+  <url>
+    <loc>https://yorix.cm/?page=escrow</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- PRESTATAIRES -->
+  <url>
+    <loc>https://yorix.cm/?page=prestataires</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- BUSINESS B2B -->
+  <url>
+    <loc>https://yorix.cm/?page=business</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- ACADEMY -->
+  <url>
+    <loc>https://yorix.cm/?page=academy</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- BLOG -->
+  <url>
+    <loc>https://yorix.cm/?page=blog</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- FIDÉLITÉ -->
+  <url>
+    <loc>https://yorix.cm/?page=loyalty</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- INSCRIPTION PRESTATAIRE -->
+  <url>
+    <loc>https://yorix.cm/?page=inscription</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- CGV -->
+  <url>
+    <loc>https://yorix.cm/?page=cgv</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- MENTIONS LÉGALES -->
+  <url>
+    <loc>https://yorix.cm/?page=mentions</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+</urlset>
