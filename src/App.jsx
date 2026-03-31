@@ -2274,8 +2274,7 @@ function FormulaireLivraison({ user, userData, onClose }) {
       ``,
       `──────────────────────────`,
       `✅ Confirmation par Yorix sous 5 min`,
-    ].filter(Boolean).join("
-");
+    ].filter(Boolean).join("\n");
   };
 
   const validerEtape1 = () => {
