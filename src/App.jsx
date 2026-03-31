@@ -188,11 +188,35 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
 
 /** Charger le profil utilisateur + son rôle depuis Supabase */
 async function getUserProfile(uid) {
-  // Cherche d'abord dans "users" (table principale), fallback sur "profiles"
-  const { data, error } = await supabase.from("users").select("*").eq("uid", uid).maybeSingle();
-  if (error) { console.error("getUserProfile ERROR:", error); return null; }
-  console.log("USER DATA:", data);
-  return data;
+  // 1. Chercher dans "users" par uid (colonne uid = string)
+  try {
+    const { data: dataUsers } = await supabase
+      .from("users")
+      .select("*")
+      .eq("uid", uid)
+      .maybeSingle();
+    if (dataUsers) {
+      console.log("USER DATA (from users):", dataUsers);
+      return dataUsers;
+    }
+  } catch(e) { console.warn("users lookup failed:", e?.message); }
+
+  // 2. Fallback : chercher dans "profiles" par id (colonne id = uuid)
+  try {
+    const { data: dataProfiles } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", uid)
+      .maybeSingle();
+    if (dataProfiles) {
+      console.log("USER DATA (from profiles):", dataProfiles);
+      return dataProfiles;
+    }
+  } catch(e) { console.warn("profiles lookup failed:", e?.message); }
+
+  // 3. Aucun profil trouvé — retourner null (le fallback role sera buyer)
+  console.log("Aucun profil trouvé pour uid:", uid);
+  return null;
 }
 
 function getUserRole(profileData) {
@@ -1816,7 +1840,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
   const actionLivraison = async (id, newStatus) => {
     try {
-      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).catch(console.error);
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).catch(e => console.warn("Supabase error:", e?.message));
       setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
     } catch (err) {
       console.error("actionLivraison:", err);
@@ -1999,7 +2023,7 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
 
   const saveService = async () => {
     if (!serviceForm.nom || !serviceForm.prix) { alert("Nom et prix obligatoires !"); return; }
-    await supabase.from("services").insert({ ...serviceForm, prix: Number(serviceForm.prix), provider_id: user.id, provider_nom: userData?.nom }).catch(console.error);
+    await supabase.from("services").insert({ ...serviceForm, prix: Number(serviceForm.prix), provider_id: user.id, provider_nom: userData?.nom }).catch(e => console.warn("Supabase error:", e?.message));
     setServiceForm({ nom:"", categorie:"", description:"", prix:"", ville:"", disponible:true });
     setServiceSaved(true);
     setTimeout(() => setServiceSaved(false), 3000);
@@ -2699,56 +2723,77 @@ export default function Yorix() {
   const doRegister = async () => {
     setAuthError(""); setAuthLoading(true);
     try {
-      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
-      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
+      // ── Validation champs ──
+      if (!authForm.nom.trim())      throw new Error("Le nom est obligatoire.");
+      if (!authForm.email.trim())    throw new Error("L'email est obligatoire.");
+      if (!authForm.tel.trim())      throw new Error("Le téléphone est obligatoire.");
+      if (!authForm.password.trim()) throw new Error("Le mot de passe est obligatoire.");
+      if (!selectedRole)             throw new Error("Choisissez un profil : Acheteur, Vendeur, Livreur ou Prestataire.");
 
-      const { data, error } = await supabase.auth.signUp({
-        email: authForm.email,
-        password: authForm.password,
-        options: { data: { display_name: authForm.nom } },
+      // ── Créer le compte Supabase Auth ──
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email:    authForm.email.trim(),
+        password: authForm.password.trim(),
+        options:  { data: { display_name: authForm.nom.trim() } },
       });
-      if (error) throw error;
+      if (authError) throw authError;
 
-      const uid = data.user?.id;
-      if (!uid) throw new Error("Erreur création compte.");
+      const uid = authData?.user?.id;
+      if (!uid) throw new Error("Erreur lors de la création du compte. Réessayez.");
 
-      // Insérer le profil dans la table "users"
-      const { error: profileError } = await supabase.from("users").insert({
-        uid,
-        nom:             authForm.nom,
-        email:           authForm.email,
-        telephone:       authForm.tel,
-        role:            selectedRole,
+      // ── Profil à insérer ──
+      const profileData = {
+        uid:             uid,
+        nom:             authForm.nom.trim(),
+        email:           authForm.email.trim(),
+        telephone:       authForm.tel.trim(),
+        role:            selectedRole,   // rôle EXACT choisi par l'utilisateur
         langue:          "fr",
         actif:           true,
         verifie:         false,
         note:            0,
         nombre_avis:     0,
         total_commandes: 0,
-      });
-      if (profileError) {
-        console.error("Profile insert error:", profileError);
-        // Si la table users rejette, essayer la table profiles en fallback
-        if (profileError.code === "42501" || profileError.message?.includes("row-level security") || profileError.message?.includes("permission")) {
-          console.warn("RLS bloqué sur users — insertion dans profiles en fallback");
-          await supabase.from("profiles").insert({
-            id:        uid,
-            uid,
-            nom:       authForm.nom,
-            email:     authForm.email,
-            telephone: authForm.tel,
-            role:      selectedRole,
-          }).catch(e => console.error("Fallback profiles aussi échoué:", e));
+      };
+
+      // ── Essayer d'abord dans "users" ──
+      const { error: usersErr } = await supabase.from("users").insert(profileData);
+
+      if (usersErr) {
+        console.warn("Insert users échoué:", usersErr.message);
+        // ── Fallback dans "profiles" (même structure) ──
+        const { error: profilesErr } = await supabase.from("profiles").insert({
+          id:        uid,   // profiles utilise "id" comme clé
+          ...profileData,
+        });
+        if (profilesErr) {
+          console.warn("Insert profiles aussi échoué:", profilesErr.message);
+          // On continue quand même — l'auth est créé, le profil sera chargé au login
         }
       }
 
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(console.error);
+      // ── Créer le wallet ──
+      await supabase.from("wallets").insert({
+        user_id:     uid,
+        solde:       0,
+        total_gagne: 0,
+        devise:      "FCFA",
+      }).then(() => {}).catch(e => console.warn("Wallet insert:", e?.message));
+
+      // ── Charger le profil et fermer ──
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
+
     } catch (err) {
       console.error("Register error:", err);
-      setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message);
+      if (err.message?.includes("already registered") || err.message?.includes("already been registered")) {
+        setAuthError("Cet email est déjà utilisé. Essayez de vous connecter.");
+      } else if (err.message?.includes("Password")) {
+        setAuthError("Mot de passe trop court (minimum 6 caractères).");
+      } else {
+        setAuthError(err.message || "Erreur lors de l'inscription. Réessayez.");
+      }
     }
     setAuthLoading(false);
   };
@@ -2810,10 +2855,10 @@ export default function Yorix() {
     const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
     if (filtre.bloque) {
       setChatBlocked(true); setTimeout(() => setChatBlocked(false), 4000);
-      if (user) await supabase.from("fraud_logs").insert({ type:"tentative_contournement", user_id:user.id, message:chatMsg }).catch(console.error);
+      if (user) await supabase.from("fraud_logs").insert({ type:"tentative_contournement", user_id:user.id, message:chatMsg }).catch(e => console.warn("Supabase error:", e?.message));
       setChatMsg(""); return;
     }
-    if (user) await supabase.from("messages").insert({ expediteur_id:user.id, destinataire_id:"support", texte:chatMsg, conversation_id:`${user.id}_support`, lu:false }).catch(console.error);
+    if (user) await supabase.from("messages").insert({ expediteur_id:user.id, destinataire_id:"support", texte:chatMsg, conversation_id:`${user.id}_support`, lu:false }).catch(e => console.warn("Supabase error:", e?.message));
     setChatMessages(prev => [...prev, { text:chatMsg, me:true, time }]);
     setChatMsg("");
     setTimeout(() => setChatMessages(prev => [...prev, { text:"Merci ! Un conseiller Yorix vous répond dans quelques minutes. ⚡", me:false, time }]), 1200);
@@ -2822,12 +2867,12 @@ export default function Yorix() {
   const toggleWish = useCallback((id) => { if (!id) return; setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); }, []);
 
   const marquerNotifLue = async (id) => {
-    await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(console.error);
+    await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(e => console.warn("Supabase error:", e?.message));
     setNotifs(prev => prev.map(n => n.id===id ? {...n,lu:true} : n));
   };
   const marquerToutesLues = async () => {
     const ids = notifs.filter(n => !n.lu).map(n => n.id);
-    if (ids.length) { await supabase.from("notifications").update({lu:true}).in("id",ids).catch(console.error); setNotifs(prev => prev.map(n => ({...n,lu:true}))); }
+    if (ids.length) { await supabase.from("notifications").update({lu:true}).in("id",ids).catch(e => console.warn("Supabase error:", e?.message)); setNotifs(prev => prev.map(n => ({...n,lu:true}))); }
   };
 
   const unread = notifs.filter(n => !n.lu).length;
@@ -3237,7 +3282,7 @@ export default function Yorix() {
               ? <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Vous êtes abonné(e) !</div>
               : <div className="nl-form">
                   <input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/>
-                  <button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(console.error);setNlSent(true);}}}>S'abonner 🚀</button>
+                  <button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn("Supabase error:", e?.message));setNlSent(true);}}}>S'abonner 🚀</button>
                 </div>
             }
           </div>
@@ -3474,7 +3519,7 @@ export default function Yorix() {
                   <div className="form-group"><label className="form-label">Tarif (FCFA)</label><input className="form-input" value={inscriptionForm.tarif} onChange={e=>setInscriptionForm(f=>({...f,tarif:e.target.value}))} placeholder="Ex: 15 000/h"/></div>
                   <div className="form-group full"><label className="form-label">Présentation</label><textarea className="form-textarea" value={inscriptionForm.bio} onChange={e=>setInscriptionForm(f=>({...f,bio:e.target.value}))} placeholder="Décrivez vos compétences..."/></div>
                 </div>
-                <button className="form-submit" onClick={async()=>{if(!inscriptionForm.nom||!inscriptionForm.tel||!inscriptionForm.metier){alert("Nom, téléphone et métier obligatoires !");return;}await supabase.from("prestataires").insert(inscriptionForm).catch(console.error);setInscriptionSent(true);}}>🚀 Soumettre ma candidature</button>
+                <button className="form-submit" onClick={async()=>{if(!inscriptionForm.nom||!inscriptionForm.tel||!inscriptionForm.metier){alert("Nom, téléphone et métier obligatoires !");return;}await supabase.from("prestataires").insert(inscriptionForm).catch(e => console.warn("Supabase error:", e?.message));setInscriptionSent(true);}}>🚀 Soumettre ma candidature</button>
               </div>
             )}
           </div>
@@ -3602,7 +3647,7 @@ export default function Yorix() {
           <div className="nl-title">📬 Restez informé(e)</div>
           <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
           {nlSent?<div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
-            :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(console.error);setNlSent(true);}}}>S'abonner 🚀</button></div>}
+            :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn("Supabase error:", e?.message));setNlSent(true);}}}>S'abonner 🚀</button></div>}
         </div>
       )}
 
