@@ -388,8 +388,8 @@ function getUserRole(profileData) {
     console.log("ROLE FINAL:", role);
     return role;
   }
-  console.log("ROLE FINAL: buyer (fallback — aucun rôle défini)");
-  return "buyer"; // fallback : acheteur par défaut (PAS vendeur)
+  console.log("ROLE FINAL: seller (fallback — aucun rôle défini)");
+  return "seller"; // fallback : acheteur par défaut (PAS vendeur)
 }
 
 /** Filtre anti-contournement messages */
