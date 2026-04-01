@@ -3316,7 +3316,8 @@ export default function Yorix() {
     {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
     {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
     ...(user ? [{l:"📊 Mon espace",p:"dashboard"}] : []),
-    ...(user && (userRole==="admin" || userData?.role==="admin") ? [{l:"⚙️ Admin",p:"admin"}] : []),
+    ...(user && userData?.role==="admin" 
+  ? [{l:"⚙️ Admin",p:"admin"}] : []),
   ];
 
   if (loading) return (
