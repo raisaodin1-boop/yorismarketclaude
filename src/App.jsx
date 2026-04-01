@@ -15,15 +15,19 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(
+  "https://msrymchhhxitdevthvdi.supabase.co",
+  "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA"
+)
+
 // ─────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────
-const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "https://msrymchhhxitdevthvdi.supabase.co";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA";
+const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
 const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
 const YORIX_WA_NUMBER   = "237696565654";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
 
@@ -38,55 +42,6 @@ const DELIVERY_STATUSES = { pending:"⏳ En attente", en_cours:"🚚 En cours", 
 const ESCROW_STATUSES   = { pending:"⏳ En attente", securise:"🔐 Sécurisé", libere:"✅ Libéré", rembourse:"↩️ Remboursé" };
 
 // ─────────────────────────────────────────────────────────────
-// CONSTANTES LIVRAISON GOZEM-STYLE
-// ─────────────────────────────────────────────────────────────
-const QUARTIERS = {
-  "Douala": [
-    "Akwa","Bonanjo","Bonapriso","Bali","Deido","Makepe","Kotto",
-    "Ndokotti","Logpom","Bépanda","PK 8","PK 10","PK 12","PK 14",
-    "Bonabéri","Nyalla","Bonamoussadi","Cité des palmiers","Autre"
-  ],
-  "Yaoundé": [
-    "Bastos","Centre-ville","Mvan","Mvog-Ada","Nlongkak","Obili",
-    "Mendong","Biyem-Assi","Mfandena","Elig-Essono","Damas",
-    "Ngousso","Emombo","Mokolo","Tsinga","Autre"
-  ],
-  "Bafoussam": ["Centre","Banengo","Tougang","Famla","Tamdja","Autre"],
-  "Bamenda": ["Commercial Avenue","Up Station","Nkwen","Mile 4","Autre"],
-  "Garoua":  ["Centre","Plateau","Marché central","Lopéré","Autre"],
-  "Kribi":   ["Centre","Kribi Plage","Dombé","Autre"],
-  "Ngaoundéré": ["Centre","Djalingo","Mbideng","Autre"],
-};
-
-// Tarifs en FCFA selon la combinaison ville/type de zone
-const TARIFS_LIVRAISON = {
-  intra_quartier:  { min: 500,  max: 1000, label:"Même quartier",       delai:"20–30 min" },
-  intra_ville:     { min: 1000, max: 2000, label:"Même ville",           delai:"30–60 min" },
-  inter_ville_proche: { min: 2500, max: 5000, label:"Villes proches",    delai:"2–4h"      },
-  inter_ville:     { min: 5000, max: 10000, label:"Inter-villes",        delai:"J+1"       },
-};
-
-// Types de colis
-const TYPES_COLIS = [
-  { id:"enveloppe", label:"📄 Enveloppe / Documents",  desc:"Moins de 500g",  bonus:0 },
-  { id:"petit",     label:"📦 Petit colis",             desc:"0.5 – 5 kg",    bonus:500 },
-  { id:"moyen",     label:"🗃️ Colis moyen",             desc:"5 – 20 kg",     bonus:1000 },
-  { id:"grand",     label:"📫 Grand colis / Palette",  desc:"Plus de 20 kg", bonus:2000 },
-  { id:"fragile",   label:"🥚 Colis fragile",           desc:"Électronique, verre", bonus:1500 },
-];
-
-// Livreurs disponibles (données statiques enrichies)
-const LIVREURS_DATA = [
-  { id:"L1", emoji:"🏍️", name:"Jean-Pierre M.", sub:"Moto · Douala",  ville:"Douala",  livraisons:342, note:4.9, dispo:true,  temps:"~15 min", vehicule:"Moto",        tel:"655001122", types:["enveloppe","petit","moyen"] },
-  { id:"L2", emoji:"🚐", name:"Augustin N.",    sub:"Minibus · Yaoundé", ville:"Yaoundé", livraisons:218, note:4.8, dispo:true,  temps:"~20 min", vehicule:"Minibus",     tel:"677882244", types:["petit","moyen","grand"] },
-  { id:"L3", emoji:"🚗", name:"Grace T.",       sub:"Voiture · Douala",  ville:"Douala",  livraisons:156, note:5.0, dispo:true,  temps:"~10 min", vehicule:"Voiture",     tel:"699334455", types:["enveloppe","petit","moyen","fragile"] },
-  { id:"L4", emoji:"🚚", name:"Fabrice K.",     sub:"Camionnette · Bafoussam", ville:"Bafoussam", livraisons:189, note:4.7, dispo:false, temps:null, vehicule:"Camionnette", tel:"670556677", types:["moyen","grand"] },
-  { id:"L5", emoji:"🏍️", name:"Bertrand A.",    sub:"Moto · Yaoundé",  ville:"Yaoundé", livraisons:271, note:4.8, dispo:true,  temps:"~18 min", vehicule:"Moto",        tel:"655778899", types:["enveloppe","petit"] },
-  { id:"L6", emoji:"🚐", name:"Carine M.",      sub:"Minibus · Douala",  ville:"Douala",  livraisons:98,  note:4.9, dispo:false, temps:null, vehicule:"Minibus",     tel:"677001234", types:["petit","moyen","grand"] },
-];
-
-
-// ─────────────────────────────────────────────────────────────
 // DONNÉES STATIQUES
 // ─────────────────────────────────────────────────────────────
 const PREST_DATA = [
@@ -98,176 +53,29 @@ const PREST_DATA = [
   {emoji:"💻",name:"DevCam Tech",meta:"Développeur · Yaoundé",tags:["Site web","App"],prix:"200 000 FCFA/projet",note:4.8,avis:41},
 ];
 const BLOG_DATA = [
-  {
-    emoji:"📈", cat:"Business",
-    title:"Comment vendre en ligne au Cameroun en 2026",
-    excerpt:"E-commerce, MTN MoMo, réseaux sociaux : tout ce qu'il faut savoir pour lancer votre boutique en ligne et toucher des milliers de clients au Cameroun.",
-    date:"22 mars", read:"5 min",
-    url:"https://businesscameroon.net/e-commerce-cameroun-guide-vendeur/",
-    image:"https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=80"
-  },
-  {
-    emoji:"🌿", cat:"Produits locaux",
-    title:"Les 10 produits camerounais les plus vendus en ligne",
-    excerpt:"Beurre de karité, pagne wax, cacao, café arabica, poivre de Penja... Découvrez les produits locaux qui cartonnent sur internet.",
-    date:"19 mars", read:"3 min",
-    url:"https://www.cameroon-info.net/article/cameroun-les-produits-locaux-qui-se-vendent-le-mieux/",
-    image:"https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80"
-  },
-  {
-    emoji:"💳", cat:"Paiement",
-    title:"MTN MoMo vs Orange Money : lequel choisir au Cameroun ?",
-    excerpt:"Comparatif complet des deux géants du paiement mobile au Cameroun : frais, plafonds, couverture réseau, avantages et inconvénients.",
-    date:"16 mars", read:"4 min",
-    url:"https://www.mtn.cm/momo/",
-    image:"https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&q=80"
-  },
-  {
-    emoji:"🚚", cat:"Livraison",
-    title:"Comment fonctionne la livraison à domicile à Douala en 2026",
-    excerpt:"Gozem, Jumia, livreurs indépendants : tous les services de livraison disponibles à Douala et Yaoundé, leurs tarifs et délais.",
-    date:"12 mars", read:"2 min",
-    url:"https://gozem.co/cm/fr/",
-    image:"https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=400&q=80"
-  },
-  {
-    emoji:"🔐", cat:"Sécurité",
-    title:"Paiement en ligne sécurisé : comment éviter les arnaques au Cameroun",
-    excerpt:"Escrow, vérification vendeur, signes d'alerte... Comment acheter en toute sécurité sur internet et éviter les fraudes.",
-    date:"8 mars", read:"6 min",
-    url:"https://www.antic.cm/index.php/cybersecurite",
-    image:"https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=400&q=80"
-  },
-  {
-    emoji:"👷", cat:"Prestataires",
-    title:"Comment trouver un bon artisan ou technicien à Yaoundé",
-    excerpt:"Plombier, électricien, menuisier... Les bonnes pratiques pour recruter un prestataire fiable, vérifier ses références et négocier le prix.",
-    date:"5 mars", read:"4 min",
-    url:"https://www.anor.cm/fr/",
-    image:"https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&q=80"
-  },
-  {
-    emoji:"📱", cat:"Digital",
-    title:"WhatsApp Business pour les commerçants camerounais",
-    excerpt:"Créer un catalogue produit, automatiser les réponses, diffuser des offres... Guide complet de WhatsApp Business pour booster vos ventes.",
-    date:"1 mars", read:"5 min",
-    url:"https://business.whatsapp.com/",
-    image:"https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80"
-  },
-  {
-    emoji:"🌍", cat:"Export",
-    title:"Exporter des produits camerounais : les opportunités en 2026",
-    excerpt:"Cacao, café, huile de palme, artisanat... Comment les PME camerounaises peuvent accéder aux marchés européens et africains.",
-    date:"25 fév", read:"7 min",
-    url:"https://www.mincommerce.cm/",
-    image:"https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?w=400&q=80"
-  },
-  {
-    emoji:"🎓", cat:"Formation",
-    title:"Top 5 formations gratuites pour entrepreneurs camerounais",
-    excerpt:"Coursera, Google Digital Garage, HubSpot Academy... Les meilleures formations en ligne gratuites pour développer votre business au Cameroun.",
-    date:"20 fév", read:"4 min",
-    url:"https://grow.google/intl/fr_fr/",
-    image:"https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80"
-  },
+  {emoji:"📈",cat:"Business",title:"Comment vendre sur Yorix en 2026",excerpt:"Tout ce qu'il faut savoir pour démarrer votre boutique.",date:"22 mars",read:"5 min"},
+  {emoji:"🌿",cat:"Local",title:"Les 10 produits camerounais les plus vendus",excerpt:"Beurre de karité, pagne wax, cacao...",date:"19 mars",read:"3 min"},
+  {emoji:"💳",cat:"Paiement",title:"MTN MoMo vs Orange Money",excerpt:"Comparatif complet des deux systèmes.",date:"16 mars",read:"4 min"},
+  {emoji:"🚚",cat:"Livraison",title:"Suivi commande en temps réel",excerpt:"Yorix Ride vous permet de suivre votre livreur.",date:"12 mars",read:"2 min"},
+  {emoji:"🔐",cat:"Sécurité",title:"Escrow Yorix : votre argent est-il protégé ?",excerpt:"On répond à toutes vos questions.",date:"8 mars",read:"6 min"},
+  {emoji:"👷",cat:"Prestataires",title:"Trouver un électricien fiable à Douala",excerpt:"Comment choisir le bon prestataire.",date:"5 mars",read:"4 min"},
 ];
 const COURSES_DATA = [
-  {
-    emoji:"🏪", title:"Créer sa boutique en ligne en 1h",
-    level:"Débutant", lc:"level-deb", duree:"1h30", apprenants:"2.4K", prix:"Gratuit", bg:"#e8f7ee",
-    desc:"Ouvre ta boutique sur Yorix et commence à vendre dès aujourd'hui. Aucune connaissance technique requise.",
-    url:"https://learndigital.withgoogle.com/digitalactivation/course/digital-skills-for-work"
-  },
-  {
-    emoji:"📸", title:"Photographier ses produits avec un téléphone",
-    level:"Débutant", lc:"level-deb", duree:"2h", apprenants:"1.8K", prix:"Gratuit", bg:"#fff3e0",
-    desc:"Prends des photos professionnelles de tes produits avec ton smartphone. Lumière, cadrage, retouche simple.",
-    url:"https://www.skillshop.exceedlms.com/student/catalog/list?category_ids=53-google-my-business"
-  },
-  {
-    emoji:"📊", title:"Analyser ses ventes et optimiser",
-    level:"Intermédiaire", lc:"level-int", duree:"3h", apprenants:"920", prix:"Gratuit", bg:"#e3f2fd",
-    desc:"Comprendre ses données de vente, identifier ses best-sellers, ajuster ses prix pour maximiser les profits.",
-    url:"https://analytics.google.com/analytics/academy/"
-  },
-  {
-    emoji:"💡", title:"Marketing digital pour commerçants africains",
-    level:"Intermédiaire", lc:"level-int", duree:"4h", apprenants:"640", prix:"Gratuit", bg:"#fce4ec",
-    desc:"Facebook Ads, WhatsApp Business, Instagram Shopping : attirer des clients camerounais sur internet.",
-    url:"https://learndigital.withgoogle.com/digitalactivation/courses"
-  },
-  {
-    emoji:"💳", title:"Accepter les paiements MTN MoMo et Orange Money",
-    level:"Débutant", lc:"level-deb", duree:"45 min", apprenants:"3.1K", prix:"Gratuit", bg:"#fff8e1",
-    desc:"Configurer les paiements mobiles pour ta boutique. Recevoir, envoyer, gérer tes transactions MoMo.",
-    url:"https://www.mtn.cm/momo/business/"
-  },
-  {
-    emoji:"🤝", title:"Négocier avec les fournisseurs locaux",
-    level:"Avancé", lc:"level-adv", duree:"2h30", apprenants:"380", prix:"Gratuit", bg:"#ede7f6",
-    desc:"Techniques de négociation avec les grossistes de Douala et Yaoundé. Prix, délais, qualité.",
-    url:"https://www.coursera.org/learn/negotiation"
-  },
-  {
-    emoji:"📦", title:"Gérer son stock et éviter les ruptures",
-    level:"Intermédiaire", lc:"level-int", duree:"2h", apprenants:"720", prix:"Gratuit", bg:"#e0f7fa",
-    desc:"Organisation du stock, prévision de la demande, gestion des approvisionnements pour une boutique qui tourne.",
-    url:"https://learndigital.withgoogle.com/digitalactivation/course/ecommerce-essentials"
-  },
-  {
-    emoji:"🚀", title:"Développer son business vers le B2B",
-    level:"Avancé", lc:"level-adv", duree:"5h", apprenants:"210", prix:"Gratuit", bg:"#e0f2f1",
-    desc:"Vendre à d'autres entreprises, gérer les commandes en gros, établir des partenariats durables en Afrique centrale.",
-    url:"https://www.coursera.org/specializations/sales-operations"
-  },
+  {emoji:"🏪",title:"Créer sa boutique en 1h",level:"Débutant",lc:"level-deb",duree:"1h30",apprenants:"2.4K",prix:"Gratuit",bg:"#e8f7ee"},
+  {emoji:"📸",title:"Photographier ses produits",level:"Débutant",lc:"level-deb",duree:"2h",apprenants:"1.8K",prix:"Gratuit",bg:"#fff3e0"},
+  {emoji:"📊",title:"Analyser ses ventes",level:"Intermédiaire",lc:"level-int",duree:"3h",apprenants:"920",prix:"5 000 FCFA",bg:"#e3f2fd"},
+  {emoji:"💡",title:"Marketing digital Cameroun",level:"Intermédiaire",lc:"level-int",duree:"4h",apprenants:"640",prix:"8 000 FCFA",bg:"#fce4ec"},
+  {emoji:"🤝",title:"Négocier avec les fournisseurs",level:"Avancé",lc:"level-adv",duree:"2h30",apprenants:"380",prix:"10 000 FCFA",bg:"#ede7f6"},
+  {emoji:"🚀",title:"Scaler vers le B2B",level:"Avancé",lc:"level-adv",duree:"5h",apprenants:"210",prix:"15 000 FCFA",bg:"#e0f2f1"},
 ];
 const REWARDS_DATA = [
-  {icon:"🎁", name:"Bon d'achat 5 000 FCFA",      pts:500,  type:"pts",   desc:"Valable sur tous les produits Yorix"},
-  {icon:"🚚", name:"Livraison gratuite x3",         pts:300,  type:"pts",   desc:"3 livraisons offertes intra-ville"},
-  {icon:"📱", name:"-20% sur les téléphones",       pts:400,  type:"pts",   desc:"Réduction valable 30 jours"},
-  {icon:"☕", name:"Pack café 500g",                pts:200,  type:"pts",   desc:"Café arabica du Cameroun livré"},
-  {icon:"🎓", name:"Cours Academy offert",          pts:350,  type:"pts",   desc:"Accès 1 cours au choix"},
-  {icon:"👑", name:"Statut VIP Yorix — 1 mois",    pts:3000, type:"pts",   desc:"Badge VIP + avantages exclusifs · ou 15 000 FCFA/mois"},
-  {icon:"⭐", name:"Badge Top Vendeur — 1 mois",   pts:3000, type:"pts",   desc:"Badge Top Vendeur + visibilité accrue · ou 15 000 FCFA/mois"},
-  {icon:"🏆", name:"Best Seller — 1 mois",         pts:0,    type:"auto",  desc:"Automatique : vendeur avec le + de produits actifs"},
+  {icon:"🎁",name:"Bon 5 000 FCFA",pts:500},
+  {icon:"🚚",name:"Livraison gratuite x3",pts:300},
+  {icon:"⭐",name:"Statut VIP Yorix",pts:1000},
+  {icon:"📱",name:"-20% téléphones",pts:400},
+  {icon:"☕",name:"Pack café 500g",pts:200},
+  {icon:"🎓",name:"Cours Academy offert",pts:350},
 ];
-
-// ─────────────────────────────────────────────────────────────
-// AVIS CLIENTS CAMEROUNAIS
-// ─────────────────────────────────────────────────────────────
-const AVIS_CLIENTS = [
-  { nom:"Marie-Claire N.", ville:"Douala · Akwa", role:"Acheteuse", note:5, date:"15 mars 2026",
-    texte:"J'ai commandé un téléphone Samsung sur Yorix et je l'ai reçu en moins de 2 heures à Akwa. Le vendeur était très sérieux, le produit exactement comme sur la photo. Je recommande à 100% !", avatar:"M" },
-  { nom:"Jean-Baptiste K.", ville:"Yaoundé · Bastos", role:"Vendeur", note:5, date:"12 mars 2026",
-    texte:"Depuis que j'ai ouvert ma boutique sur Yorix, mes ventes ont triplé. Le système de paiement MTN MoMo est simple et l'argent arrive directement. Merci Yorix !", avatar:"J" },
-  { nom:"Fatima A.", ville:"Douala · Makepe", role:"Acheteuse", note:5, date:"8 mars 2026",
-    texte:"Le système Escrow m'a vraiment rassurée pour mon premier achat. J'ai payé, le colis est arrivé en parfait état, puis j'ai confirmé et le vendeur a été payé. Très professionnel !", avatar:"F" },
-  { nom:"Patrick Essame", ville:"Bafoussam", role:"Livreur Yorix", note:5, date:"5 mars 2026",
-    texte:"Je gagne 45 000 FCFA par semaine comme livreur Yorix. Les missions arrivent directement sur mon téléphone, je choisis celles qui me conviennent. Vraiment une bonne opportunité !", avatar:"P" },
-  { nom:"Christelle M.", ville:"Yaoundé · Mvan", role:"Acheteuse", note:4, date:"1 mars 2026",
-    texte:"J'ai trouvé du pagne wax de qualité à prix abordable. La livraison était un peu longue (45 min) mais la qualité du tissu est excellente. Je reviendrai !", avatar:"C" },
-  { nom:"Augustin N.", ville:"Douala · Bonapriso", role:"Vendeur", note:5, date:"25 fév 2026",
-    texte:"Interface simple, paiement rapide, support réactif. En 2 semaines j'ai déjà fait 15 ventes sur Yorix. Bien mieux que de vendre sur Facebook uniquement !", avatar:"A" },
-];
-
-// ─────────────────────────────────────────────────────────────
-// SYSTÈME DE POINTS — RÈGLES
-// ─────────────────────────────────────────────────────────────
-const POINTS_REGLES = {
-  achat:      { pts:5,   label:"Par achat effectué",          icon:"🛍️" },
-  vente:      { pts:5,   label:"Par vente conclue",           icon:"💰" },
-  livraison:  { pts:5,   label:"Par livraison effectuée",     icon:"🚚" },
-  prestation: { pts:5,   label:"Par prestation réalisée",     icon:"👷" },
-  inscription:{ pts:10,  label:"Inscription sur Yorix",       icon:"🎉" },
-  avis:       { pts:2,   label:"Avis client publié",          icon:"⭐" },
-  parrainage: { pts:20,  label:"Parrainage d'un ami",         icon:"👥" },
-};
-const POINTS_VALEUR_FCFA = 1; // 1 point = 1 FCFA (5 pts = 5 FCFA)
-const POINTS_MIN_ECHANGE = 500; // minimum 500 pts pour échanger
-
-// ─────────────────────────────────────────────────────────────
-// RÉCOMPENSES (mis à jour avec VIP et Top Vendeur payants)
-// ─────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS — FONCTIONS UTILITAIRES
@@ -330,55 +138,15 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
   }).select().single();
 
   if (error) throw error;
-
-  // ── Créditer 5 points à l'acheteur et 5 points au vendeur ──
-  if (userId) {
-    // Mettre à jour dans Supabase (table users)
-    supabase.from("users")
-      .select("points_total")
-      .eq("uid", userId)
-      .maybeSingle()
-      .then(({ data: u }) => {
-        const pts = (u?.points_total || 0) + POINTS_REGLES.achat.pts;
-        supabase.from("users").update({ points_total: pts }).eq("uid", userId)
-          .then(() => {}).catch(() => {});
-      }).catch(() => {});
-  }
-
   return data;
 }
 
 /** Charger le profil utilisateur + son rôle depuis Supabase */
 async function getUserProfile(uid) {
-  // 1. Chercher dans "users" par uid (colonne uid = string)
-  try {
-    const { data: dataUsers } = await supabase
-      .from("users")
-      .select("*")
-      .eq("uid", uid)
-      .maybeSingle();
-    if (dataUsers) {
-      console.log("USER DATA (from users):", dataUsers);
-      return dataUsers;
-    }
-  } catch(e) { console.warn("users lookup failed:", e?.message); }
-
-  // 2. Fallback : chercher dans "profiles" par id (colonne id = uuid)
-  try {
-    const { data: dataProfiles } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", uid)
-      .maybeSingle();
-    if (dataProfiles) {
-      console.log("USER DATA (from profiles):", dataProfiles);
-      return dataProfiles;
-    }
-  } catch(e) { console.warn("profiles lookup failed:", e?.message); }
-
-  // 3. Aucun profil trouvé — retourner null (le fallback role sera buyer)
-  console.log("Aucun profil trouvé pour uid:", uid);
-  return null;
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+  if (error) { console.error("getUserProfile ERROR:", error); return null; }
+  console.log("USER DATA:", data);
+  return data;
 }
 
 function getUserRole(profileData) {
@@ -389,7 +157,7 @@ function getUserRole(profileData) {
     return role;
   }
   console.log("ROLE FINAL: seller (fallback — aucun rôle défini)");
-  return "seller"; // fallback : acheteur par défaut (PAS vendeur)
+  return "seller"; // fallback : vendeur par défaut
 }
 
 /** Filtre anti-contournement messages */
@@ -625,9 +393,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 
 /* DASHBOARD */
 .dash-layout{display:grid;grid-template-columns:220px 1fr;gap:0;min-height:75vh;max-width:1200px;margin:22px auto;padding:0 24px;}
-.dash-sidebar{background:var(--surface);border-radius:13px;padding:18px;border:1px solid var(--border);height:fit-content;position:sticky;top:88px;overflow:hidden;}
+.dash-sidebar{background:var(--surface);border-radius:13px;padding:18px;border:1px solid var(--border);height:fit-content;position:sticky;top:88px;}
 .dash-avatar{width:60px;height:60px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 8px;}
-.dash-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;text-align:center;color:var(--ink);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;word-break:break-all;}
+.dash-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.92rem;text-align:center;color:var(--ink);margin-bottom:4px;}
 .dash-role-badge{text-align:center;margin-bottom:14px;}
 .dash-nav{display:flex;flex-direction:column;gap:2px;}
 .dash-nav-item{display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:8px;cursor:pointer;font-size:.8rem;color:var(--gray);font-weight:500;transition:all .2s;}
@@ -817,6 +585,93 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .nl-input{flex:1;border:none;border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;}
 .nl-btn{background:var(--yellow);color:#0d1f14;border:none;padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:.79rem;cursor:pointer;}
 
+/* ── ADMIN DASHBOARD ── */
+.admin-layout{display:flex;min-height:100vh;gap:0;}
+.admin-sidebar{width:220px;background:${dark?"#060d09":"#0a1a10"};color:#fff;padding:20px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.admin-sidebar-logo{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;}
+.admin-sidebar-logo-txt{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:#b7e4c7;}
+.admin-sidebar-logo-sub{font-size:.65rem;color:rgba(255,255,255,.35);margin-top:2px;}
+.admin-nav-item{display:flex;align-items:center;gap:9px;padding:10px 20px;cursor:pointer;font-size:.83rem;color:rgba(255,255,255,.55);transition:all .15s;border-left:3px solid transparent;}
+.admin-nav-item:hover{background:rgba(255,255,255,.05);color:#fff;}
+.admin-nav-item.active{background:rgba(79,209,125,.1);color:#4fd17d;border-left-color:#4fd17d;}
+.admin-content{flex:1;padding:24px;background:var(--bg);overflow-y:auto;min-width:0;}
+.admin-page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:var(--ink);margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.stat-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;}
+.stat-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:10px;}
+.stat-card-val{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--ink);line-height:1;}
+.stat-card-lbl{font-size:.72rem;color:var(--gray);margin-top:4px;}
+.stat-card-trend{font-size:.68rem;font-weight:600;margin-top:6px;}
+.admin-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.admin-table th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:.73rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);}
+.admin-table td{padding:11px 14px;font-size:.8rem;color:var(--ink);border-bottom:1px solid var(--border);}
+.admin-table tr:last-child td{border-bottom:none;}
+.admin-table tr:hover td{background:var(--surface2);}
+.admin-badge{display:inline-block;padding:2px 8px;border-radius:50px;font-size:.65rem;font-weight:700;}
+.admin-badge-green{background:#e6fff0;color:#1a6b3a;}
+.admin-badge-red{background:#fff0f0;color:#ce1126;}
+.admin-badge-blue{background:#e6f0ff;color:#1a4a9a;}
+.admin-badge-yellow{background:#fff9e6;color:#b8860b;}
+.admin-badge-gray{background:var(--surface2);color:var(--gray);}
+.admin-action-btn{padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:.71rem;font-weight:600;transition:all .15s;}
+.admin-search{border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--ink);background:var(--surface);outline:none;width:100%;max-width:280px;}
+.admin-filter-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.admin-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px;}
+.admin-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.admin-alert{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;margin-bottom:8px;font-size:.8rem;}
+.admin-alert-red{background:#fff0f0;border:1px solid #f5c6c6;color:#721c24;}
+.admin-alert-yellow{background:#fff9e6;border:1px solid #fdecc6;color:#856404;}
+.admin-alert-green{background:#e6fff0;border:1px solid #b7e4c7;color:#1a6b3a;}
+.chart-bar-wrap{display:flex;align-items:flex-end;gap:5px;height:80px;margin-top:10px;}
+.chart-bar{flex:1;background:var(--green);border-radius:3px 3px 0 0;min-width:8px;transition:height .4s;position:relative;cursor:pointer;}
+.chart-bar:hover::after{content:attr(data-val);position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--surface);font-size:.62rem;padding:2px 5px;border-radius:4px;white-space:nowrap;}
+.chart-labels{display:flex;gap:5px;margin-top:4px;}
+.chart-label{flex:1;font-size:.58rem;color:var(--gray);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:768px){.admin-sidebar{width:100%;height:auto;position:relative;}.admin-layout{flex-direction:column;}.admin-content{padding:16px;}}
+
+/* ── ADMIN DASHBOARD ── */
+.admin-layout{display:flex;min-height:calc(100vh - 60px);gap:0;}
+.admin-sidebar{width:220px;background:${dark?"#060d09":"#0a1a10"};color:#fff;padding:20px 0;flex-shrink:0;}
+.admin-sidebar-logo{padding:0 20px 16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;}
+.admin-sidebar-logo-txt{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:#b7e4c7;}
+.admin-sidebar-logo-sub{font-size:.62rem;color:rgba(255,255,255,.35);margin-top:2px;}
+.admin-nav-item{display:flex;align-items:center;gap:9px;padding:10px 20px;cursor:pointer;font-size:.82rem;color:rgba(255,255,255,.55);transition:all .15s;border-left:3px solid transparent;}
+.admin-nav-item:hover{background:rgba(255,255,255,.05);color:#fff;}
+.admin-nav-item.active{background:rgba(79,209,125,.1);color:#4fd17d;border-left-color:#4fd17d;}
+.admin-content{flex:1;padding:22px;overflow-y:auto;min-width:0;}
+.admin-page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:var(--ink);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.stat-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:22px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;}
+.stat-card-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:9px;}
+.stat-card-val{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:var(--ink);line-height:1;}
+.stat-card-lbl{font-size:.7rem;color:var(--gray);margin-top:4px;}
+.stat-card-trend{font-size:.67rem;font-weight:600;margin-top:5px;}
+.admin-table-wrap{overflow-x:auto;}
+.admin-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.admin-table th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:.7rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);}
+.admin-table td{padding:10px 12px;font-size:.78rem;color:var(--ink);border-bottom:1px solid var(--border);background:var(--surface);}
+.admin-table tr:last-child td{border-bottom:none;}
+.admin-table tr:hover td{background:var(--surface2);}
+.admin-badge{display:inline-block;padding:2px 8px;border-radius:50px;font-size:.63rem;font-weight:700;}
+.admin-badge-green{background:#e6fff0;color:#1a6b3a;}
+.admin-badge-red{background:#fff0f0;color:#ce1126;}
+.admin-badge-blue{background:#e6f0ff;color:#1a4a9a;}
+.admin-badge-yellow{background:#fff9e6;color:#b8860b;}
+.admin-badge-gray{background:var(--surface2);color:var(--gray);}
+.admin-action-btn{padding:4px 9px;border-radius:6px;border:none;cursor:pointer;font-size:.69rem;font-weight:600;transition:all .15s;margin:0 2px;}
+.admin-search{border:1.5px solid var(--border);border-radius:8px;padding:7px 11px;font-size:.8rem;color:var(--ink);background:var(--surface);outline:none;width:100%;max-width:260px;}
+.admin-filter-row{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.admin-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px;}
+.admin-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.86rem;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.admin-alert{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;margin-bottom:7px;font-size:.78rem;}
+.admin-alert-red{background:#fff0f0;border:1px solid #f5c6c6;color:#721c24;}
+.admin-alert-yellow{background:#fff9e6;border:1px solid #fdecc6;color:#856404;}
+.admin-alert-green{background:#e6fff0;border:1px solid #b7e4c7;color:#1a6b3a;}
+.chart-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:70px;}
+.chart-bar{flex:1;border-radius:3px 3px 0 0;min-width:8px;transition:height .4s;cursor:pointer;background:var(--green);}
+.chart-labels{display:flex;gap:4px;margin-top:3px;}
+.chart-label{flex:1;font-size:.56rem;color:var(--gray);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:768px){.admin-sidebar{display:none;}.admin-content{padding:14px;}}
 /* FOOTER */
 .footer{background:${dark?"#060d09":"#0a1a10"};color:rgba(255,255,255,.44);padding:34px 24px 18px;margin-top:32px;}
 .footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:30px;margin-bottom:24px;}
@@ -958,7 +813,6 @@ function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) {
 function ModalCommander({ product, user, userData, onClose, onSuccess }) {
   const [nom, setNom]         = useState(userData?.nom || "");
   const [tel, setTel]         = useState(userData?.telephone || "");
-  const [payMode, setPayMode] = useState(""); // "om" | "momo" | "visa"
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState({});
   const [done, setDone]       = useState(false);
@@ -993,7 +847,7 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
       <div className="modal">
         <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-title">📦 Commander ce produit</div>
-        <p className="modal-sub">{product?.name_fr || "Produit Yorix"}</p>
+        <p className="modal-sub">{product.name_fr}</p>
 
         {done ? (
           <div className="success-msg">✅ Commande créée avec succès ! Vous serez contacté(e) sous peu.</div>
@@ -1001,9 +855,17 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
           <>
             {/* Résumé prix */}
             <div style={{ background:"var(--surface2)", borderRadius:10, padding:"12px 14px", marginBottom:16 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".88rem" }}>
-                <span style={{ color:"var(--gray)" }}>💰 Total à payer</span>
-                <strong style={{color:"var(--green)",fontFamily:"'Syne',sans-serif",fontSize:"1rem"}}>{product.prix?.toLocaleString()} FCFA</strong>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".82rem", marginBottom:4 }}>
+                <span style={{ color:"var(--gray)" }}>Prix produit</span>
+                <strong>{product.prix?.toLocaleString()} FCFA</strong>
+              </div>
+              <div className="commission-box" style={{ margin:0 }}>
+                <span>Commission Yorix ({Math.round(COMMISSION_RATE * 100)}%)</span>
+                <strong>−{commission.toLocaleString()} FCFA</strong>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".82rem", marginTop:4, fontWeight:700, color:"var(--green)" }}>
+                <span>Vendeur reçoit</span>
+                <span>{netVendeur.toLocaleString()} FCFA</span>
               </div>
             </div>
 
@@ -1018,96 +880,14 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
               {errors.tel && <span className="form-error-text">{errors.tel}</span>}
             </div>
 
-            {/* ── MODE DE PAIEMENT ── */}
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:".78rem",fontWeight:700,color:"var(--ink)",marginBottom:8}}>💳 Choisir un mode de paiement</div>
-              <div style={{display:"flex",flexDirection:"column",gap:7}}>
-                {[
-                  {id:"om",   label:"Orange Money", icon:"🔶", color:"#ff6600"},
-                  {id:"momo", label:"MTN MoMo",     icon:"📱", color:"#ffcc00"},
-                  {id:"visa", label:"Carte Visa",   icon:"💳", color:"#1a6b9a"},
-                ].map(opt => (
-                  <div
-                    key={opt.id}
-                    onClick={() => setPayMode(opt.id)}
-                    style={{
-                      border:`2px solid ${payMode===opt.id?opt.color:"var(--border)"}`,
-                      borderRadius:9,padding:"10px 14px",cursor:"pointer",
-                      background:payMode===opt.id?"var(--surface2)":"var(--surface)",
-                      display:"flex",alignItems:"center",gap:10,transition:"all .2s",
-                    }}
-                  >
-                    <span style={{fontSize:"1.3rem"}}>{opt.icon}</span>
-                    <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".83rem",color:"var(--ink)"}}>{opt.label}</span>
-                    {payMode===opt.id && <span style={{marginLeft:"auto",color:opt.color,fontWeight:700,fontSize:".75rem"}}>✅ Sélectionné</span>}
-                  </div>
-                ))}
-              </div>
-
-              {/* Instructions par mode */}
-              {payMode==="om" && (
-                <div style={{marginTop:10,background:"#fff4e6",border:"1px solid #ffcc88",borderRadius:9,padding:"12px 14px"}}>
-                  <div style={{fontWeight:700,fontSize:".82rem",color:"#cc5500",marginBottom:4}}>🔶 Orange Money</div>
-                  <div style={{fontSize:".82rem",color:"#883300",marginBottom:6}}>Envoyez le paiement au numéro Orange Money :<br/><strong style={{fontSize:"1rem"}}>+237 696 56 56 54</strong></div>
-                  <div style={{fontSize:".75rem",color:"#666",display:"flex",alignItems:"center",gap:5}}>
-                    <span>📲</span>
-                    <span style={{color:"#1a6b3a",fontWeight:600}}>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
-                  </div>
-                  <a href="https://wa.me/237696565654?text=Preuve%20de%20paiement%20Orange%20Money" target="_blank" rel="noreferrer"
-                    style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:8,background:"#25D366",color:"#fff",padding:"6px 12px",borderRadius:6,fontSize:".73rem",fontWeight:700,textDecoration:"none"}}>
-                    📱 Envoyer la preuve WhatsApp
-                  </a>
-                </div>
-              )}
-              {payMode==="momo" && (
-                <div style={{marginTop:10,background:"#fffbe6",border:"1px solid #ffdd44",borderRadius:9,padding:"12px 14px"}}>
-                  <div style={{fontWeight:700,fontSize:".82rem",color:"#886600",marginBottom:4}}>📱 MTN MoMo</div>
-                  <div style={{fontSize:".82rem",color:"#664400",marginBottom:6}}>Envoyez le paiement au numéro MTN MoMo :<br/><strong style={{fontSize:"1rem"}}>+237 676 93 51 95</strong></div>
-                  <div style={{fontSize:".75rem",color:"#666",display:"flex",alignItems:"center",gap:5}}>
-                    <span>📲</span>
-                    <span style={{color:"#1a6b3a",fontWeight:600}}>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
-                  </div>
-                  <a href="https://wa.me/237696565654?text=Preuve%20de%20paiement%20MTN%20MoMo" target="_blank" rel="noreferrer"
-                    style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:8,background:"#25D366",color:"#fff",padding:"6px 12px",borderRadius:6,fontSize:".73rem",fontWeight:700,textDecoration:"none"}}>
-                    📱 Envoyer la preuve WhatsApp
-                  </a>
-                </div>
-              )}
-              {payMode==="visa" && (
-                <div style={{marginTop:10,background:"#e6f0ff",border:"1px solid #aaccff",borderRadius:9,padding:"12px 14px"}}>
-                  <div style={{fontWeight:700,fontSize:".82rem",color:"#003388",marginBottom:4}}>💳 Carte Visa</div>
-                  <div style={{fontSize:".82rem",color:"#334"}}>Paiement par carte indisponible pour le moment.<br/>Veuillez choisir Orange Money ou MTN MoMo.</div>
-                </div>
-              )}
-            </div>
-
-            <button
-              className="form-submit"
-              onClick={handleCommander}
-              disabled={loading || !payMode || payMode==="visa"}
-              style={{opacity:(!payMode||payMode==="visa")?0.5:1}}
-            >
-              {loading
-                ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Enregistrement...</>
-                : !payMode
-                  ? "Choisissez un mode de paiement"
-                  : payMode==="visa"
-                    ? "Carte indisponible — choisir MoMo/OM"
-                    : "✅ Confirmer la commande"
-              }
+            <button className="form-submit" onClick={handleCommander} disabled={loading}>
+              {loading ? <><div className="spinner" style={{ width:16, height:16, borderWidth:2 }}/>Enregistrement...</> : "✅ Confirmer la commande"}
             </button>
-            <p style={{fontSize:".7rem",color:"var(--gray)",textAlign:"center",marginTop:6}}>
-              ⚡ Votre commande sera traitée après confirmation du paiement
-            </p>
 
             <div className="divider">ou</div>
-            <button
-              className="btn-wa"
-              style={{width:"100%",justifyContent:"center",padding:"11px",borderRadius:9,fontSize:".85rem"}}
-              onClick={() => commanderWhatsApp(product, nom)}
-            >
-              📱 Commander via WhatsApp
-            </button>
+            <p style={{textAlign:"center",fontSize:".75rem",color:"var(--gray)"}}>
+              💡 Tu peux aussi ajouter au panier et commander tout en une fois via WhatsApp
+            </p>
           </>
         )}
       </div>
@@ -1174,21 +954,6 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const [activeImg, setActiveImg]   = useState(0);
   const [avis, setAvis]             = useState([]);
   const [showCmdModal, setShowCmdModal] = useState(false);
-
-  // Guard contre product null/undefined → évite la page blanche
-  if (!product || !product.id) {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal" style={{textAlign:"center",padding:40}}>
-          <div style={{fontSize:"2.5rem",marginBottom:12}}>⚠️</div>
-          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,color:"var(--ink)",marginBottom:8}}>Produit introuvable</div>
-          <p style={{color:"var(--gray)",fontSize:".82rem",marginBottom:16}}>Ce produit n'est plus disponible.</p>
-          <button className="form-submit" style={{width:"auto",padding:"9px 20px"}} onClick={onClose}>Fermer</button>
-        </div>
-      </div>
-    );
-  }
-
   // Priorité : p.image en premier, puis image_urls[], filtrer les URL non-http
   const rawImgs = product.image && product.image.startsWith("http")
     ? [product.image, ...(product.image_urls || []).filter(u => u && u.startsWith("http") && u !== product.image)]
@@ -1269,16 +1034,13 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
           </div>
         )}
 
-        {/* Actions */}
+        {/* Actions — WA centralisé dans le panier */}
         <div style={{ display:"flex", gap:8, marginBottom:16 }}>
-          <button className="btn-wa" style={{ flex:1, justifyContent:"center", padding:"10px" }} onClick={() => commanderWhatsApp(product, userData?.nom)}>
-            📱 Commander via WhatsApp
-          </button>
-          <button className="btn-cmd-sm" style={{ flex:1, padding:"10px" }} onClick={() => setShowCmdModal(true)}>
+          <button className="btn-cmd-sm" style={{ flex:2, padding:"11px", borderRadius:9 }} onClick={() => setShowCmdModal(true)}>
             ✅ Commander
           </button>
           {onAddToCart && (
-            <button onClick={() => { onAddToCart(product); onClose(); }} style={{ background:"var(--surface2)", border:"1.5px solid var(--border)", borderRadius:8, padding:"10px 14px", cursor:"pointer", fontSize:".85rem" }}>
+            <button onClick={() => { onAddToCart(product); onClose(); }} style={{ background:"var(--green)", color:"#fff", border:"none", borderRadius:9, padding:"11px 16px", cursor:"pointer", fontSize:".85rem", fontWeight:700 }}>
               🛒
             </button>
           )}
@@ -1381,19 +1143,17 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
   return (
     <>
       <div className="prod-grid">
-        {prods.map((p, _idx) => {
+        {prods.map(p => {
           const safeImg    = getSafeImg(p);
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
           const vendBadges = getVendeurBadges(p);
           const prixPromo  = p.promo_pct ? Math.round(p.prix * (1 - p.promo_pct / 100)) : null;
-          const cardKey    = p.id ? `prod-${p.id}` : `prod-idx-${_idx}`;
-          const isLiked    = wishlist.has(p.id);
 
           return (
-            <div key={cardKey} className={`prod-card${p.flash?" prod-card-flash":""}`}>
+            <div key={p.id} className={`prod-card${p.flash?" prod-card-flash":""}`}>
 
               {/* ── IMAGE ── */}
-              <div className="prod-img-wrap" onClick={() => { if(p && p.id) setFicheOpen(p); }}>
+              <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
                 {safeImg ? (
                   <img
                     src={safeImg}
@@ -1412,13 +1172,13 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 {/* Escrow bas gauche */}
                 {p.escrow && <span className="escrow-badge">🔐</span>}
                 {/* Wishlist */}
-                <button className="wish-btn" onClick={e => { e.stopPropagation(); if(p.id) onWish(p.id); }}>
-                  {isLiked ? "❤️" : "🤍"}
+                <button className="wish-btn" onClick={e => { e.stopPropagation(); onWish(p.id); }}>
+                  {wishlist.has(p.id) ? "❤️" : "🤍"}
                 </button>
               </div>
 
               {/* ── INFOS ── */}
-              <div className="prod-info" onClick={() => { if(p && p.id) setFicheOpen(p); }}>
+              <div className="prod-info" onClick={() => setFicheOpen(p)}>
                 {/* Badges vendeur */}
                 {vendBadges.length > 0 && (
                   <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>
@@ -1429,26 +1189,13 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 )}
 
                 <div className="prod-name">{p.name_fr}</div>
-                {/* Infos vendeur bien visible sous le nom */}
-                <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0 2px",borderBottom:"1px solid var(--border)",marginBottom:3}}>
-                  <div style={{width:22,height:22,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:".65rem",fontWeight:800,flexShrink:0}}>
-                    {p.vendeur_nom?.[0]?.toUpperCase()||"V"}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:".71rem",fontWeight:700,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                      {p.vendeur_nom||"Vendeur Yorix"}
-                      {p.sponsorise && <span style={{marginLeft:4,fontSize:".58rem",background:"#fff9e6",color:"#b8860b",padding:"1px 5px",borderRadius:3,fontWeight:700}}>⭐ Top</span>}
-                      {p.verifie && <span style={{marginLeft:3,fontSize:".58rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 5px",borderRadius:3,fontWeight:700}}>✅</span>}
-                    </div>
-                    <div style={{fontSize:".62rem",color:"var(--gray)"}}>📍 {p.ville||"Cameroun"}</div>
-                  </div>
-                </div>
+                <div className="prod-loc">📍 {p.ville || "Cameroun"} · {p.vendeur_nom || ""}</div>
 
                 {/* Badges conversion */}
                 <div className="prod-badge-row">
                   {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire">🔥 Stock limité</span>}
                   <span className="pb pb-truck">🚚 Livraison rapide</span>
-                  <span className="pb pb-cash">💰 Paiement MoMo/OM</span>
+                  <span className="pb pb-cash">💰 Paiement livraison</span>
                 </div>
 
                 {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
@@ -1479,13 +1226,14 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 </div>
               </div>
 
-              {/* ── BOUTON WA ── */}
+              {/* ── BOUTON PANIER (WA retiré des cartes — centralisé dans le panier) ── */}
               <div className="prod-actions" style={{ padding:"0 11px 11px" }}>
                 <button
-                  className="btn-wa-sm"
-                  onClick={e => { e.stopPropagation(); commanderWhatsApp(p, userData?.nom); }}
+                  className="add-btn"
+                  style={{width:"100%",padding:"8px",borderRadius:8,fontSize:".78rem",fontFamily:"'Syne',sans-serif",fontWeight:700,background:"var(--green)",color:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}
+                  onClick={e => { e.stopPropagation(); onAddToCart(p); }}
                 >
-                  📱 Commander via WhatsApp
+                  🛒 Ajouter au panier
                 </button>
               </div>
 
@@ -1741,12 +1489,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     <>
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title">
-            Bonjour {userData?.nom} 🏪
-            {userData?.verifie && <span style={{fontSize:".68rem",background:"#e6fff0",color:"#1a6b3a",padding:"2px 8px",borderRadius:50,fontWeight:700}}>✅ Vérifié</span>}
-            {mesProduits.length >= 5 && <span style={{fontSize:".68rem",background:"#fff9e6",color:"#b8860b",padding:"2px 8px",borderRadius:50,fontWeight:700}}>⭐ Top Vendeur</span>}
-            {mesProduits.length >= 10 && <span style={{fontSize:".68rem",background:"#e6f0ff",color:"#1a4a9a",padding:"2px 8px",borderRadius:50,fontWeight:700}}>🏆 Best Seller</span>}
-          </div>
+          <div className="dash-page-title">Bonjour {userData?.nom} 🏪</div>
           <div className="dash-stats">
             {[
               { icon:"🏪", val:mesProduits.length,          lbl:"Produits actifs",   trend:"" },
@@ -2020,7 +1763,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
   const actionLivraison = async (id, newStatus) => {
     try {
-      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).catch(e => console.warn("Supabase error:", e?.message));
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id)(console.error);
       setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
     } catch (err) {
       console.error("actionLivraison:", err);
@@ -2203,7 +1946,7 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
 
   const saveService = async () => {
     if (!serviceForm.nom || !serviceForm.prix) { alert("Nom et prix obligatoires !"); return; }
-    await supabase.from("services").insert({ ...serviceForm, prix: Number(serviceForm.prix), provider_id: user.id, provider_nom: userData?.nom }).catch(e => console.warn("Supabase error:", e?.message));
+    await supabase.from("services").insert({ ...serviceForm, prix: Number(serviceForm.prix), provider_id: user.id, provider_nom: userData?.nom }).catch(e => console.warn(e?.message));
     setServiceForm({ nom:"", categorie:"", description:"", prix:"", ville:"", disponible:true });
     setServiceSaved(true);
     setTimeout(() => setServiceSaved(false), 3000);
@@ -2274,611 +2017,1063 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
 // APP PRINCIPALE
 // ═══════════════════════════════════════════════════════════════
 
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : FOOTER PANIER AVEC OPTIONS DE PAIEMENT
-// ─────────────────────────────────────────────────────────────
-function CartPaymentFooter({ totalPrice, cartItems, onConfirm }) {
-  const [payMode, setPayMode] = useState(""); // "om" | "momo" | "visa"
+// ═══════════════════════════════════════════════════════════════
+// COMPOSANT : ADMIN DASHBOARD — Yorix CM
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD — Yorix CM · Version complète Jumia-style
+// ═══════════════════════════════════════════════════════════════
+function AdminDashboard({ user, userData, goPage }) {
 
-  const PAYMENT_OPTIONS = [
-    { id:"om",   icon:"🔶", label:"Orange Money", color:"#ff6600", bg:"#fff4e6", border:"#ffcc88" },
-    { id:"momo", icon:"📱", label:"MTN MoMo",     color:"#bb8800", bg:"#fffbe6", border:"#ffdd44" },
-    { id:"visa", icon:"💳", label:"Carte Visa",   color:"#1a6b9a", bg:"#e6f0ff", border:"#aaccff" },
+  // ── États principaux ──
+  const [adminTab, setAdminTab]       = useState("overview");
+  const [loading, setLoading]         = useState(true);
+  const [refreshKey, setRefreshKey]   = useState(0);
+
+  // ── Données ──
+  const [stats, setStats]             = useState({ users:0, products:0, orders:0, revenue:0, revenueToday:0, revenueWeek:0, commissionTotal:0, vendeurs:0, livreurs:0 });
+  const [produits, setProduits]       = useState([]);
+  const [produitsFull, setProduitsFull] = useState([]);
+  const [utilisateurs, setUtilisateurs] = useState([]);
+  const [commandes, setCommandes]     = useState([]);
+  const [chartVentes, setChartVentes] = useState([]);
+  const [chartInscrits, setChartInscrits] = useState([]);
+  const [topProduits, setTopProduits] = useState([]);
+
+  // ── Filtres produits ──
+  const [searchProd, setSearchProd]   = useState("");
+  const [filterProdCat, setFilterProdCat] = useState("");
+  const [filterProdStatut, setFilterProdStatut] = useState("");
+
+  // ── Filtres utilisateurs ──
+  const [searchUser, setSearchUser]   = useState("");
+  const [filterRole, setFilterRole]   = useState("");
+
+  // ── Filtres commandes ──
+  const [filterOrder, setFilterOrder] = useState("");
+  const [sortOrder, setSortOrder]     = useState("desc");
+
+  // ── Modal produit détail ──
+  const [selectedProd, setSelectedProd] = useState(null);
+
+  // ── Toast notifications ──
+  const [toast, setToast]             = useState(null);
+
+  // ─── Sécurité admin ───
+  if (!user || (userData?.role !== "admin" && userData?.role !== "superadmin")) {
+    return (
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:16,padding:40}}>
+        <div style={{fontSize:"4rem"}}>🔒</div>
+        <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)"}}>Accès refusé</div>
+        <p style={{color:"var(--gray)",textAlign:"center",maxWidth:400,lineHeight:1.7}}>
+          Cette page est réservée aux administrateurs Yorix.<br/>
+          Connectez-vous avec un compte admin pour y accéder.
+        </p>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+          <button className="form-submit" style={{width:"auto",padding:"10px 24px"}} onClick={()=>goPage("home")}>← Retour à l'accueil</button>
+          <button className="btn-ghost" style={{padding:"10px 18px"}} onClick={()=>goPage("dashboard")}>Mon espace</button>
+        </div>
+        <div style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 16px",marginTop:8,fontSize:".78rem",color:"var(--gray)",maxWidth:420,textAlign:"center"}}>
+          💡 Pour activer le mode admin : Supabase → Table <strong>users</strong> → trouve ton compte → change la colonne <strong>role</strong> en <code>admin</code>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Affichage toast ───
+  const showToast = (msg, type="success") => {
+    setToast({msg, type});
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // ─── Chargement des données ───
+  useEffect(() => { loadAll(); }, [refreshKey]);
+
+  const loadAll = async () => {
+    setLoading(true);
+    try {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+
+      const [usersRes, prodRes, ordersRes] = await Promise.all([
+        supabase.from("users").select("*").order("created_at",{ascending:false}).limit(500),
+        supabase.from("products").select("*").order("created_at",{ascending:false}).limit(500),
+        supabase.from("orders").select("*").order("created_at",{ascending:false}).limit(500),
+      ]);
+
+      const usersData   = usersRes.data   || [];
+      const prodsData   = prodRes.data    || [];
+      const ordersData  = ordersRes.data  || [];
+
+      // Stats globales
+      const commissionTotal = ordersData.reduce((s,o) => s+(o.commission||0), 0);
+      const revenueTotal    = ordersData.reduce((s,o) => s+(o.montant||0), 0);
+      const revenueToday    = ordersData.filter(o => new Date(o.created_at) >= today).reduce((s,o) => s+(o.commission||0), 0);
+      const revenueWeek     = ordersData.filter(o => new Date(o.created_at) >= weekAgo).reduce((s,o) => s+(o.commission||0), 0);
+
+      // Graphique ventes 7 jours
+      const chartV = Array.from({length:7}, (_,i) => {
+        const d = new Date(); d.setDate(d.getDate()-6+i); d.setHours(0,0,0,0);
+        const next = new Date(d); next.setDate(next.getDate()+1);
+        const orders = ordersData.filter(o => { const t = new Date(o.created_at); return t >= d && t < next; });
+        return {
+          label: d.toLocaleDateString("fr-FR",{weekday:"short"}),
+          orders: orders.length,
+          revenue: orders.reduce((s,o)=>s+(o.commission||0),0),
+        };
+      });
+
+      // Graphique inscriptions 7 jours
+      const chartI = Array.from({length:7}, (_,i) => {
+        const d = new Date(); d.setDate(d.getDate()-6+i); d.setHours(0,0,0,0);
+        const next = new Date(d); next.setDate(next.getDate()+1);
+        const cnt = usersData.filter(u => { const t = new Date(u.created_at); return t >= d && t < next; }).length;
+        return { label: d.toLocaleDateString("fr-FR",{weekday:"short"}), val: cnt };
+      });
+
+      // Top produits par ventes simulées
+      const topP = prodsData
+        .filter(p => p.vente_total > 0)
+        .sort((a,b) => (b.vente_total||0) - (a.vente_total||0))
+        .slice(0,5);
+
+      setStats({
+        users: usersData.length,
+        products: prodsData.length,
+        orders: ordersData.length,
+        revenue: revenueTotal,
+        commissionTotal,
+        revenueToday,
+        revenueWeek,
+        vendeurs: usersData.filter(u=>u.role==="seller").length,
+        livreurs: usersData.filter(u=>u.role==="delivery").length,
+        ruptures: prodsData.filter(p=>(p.stock||0)===0).length,
+        enAttente: ordersData.filter(o=>o.status==="pending").length,
+      });
+      setUtilisateurs(usersData);
+      setProduits(prodsData);
+      setProduitsFull(prodsData);
+      setCommandes(ordersData);
+      setChartVentes(chartV);
+      setChartInscrits(chartI);
+      setTopProduits(topP);
+
+    } catch(e) { console.error("Admin load:", e); showToast("Erreur de chargement", "error"); }
+    setLoading(false);
+  };
+
+  // ─── Actions ───
+  const supprimerProduit = async (id, nom) => {
+    if (!window.confirm(`Supprimer "${nom}" ? Cette action est irréversible.`)) return;
+    await supabase.from("products").delete().eq("id",id).catch(()=>{});
+    setProduits(p => p.filter(x=>x.id!==id));
+    setProduitsFull(p => p.filter(x=>x.id!==id));
+    showToast(`Produit "${nom}" supprimé`);
+  };
+
+  const toggleActifProduit = async (id, actif) => {
+    await supabase.from("products").update({actif:!actif}).eq("id",id).catch(()=>{});
+    const update = p => p.map(x=>x.id===id?{...x,actif:!actif}:x);
+    setProduits(update); setProduitsFull(update);
+    showToast(actif ? "Produit désactivé" : "Produit activé");
+  };
+
+  const changerRole = async (uid, newRole) => {
+    await Promise.all([
+      supabase.from("users").update({role:newRole}).eq("uid",uid).catch(()=>{}),
+      supabase.from("profiles").update({role:newRole}).eq("id",uid).catch(()=>{}),
+    ]);
+    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
+    showToast(`Rôle changé → ${newRole}`);
+  };
+
+  const supprimerUser = async (uid, email) => {
+    if (!window.confirm(`Supprimer l'utilisateur "${email}" ?`)) return;
+    await supabase.from("users").delete().eq("uid",uid).catch(()=>{});
+    setUtilisateurs(u => u.filter(x=>(x.uid||x.id)!==uid));
+    showToast(`Utilisateur supprimé`);
+  };
+
+  const toggleVendeur = async (uid, actif) => {
+    await supabase.from("users").update({actif:!actif}).eq("uid",uid).catch(()=>{});
+    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,actif:!actif}:x));
+    showToast(actif ? "Vendeur suspendu" : "Vendeur réactivé");
+  };
+
+  const validerCommande = async (id) => {
+    await supabase.from("orders").update({status:"validee"}).eq("id",id).catch(()=>{});
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"validee"}:x));
+    showToast("Commande validée ✅");
+  };
+
+  const marquerLivre = async (id) => {
+    await supabase.from("orders").update({status:"livre",livraison_status:"livre",escrow_status:"libere"}).eq("id",id).catch(()=>{});
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"livre",livraison_status:"livre"}:x));
+    showToast("Commande marquée livrée 📦");
+  };
+
+  const annulerCommande = async (id) => {
+    if (!window.confirm("Annuler cette commande ?")) return;
+    await supabase.from("orders").update({status:"annulee"}).eq("id",id).catch(()=>{});
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"annulee"}:x));
+    showToast("Commande annulée");
+  };
+
+  // ─── Export CSV ───
+  const exportCSV = (data, filename) => {
+    if (!data.length) return;
+    const keys = Object.keys(data[0]);
+    const csv = [keys.join(","), ...data.map(row => keys.map(k => `"${(row[k]||"").toString().replace(/"/g,'""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], {type:"text/csv"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a"); a.href=url; a.download=filename; a.click();
+    showToast(`Export ${filename} téléchargé`);
+  };
+
+  // ─── Filtres calculés ───
+  const produitsFiltres = produits
+    .filter(p => !searchProd || (p.name_fr||"").toLowerCase().includes(searchProd.toLowerCase()) || (p.vendeur_nom||"").toLowerCase().includes(searchProd.toLowerCase()))
+    .filter(p => !filterProdCat || p.categorie===filterProdCat)
+    .filter(p => filterProdStatut==="" ? true : filterProdStatut==="actif" ? p.actif : !p.actif);
+
+  const usersFiltres = utilisateurs
+    .filter(u => !searchUser || (u.email||"").toLowerCase().includes(searchUser.toLowerCase()) || (u.nom||"").toLowerCase().includes(searchUser.toLowerCase()))
+    .filter(u => !filterRole || u.role===filterRole);
+
+  const commandesFiltrees = [...commandes]
+    .filter(o => !filterOrder || o.status===filterOrder)
+    .sort((a,b) => sortOrder==="desc" ? new Date(b.created_at)-new Date(a.created_at) : new Date(a.created_at)-new Date(b.created_at));
+
+  const sellers   = utilisateurs.filter(u => u.role==="seller");
+  const alertes   = [
+    ...produits.filter(p=>(p.stock||0)===0).map(p=>({type:"red",  label:"Stock 0",  msg:`📦 ${p.name_fr||"Produit"} — vendeur : ${p.vendeur_nom||"?"}`})),
+    ...commandes.filter(o=>o.status==="pending").map(o=>({type:"yellow", label:"Commande", msg:`⏳ ${o.client_nom||"Client"} — ${(o.montant||0).toLocaleString()} FCFA`})),
+    ...utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).map(u=>({type:"green", label:"Nouveau", msg:`🆕 ${u.nom||u.email||"Utilisateur"} — ${u.role||"buyer"}`})),
   ];
 
-  return (
-    <div className="cart-footer">
-      <div className="cart-note note-escrow">🔐 Paiement sécurisé · Confirmation après preuve</div>
-      <div className="cart-total-row"><span>Sous-total</span><span>{totalPrice.toLocaleString()} FCFA</span></div>
-      <div className="cart-total-row"><span>Livraison estimée</span><span>2 500 FCFA</span></div>
-      <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
+  const maxChartV   = Math.max(...chartVentes.map(d=>d.orders), 1);
+  const maxChartRev = Math.max(...chartVentes.map(d=>d.revenue), 1);
+  const maxChartI   = Math.max(...chartInscrits.map(d=>d.val), 1);
 
-      {/* ── CHOIX DU MODE DE PAIEMENT ── */}
-      <div style={{marginTop:12,marginBottom:10}}>
-        <div style={{fontSize:".74rem",fontWeight:700,color:"var(--ink)",marginBottom:7}}>
-          💳 Mode de paiement
+  const CATS_LIST = ["Téléphones","Mode","Alimentation","Maison","Agricole","Beauté","BTP","Automobile","Éducation","Services"];
+
+  // ─── Navigation ───
+  const NAV = [
+    {id:"overview",    icon:"📊", label:"Vue d'ensemble"},
+    {id:"produits",    icon:"📦", label:"Produits",    badge:produits.filter(p=>(p.stock||0)===0).length||null},
+    {id:"commandes",   icon:"🛍️", label:"Commandes",   badge:commandes.filter(o=>o.status==="pending").length||null},
+    {id:"utilisateurs",icon:"👥", label:"Utilisateurs"},
+    {id:"vendeurs",    icon:"🏪", label:"Vendeurs"},
+    {id:"revenus",     icon:"💰", label:"Revenus"},
+    {id:"alertes",     icon:"🔔", label:"Alertes",     badge:alertes.length||null},
+  ];
+
+  // ─── Helpers UI ───
+  const StatCard = ({icon,val,lbl,trend,col,ic,onClick}) => (
+    <div className="stat-card" style={{cursor:onClick?"pointer":"default",transition:"transform .15s,box-shadow .15s"}}
+      onClick={onClick}
+      onMouseOver={e=>{if(onClick){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,.1)";}}}
+      onMouseOut={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+      <div className="stat-card-icon" style={{background:col||"var(--surface2)"}}><span>{icon}</span></div>
+      <div className="stat-card-val">{val}</div>
+      <div className="stat-card-lbl">{lbl}</div>
+      {trend && <div className="stat-card-trend" style={{color:ic||"var(--green)"}}>{trend}</div>}
+    </div>
+  );
+
+  const BadgeStatut = ({statut}) => {
+    const map = {
+      livre:"green", validee:"blue", pending:"yellow", annulee:"red",
+      libere:"green", securise:"blue", rembourse:"gray",
+      en_cours:"yellow", echec:"red",
+    };
+    return <span className={`admin-badge admin-badge-${map[statut]||"gray"}`}>{statut||"—"}</span>;
+  };
+
+  if (loading) return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"50vh",gap:14,color:"var(--green)",flexDirection:"column"}}>
+      <div style={{width:40,height:40,border:"4px solid var(--border)",borderTopColor:"var(--green)",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>
+      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700}}>Chargement des données Yorix...</div>
+    </div>
+  );
+
+  return (
+    <div className="admin-layout" style={{minHeight:"calc(100vh - 130px)"}}>
+
+      {/* ── TOAST ── */}
+      {toast && (
+        <div style={{
+          position:"fixed",bottom:24,right:24,zIndex:9999,
+          background:toast.type==="error"?"#ce1126":"var(--green)",
+          color:"#fff",padding:"12px 20px",borderRadius:10,
+          fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",
+          boxShadow:"0 4px 20px rgba(0,0,0,.2)",animation:"fadeUp .3s ease",
+          display:"flex",alignItems:"center",gap:8,
+        }}>
+          {toast.type==="error"?"❌":"✅"} {toast.msg}
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {PAYMENT_OPTIONS.map(opt => (
-            <div
-              key={opt.id}
-              onClick={() => setPayMode(opt.id)}
-              style={{
-                border:`2px solid ${payMode===opt.id ? opt.color : "var(--border)"}`,
-                borderRadius:8, padding:"9px 12px", cursor:"pointer",
-                background: payMode===opt.id ? opt.bg : "var(--surface)",
-                display:"flex", alignItems:"center", gap:9, transition:"all .2s",
-              }}
-            >
-              <span style={{fontSize:"1.2rem"}}>{opt.icon}</span>
-              <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".8rem",color:"var(--ink)",flex:1}}>{opt.label}</span>
-              {payMode===opt.id && (
-                <span style={{fontSize:".68rem",fontWeight:700,color:opt.color}}>✅</span>
+      )}
+
+      {/* ── MODAL DÉTAIL PRODUIT ── */}
+      {selectedProd && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedProd(null)}>
+          <div className="modal modal-lg">
+            <button className="modal-close" onClick={()=>setSelectedProd(null)}>✕</button>
+            <div className="modal-title">{selectedProd.name_fr||"Produit"}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}}>
+              {selectedProd.image && (
+                <img src={selectedProd.image} alt="" style={{width:"100%",borderRadius:10,objectFit:"cover",maxHeight:200}} onError={e=>e.target.style.display="none"}/>
               )}
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {[
+                  ["Vendeur", selectedProd.vendeur_nom||"—"],
+                  ["Prix", `${(selectedProd.prix||0).toLocaleString()} FCFA`],
+                  ["Stock", selectedProd.stock||0],
+                  ["Catégorie", selectedProd.categorie||"—"],
+                  ["Ville", selectedProd.ville||"—"],
+                  ["Statut", selectedProd.actif?"Actif":"Inactif"],
+                  ["Vues", selectedProd.vues||0],
+                  ["Ventes", selectedProd.vente_total||0],
+                ].map(([k,v])=>(
+                  <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:".8rem",padding:"5px 0",borderBottom:"1px solid var(--border)"}}>
+                    <span style={{color:"var(--gray)"}}>{k}</span>
+                    <strong style={{color:"var(--ink)"}}>{v}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {selectedProd.description_fr && (
+              <div style={{marginTop:14,fontSize:".8rem",color:"var(--gray)",lineHeight:1.7}}>{selectedProd.description_fr}</div>
+            )}
+            <div style={{display:"flex",gap:8,marginTop:16}}>
+              <button className="form-submit" style={{flex:1}} onClick={()=>{toggleActifProduit(selectedProd.id,selectedProd.actif);setSelectedProd(null);}}>
+                {selectedProd.actif?"⛔ Désactiver":"✅ Activer"}
+              </button>
+              <button className="btn-ghost" style={{flex:1}} onClick={()=>{supprimerProduit(selectedProd.id,selectedProd.name_fr);setSelectedProd(null);}}>
+                🗑️ Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <div className="admin-sidebar">
+        <div className="admin-sidebar-logo">
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+            <div style={{width:32,height:32,background:"var(--green)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1rem"}}>⚙️</div>
+            <div>
+              <div className="admin-sidebar-logo-txt">Yorix Admin</div>
+              <div className="admin-sidebar-logo-sub">Panneau de contrôle</div>
+            </div>
+          </div>
+          <div style={{fontSize:".67rem",color:"rgba(255,255,255,.3)",marginTop:6,padding:"6px 8px",background:"rgba(255,255,255,.04)",borderRadius:6}}>
+            👤 {userData?.nom||user?.email?.split("@")[0]||"Admin"}
+          </div>
+        </div>
+
+        {NAV.map(n => (
+          <div key={n.id} className={`admin-nav-item${adminTab===n.id?" active":""}`} onClick={()=>setAdminTab(n.id)}>
+            <span style={{fontSize:"1rem"}}>{n.icon}</span>
+            <span style={{flex:1}}>{n.label}</span>
+            {n.badge ? <span style={{background:"#ce1126",color:"#fff",fontSize:".6rem",fontWeight:800,padding:"1px 6px",borderRadius:50,minWidth:18,textAlign:"center"}}>{n.badge}</span> : null}
+          </div>
+        ))}
+
+        <div style={{padding:"14px 16px 0",borderTop:"1px solid rgba(255,255,255,.07)",marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
+          <button onClick={()=>setRefreshKey(k=>k+1)} style={{width:"100%",background:"rgba(79,209,125,.12)",color:"#4fd17d",border:"1px solid rgba(79,209,125,.2)",borderRadius:7,padding:"8px",fontSize:".75rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            🔄 Actualiser
+          </button>
+          <button onClick={()=>goPage("home")} style={{width:"100%",background:"rgba(255,255,255,.05)",color:"rgba(255,255,255,.5)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"8px",fontSize:".75rem",cursor:"pointer"}}>
+            ← Retour au site
+          </button>
+        </div>
+
+        {/* Mini stats sidebar */}
+        <div style={{padding:"14px 16px",marginTop:12,borderTop:"1px solid rgba(255,255,255,.07)"}}>
+          {[
+            {l:"Vendeurs",v:stats.vendeurs,c:"#4fd17d"},
+            {l:"Livreurs",v:stats.livreurs,c:"#60a5fa"},
+            {l:"Ruptures",v:stats.ruptures,c:stats.ruptures>0?"#f87171":"#4fd17d"},
+            {l:"En attente",v:stats.enAttente,c:stats.enAttente>0?"#fbbf24":"#4fd17d"},
+          ].map(s=>(
+            <div key={s.l} style={{display:"flex",justifyContent:"space-between",fontSize:".7rem",padding:"4px 0"}}>
+              <span style={{color:"rgba(255,255,255,.4)"}}>{s.l}</span>
+              <span style={{color:s.c,fontWeight:700}}>{s.v}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── INSTRUCTIONS SELON LE CHOIX ── */}
-      {payMode==="om" && (
-        <div style={{background:"#fff4e6",border:"1px solid #ffcc88",borderRadius:8,padding:"10px 12px",marginBottom:10}}>
-          <div style={{fontWeight:700,fontSize:".78rem",color:"#cc5500",marginBottom:3}}>🔶 Orange Money</div>
-          <div style={{fontSize:".8rem",color:"#883300",marginBottom:5}}>
-            Envoyez le paiement au :<br/>
-            <strong style={{fontSize:".95rem"}}>+237 696 56 56 54</strong>
-          </div>
-          <div style={{fontSize:".72rem",color:"#1a6b3a",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
-            <span>📲</span>
-            <span>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
-          </div>
-          <a
-            href="https://wa.me/237696565654?text=Bonjour%20Yorix%20!%20Voici%20ma%20preuve%20de%20paiement%20Orange%20Money%20%F0%9F%A7%BE"
-            target="_blank" rel="noreferrer"
-            style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:7,background:"#25D366",color:"#fff",padding:"6px 11px",borderRadius:6,fontSize:".71rem",fontWeight:700,textDecoration:"none"}}
-          >
-            📱 Envoyer la preuve WhatsApp
-          </a>
-        </div>
-      )}
+      {/* ── CONTENU PRINCIPAL ── */}
+      <div className="admin-content">
 
-      {payMode==="momo" && (
-        <div style={{background:"#fffbe6",border:"1px solid #ffdd44",borderRadius:8,padding:"10px 12px",marginBottom:10}}>
-          <div style={{fontWeight:700,fontSize:".78rem",color:"#886600",marginBottom:3}}>📱 MTN MoMo</div>
-          <div style={{fontSize:".8rem",color:"#664400",marginBottom:5}}>
-            Envoyez le paiement au :<br/>
-            <strong style={{fontSize:".95rem"}}>+237 676 93 51 95</strong>
-          </div>
-          <div style={{fontSize:".72rem",color:"#1a6b3a",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
-            <span>📲</span>
-            <span>Après paiement, envoyez la preuve via WhatsApp pour validation rapide</span>
-          </div>
-          <a
-            href="https://wa.me/237696565654?text=Bonjour%20Yorix%20!%20Voici%20ma%20preuve%20de%20paiement%20MTN%20MoMo%20%F0%9F%93%B1"
-            target="_blank" rel="noreferrer"
-            style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:7,background:"#25D366",color:"#fff",padding:"6px 11px",borderRadius:6,fontSize:".71rem",fontWeight:700,textDecoration:"none"}}
-          >
-            📱 Envoyer la preuve WhatsApp
-          </a>
-        </div>
-      )}
-
-      {payMode==="visa" && (
-        <div style={{background:"#e6f0ff",border:"1px solid #aaccff",borderRadius:8,padding:"10px 12px",marginBottom:10}}>
-          <div style={{fontWeight:700,fontSize:".78rem",color:"#003388",marginBottom:3}}>💳 Carte Visa</div>
-          <div style={{fontSize:".8rem",color:"#334"}}>
-            Paiement par carte indisponible pour le moment.<br/>
-            <span style={{color:"#1a6b3a",fontWeight:600}}>Veuillez utiliser Orange Money ou MTN MoMo.</span>
-          </div>
-        </div>
-      )}
-
-      {/* ── BOUTON CONFIRMER ── */}
-      <button
-        className="cart-checkout"
-        onClick={onConfirm}
-        disabled={!payMode || payMode==="visa"}
-        style={{
-          opacity: (!payMode || payMode==="visa") ? 0.5 : 1,
-          cursor: (!payMode || payMode==="visa") ? "not-allowed" : "pointer",
-        }}
-      >
-        {!payMode
-          ? "Choisissez un mode de paiement"
-          : payMode==="visa"
-            ? "💳 Carte indisponible — choisir MoMo/OM"
-            : "✅ Confirmer la commande"
-        }
-      </button>
-
-      {payMode && payMode!=="visa" && (
-        <p style={{fontSize:".69rem",color:"var(--gray)",textAlign:"center",marginTop:6}}>
-          ⚡ Votre commande sera traitée après confirmation du paiement
-        </p>
-      )}
-    </div>
-  );
-}
-
-
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : FORMULAIRE LIVRAISON GOZEM-STYLE
-// ─────────────────────────────────────────────────────────────
-function FormulaireLivraison({ user, userData, onClose }) {
-  const [etape, setEtape] = useState(1); // 1=infos | 2=livreur | 3=confirmation
-
-  // Étape 1 — Informations du colis
-  const [villeCollecte, setVilleCollecte]       = useState("Douala");
-  const [quartierCollecte, setQuartierCollecte] = useState("");
-  const [adresseCollecte, setAdresseCollecte]   = useState("");
-  const [quartierLivraison, setQuartierLivraison] = useState("");
-  const [adresseLivraison, setAdresseLivraison] = useState("");
-  const [typeColis, setTypeColis]               = useState("");
-  const [descColis, setDescColis]               = useState("");
-  const [valeurColis, setValeurColis]           = useState("");
-  const [nomDestinataire, setNomDestinataire]   = useState("");
-  const [telDestinataire, setTelDestinataire]   = useState("");
-  const [heuresSouhaitee, setHeureSouhaitee]    = useState("Le plus tôt possible");
-  const [errors, setErrors]                     = useState({});
-
-  // Étape 2 — Livreur choisi
-  const [livreurChoisi, setLivreurChoisi] = useState(null);
-
-  // Calcul automatique du tarif
-  const calculerTarif = () => {
-    const typeMeta = TYPES_COLIS.find(t => t.id === typeColis);
-    const bonus    = typeMeta?.bonus || 0;
-
-    // Déterminer la zone selon la combinaison quartiers
-    let zone;
-    if (!quartierCollecte || !quartierLivraison) return null;
-    if (quartierCollecte === quartierLivraison) {
-      zone = TARIFS_LIVRAISON.intra_quartier;
-    } else {
-      zone = TARIFS_LIVRAISON.intra_ville;
-    }
-
-    const base = Math.round((zone.min + zone.max) / 2);
-    const total = base + bonus;
-    return { min: zone.min + bonus, max: zone.max + bonus, total, zone, delai: zone.delai, label: zone.label };
-  };
-
-  const tarif = calculerTarif();
-
-  // Message WhatsApp complet pré-rempli
-  const genererMessageWA = (livreur) => {
-    const t = calculerTarif();
-    const numCmd = "YX-" + Date.now().toString().slice(-6);
-    const nomExp = userData?.nom || user?.email?.split("@")[0] || "Client";
-    const telExp = userData?.telephone || "+237 XXX XXX XXX";
-
-    return [
-      `🛵 *YORIX RIDE — Demande de livraison*`,
-      `──────────────────────────`,
-      `📋 *Mission :* #${numCmd}`,
-      `📦 *Colis :* ${descColis || typeColis}`,
-      `🗃️ *Type :* ${TYPES_COLIS.find(x=>x.id===typeColis)?.label || typeColis}`,
-      valeurColis ? `💎 *Valeur déclarée :* ${Number(valeurColis).toLocaleString()} FCFA` : "",
-      ``,
-      `📍 *COLLECTE :*`,
-      `👤 Expéditeur : ${nomExp}`,
-      `📌 Quartier : ${quartierCollecte}, ${villeCollecte}`,
-      adresseCollecte ? `🏠 Adresse : ${adresseCollecte}` : "",
-      `📞 Tél : ${telExp}`,
-      ``,
-      `🏠 *LIVRAISON :*`,
-      `👤 Destinataire : ${nomDestinataire}`,
-      `📌 Quartier : ${quartierLivraison}, ${villeCollecte}`,
-      adresseLivraison ? `🏠 Adresse : ${adresseLivraison}` : "",
-      `📞 Tél : ${telDestinataire}`,
-      ``,
-      `⏰ *Heure souhaitée :* ${heuresSouhaitee}`,
-      t ? `💰 *Tarif estimé :* ${t.min.toLocaleString()} – ${t.max.toLocaleString()} FCFA` : "",
-      t ? `⏱️ *Délai :* ${t.delai}` : "",
-      livreur ? `🏍️ *Livreur :* ${livreur.name} (${livreur.vehicule})` : "",
-      ``,
-      `──────────────────────────`,
-      `✅ Confirmation par Yorix sous 5 min`,
-    ].filter(Boolean).join("\n");
-  };
-
-  const validerEtape1 = () => {
-    const e = {};
-    if (!quartierCollecte) e.quartierCollecte = "Quartier de collecte requis";
-    if (!quartierLivraison) e.quartierLivraison = "Quartier de livraison requis";
-    if (!typeColis) e.typeColis = "Type de colis requis";
-    if (!nomDestinataire.trim()) e.nomDestinataire = "Nom du destinataire requis";
-    if (!telDestinataire.trim()) e.telDestinataire = "Téléphone destinataire requis";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const livreursFiltres = LIVREURS_DATA.filter(l =>
-    l.dispo &&
-    (l.ville === villeCollecte || !villeCollecte) &&
-    (!typeColis || l.types.includes(typeColis))
-  );
-
-  const confirmerLivraison = (livreur) => {
-    const msg = genererMessageWA(livreur);
-    const tel = livreur ? livreur.tel : "237696565654";
-    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, "_blank");
-    setEtape(3);
-  };
-
-  // Styles inline réutilisables (respecte le design existant)
-  const S = {
-    label: { fontSize:".73rem", fontWeight:600, color:"var(--ink)", marginBottom:4, display:"block" },
-    input: { border:"1.5px solid var(--border)", borderRadius:8, padding:"9px 10px", fontFamily:"'DM Sans',sans-serif", fontSize:".81rem", color:"var(--ink)", outline:"none", background:"var(--surface)", width:"100%" },
-    inputErr: { border:"1.5px solid var(--red)", borderRadius:8, padding:"9px 10px", fontFamily:"'DM Sans',sans-serif", fontSize:".81rem", color:"var(--ink)", outline:"none", background:"var(--surface)", width:"100%" },
-    errTxt: { fontSize:".68rem", color:"var(--red)", marginTop:2 },
-    select: { border:"1.5px solid var(--border)", borderRadius:8, padding:"9px 10px", fontFamily:"'DM Sans',sans-serif", fontSize:".81rem", color:"var(--ink)", outline:"none", background:"var(--surface)", width:"100%" },
-    row2: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:11, marginBottom:11 },
-    grp: { display:"flex", flexDirection:"column", gap:4, marginBottom:11 },
-    btnVert: { background:"var(--green)", color:"#fff", border:"none", padding:"11px", borderRadius:9, fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".85rem", cursor:"pointer", width:"100%" },
-    btnGhost: { background:"var(--surface2)", color:"var(--ink)", border:"1.5px solid var(--border)", padding:"9px", borderRadius:8, fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".81rem", cursor:"pointer" },
-    card: { background:"var(--surface2)", border:"1.5px solid var(--border)", borderRadius:11, padding:14, marginBottom:10 },
-  };
-
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg" style={{ maxHeight:"92vh", overflowY:"auto" }}>
-        <button className="modal-close" onClick={onClose}>✕</button>
-
-        {/* ── EN-TÊTE ── */}
-        <div style={{ marginBottom:18 }}>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1.1rem", color:"var(--ink)", marginBottom:3 }}>
-            🛵 Demander une livraison
-          </div>
-          <p style={{ fontSize:".78rem", color:"var(--gray)" }}>
-            Remplissez les informations — le message WhatsApp sera généré automatiquement pour le livreur
-          </p>
-          {/* Barre de progression */}
-          <div style={{ display:"flex", gap:6, marginTop:12, alignItems:"center" }}>
-            {[{n:1,l:"📦 Infos colis"},{n:2,l:"🏍️ Livreur"},{n:3,l:"✅ Confirmé"}].map(s => (
-              <div key={s.n} style={{ display:"flex", alignItems:"center", gap:6, flex:1 }}>
-                <div style={{
-                  width:24, height:24, borderRadius:"50%", flexShrink:0,
-                  background: etape >= s.n ? "var(--green)" : "var(--surface2)",
-                  border: `2px solid ${etape >= s.n ? "var(--green)" : "var(--border)"}`,
-                  color: etape >= s.n ? "#fff" : "var(--gray)",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:".72rem",
-                }}>{s.n}</div>
-                <div style={{ fontSize:".68rem", fontWeight: etape===s.n ? 700 : 400, color: etape===s.n ? "var(--ink)" : "var(--gray)", whiteSpace:"nowrap" }}>{s.l}</div>
-                {s.n < 3 && <div style={{ flex:1, height:2, background: etape > s.n ? "var(--green)" : "var(--border)", borderRadius:2 }}/>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ═══ ÉTAPE 1 — INFORMATIONS DU COLIS ═══ */}
-        {etape === 1 && (
+        {/* ════ VUE D'ENSEMBLE ════ */}
+        {adminTab==="overview" && (
           <>
-            {/* Ville */}
-            <div style={S.grp}>
-              <label style={S.label}>🌍 Ville de livraison <span style={{color:"var(--red)"}}>*</span></label>
-              <select style={S.select} value={villeCollecte} onChange={e => { setVilleCollecte(e.target.value); setQuartierCollecte(""); setQuartierLivraison(""); }}>
-                {Object.keys(QUARTIERS).map(v => <option key={v} value={v}>{v}</option>)}
+            <div className="admin-page-title">
+              📊 Vue d'ensemble
+              <span style={{fontSize:".72rem",color:"var(--gray)",fontWeight:400,marginLeft:"auto"}}>
+                {new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+              </span>
+            </div>
+
+            {/* Cartes stats principales */}
+            <div className="stat-cards-grid">
+              <StatCard icon="👥" val={stats.users.toLocaleString()} lbl="Utilisateurs" trend={`+${utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000*7).length} cette semaine`} col="#e6f0ff" ic="#1a4a9a" onClick={()=>setAdminTab("utilisateurs")}/>
+              <StatCard icon="📦" val={stats.products.toLocaleString()} lbl="Produits" trend={`${produits.filter(p=>p.actif).length} actifs · ${produits.filter(p=>!p.actif).length} inactifs`} col="#e6fff0" ic="#1a6b3a" onClick={()=>setAdminTab("produits")}/>
+              <StatCard icon="🛍️" val={stats.orders.toLocaleString()} lbl="Commandes" trend={`${stats.enAttente} en attente`} col="#fff9e6" ic="#b8860b" onClick={()=>setAdminTab("commandes")}/>
+              <StatCard icon="💰" val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions Yorix" trend="5% par transaction" col="#fff0f6" ic="#a0105a" onClick={()=>setAdminTab("revenus")}/>
+              <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Revenus aujourd'hui" trend="Commissions du jour" col="#f0fff4" ic="#276749"/>
+              <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Revenus 7 jours" trend="Cette semaine" col="#fef9f0" ic="#7b5a10"/>
+              <StatCard icon="🏪" val={stats.vendeurs} lbl="Vendeurs actifs" trend={`${sellers.filter(s=>s.actif!==false).length} actifs`} col="#ede7f6" ic="#6a1b9a"/>
+              <StatCard icon="🚚" val={stats.livreurs} lbl="Livreurs" trend="Disponibles" col="#e0f7fa" ic="#006064"/>
+            </div>
+
+            {/* Graphiques côte à côte */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              {/* Graphique commandes */}
+              <div className="admin-section">
+                <div className="admin-section-title">
+                  📈 Commandes / jour
+                  <span style={{fontSize:".69rem",color:"var(--gray)",fontWeight:400}}>7 derniers jours</span>
+                </div>
+                <div style={{display:"flex",alignItems:"flex-end",gap:5,height:90,marginBottom:6}}>
+                  {chartVentes.map((d,i)=>(
+                    <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                      <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.orders||""}</div>
+                      <div style={{
+                        width:"100%",borderRadius:"3px 3px 0 0",
+                        height:`${Math.max((d.orders/maxChartV)*70,d.orders>0?8:3)}px`,
+                        background:i===chartVentes.length-1?"var(--green)":i===chartVentes.findIndex(x=>x.orders===Math.max(...chartVentes.map(x=>x.orders)))?"var(--yellow)":"var(--green-mid)",
+                        opacity:.85,transition:"height .5s",
+                      }}/>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:"flex",gap:5}}>
+                  {chartVentes.map((d,i)=><div key={i} style={{flex:1,textAlign:"center",fontSize:".6rem",color:"var(--gray)"}}>{d.label}</div>)}
+                </div>
+              </div>
+
+              {/* Graphique inscriptions */}
+              <div className="admin-section">
+                <div className="admin-section-title">
+                  👥 Inscriptions / jour
+                  <span style={{fontSize:".69rem",color:"var(--gray)",fontWeight:400}}>7 derniers jours</span>
+                </div>
+                <div style={{display:"flex",alignItems:"flex-end",gap:5,height:90,marginBottom:6}}>
+                  {chartInscrits.map((d,i)=>(
+                    <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                      <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.val||""}</div>
+                      <div style={{
+                        width:"100%",borderRadius:"3px 3px 0 0",
+                        height:`${Math.max((d.val/maxChartI)*70,d.val>0?8:3)}px`,
+                        background:"#818cf8",opacity:.85,transition:"height .5s",
+                      }}/>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:"flex",gap:5}}>
+                  {chartInscrits.map((d,i)=><div key={i} style={{flex:1,textAlign:"center",fontSize:".6rem",color:"var(--gray)"}}>{d.label}</div>)}
+                </div>
+              </div>
+            </div>
+
+            {/* Top produits + Alertes */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              {/* Top produits */}
+              <div className="admin-section">
+                <div className="admin-section-title">🏆 Top produits</div>
+                {topProduits.length===0
+                  ? <div style={{fontSize:".78rem",color:"var(--gray)",padding:"12px 0"}}>Aucune vente enregistrée</div>
+                  : topProduits.map((p,i)=>(
+                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
+                      <div style={{width:22,height:22,borderRadius:6,background:i===0?"var(--yellow)":i===1?"var(--gray)":"var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:".7rem",fontWeight:800,flexShrink:0,color:i<2?"#0d1f14":"var(--ink)"}}>
+                        {i+1}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:".78rem",fontWeight:600,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name_fr||"—"}</div>
+                        <div style={{fontSize:".65rem",color:"var(--gray)"}}>{p.vendeur_nom||"—"}</div>
+                      </div>
+                      <div style={{fontSize:".72rem",fontWeight:700,color:"var(--green)",flexShrink:0}}>{p.vente_total} ventes</div>
+                    </div>
+                  ))
+                }
+              </div>
+
+              {/* Alertes rapides */}
+              <div className="admin-section">
+                <div className="admin-section-title">
+                  🔔 Alertes actives
+                  <button className="admin-action-btn" style={{background:"var(--red)",color:"#fff",fontSize:".65rem"}} onClick={()=>setAdminTab("alertes")}>
+                    {alertes.length} →
+                  </button>
+                </div>
+                {alertes.length===0
+                  ? <div className="admin-alert admin-alert-green">✅ Aucune alerte — tout va bien !</div>
+                  : alertes.slice(0,4).map((a,i)=>(
+                    <div key={i} className={`admin-alert admin-alert-${a.type}`} style={{marginBottom:6}}>
+                      <span style={{fontSize:".65rem",fontWeight:700,background:"rgba(0,0,0,.1)",padding:"1px 5px",borderRadius:4,marginRight:6}}>{a.label}</span>
+                      <span style={{flex:1,fontSize:".75rem"}}>{a.msg}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            {/* Dernières commandes */}
+            <div className="admin-section">
+              <div className="admin-section-title">
+                🛍️ Dernières commandes
+                <button className="admin-action-btn" style={{background:"var(--green)",color:"#fff"}} onClick={()=>setAdminTab("commandes")}>Voir tout →</button>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Client</th><th>Montant</th><th>Commission</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {commandes.slice(0,6).map(o=>(
+                      <tr key={o.id}>
+                        <td>
+                          <strong style={{fontSize:".8rem"}}>{o.client_nom||"—"}</strong>
+                          {o.telephone && <div style={{fontSize:".65rem",color:"var(--gray)"}}>{o.telephone}</div>}
+                        </td>
+                        <td><strong style={{color:"var(--ink)"}}>{(o.montant||0).toLocaleString()} F</strong></td>
+                        <td style={{color:"var(--green)",fontWeight:700}}>{(o.commission||0).toLocaleString()} F</td>
+                        <td><BadgeStatut statut={o.status}/></td>
+                        <td style={{fontSize:".7rem",color:"var(--gray)"}}>{o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</td>
+                        <td style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                          {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
+                          {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
+                          {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""}, votre commande Yorix est en cours. 📦`)}`)}>📱</button>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ════ PRODUITS ════ */}
+        {adminTab==="produits" && (
+          <>
+            <div className="admin-page-title">
+              📦 Gestion des produits
+              <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{produitsFiltres.length} / {produits.length}</span>
+            </div>
+
+            {/* Filtres */}
+            <div className="admin-filter-row" style={{flexWrap:"wrap",gap:8}}>
+              <input className="admin-search" style={{maxWidth:240}} placeholder="🔍 Nom ou vendeur..." value={searchProd} onChange={e=>setSearchProd(e.target.value)}/>
+              <select className="admin-search" style={{maxWidth:160}} value={filterProdCat} onChange={e=>setFilterProdCat(e.target.value)}>
+                <option value="">Toutes catégories</option>
+                {CATS_LIST.map(c=><option key={c}>{c}</option>)}
               </select>
-            </div>
-
-            {/* Collecte + Livraison */}
-            <div style={{ background:"var(--surface2)", borderRadius:10, padding:"13px 14px", marginBottom:11, border:"1px solid var(--border)" }}>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", color:"var(--ink)", marginBottom:10 }}>📍 Adresses</div>
-              <div style={S.row2}>
-                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <label style={S.label}>Quartier de collecte <span style={{color:"var(--red)"}}>*</span></label>
-                  <select style={errors.quartierCollecte ? S.inputErr : S.select} value={quartierCollecte} onChange={e => setQuartierCollecte(e.target.value)}>
-                    <option value="">Choisir...</option>
-                    {(QUARTIERS[villeCollecte] || []).map(q => <option key={q} value={q}>{q}</option>)}
-                  </select>
-                  {errors.quartierCollecte && <span style={S.errTxt}>{errors.quartierCollecte}</span>}
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <label style={S.label}>Quartier de livraison <span style={{color:"var(--red)"}}>*</span></label>
-                  <select style={errors.quartierLivraison ? S.inputErr : S.select} value={quartierLivraison} onChange={e => setQuartierLivraison(e.target.value)}>
-                    <option value="">Choisir...</option>
-                    {(QUARTIERS[villeCollecte] || []).map(q => <option key={q} value={q}>{q}</option>)}
-                  </select>
-                  {errors.quartierLivraison && <span style={S.errTxt}>{errors.quartierLivraison}</span>}
-                </div>
-              </div>
-              <div style={S.row2}>
-                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <label style={S.label}>Adresse exacte collecte</label>
-                  <input style={S.input} placeholder="Ex: Immeuble Total, Apt 3A" value={adresseCollecte} onChange={e => setAdresseCollecte(e.target.value)} />
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <label style={S.label}>Adresse exacte livraison</label>
-                  <input style={S.input} placeholder="Ex: Carrefour Zéphyr, face pharmacie" value={adresseLivraison} onChange={e => setAdresseLivraison(e.target.value)} />
-                </div>
-              </div>
-            </div>
-
-            {/* Type de colis */}
-            <div style={S.grp}>
-              <label style={S.label}>📦 Type de colis <span style={{color:"var(--red)"}}>*</span></label>
-              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                {TYPES_COLIS.map(t => (
-                  <div
-                    key={t.id}
-                    onClick={() => setTypeColis(t.id)}
-                    style={{
-                      border: `2px solid ${typeColis===t.id ? "var(--green)" : "var(--border)"}`,
-                      borderRadius:8, padding:"9px 12px", cursor:"pointer",
-                      background: typeColis===t.id ? "var(--green-pale)" : "var(--surface)",
-                      display:"flex", alignItems:"center", justifyContent:"space-between",
-                      transition:"all .15s",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".82rem", color:"var(--ink)" }}>{t.label}</div>
-                      <div style={{ fontSize:".68rem", color:"var(--gray)", marginTop:2 }}>{t.desc}</div>
-                    </div>
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end" }}>
-                      {t.bonus > 0 && <span style={{ fontSize:".65rem", color:"var(--green)", fontWeight:600 }}>+{t.bonus.toLocaleString()} F</span>}
-                      {typeColis===t.id && <span style={{ fontSize:".65rem", color:"var(--green)", fontWeight:700 }}>✅</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {errors.typeColis && <span style={S.errTxt}>{errors.typeColis}</span>}
-            </div>
-
-            {/* Description + valeur */}
-            <div style={S.row2}>
-              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                <label style={S.label}>Description du colis</label>
-                <input style={S.input} placeholder="Ex: Chaussures + vêtements" value={descColis} onChange={e => setDescColis(e.target.value)} />
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                <label style={S.label}>Valeur déclarée (FCFA)</label>
-                <input style={S.input} type="number" placeholder="Ex: 25000" value={valeurColis} onChange={e => setValeurColis(e.target.value)} />
-              </div>
-            </div>
-
-            {/* Destinataire */}
-            <div style={{ background:"var(--surface2)", borderRadius:10, padding:"13px 14px", marginBottom:11, border:"1px solid var(--border)" }}>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", color:"var(--ink)", marginBottom:10 }}>👤 Destinataire</div>
-              <div style={S.row2}>
-                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <label style={S.label}>Nom du destinataire <span style={{color:"var(--red)"}}>*</span></label>
-                  <input style={errors.nomDestinataire ? S.inputErr : S.input} placeholder="Amina Bello" value={nomDestinataire} onChange={e => setNomDestinataire(e.target.value)} />
-                  {errors.nomDestinataire && <span style={S.errTxt}>{errors.nomDestinataire}</span>}
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                  <label style={S.label}>Téléphone <span style={{color:"var(--red)"}}>*</span></label>
-                  <input style={errors.telDestinataire ? S.inputErr : S.input} type="tel" placeholder="+237 6XX XXX XXX" value={telDestinataire} onChange={e => setTelDestinataire(e.target.value)} />
-                  {errors.telDestinataire && <span style={S.errTxt}>{errors.telDestinataire}</span>}
-                </div>
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                <label style={S.label}>Heure souhaitée</label>
-                <select style={S.select} value={heuresSouhaitee} onChange={e => setHeureSouhaitee(e.target.value)}>
-                  {["Le plus tôt possible","Dans 1h","Dans 2h","Ce soir","Demain matin","Demain après-midi"].map(h => <option key={h}>{h}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Estimation tarif */}
-            {tarif && (
-              <div style={{ background:"var(--green-pale)", border:"1.5px solid var(--green-light)", borderRadius:10, padding:"12px 14px", marginBottom:14 }}>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:".88rem", color:"var(--green)", marginBottom:5 }}>
-                  💰 Tarif estimé : {tarif.min.toLocaleString()} – {tarif.max.toLocaleString()} FCFA
-                </div>
-                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-                  <span style={{ fontSize:".72rem", color:"var(--green)" }}>⏱ {tarif.delai}</span>
-                  <span style={{ fontSize:".72rem", color:"var(--green)" }}>📍 {tarif.label}</span>
-                </div>
-              </div>
-            )}
-
-            <button
-              style={S.btnVert}
-              onClick={() => { if (validerEtape1()) setEtape(2); }}
-            >
-              🏍️ Choisir un livreur →
-            </button>
-          </>
-        )}
-
-        {/* ═══ ÉTAPE 2 — CHOISIR UN LIVREUR ═══ */}
-        {etape === 2 && (
-          <>
-            <div style={{ marginBottom:14 }}>
-              <button style={S.btnGhost} onClick={() => setEtape(1)}>← Retour</button>
-            </div>
-            <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:12 }}>
-              🏍️ Livreurs disponibles ({livreursFiltres.length}) — {villeCollecte}
-            </div>
-            {livreursFiltres.length === 0 && (
-              <div className="empty-state">
-                <div className="empty-icon">🛵</div>
-                <p>Aucun livreur disponible pour cette ville/type de colis.</p>
-                <p style={{ fontSize:".78rem", marginTop:6, color:"var(--gray)" }}>Essayez WhatsApp pour une demande manuelle.</p>
-                <button className="btn-wa" style={{ marginTop:12 }} onClick={() => confirmerLivraison(null)}>
-                  📱 Demander via WhatsApp
-                </button>
-              </div>
-            )}
-            {livreursFiltres.map(l => (
-              <div key={l.id} style={{
-                background:"var(--surface)", border:`1.5px solid ${livreurChoisi?.id===l.id?"var(--green)":"var(--border)"}`,
-                borderRadius:12, padding:15, marginBottom:10, cursor:"pointer", transition:"all .2s",
-                ...(livreurChoisi?.id===l.id ? { background:"var(--green-pale)" } : {}),
-              }} onClick={() => setLivreurChoisi(l)}>
-                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-                  <div style={{ width:44, height:44, borderRadius:"50%", background:"var(--green)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.2rem", flexShrink:0 }}>
-                    {l.emoji}
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)" }}>{l.name}</div>
-                    <div style={{ fontSize:".68rem", color:"var(--gray)" }}>{l.sub}</div>
-                  </div>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:".88rem", color:"var(--green)" }}>
-                      ⭐ {l.note}
-                    </div>
-                    <div style={{ fontSize:".62rem", color:"var(--gray)" }}>{l.livraisons} livraisons</div>
-                  </div>
-                </div>
-                <div style={{ display:"flex", gap:7, flexWrap:"wrap", marginBottom:10 }}>
-                  <span style={{ background:"var(--surface2)", borderRadius:6, padding:"3px 8px", fontSize:".67rem", fontWeight:600, color:"var(--ink)" }}>🏍️ {l.vehicule}</span>
-                  <span style={{ background:"var(--surface2)", borderRadius:6, padding:"3px 8px", fontSize:".67rem", fontWeight:600, color:"#27a85a" }}>
-                    <span style={{ width:6, height:6, background:"#4fd17d", borderRadius:"50%", display:"inline-block", marginRight:4 }}/>
-                    Dispo · {l.temps}
-                  </span>
-                  {tarif && <span style={{ background:"var(--green-pale)", borderRadius:6, padding:"3px 8px", fontSize:".67rem", fontWeight:700, color:"var(--green)" }}>💰 {tarif.min.toLocaleString()} – {tarif.max.toLocaleString()} FCFA</span>}
-                </div>
-                <button
-                  style={{ ...S.btnVert, background: livreurChoisi?.id===l.id ? "var(--green)" : "var(--surface2)", color: livreurChoisi?.id===l.id ? "#fff" : "var(--ink)" }}
-                  onClick={e => { e.stopPropagation(); setLivreurChoisi(l); }}
-                >
-                  {livreurChoisi?.id===l.id ? "✅ Sélectionné" : "Choisir ce livreur"}
-                </button>
-              </div>
-            ))}
-
-            {livreursFiltres.length > 0 && (
-              <button
-                style={{ ...S.btnVert, marginTop:8, opacity: livreurChoisi ? 1 : 0.5 }}
-                disabled={!livreurChoisi}
-                onClick={() => { if (livreurChoisi) confirmerLivraison(livreurChoisi); }}
-              >
-                📱 Confirmer et contacter {livreurChoisi ? livreurChoisi.name.split(" ")[0] : "le livreur"} via WhatsApp
+              <select className="admin-search" style={{maxWidth:140}} value={filterProdStatut} onChange={e=>setFilterProdStatut(e.target.value)}>
+                <option value="">Tous statuts</option>
+                <option value="actif">✅ Actif</option>
+                <option value="inactif">⛔ Inactif</option>
+              </select>
+              <button className="admin-action-btn" style={{background:"var(--surface2)",color:"var(--ink)",padding:"7px 12px",borderRadius:8,border:"1px solid var(--border)"}} onClick={()=>{setSearchProd("");setFilterProdCat("");setFilterProdStatut("");}}>✕ Reset</button>
+              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"7px 12px",borderRadius:8,marginLeft:"auto"}} onClick={()=>exportCSV(produitsFiltres.map(p=>({id:p.id,nom:p.name_fr,prix:p.prix,vendeur:p.vendeur_nom,ville:p.ville,stock:p.stock,categorie:p.categorie,actif:p.actif})),"produits-yorix.csv")}>
+                📤 Export CSV
               </button>
-            )}
-          </>
-        )}
-
-        {/* ═══ ÉTAPE 3 — CONFIRMATION ═══ */}
-        {etape === 3 && (
-          <div style={{ textAlign:"center", padding:"24px 0" }}>
-            <div style={{ fontSize:"3rem", marginBottom:12 }}>🎉</div>
-            <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1.1rem", color:"var(--ink)", marginBottom:8 }}>
-              Demande envoyée !
             </div>
-            <p style={{ fontSize:".82rem", color:"var(--gray)", marginBottom:18, lineHeight:1.7 }}>
-              Votre message a été envoyé à {livreurChoisi?.name || "un livreur"} via WhatsApp.<br/>
-              Il vous confirmera dans les 5 prochaines minutes.
-            </p>
-            {/* Récap */}
-            <div style={{ background:"var(--surface2)", borderRadius:10, padding:"13px 14px", textAlign:"left", marginBottom:18, border:"1px solid var(--border)" }}>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", color:"var(--ink)", marginBottom:8 }}>📋 Récapitulatif</div>
+
+            {/* Résumé rapide */}
+            <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
               {[
-                ["📍 Collecte", `${quartierCollecte}, ${villeCollecte}`],
-                ["🏠 Livraison", `${quartierLivraison}, ${villeCollecte}`],
-                ["📦 Colis", TYPES_COLIS.find(t=>t.id===typeColis)?.label || typeColis],
-                ["👤 Destinataire", nomDestinataire],
-                ["📞 Tél", telDestinataire],
-                tarif ? ["💰 Tarif estimé", `${tarif.min.toLocaleString()} – ${tarif.max.toLocaleString()} FCFA`] : null,
-                tarif ? ["⏱ Délai", tarif.delai] : null,
-              ].filter(Boolean).map(([k,v]) => (
-                <div key={k} style={{ display:"flex", justifyContent:"space-between", fontSize:".78rem", padding:"4px 0", borderBottom:"1px solid var(--border)" }}>
-                  <span style={{ color:"var(--gray)" }}>{k}</span>
-                  <span style={{ fontWeight:600, color:"var(--ink)" }}>{v}</span>
+                {l:"Total",v:produits.length,c:"var(--ink)"},
+                {l:"Actifs",v:produits.filter(p=>p.actif).length,c:"var(--green)"},
+                {l:"Inactifs",v:produits.filter(p=>!p.actif).length,c:"var(--gray)"},
+                {l:"Ruptures",v:produits.filter(p=>(p.stock||0)===0).length,c:"var(--red)"},
+              ].map(s=>(
+                <div key={s.l} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",fontSize:".75rem"}}>
+                  <span style={{color:"var(--gray)"}}>{s.l} : </span>
+                  <strong style={{color:s.c}}>{s.v}</strong>
                 </div>
               ))}
             </div>
-            <button className="form-submit" style={{ width:"auto", padding:"10px 28px" }} onClick={onClose}>
-              ✅ Fermer
-            </button>
-          </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Produit</th><th>Prix</th><th>Vendeur</th><th>Cat.</th><th>Ville</th><th>Stock</th><th>Vues</th><th>Statut</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {produitsFiltres.map(p=>(
+                    <tr key={p.id}>
+                      <td>
+                        <div style={{display:"flex",alignItems:"center",gap:9}}>
+                          {(p.image||p.image_urls?.[0]) && (
+                            <img src={p.image||p.image_urls?.[0]} alt="" style={{width:38,height:38,borderRadius:7,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
+                          )}
+                          <div>
+                            <strong style={{fontSize:".79rem"}}>{p.name_fr||"—"}</strong>
+                            {p.escrow && <span style={{marginLeft:4,fontSize:".58rem",background:"#e6f0ff",color:"#1a4a9a",padding:"1px 4px",borderRadius:3}}>🔐</span>}
+                            {p.flash && <span style={{marginLeft:3,fontSize:".58rem",background:"#fff0f0",color:"#ce1126",padding:"1px 4px",borderRadius:3}}>⚡</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td><strong style={{color:"var(--green)"}}>{(p.prix||0).toLocaleString()} F</strong></td>
+                      <td style={{fontSize:".75rem",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.vendeur_nom||"—"}</td>
+                      <td><span className="admin-badge admin-badge-gray">{p.categorie||"—"}</span></td>
+                      <td style={{fontSize:".72rem"}}>{p.ville||"—"}</td>
+                      <td>
+                        <span className={`admin-badge admin-badge-${(p.stock||0)===0?"red":(p.stock||0)<=5?"yellow":"green"}`}>
+                          {p.stock||0}
+                        </span>
+                      </td>
+                      <td style={{fontSize:".72rem",color:"var(--gray)"}}>{p.vues||0}</td>
+                      <td><span className={`admin-badge admin-badge-${p.actif?"green":"gray"}`}>{p.actif?"Actif":"Inactif"}</span></td>
+                      <td>
+                        <div style={{display:"flex",gap:3}}>
+                          <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>setSelectedProd(p)}>👁</button>
+                          <button className="admin-action-btn" style={{background:p.actif?"#fff9e6":"#e6fff0",color:p.actif?"#b8860b":"#1a6b3a"}} onClick={()=>toggleActifProduit(p.id,p.actif)}>
+                            {p.actif?"⛔":"✅"}
+                          </button>
+                          <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>supprimerProduit(p.id,p.name_fr)}>🗑️</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {produitsFiltres.length===0 && (
+                    <tr><td colSpan={9} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun produit trouvé</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
+
+        {/* ════ COMMANDES ════ */}
+        {adminTab==="commandes" && (
+          <>
+            <div className="admin-page-title">
+              🛍️ Gestion des commandes
+              <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{commandesFiltrees.length}</span>
+            </div>
+
+            {/* Résumé statuts */}
+            <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+              {[
+                {l:"⏳ En attente",v:commandes.filter(o=>o.status==="pending").length, c:"#b8860b",bg:"#fff9e6"},
+                {l:"✅ Validées",  v:commandes.filter(o=>o.status==="validee").length, c:"#1a4a9a",bg:"#e6f0ff"},
+                {l:"📦 Livrées",  v:commandes.filter(o=>o.status==="livre").length,   c:"#1a6b3a",bg:"#e6fff0"},
+                {l:"❌ Annulées", v:commandes.filter(o=>o.status==="annulee").length,  c:"#ce1126",bg:"#fff0f0"},
+              ].map(s=>(
+                <div key={s.l} onClick={()=>setFilterOrder(s.l.includes("attente")?"pending":s.l.includes("Validée")?"validee":s.l.includes("Livré")?"livre":"annulee")} style={{background:s.bg,border:`1px solid ${s.c}30`,borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:".75rem"}}>
+                  <span style={{color:"var(--gray)"}}>{s.l} : </span>
+                  <strong style={{color:s.c}}>{s.v}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="admin-filter-row">
+              <select className="admin-search" style={{maxWidth:180}} value={filterOrder} onChange={e=>setFilterOrder(e.target.value)}>
+                <option value="">Tous les statuts</option>
+                <option value="pending">⏳ En attente</option>
+                <option value="validee">✅ Validée</option>
+                <option value="livre">📦 Livrée</option>
+                <option value="annulee">❌ Annulée</option>
+              </select>
+              <button className="admin-action-btn" style={{background:"var(--surface2)",color:"var(--ink)",padding:"7px 12px",borderRadius:8,border:"1px solid var(--border)"}} onClick={()=>setSortOrder(s=>s==="desc"?"asc":"desc")}>
+                {sortOrder==="desc"?"⬇ Plus récent":"⬆ Plus ancien"}
+              </button>
+              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"7px 12px",borderRadius:8,marginLeft:"auto"}} onClick={()=>exportCSV(commandesFiltrees.map(o=>({id:o.id,client:o.client_nom,telephone:o.telephone,montant:o.montant,commission:o.commission,statut:o.status,date:o.created_at})),"commandes-yorix.csv")}>
+                📤 Export CSV
+              </button>
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>Client</th><th>Montant</th><th>Commission</th><th>Escrow</th><th>Livraison</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {commandesFiltrees.map(o=>(
+                    <tr key={o.id}>
+                      <td>
+                        <strong style={{fontSize:".8rem"}}>{o.client_nom||"—"}</strong>
+                        {o.telephone && <div style={{fontSize:".65rem",color:"var(--gray)"}}>{o.telephone}</div>}
+                      </td>
+                      <td><strong>{(o.montant||0).toLocaleString()} F</strong></td>
+                      <td style={{color:"var(--green)",fontWeight:700}}>{(o.commission||0).toLocaleString()} F</td>
+                      <td><BadgeStatut statut={o.escrow_status}/></td>
+                      <td><BadgeStatut statut={o.livraison_status}/></td>
+                      <td><BadgeStatut statut={o.status}/></td>
+                      <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>{o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</td>
+                      <td>
+                        <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                          {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
+                          {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
+                          {!["livre","annulee"].includes(o.status) && <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>annulerCommande(o.id)}>❌</button>}
+                          {o.telephone && (
+                            <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""} ! Votre commande Yorix est en cours. 📦`)}`)}>📱</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {commandesFiltrees.length===0 && (
+                    <tr><td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucune commande trouvée</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ════ UTILISATEURS ════ */}
+        {adminTab==="utilisateurs" && (
+          <>
+            <div className="admin-page-title">
+              👥 Gestion des utilisateurs
+              <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{usersFiltres.length} / {utilisateurs.length}</span>
+            </div>
+
+            {/* Résumé rôles */}
+            <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+              {["buyer","seller","delivery","provider","admin"].map(r=>{
+                const cnt = utilisateurs.filter(u=>u.role===r).length;
+                const colors = {buyer:"#1a4a9a",seller:"#1a6b3a",delivery:"#b8860b",provider:"#6a1b9a",admin:"#ce1126"};
+                return (
+                  <div key={r} onClick={()=>setFilterRole(r===filterRole?"":r)} style={{background:"var(--surface)",border:`1.5px solid ${filterRole===r?colors[r]:"var(--border)"}`,borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:".73rem",transition:"all .15s"}}>
+                    <span style={{color:colors[r]||"var(--gray)",fontWeight:700}}>{ROLE_LABELS[r]||r}</span>
+                    <span style={{color:"var(--gray)",marginLeft:6}}>{cnt}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="admin-filter-row">
+              <input className="admin-search" style={{maxWidth:260}} placeholder="🔍 Nom ou email..." value={searchUser} onChange={e=>setSearchUser(e.target.value)}/>
+              <button className="admin-action-btn" style={{background:"var(--surface2)",color:"var(--ink)",padding:"7px 12px",borderRadius:8,border:"1px solid var(--border)"}} onClick={()=>{setSearchUser("");setFilterRole("");}}>✕ Reset</button>
+              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"7px 12px",borderRadius:8,marginLeft:"auto"}} onClick={()=>exportCSV(usersFiltres.map(u=>({uid:u.uid,nom:u.nom,email:u.email,role:u.role,ville:u.ville,telephone:u.telephone,inscription:u.created_at})),"utilisateurs-yorix.csv")}>
+                📤 Export CSV
+              </button>
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Ville</th><th>Téléphone</th><th>Inscription</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {usersFiltres.map(u=>{
+                    const uid = u.uid||u.id;
+                    return (
+                      <tr key={uid}>
+                        <td>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".8rem",flexShrink:0}}>
+                              {(u.nom||u.email||"?")[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
+                              {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{fontSize:".75rem",color:"var(--gray)",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email||"—"}</td>
+                        <td>
+                          <select
+                            value={u.role||"buyer"}
+                            style={{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:6,padding:"3px 8px",fontSize:".72rem",cursor:"pointer",color:"var(--ink)",outline:"none"}}
+                            onChange={e=>changerRole(uid,e.target.value)}
+                          >
+                            {["buyer","seller","delivery","provider","admin"].map(r=><option key={r} value={r}>{r}</option>)}
+                          </select>
+                        </td>
+                        <td style={{fontSize:".73rem"}}>{u.ville||"—"}</td>
+                        <td style={{fontSize:".73rem",color:"var(--gray)"}}>{u.telephone||"—"}</td>
+                        <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString("fr-FR"):"-"}</td>
+                        <td>
+                          <div style={{display:"flex",gap:3}}>
+                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}`)}>📱</button>}
+                            <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>supprimerUser(uid,u.email)}>🗑️</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {usersFiltres.length===0 && (
+                    <tr><td colSpan={7} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun utilisateur trouvé</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ════ VENDEURS ════ */}
+        {adminTab==="vendeurs" && (
+          <>
+            <div className="admin-page-title">
+              🏪 Gestion des vendeurs
+              <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{sellers.length}</span>
+            </div>
+
+            {/* Stats vendeurs */}
+            <div className="stat-cards-grid" style={{marginBottom:16}}>
+              <StatCard icon="🏪" val={sellers.length} lbl="Vendeurs total" col="#e6fff0" ic="#1a6b3a"/>
+              <StatCard icon="✅" val={sellers.filter(s=>s.actif!==false).length} lbl="Actifs" col="#e6f0ff" ic="#1a4a9a"/>
+              <StatCard icon="⛔" val={sellers.filter(s=>s.actif===false).length} lbl="Suspendus" col="#fff0f0" ic="#ce1126"/>
+              <StatCard icon="✔️" val={sellers.filter(s=>s.verifie).length} lbl="Vérifiés" col="#fff9e6" ic="#b8860b"/>
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>Vendeur</th><th>Email</th><th>Produits</th><th>Ventes</th><th>Revenus vendeur</th><th>Commission</th><th>Statut</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {sellers.map(u=>{
+                    const uid = u.uid||u.id;
+                    const mesProds = produits.filter(p=>p.vendeur_id===uid);
+                    const mesVentes = commandes.filter(o=>o.vendeur_id===uid);
+                    const revVendeur = mesVentes.reduce((s,o)=>s+(o.montant_vendeur||0),0);
+                    const commissionVendeur = mesVentes.reduce((s,o)=>s+(o.commission||0),0);
+                    return (
+                      <tr key={uid}>
+                        <td>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{width:32,height:32,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".8rem",flexShrink:0}}>
+                              {(u.nom||"?")[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
+                              {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                              {mesProds.length>=5 && <span style={{marginLeft:3,fontSize:".6rem",background:"#fff9e6",color:"#b8860b",padding:"1px 4px",borderRadius:3}}>⭐ Top</span>}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{fontSize:".72rem",color:"var(--gray)"}}>{u.email||"—"}</td>
+                        <td>
+                          <span className="admin-badge admin-badge-blue">{mesProds.length}</span>
+                          {mesProds.filter(p=>p.actif).length > 0 && <span style={{fontSize:".63rem",color:"var(--green)",marginLeft:4}}>{mesProds.filter(p=>p.actif).length} actifs</span>}
+                        </td>
+                        <td><span className="admin-badge admin-badge-green">{mesVentes.length}</span></td>
+                        <td style={{color:"var(--green)",fontWeight:700}}>{revVendeur.toLocaleString()} F</td>
+                        <td style={{color:"var(--red)",fontWeight:700,fontSize:".75rem"}}>{commissionVendeur.toLocaleString()} F</td>
+                        <td><span className={`admin-badge admin-badge-${u.actif!==false?"green":"red"}`}>{u.actif!==false?"Actif":"Suspendu"}</span></td>
+                        <td>
+                          <div style={{display:"flex",gap:3}}>
+                            <button className="admin-action-btn" style={{background:u.actif!==false?"#fff0f0":"#e6fff0",color:u.actif!==false?"#ce1126":"#1a6b3a"}} onClick={()=>toggleVendeur(uid,u.actif!==false)}>
+                              {u.actif!==false?"⛔":"✅"}
+                            </button>
+                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${u.nom||""}, l'équipe Yorix vous contacte.`)}`)}>📱</button>}
+                            {u.email && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>window.open(`mailto:${u.email}`)}>✉️</button>}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {sellers.length===0 && (
+                    <tr><td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun vendeur inscrit</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ════ REVENUS ════ */}
+        {adminTab==="revenus" && (
+          <>
+            <div className="admin-page-title">💰 Revenus & Finances</div>
+
+            <div className="stat-cards-grid" style={{marginBottom:20}}>
+              <StatCard icon="💵" val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions totales (5%)" col="#e6fff0" ic="#1a6b3a"/>
+              <StatCard icon="💰" val={`${stats.revenue.toLocaleString()} F`} lbl="Volume transactions total" col="#fff9e6" ic="#b8860b"/>
+              <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Commissions aujourd'hui" col="#f0fff4" ic="#276749"/>
+              <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Commissions 7 jours" col="#fef9f0" ic="#7b5a10"/>
+              <StatCard icon="🛍️" val={stats.orders} lbl="Commandes totales" col="#e6f0ff" ic="#1a4a9a"/>
+              <StatCard icon="✅" val={commandes.filter(o=>o.status==="livre").length} lbl="Commandes livrées" col="#e6fff0" ic="#1a6b3a"/>
+            </div>
+
+            {/* Graphique revenus 7 jours */}
+            <div className="admin-section" style={{marginBottom:16}}>
+              <div className="admin-section-title">📈 Commissions journalières — 7 derniers jours</div>
+              <div style={{display:"flex",alignItems:"flex-end",gap:8,height:100,marginBottom:8}}>
+                {chartVentes.map((d,i)=>(
+                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                    {d.revenue > 0 && <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.revenue.toLocaleString()}</div>}
+                    <div style={{
+                      width:"100%",borderRadius:"4px 4px 0 0",
+                      height:`${Math.max((d.revenue/maxChartRev)*80,d.revenue>0?8:3)}px`,
+                      background:i===chartVentes.length-1?"var(--yellow)":"var(--green)",
+                      opacity:.85,transition:"height .5s",cursor:"default",
+                    }} title={`${d.revenue.toLocaleString()} FCFA`}/>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                {chartVentes.map((d,i)=><div key={i} style={{flex:1,textAlign:"center",fontSize:".63rem",color:"var(--gray)"}}>{d.label}</div>)}
+              </div>
+            </div>
+
+            {/* Revenus par catégorie */}
+            <div className="admin-section">
+              <div className="admin-section-title">📊 Commissions par catégorie</div>
+              {CATS_LIST.map(cat=>{
+                const catOrders = commandes.filter(o=>{
+                  const prod = produits.find(p=>p.id===o.product_id);
+                  return prod?.categorie===cat;
+                });
+                const catRev = catOrders.reduce((s,o)=>s+(o.commission||0),0);
+                const totalRev = Math.max(stats.commissionTotal,1);
+                const pct = Math.round((catRev/totalRev)*100);
+                return (
+                  <div key={cat} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                    <div style={{width:110,fontSize:".75rem",color:"var(--gray)",flexShrink:0}}>{cat}</div>
+                    <div style={{flex:1,background:"var(--surface2)",borderRadius:6,height:20,overflow:"hidden",position:"relative"}}>
+                      <div style={{height:"100%",background:"var(--green)",borderRadius:6,width:`${pct}%`,transition:"width .6s",opacity:.85}}/>
+                      {pct>5 && <div style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",fontSize:".6rem",color:"var(--surface)",fontWeight:700}}>{pct}%</div>}
+                    </div>
+                    <div style={{width:90,fontSize:".75rem",fontWeight:700,color:"var(--green)",textAlign:"right",flexShrink:0}}>{catRev.toLocaleString()} F</div>
+                    <div style={{width:40,fontSize:".7rem",color:"var(--gray)",textAlign:"right",flexShrink:0}}>{catOrders.length} cmd</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Top vendeurs par revenus */}
+            <div className="admin-section">
+              <div className="admin-section-title">🏪 Top 5 vendeurs par commissions générées</div>
+              {sellers
+                .map(u=>{
+                  const uid = u.uid||u.id;
+                  const rev = commandes.filter(o=>o.vendeur_id===uid).reduce((s,o)=>s+(o.commission||0),0);
+                  return {...u, revCommission: rev};
+                })
+                .sort((a,b)=>b.revCommission-a.revCommission)
+                .slice(0,5)
+                .map((u,i)=>(
+                  <div key={u.uid||u.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 0",borderBottom:"1px solid var(--border)"}}>
+                    <div style={{width:24,height:24,borderRadius:6,background:i===0?"var(--yellow)":i===1?"#c0c0c0":"var(--surface2)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".72rem",color:i<2?"#0d1f14":"var(--gray)",flexShrink:0}}>{i+1}</div>
+                    <div style={{flex:1}}>
+                      <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
+                      <div style={{fontSize:".65rem",color:"var(--gray)"}}>{u.email||""}</div>
+                    </div>
+                    <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,color:"var(--green)",fontSize:".85rem"}}>{u.revCommission.toLocaleString()} F</div>
+                    {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}`)}>📱</button>}
+                  </div>
+                ))
+              }
+            </div>
+          </>
+        )}
+
+        {/* ════ ALERTES ════ */}
+        {adminTab==="alertes" && (
+          <>
+            <div className="admin-page-title">
+              🔔 Alertes & Notifications
+              <span style={{fontSize:".75rem",background:alertes.length>0?"var(--red)":"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{alertes.length} alerte{alertes.length!==1?"s":""}</span>
+            </div>
+
+            {alertes.length===0 && (
+              <div style={{textAlign:"center",padding:"48px 0",color:"var(--gray)"}}>
+                <div style={{fontSize:"3.5rem",marginBottom:12}}>✅</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",marginBottom:6,color:"var(--ink)"}}>Tout va bien !</div>
+                <p>Aucune alerte en cours sur la plateforme Yorix.</p>
+              </div>
+            )}
+
+            {/* Ruptures de stock */}
+            <div className="admin-section">
+              <div className="admin-section-title">
+                📦 Ruptures de stock
+                <span className="admin-badge admin-badge-red">{produits.filter(p=>(p.stock||0)===0).length}</span>
+              </div>
+              {produits.filter(p=>(p.stock||0)===0).length===0
+                ? <div className="admin-alert admin-alert-green">✅ Aucun produit en rupture de stock</div>
+                : produits.filter(p=>(p.stock||0)===0).map(p=>(
+                    <div key={p.id} className="admin-alert admin-alert-red" style={{flexWrap:"wrap",gap:8}}>
+                      <div>
+                        <strong>{p.name_fr||"Produit"}</strong>
+                        <div style={{fontSize:".7rem",marginTop:2}}>Vendeur : {p.vendeur_nom||"—"} · Catégorie : {p.categorie||"—"} · Prix : {(p.prix||0).toLocaleString()} FCFA</div>
+                      </div>
+                      <div style={{marginLeft:"auto",display:"flex",gap:4}}>
+                        <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
+                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, votre produit "${p.name_fr}" est en rupture de stock sur Yorix.`)}`)}>📱</button>}
+                      </div>
+                    </div>
+                  ))
+              }
+            </div>
+
+            {/* Commandes en attente */}
+            <div className="admin-section">
+              <div className="admin-section-title">
+                ⏳ Commandes en attente
+                <span className="admin-badge admin-badge-yellow">{commandes.filter(o=>o.status==="pending").length}</span>
+              </div>
+              {commandes.filter(o=>o.status==="pending").length===0
+                ? <div className="admin-alert admin-alert-green">✅ Aucune commande en attente</div>
+                : commandes.filter(o=>o.status==="pending").map(o=>(
+                    <div key={o.id} className="admin-alert admin-alert-yellow" style={{flexWrap:"wrap",gap:8}}>
+                      <div>
+                        <strong>{o.client_nom||"Client"}</strong>
+                        <div style={{fontSize:".7rem",marginTop:2}}>{(o.montant||0).toLocaleString()} FCFA · {o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</div>
+                      </div>
+                      <div style={{marginLeft:"auto",display:"flex",gap:4}}>
+                        <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅ Valider</button>
+                        {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}`)}>📱</button>}
+                      </div>
+                    </div>
+                  ))
+              }
+            </div>
+
+            {/* Nouveaux utilisateurs 24h */}
+            <div className="admin-section">
+              <div className="admin-section-title">
+                🆕 Nouveaux utilisateurs (24h)
+                <span className="admin-badge admin-badge-green">{utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).length}</span>
+              </div>
+              {utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).length===0
+                ? <div className="admin-alert" style={{background:"var(--surface2)",border:"1px solid var(--border)"}}>Aucun nouvel utilisateur dans les 24h</div>
+                : utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).map(u=>(
+                    <div key={u.uid||u.id} className="admin-alert admin-alert-green" style={{flexWrap:"wrap"}}>
+                      <div>
+                        <strong>{u.nom||u.email||"—"}</strong>
+                        <div style={{fontSize:".7rem",marginTop:2}}>{u.role||"buyer"} · {u.ville||"—"} · {u.created_at?new Date(u.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):""}</div>
+                      </div>
+                      {u.telephone && <button className="admin-action-btn" style={{marginLeft:"auto",background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}`)}>📱</button>}
+                    </div>
+                  ))
+              }
+            </div>
+
+            {/* Stock faible */}
+            <div className="admin-section">
+              <div className="admin-section-title">
+                ⚠️ Stock faible (1–5 unités)
+                <span className="admin-badge admin-badge-yellow">{produits.filter(p=>p.stock>0&&p.stock<=5).length}</span>
+              </div>
+              {produits.filter(p=>p.stock>0&&p.stock<=5).length===0
+                ? <div className="admin-alert admin-alert-green">✅ Aucun stock faible</div>
+                : produits.filter(p=>p.stock>0&&p.stock<=5).map(p=>(
+                    <div key={p.id} className="admin-alert admin-alert-yellow">
+                      <div>
+                        <strong>{p.name_fr||"Produit"}</strong>
+                        <div style={{fontSize:".7rem",marginTop:2}}>Stock : {p.stock} · Vendeur : {p.vendeur_nom||"—"}</div>
+                      </div>
+                    </div>
+                  ))
+              }
+            </div>
+          </>
+        )}
+
       </div>
     </div>
-  );
-}
-
-
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : FORMULAIRE DE CONTACT
-// ─────────────────────────────────────────────────────────────
-function ContactForm({ user, userData }) {
-  const [form, setForm] = useState({ nom: userData?.nom||"", email: userData?.email||"", sujet:"", message:"" });
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  const send = async () => {
-    if (!form.nom||!form.email||!form.sujet||!form.message) { setErr("Tous les champs sont obligatoires."); return; }
-    setLoading(true); setErr("");
-    try {
-      // Sauvegarder dans Supabase
-      await supabase.from("messages").insert({
-        expediteur_id: user?.id || null,
-        destinataire_id: "support",
-        texte: `[CONTACT] Sujet: ${form.sujet}\n\n${form.message}`,
-        conversation_id: `contact_${Date.now()}`,
-        lu: false,
-        meta: JSON.stringify({ nom: form.nom, email: form.email, sujet: form.sujet }),
-      }).catch(e => console.warn("Contact save:", e?.message));
-
-      // Ouvrir WhatsApp avec le message
-      const msg = [
-        `📩 *Contact Yorix CM*`,
-        ``,
-        `👤 Nom : ${form.nom}`,
-        `✉️ Email : ${form.email}`,
-        `📋 Sujet : ${form.sujet}`,
-        ``,
-        `💬 Message :`,
-        form.message,
-      ].join("\n");
-      window.open(`https://wa.me/237696565654?text=${encodeURIComponent(msg)}`, "_blank");
-      setSent(true);
-    } catch(e) { setErr("Erreur d'envoi. Réessayez."); }
-    setLoading(false);
-  };
-
-  if (sent) return (
-    <div className="success-msg" style={{textAlign:"center",padding:"24px"}}>
-      <div style={{fontSize:"2rem",marginBottom:8}}>✅</div>
-      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",marginBottom:4}}>Message envoyé !</div>
-      <p style={{fontSize:".8rem",color:"var(--gray)"}}>Notre équipe vous répond sous 2h via WhatsApp ou email.</p>
-      <button className="btn-ghost" style={{marginTop:12}} onClick={()=>setSent(false)}>Envoyer un autre message</button>
-    </div>
-  );
-
-  return (
-    <>
-      {err && <div className="error-msg">⚠️ {err}</div>}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
-        <div className="form-group" style={{marginBottom:0}}>
-          <label className="form-label">Nom complet <span style={{color:"var(--red)"}}>*</span></label>
-          <input className="form-input" placeholder="Votre nom" value={form.nom} onChange={e=>setForm(f=>({...f,nom:e.target.value}))}/>
-        </div>
-        <div className="form-group" style={{marginBottom:0}}>
-          <label className="form-label">Email <span style={{color:"var(--red)"}}>*</span></label>
-          <input className="form-input" type="email" placeholder="votre@email.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
-        </div>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Sujet <span style={{color:"var(--red)"}}>*</span></label>
-        <select className="form-select" value={form.sujet} onChange={e=>setForm(f=>({...f,sujet:e.target.value}))}>
-          <option value="">Choisir un sujet...</option>
-          {["Problème avec une commande","Signaler un vendeur","Demande de remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre question"].map(s=><option key={s}>{s}</option>)}
-        </select>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Message <span style={{color:"var(--red)"}}>*</span></label>
-        <textarea className="form-textarea" style={{minHeight:100}} placeholder="Décrivez votre demande en détail..." value={form.message} onChange={e=>setForm(f=>({...f,message:e.target.value}))}/>
-      </div>
-      <button className="form-submit" onClick={send} disabled={loading}>
-        {loading ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Envoi...</> : "📱 Envoyer via WhatsApp"}
-      </button>
-      <p style={{fontSize:".69rem",color:"var(--gray)",textAlign:"center",marginTop:6}}>
-        Votre message sera envoyé sur WhatsApp à notre équipe support · Réponse garantie sous 2h
-      </p>
-    </>
   );
 }
 
 export default function Yorix() {
   const [dark, setDark]           = useState(false);
   const [page, setPage]           = useState("home");
-  const [showLivraisonForm, setShowLivraisonForm] = useState(false); // Modal formulaire livraison
   const [user, setUser]           = useState(null);
   const [userData, setUserData]   = useState(null);
   const [userRole, setUserRole]   = useState(null);
@@ -2987,79 +3182,41 @@ export default function Yorix() {
   const doRegister = async () => {
     setAuthError(""); setAuthLoading(true);
     try {
-      // ── Validation champs ──
-      if (!authForm.nom.trim())      throw new Error("Le nom est obligatoire.");
-      if (!authForm.email.trim())    throw new Error("L'email est obligatoire.");
-      if (!authForm.tel.trim())      throw new Error("Le téléphone est obligatoire.");
-      if (!authForm.password.trim()) throw new Error("Le mot de passe est obligatoire.");
-      if (!selectedRole)             throw new Error("Choisissez un profil : Acheteur, Vendeur, Livreur ou Prestataire.");
+      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
+      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
 
-      // ── Créer le compte Supabase Auth ──
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email:    authForm.email.trim(),
-        password: authForm.password.trim(),
-        options:  { data: { display_name: authForm.nom.trim() } },
+      const { data, error } = await supabase.auth.signUp({
+        email: authForm.email,
+        password: authForm.password,
+        options: { data: { display_name: authForm.nom } },
       });
-      if (authError) throw authError;
+      if (error) throw error;
 
-      const uid = authData?.user?.id;
-      if (!uid) throw new Error("Erreur lors de la création du compte. Réessayez.");
+      const uid = data.user?.id;
+      if (!uid) throw new Error("Erreur création compte.");
 
-      // ── Profil à insérer ──
-      const profileData = {
-        uid:             uid,
-        nom:             authForm.nom.trim(),
-        email:           authForm.email.trim(),
-        telephone:       authForm.tel.trim(),
-        role:            selectedRole,   // rôle EXACT choisi par l'utilisateur
-        langue:          "fr",
-        actif:           true,
-        verifie:         false,
-        note:            0,
-        nombre_avis:     0,
+      const { error: profileError } = await supabase.from("users").insert({
+        uid,
+        nom:          authForm.nom,
+        email:        authForm.email,
+        telephone:    authForm.tel,
+        role:         selectedRole,   // ← rôle EXACTEMENT choisi par l'utilisateur
+        langue:       "fr",
+        actif:        true,
+        verifie:      false,
+        note:         0,
+        nombre_avis:  0,
         total_commandes: 0,
-        points_total:    10,             // 10 pts offerts à l'inscription
-        points_historique: JSON.stringify([{ action:"inscription", pts:10, date: new Date().toISOString() }]),
-      };
+      });
+      if (profileError) console.error("Profile insert error:", profileError);
 
-      // ── Essayer d'abord dans "users" ──
-      const { error: usersErr } = await supabase.from("users").insert(profileData);
-
-      if (usersErr) {
-        console.warn("Insert users échoué:", usersErr.message);
-        // ── Fallback dans "profiles" (même structure) ──
-        const { error: profilesErr } = await supabase.from("profiles").insert({
-          id:        uid,   // profiles utilise "id" comme clé
-          ...profileData,
-        });
-        if (profilesErr) {
-          console.warn("Insert profiles aussi échoué:", profilesErr.message);
-          // On continue quand même — l'auth est créé, le profil sera chargé au login
-        }
-      }
-
-      // ── Créer le wallet ──
-      await supabase.from("wallets").insert({
-        user_id:     uid,
-        solde:       0,
-        total_gagne: 0,
-        devise:      "FCFA",
-      }).then(() => {}).catch(e => console.warn("Wallet insert:", e?.message));
-
-      // ── Charger le profil et fermer ──
+      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" })(console.error);
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
-
     } catch (err) {
       console.error("Register error:", err);
-      if (err.message?.includes("already registered") || err.message?.includes("already been registered")) {
-        setAuthError("Cet email est déjà utilisé. Essayez de vous connecter.");
-      } else if (err.message?.includes("Password")) {
-        setAuthError("Mot de passe trop court (minimum 6 caractères).");
-      } else {
-        setAuthError(err.message || "Erreur lors de l'inscription. Réessayez.");
-      }
+      setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message);
     }
     setAuthLoading(false);
   };
@@ -3121,24 +3278,24 @@ export default function Yorix() {
     const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
     if (filtre.bloque) {
       setChatBlocked(true); setTimeout(() => setChatBlocked(false), 4000);
-      if (user) await supabase.from("fraud_logs").insert({ type:"tentative_contournement", user_id:user.id, message:chatMsg }).catch(e => console.warn("Supabase error:", e?.message));
+      if (user) await supabase.from("fraud_logs").insert({ type:"tentative_contournement", user_id:user.id, message:chatMsg }).catch(e => console.warn(e?.message));
       setChatMsg(""); return;
     }
-    if (user) await supabase.from("messages").insert({ expediteur_id:user.id, destinataire_id:"support", texte:chatMsg, conversation_id:`${user.id}_support`, lu:false }).catch(e => console.warn("Supabase error:", e?.message));
+    if (user) await supabase.from("messages").insert({ expediteur_id:user.id, destinataire_id:"support", texte:chatMsg, conversation_id:`${user.id}_support`, lu:false }).catch(e => console.warn(e?.message));
     setChatMessages(prev => [...prev, { text:chatMsg, me:true, time }]);
     setChatMsg("");
     setTimeout(() => setChatMessages(prev => [...prev, { text:"Merci ! Un conseiller Yorix vous répond dans quelques minutes. ⚡", me:false, time }]), 1200);
   };
 
-  const toggleWish = useCallback((id) => { if (!id) return; setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); }, []);
+  const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
   const marquerNotifLue = async (id) => {
-    await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(e => console.warn("Supabase error:", e?.message));
+    await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(e => console.warn(e?.message));
     setNotifs(prev => prev.map(n => n.id===id ? {...n,lu:true} : n));
   };
   const marquerToutesLues = async () => {
     const ids = notifs.filter(n => !n.lu).map(n => n.id);
-    if (ids.length) { await supabase.from("notifications").update({lu:true}).in("id",ids).catch(e => console.warn("Supabase error:", e?.message)); setNotifs(prev => prev.map(n => ({...n,lu:true}))); }
+    if (ids.length) { await supabase.from("notifications").update({lu:true}).in("id",ids).catch(e => console.warn(e?.message)); setNotifs(prev => prev.map(n => ({...n,lu:true}))); }
   };
 
   const unread = notifs.filter(n => !n.lu).length;
@@ -3159,6 +3316,7 @@ export default function Yorix() {
     {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
     {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
     ...(user ? [{l:"📊 Mon espace",p:"dashboard"}] : []),
+    ...(user && (userRole==="admin" || userData?.role==="admin") ? [{l:"⚙️ Admin",p:"admin"}] : []),
   ];
 
   if (loading) return (
@@ -3172,15 +3330,6 @@ export default function Yorix() {
   return (
     <>
       <style>{makeCSS(dark)}</style>
-
-      {/* ── MODAL FORMULAIRE LIVRAISON ── */}
-      {showLivraisonForm && (
-        <FormulaireLivraison
-          user={user}
-          userData={userData}
-          onClose={() => setShowLivraisonForm(false)}
-        />
-      )}
 
       {/* ── AUTH MODAL ── */}
       {authOpen && (
@@ -3281,12 +3430,61 @@ export default function Yorix() {
               ))
           }
         </div>
+        {cartItems.length === 0 && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:32}}>
+            <div style={{fontSize:"3rem"}}>🛒</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)"}}>Votre panier est vide</div>
+            <p style={{fontSize:".78rem",color:"var(--gray)",textAlign:"center"}}>Ajoutez des produits depuis le catalogue</p>
+            <button className="form-submit" style={{padding:"9px 20px",width:"auto"}} onClick={()=>{setCartOpen(false);goPage("produits");}}>
+              🛍️ Voir les produits
+            </button>
+          </div>
+        )}
         {cartItems.length > 0 && (
-          <CartPaymentFooter
-            totalPrice={totalPrice}
-            cartItems={cartItems}
-            onConfirm={passerCommande}
-          />
+          <div className="cart-footer">
+            <div className="cart-note note-escrow">🔐 Paiement protégé Escrow Yorix</div>
+            <div className="cart-total-row"><span>Sous-total ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})</span><span>{totalPrice.toLocaleString()} FCFA</span></div>
+            <div className="cart-total-row"><span>Livraison estimée</span><span style={{color:"var(--green)"}}>2 500 FCFA</span></div>
+            <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
+
+            {/* Bouton principal WhatsApp — message complet auto-généré */}
+            <button
+              className="cart-wa"
+              style={{marginTop:10,fontSize:".88rem",padding:"13px",fontWeight:800}}
+              onClick={() => {
+                const lignes = cartItems.map(i =>
+                  `• ${i.name_fr||i.name} (x${i.qty}) — ${(i.prix*i.qty).toLocaleString()} FCFA`
+                ).join("\n");
+                const clientNom = userData?.nom || "Client";
+                const clientTel = userData?.telephone || "";
+                const msg = [
+                  "Bonjour Yorix ! Je souhaite commander :",
+                  "",
+                  "🛒 *Produits :*",
+                  lignes,
+                  "",
+                  `💰 *Sous-total :* ${totalPrice.toLocaleString()} FCFA`,
+                  `🚚 *Livraison :* 2 500 FCFA`,
+                  `💵 *Total :* ${(totalPrice+2500).toLocaleString()} FCFA`,
+                  "",
+                  "📍 *Informations client :*",
+                  `Nom : ${clientNom}`,
+                  clientTel ? `Téléphone : ${clientTel}` : "Téléphone : ",
+                  "Adresse de livraison : ",
+                  "",
+                  "Merci ✅",
+                ].join("\n");
+                if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
+                  window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+                }
+              }}
+            >
+              📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
+            </button>
+            <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
+              ✅ Confirmer la commande (paiement en ligne)
+            </button>
+          </div>
         )}
       </div>
 
@@ -3380,9 +3578,9 @@ export default function Yorix() {
                 <div className="hero-ctas">
                   <button className="cta-y" onClick={()=>goPage("produits")}>🛍️ Voir les produits</button>
                   <button
-                    className="btn-wa"
-                    onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux commander un produit 🛍️")}`, "_blank")}
-                  >📱 Commander via WhatsApp</button>
+                    className="cta-w"
+                    onClick={()=>{setCartOpen(true);}}
+                  >🛒 Mon panier</button>
                 </div>
 
                 <div className="hero-stats">
@@ -3541,68 +3739,6 @@ export default function Yorix() {
             </div>
           </section>
 
-          {/* ── AVIS CLIENTS CAMEROUNAIS ── */}
-          <section className="sec" style={{paddingTop:0}}>
-            <div className="sec-head">
-              <h2 className="sec-title">💬 Ils font confiance à Yorix</h2>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"var(--green)"}}>4.9</span>
-                <span style={{color:"var(--gold)"}}>★★★★★</span>
-                <span style={{fontSize:".75rem",color:"var(--gray)"}}>+2 400 avis</span>
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-              {AVIS_CLIENTS.map(a=>(
-                <div key={a.nom} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:16}}>
-                  <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
-                    <div style={{width:38,height:38,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",flexShrink:0}}>
-                      {a.avatar}
-                    </div>
-                    <div>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--ink)"}}>{a.nom}</div>
-                      <div style={{fontSize:".65rem",color:"var(--gray)"}}>{a.ville} · {a.role}</div>
-                    </div>
-                    <div style={{marginLeft:"auto",display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
-                      <div style={{color:"var(--gold)",fontSize:".75rem"}}>{"★".repeat(a.note)}</div>
-                      <div style={{fontSize:".6rem",color:"var(--gray)"}}>{a.date}</div>
-                    </div>
-                  </div>
-                  <p style={{fontSize:".78rem",color:"var(--gray)",lineHeight:1.65,fontStyle:"italic"}}>"{a.texte}"</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* ── AVIS CLIENTS CAMEROUNAIS ── */}
-          <section className="sec" style={{paddingTop:0}}>
-            <div className="sec-head">
-              <h2 className="sec-title">💬 Ils font confiance à Yorix</h2>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"var(--green)"}}>4.9</span>
-                <span style={{color:"var(--gold)"}}>★★★★★</span>
-                <span style={{fontSize:".75rem",color:"var(--gray)"}}>+2 400 avis</span>
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-              {AVIS_CLIENTS.map(a=>(
-                <div key={a.nom} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:16}}>
-                  <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
-                    <div style={{width:38,height:38,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",flexShrink:0}}>{a.avatar}</div>
-                    <div>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--ink)"}}>{a.nom}</div>
-                      <div style={{fontSize:".65rem",color:"var(--gray)"}}>{a.ville} · {a.role}</div>
-                    </div>
-                    <div style={{marginLeft:"auto",display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
-                      <div style={{color:"var(--gold)",fontSize:".75rem"}}>{"★".repeat(a.note)}</div>
-                      <div style={{fontSize:".6rem",color:"var(--gray)"}}>{a.date}</div>
-                    </div>
-                  </div>
-                  <p style={{fontSize:".78rem",color:"var(--gray)",lineHeight:1.65,fontStyle:"italic"}}>"{a.texte}"</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
           {/* ── NEWSLETTER ── */}
           <div className="newsletter">
             <div className="nl-title">📬 Restez informé(e)</div>
@@ -3611,7 +3747,7 @@ export default function Yorix() {
               ? <div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Vous êtes abonné(e) !</div>
               : <div className="nl-form">
                   <input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/>
-                  <button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn("Supabase error:", e?.message));setNlSent(true);}}}>S'abonner 🚀</button>
+                  <button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn(e?.message));setNlSent(true);}}}>S'abonner 🚀</button>
                 </div>
             }
           </div>
@@ -3666,7 +3802,7 @@ export default function Yorix() {
                 Livraison à domicile<br/><span style={{color:"#4fd17d"}}>comme Uber, partout au Cameroun</span>
               </h2>
               <p style={{color:"rgba(255,255,255,.6)",fontSize:".85rem",lineHeight:1.75,marginBottom:20,maxWidth:480}}>
-                Commandez un produit, un livreur proche de vous accepte la mission en quelques secondes. Suivi GPS en temps réel, paiement sécurisé MTN MoMo / Orange Money.
+                Commandez un produit, un livreur proche de vous accepte la mission en quelques secondes. Suivi GPS en temps réel, paiement à la livraison.
               </p>
 
               {/* Stats livraison */}
@@ -3686,7 +3822,7 @@ export default function Yorix() {
               <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                 <button
                   style={{background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"11px 20px",borderRadius:9,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",cursor:"pointer"}}
-                  onClick={() => setShowLivraisonForm(true)}
+                  onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix Ride ! Je veux une livraison 📦\n\n📍 Adresse de collecte : \n📍 Adresse de livraison : \n📦 Contenu du colis : ")}`, "_blank")}
                 >📦 Demander une livraison</button>
                 <button
                   style={{background:"rgba(255,255,255,.09)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",padding:"11px 20px",borderRadius:9,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",cursor:"pointer"}}
@@ -3766,7 +3902,7 @@ export default function Yorix() {
                     </div>
                     <button
                       style={{width:"100%",background:d.dispo?"var(--green)":"var(--border)",color:d.dispo?"#fff":"var(--gray)",border:"none",padding:"8px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",cursor:d.dispo?"pointer":"default"}}
-                      onClick={() => d.dispo && setShowLivraisonForm(true)}
+                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour ! Je veux une livraison avec ${d.name} (${d.vehicule}) 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : `)}`, "_blank")}
                     >{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
                   </div>
                 ))}
@@ -3848,7 +3984,7 @@ export default function Yorix() {
                   <div className="form-group"><label className="form-label">Tarif (FCFA)</label><input className="form-input" value={inscriptionForm.tarif} onChange={e=>setInscriptionForm(f=>({...f,tarif:e.target.value}))} placeholder="Ex: 15 000/h"/></div>
                   <div className="form-group full"><label className="form-label">Présentation</label><textarea className="form-textarea" value={inscriptionForm.bio} onChange={e=>setInscriptionForm(f=>({...f,bio:e.target.value}))} placeholder="Décrivez vos compétences..."/></div>
                 </div>
-                <button className="form-submit" onClick={async()=>{if(!inscriptionForm.nom||!inscriptionForm.tel||!inscriptionForm.metier){alert("Nom, téléphone et métier obligatoires !");return;}await supabase.from("prestataires").insert(inscriptionForm).catch(e => console.warn("Supabase error:", e?.message));setInscriptionSent(true);}}>🚀 Soumettre ma candidature</button>
+                <button className="form-submit" onClick={async()=>{if(!inscriptionForm.nom||!inscriptionForm.tel||!inscriptionForm.metier){alert("Nom, téléphone et métier obligatoires !");return;}await supabase.from("prestataires").insert(inscriptionForm).catch(e => console.warn(e?.message));setInscriptionSent(true);}}>🚀 Soumettre ma candidature</button>
               </div>
             )}
           </div>
@@ -3889,177 +4025,29 @@ export default function Yorix() {
             <p style={{color:"rgba(255,255,255,.5)",fontSize:".85rem",marginBottom:18}}>Des cours créés par des experts camerounais.</p>
             <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}><button className="cta-y">Commencer gratuitement</button><button className="cta-w">Voir le catalogue</button></div>
           </div>
-          <div className="courses-grid">
-            {COURSES_DATA.map(c=>(
-              <div key={c.title} className="course-card" style={{cursor:"pointer"}} onClick={()=>window.open(c.url,"_blank")}>
-                <div className="course-img" style={{background:c.bg}}>{c.emoji}</div>
-                <div className="course-body">
-                  <div className={`course-level ${c.lc}`}>{c.level}</div>
-                  <div className="course-title">{c.title}</div>
-                  <div style={{fontSize:".71rem",color:"var(--gray)",lineHeight:1.5,margin:"4px 0 6px"}}>{c.desc}</div>
-                  <div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants} apprenants</div>
-                  <div className="course-footer">
-                    <div className="course-price" style={{color:"var(--green)",fontWeight:700}}>{c.prix}</div>
-                    <button className="course-btn" onClick={e=>{e.stopPropagation();window.open(c.url,"_blank");}}>Démarrer →</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="courses-grid">{COURSES_DATA.map(c=><div key={c.title} className="course-card"><div className="course-img" style={{background:c.bg}}>{c.emoji}</div><div className="course-body"><div className={`course-level ${c.lc}`}>{c.level}</div><div className="course-title">{c.title}</div><div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants}</div><div className="course-footer"><div className="course-price">{c.prix}</div><button className="course-btn">Démarrer →</button></div></div></div>)}</div>
         </section>
       )}
 
       {/* ════════ PAGE : BLOG ════════ */}
       {page==="blog"&&(
         <section className="sec anim">
-          <div className="sec-head">
-            <h2 className="sec-title">📰 Blog Yorix</h2>
-            <span style={{fontSize:".78rem",color:"var(--gray)"}}>Cliquez sur un article pour le lire</span>
-          </div>
-          <div className="blog-grid">
-            {BLOG_DATA.map(p=>(
-              <div
-                key={p.title}
-                className="blog-card"
-                style={{cursor:"pointer",transition:"transform .2s,box-shadow .2s"}}
-                onClick={()=>window.open(p.url,"_blank")}
-                onMouseOver={e=>e.currentTarget.style.transform="translateY(-4px)"}
-                onMouseOut={e=>e.currentTarget.style.transform="none"}
-              >
-                <div className="blog-img" style={{
-                  height:130,
-                  background:p.image ? `url(${p.image}) center/cover` : "var(--surface2)",
-                  position:"relative",overflow:"hidden",
-                }}>
-                  {!p.image && <span style={{fontSize:"2.5rem"}}>{p.emoji}</span>}
-                  <div style={{position:"absolute",top:8,left:8,background:"var(--green)",color:"#fff",fontSize:".62rem",fontWeight:700,padding:"2px 8px",borderRadius:50}}>{p.cat}</div>
-                  <div style={{position:"absolute",bottom:0,left:0,right:0,height:40,background:"linear-gradient(transparent,rgba(0,0,0,.4))"}}/>
-                </div>
-                <div className="blog-body">
-                  <div className="blog-title">{p.title}</div>
-                  <div className="blog-excerpt">{p.excerpt}</div>
-                </div>
-                <div className="blog-footer">
-                  <span>{p.date}</span>
-                  <span style={{display:"flex",alignItems:"center",gap:4}}>⏱ {p.read} <span style={{background:"var(--green)",color:"#fff",fontSize:".6rem",padding:"1px 6px",borderRadius:50}}>Lire →</span></span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="sec-head"><h2 className="sec-title">📰 Blog Yorix</h2></div>
+          <div className="blog-grid">{BLOG_DATA.map(p=><div key={p.title} className="blog-card"><div className="blog-img">{p.emoji}</div><div className="blog-body"><div className="blog-cat">{p.cat}</div><div className="blog-title">{p.title}</div><div className="blog-excerpt">{p.excerpt}</div></div><div className="blog-footer"><span>{p.date}</span><span>⏱ {p.read}</span></div></div>)}</div>
         </section>
       )}
 
       {/* ════════ PAGE : FIDÉLITÉ ════════ */}
       {page==="loyalty"&&(
         <section className="sec anim">
-
-          {/* ── CARTE POINTS ── */}
-          <div style={{background:"linear-gradient(135deg,#0a1410,#1a3a24,var(--green))",borderRadius:16,padding:24,color:"#fff",marginBottom:20,position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",top:-20,right:-20,width:140,height:140,background:"rgba(252,209,22,.06)",borderRadius:"50%"}}/>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
-              <div>
-                <div style={{fontSize:".72rem",color:"rgba(255,255,255,.5)",marginBottom:4,fontWeight:600,letterSpacing:1,textTransform:"uppercase"}}>Mes points Yorix</div>
-                <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2.4rem",fontWeight:800,color:"var(--yellow)",lineHeight:1}}>{loyaltyPts.toLocaleString()} pts</div>
-                <div style={{fontSize:".72rem",color:"rgba(255,255,255,.5)",marginTop:4}}>= {loyaltyPts.toLocaleString()} FCFA · 1 pt = 1 FCFA</div>
-              </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:".72rem",color:"rgba(255,255,255,.5)",marginBottom:4}}>Niveau</div>
-                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:loyaltyPts>=3000?"#ffd700":loyaltyPts>=1000?"#c0c0c0":"#cd7f32"}}>
-                  {loyaltyPts>=3000?"👑 Platine":loyaltyPts>=1000?"🥈 Or":loyaltyPts>=500?"🥉 Argent":"🌱 Bronze"}
-                </div>
-                <div style={{fontSize:".67rem",color:"rgba(255,255,255,.35)",marginTop:2}}>
-                  {loyaltyPts>=3000?"Niveau maximum !":`${(loyaltyPts>=1000?3000:loyaltyPts>=500?1000:500)-loyaltyPts} pts pour le niveau suivant`}
-                </div>
-              </div>
-            </div>
-            {/* Barre de progression */}
-            <div style={{background:"rgba(255,255,255,.15)",borderRadius:50,height:8,marginTop:16}}>
-              <div style={{background:"var(--yellow)",borderRadius:50,height:8,width:`${Math.min(loyaltyPts/30,100)}%`,transition:"width .8s"}}/>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:".62rem",color:"rgba(255,255,255,.3)",marginTop:4}}>
-              <span>0</span><span>500</span><span>1000</span><span>3000</span>
-            </div>
+          <div style={{background:"linear-gradient(135deg,#1a3a24,var(--green))",borderRadius:14,padding:22,color:"#fff",marginBottom:18}}>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",marginBottom:4}}>🌟 Mes points Yorix</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2rem",fontWeight:800,color:"var(--yellow)"}}>{loyaltyPts} pts</div>
+            <div style={{fontSize:".71rem",opacity:.62,marginBottom:12}}>Niveau Or · {1000-loyaltyPts} pts pour Platine</div>
+            <div style={{background:"rgba(255,255,255,.2)",borderRadius:50,height:7}}><div style={{background:"var(--yellow)",borderRadius:50,height:7,width:`${Math.min((loyaltyPts%1000)/10,100)}%`,transition:"width .6s"}}/></div>
           </div>
-
-          {/* ── COMMENT GAGNER DES POINTS ── */}
-          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:18,marginBottom:20}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)",marginBottom:12}}>💡 Comment gagner des points ?</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-              {Object.entries(POINTS_REGLES).map(([k,v])=>(
-                <div key={k} style={{textAlign:"center",background:"var(--surface2)",borderRadius:9,padding:"12px 8px"}}>
-                  <div style={{fontSize:"1.4rem",marginBottom:5}}>{v.icon}</div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",color:"var(--green)"}}>+{v.pts} pts</div>
-                  <div style={{fontSize:".63rem",color:"var(--gray)",marginTop:2,lineHeight:1.4}}>{v.label}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{background:"var(--green-pale)",borderRadius:8,padding:"8px 12px",marginTop:12,fontSize:".75rem",color:"var(--green)",fontWeight:600}}>
-              🔓 Échange possible dès {POINTS_MIN_ECHANGE.toLocaleString()} points · Échange minimum = {POINTS_MIN_ECHANGE.toLocaleString()} FCFA
-            </div>
-          </div>
-
-          {/* ── RÉCOMPENSES ── */}
-          <div className="sec-head"><h2 className="sec-title">🎁 Récompenses disponibles</h2></div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
-            {REWARDS_DATA.map(r=>(
-              <div key={r.name} className="reward-card" style={{position:"relative"}}>
-                {r.type==="auto" && (
-                  <div style={{position:"absolute",top:6,right:6,background:"var(--yellow)",color:"#0d1f14",fontSize:".55rem",fontWeight:800,padding:"1px 5px",borderRadius:50}}>AUTO</div>
-                )}
-                <div className="reward-icon">{r.icon}</div>
-                <div className="reward-name">{r.name}</div>
-                <div style={{fontSize:".67rem",color:"var(--gray)",marginBottom:5,lineHeight:1.4}}>{r.desc}</div>
-                <div className="reward-pts">
-                  {r.pts > 0 ? `${r.pts.toLocaleString()} pts` : "Automatique"}
-                </div>
-                {r.pts > 0 && r.type !== "auto" && (
-                  <button
-                    className="reward-btn"
-                    disabled={loyaltyPts < r.pts}
-                    style={{opacity: loyaltyPts >= r.pts ? 1 : 0.45, cursor: loyaltyPts >= r.pts ? "pointer" : "not-allowed"}}
-                    onClick={() => {
-                      if (loyaltyPts >= r.pts) {
-                        setLoyaltyPts(p => p - r.pts);
-                        alert(`✅ ${r.name} activé ! Votre solde : ${loyaltyPts - r.pts} pts`);
-                      }
-                    }}
-                  >
-                    {loyaltyPts >= r.pts ? "Échanger" : `Il manque ${r.pts - loyaltyPts} pts`}
-                  </button>
-                )}
-                {r.type === "auto" && (
-                  <div style={{fontSize:".67rem",color:"var(--green)",fontWeight:600,marginTop:6}}>Attribution automatique</div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* ── ACHETER VIP / TOP VENDEUR ── */}
-          <div style={{background:"linear-gradient(135deg,#0a1410,#1a3a24)",borderRadius:14,padding:20,marginBottom:20}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"#fff",marginBottom:4}}>👑 Statuts Premium</div>
-            <p style={{color:"rgba(255,255,255,.55)",fontSize:".8rem",marginBottom:16}}>Boostez votre visibilité et gagnez la confiance des acheteurs</p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              {[
-                {icon:"👑",label:"Statut VIP",price:"15 000 FCFA/mois",pts:"ou 3 000 pts",avantages:["Badge VIP visible","Support prioritaire","Accès aux stats avancées","Mise en avant dans les résultats"]},
-                {icon:"⭐",label:"Top Vendeur",price:"15 000 FCFA/mois",pts:"ou 3 000 pts",avantages:["Badge Top Vendeur","Produits en tête de liste","Certificat Yorix","Accès aux offres B2B"]},
-              ].map(s=>(
-                <div key={s.label} style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:11,padding:16}}>
-                  <div style={{fontSize:"1.8rem",marginBottom:6}}>{s.icon}</div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".88rem",color:"#fff",marginBottom:4}}>{s.label}</div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--yellow)",marginBottom:2}}>{s.price}</div>
-                  <div style={{fontSize:".68rem",color:"rgba(255,255,255,.4)",marginBottom:10}}>{s.pts}</div>
-                  {s.avantages.map(a=><div key={a} style={{fontSize:".7rem",color:"rgba(255,255,255,.7)",marginBottom:3}}>✅ {a}</div>)}
-                  <button
-                    style={{width:"100%",background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".78rem",cursor:"pointer",marginTop:12}}
-                    onClick={()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent(`Bonjour Yorix ! Je veux acheter le statut ${s.label} à ${s.price}. Mon compte : ${user?.email||""}`)}`,"_blank")}
-                  >
-                    Obtenir {s.label}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
+          <div className="sec-head"><h2 className="sec-title">🎁 Récompenses</h2></div>
+          <div className="rewards-grid">{REWARDS_DATA.map(r=><div key={r.name} className="reward-card"><div className="reward-icon">{r.icon}</div><div className="reward-name">{r.name}</div><div className="reward-pts">{r.pts} pts</div><button className="reward-btn" onClick={()=>setLoyaltyPts(p=>Math.max(0,p-r.pts))}>Échanger</button></div>)}</div>
         </section>
       )}
 
@@ -4069,7 +4057,7 @@ export default function Yorix() {
           <div className="dash-layout anim">
             <div className="dash-sidebar">
               <div className="dash-avatar">{userData?.nom?.[0]||"U"}</div>
-              <div className="dash-name" title={userData?.nom||user.email}>{userData?.nom || (user.email ? user.email.split("@")[0] : "Utilisateur")}</div>
+              <div className="dash-name">{userData?.nom||user.email}</div>
               <div className="dash-role-badge"><span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole||"buyer"]}</span></div>
               <div className="dash-nav">
                 {getDashNav().map(item=>(
@@ -4124,256 +4112,8 @@ export default function Yorix() {
           <div className="nl-title">📬 Restez informé(e)</div>
           <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
           {nlSent?<div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
-            :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn("Supabase error:", e?.message));setNlSent(true);}}}>S'abonner 🚀</button></div>}
+            :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn(e?.message));setNlSent(true);}}}>S'abonner 🚀</button></div>}
         </div>
-      )}
-
-
-      {/* ════════ PAGE : CGV ════════ */}
-      {page==="cgv"&&(
-        <section className="sec anim">
-          <div style={{maxWidth:800,margin:"0 auto"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
-              <button className="btn-ghost" style={{padding:"6px 12px",fontSize:".78rem"}} onClick={()=>goPage("home")}>← Retour</button>
-              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)",letterSpacing:"-.5px"}}>📜 Conditions Générales de Vente</h1>
-            </div>
-            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:28,lineHeight:1.9,fontSize:".84rem",color:"var(--ink)"}}>
-              <p style={{color:"var(--gray)",marginBottom:20}}>Dernière mise à jour : 31 mars 2026 · Yorix CM — DOUALA/2026/B237</p>
-
-              {[
-                {title:"1. Objet et champ d'application",body:`Les présentes Conditions Générales de Vente (CGV) régissent les transactions réalisées sur la plateforme Yorix CM (yorix.cm), marketplace en ligne au Cameroun. En passant une commande, vous acceptez sans réserve les présentes CGV.`},
-                {title:"2. Identification du vendeur de la plateforme",body:`Yorix CM est exploité par Yorix Cameroun SARL, société immatriculée à Douala (RC : DOUALA/2026/B237). Siège social : Douala, Cameroun. Email : support@yorix.cm — Tél : +237 696 56 56 54`},
-                {title:"3. Produits et services",body:`Yorix CM est une marketplace qui met en relation des vendeurs indépendants et des acheteurs. Chaque vendeur est seul responsable de la conformité, de la qualité et de la légalité des produits qu'il publie. Yorix CM vérifie les vendeurs mais ne garantit pas chaque produit individuellement.`},
-                {title:"4. Prix et paiement",body:`Tous les prix sont exprimés en Francs CFA (FCFA) toutes taxes comprises. Les paiements sont acceptés via MTN Mobile Money, Orange Money, et virement bancaire. La commission Yorix est prélevée automatiquement sur chaque transaction et n'est pas remboursable.`},
-                {title:"5. Système Escrow Yorix",body:`Le système Escrow Yorix bloque les fonds de l'acheteur jusqu'à confirmation de réception. En cas de litige, Yorix CM arbitre dans un délai de 48h ouvrables. Les décisions d'arbitrage sont définitives. Le remboursement s'effectue via le même mode de paiement initial.`},
-                {title:"6. Livraison",body:`Les délais de livraison sont indicatifs. Yorix CM ne peut être tenu responsable des retards liés aux livreurs indépendants, aux conditions météorologiques ou à des événements de force majeure. En cas de colis perdu, une enquête est ouverte sous 24h.`},
-                {title:"7. Droit de rétractation",body:`Conformément à la réglementation camerounaise, tout acheteur dispose d'un délai de 48 heures après réception pour signaler un problème (produit non conforme, endommagé, ou non reçu). Au-delà de ce délai, la transaction est considérée comme validée.`},
-                {title:"8. Responsabilités",body:`Yorix CM ne peut être tenu responsable des dommages indirects liés à l'utilisation de la plateforme. Yorix CM se réserve le droit de suspendre tout compte en cas de comportement frauduleux ou de violation des présentes CGV.`},
-                {title:"9. Litiges",body:`Tout litige relatif à l'interprétation ou à l'exécution des présentes CGV sera soumis à la compétence exclusive des tribunaux de Douala, Cameroun.`},
-              ].map(s=>(
-                <div key={s.title} style={{marginBottom:20}}>
-                  <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".92rem",color:"var(--ink)",marginBottom:7}}>{s.title}</h3>
-                  <p style={{color:"var(--gray)",lineHeight:1.8}}>{s.body}</p>
-                </div>
-              ))}
-
-              <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:9,padding:"12px 16px",marginTop:16}}>
-                <p style={{color:"var(--green)",fontWeight:600,fontSize:".82rem"}}>📞 Questions ? Contactez-nous : support@yorix.cm ou WhatsApp +237 696 56 56 54</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ════════ PAGE : MENTIONS LÉGALES ════════ */}
-      {page==="mentions"&&(
-        <section className="sec anim">
-          <div style={{maxWidth:800,margin:"0 auto"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
-              <button className="btn-ghost" style={{padding:"6px 12px",fontSize:".78rem"}} onClick={()=>goPage("home")}>← Retour</button>
-              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)",letterSpacing:"-.5px"}}>⚖️ Mentions Légales</h1>
-            </div>
-            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:28,lineHeight:1.9,fontSize:".84rem",color:"var(--ink)"}}>
-              <p style={{color:"var(--gray)",marginBottom:20}}>Conformément aux lois camerounaises en vigueur et à la réglementation de l'ANTIC.</p>
-
-              {[
-                {title:"Éditeur du site",items:[
-                  "Nom de la société : Yorix Cameroun SARL",
-                  "Numéro RC : DOUALA/2026/B237",
-                  "Siège social : Douala, Cameroun",
-                  "Email : support@yorix.cm",
-                  "Téléphone : +237 696 56 56 54",
-                  "WhatsApp : +237 696 56 56 54",
-                ]},
-                {title:"Hébergement",items:[
-                  "Hébergeur : Vercel Inc.",
-                  "Adresse : 340 S Lemon Ave #4133, Walnut, CA 91789, USA",
-                  "Site : https://vercel.com",
-                  "Base de données : Supabase Inc.",
-                  "Images : Cloudinary Inc.",
-                ]},
-                {title:"Propriété intellectuelle",items:[
-                  "Le nom Yorix CM, le logo et l'ensemble des éléments constituant la plateforme sont la propriété exclusive de Yorix Cameroun SARL.",
-                  "Toute reproduction, représentation ou diffusion non autorisée est strictement interdite.",
-                  "Les contenus publiés par les vendeurs restent leur propriété — Yorix CM dispose d'une licence d'utilisation pour les afficher.",
-                ]},
-                {title:"Données personnelles (RGPD/ANTIC)",items:[
-                  "Responsable du traitement : Yorix Cameroun SARL",
-                  "Les données collectées (nom, email, téléphone) sont utilisées uniquement pour la gestion des commandes et la relation client.",
-                  "Aucune donnée n'est vendue à des tiers.",
-                  "Droit d'accès, rectification et suppression : support@yorix.cm",
-                  "Conservation des données : 3 ans après la dernière transaction.",
-                ]},
-                {title:"Cookies",items:[
-                  "Yorix CM utilise des cookies techniques essentiels au fonctionnement du site (authentification, préférences).",
-                  "Aucun cookie publicitaire n'est utilisé.",
-                  "En continuant à naviguer, vous acceptez l'utilisation de ces cookies techniques.",
-                ]},
-              ].map(s=>(
-                <div key={s.title} style={{marginBottom:20}}>
-                  <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".92rem",color:"var(--ink)",marginBottom:10}}>{s.title}</h3>
-                  <ul style={{paddingLeft:16,listStyle:"disc",color:"var(--gray)",lineHeight:1.9}}>
-                    {s.items.map(item=><li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ════════ PAGE : POLITIQUE DE CONFIDENTIALITÉ ════════ */}
-      {page==="privacy"&&(
-        <section className="sec anim">
-          <div style={{maxWidth:800,margin:"0 auto"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
-              <button className="btn-ghost" style={{padding:"6px 12px",fontSize:".78rem"}} onClick={()=>goPage("home")}>← Retour</button>
-              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.4rem",color:"var(--ink)",letterSpacing:"-.5px"}}>🔐 Politique de Confidentialité</h1>
-            </div>
-            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:28,lineHeight:1.9,fontSize:".84rem",color:"var(--ink)"}}>
-              <p style={{color:"var(--gray)",marginBottom:20}}>Dernière mise à jour : 31 mars 2026. Yorix CM s'engage à protéger vos données personnelles.</p>
-
-              {[
-                {title:"1. Données collectées",body:"Lors de votre inscription : nom complet, adresse email, numéro de téléphone, rôle choisi (acheteur/vendeur/livreur/prestataire). Lors d'une commande : adresse de livraison, historique des achats. Automatiquement : adresse IP, type d'appareil, pages visitées."},
-                {title:"2. Utilisation des données",body:"Vos données sont utilisées pour : (1) Gérer votre compte et vos commandes, (2) Vous envoyer des confirmations et notifications, (3) Améliorer la plateforme, (4) Prévenir la fraude et respecter nos obligations légales. Nous ne vendons jamais vos données à des tiers."},
-                {title:"3. Partage des données",body:"Vos données peuvent être partagées uniquement avec : (1) Les vendeurs impliqués dans votre commande (nom, téléphone uniquement), (2) Les livreurs assignés à votre livraison, (3) Nos prestataires techniques (Supabase, Cloudinary) soumis à des accords de confidentialité stricts."},
-                {title:"4. Sécurité",body:"Vos données sont stockées de façon chiffrée sur des serveurs sécurisés (Supabase/PostgreSQL). Les mots de passe sont hashés et jamais stockés en clair. Les communications sont chiffrées via HTTPS/TLS."},
-                {title:"5. Vos droits",body:"Conformément à la loi camerounaise sur la protection des données et au RGPD : droit d'accès, de rectification, de suppression, de portabilité. Pour exercer ces droits : support@yorix.cm. Réponse sous 30 jours."},
-                {title:"6. Durée de conservation",body:"Données de compte : 3 ans après la dernière connexion. Historique des commandes : 5 ans (obligations comptables). Logs de sécurité : 12 mois. Après expiration, les données sont supprimées ou anonymisées."},
-              ].map(s=>(
-                <div key={s.title} style={{marginBottom:20}}>
-                  <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".92rem",color:"var(--ink)",marginBottom:7}}>{s.title}</h3>
-                  <p style={{color:"var(--gray)",lineHeight:1.8}}>{s.body}</p>
-                </div>
-              ))}
-
-              <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:9,padding:"12px 16px",marginTop:16}}>
-                <p style={{color:"var(--green)",fontWeight:600,fontSize:".82rem"}}>🔐 Questions sur vos données ? support@yorix.cm ou WhatsApp +237 696 56 56 54</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-
-      {/* ════════ PAGE : NOUS CONTACTER ════════ */}
-      {page==="contact"&&(
-        <section className="sec anim">
-          <div style={{maxWidth:700,margin:"0 auto"}}>
-            <div style={{textAlign:"center",marginBottom:24}}>
-              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",letterSpacing:"-.5px",marginBottom:8}}>📞 Nous contacter</h1>
-              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Notre équipe répond en moins de 2h · 7j/7</p>
-            </div>
-
-            {/* Cartes de contact */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
-              {[
-                {icon:"📱",label:"WhatsApp",val:"+237 696 56 56 54",action:()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`)},
-                {icon:"📞",label:"Téléphone",val:"+237 696 56 56 54",action:()=>window.open("tel:+237696565654")},
-                {icon:"✉️",label:"Email",val:"support@yorix.cm",action:()=>window.open("mailto:support@yorix.cm")},
-              ].map(c=>(
-                <div key={c.label} onClick={c.action} style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",transition:"all .2s"}}
-                  onMouseOver={e=>e.currentTarget.style.borderColor="var(--green)"}
-                  onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}
-                >
-                  <div style={{fontSize:"2rem",marginBottom:8}}>{c.icon}</div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",color:"var(--ink)",marginBottom:4}}>{c.label}</div>
-                  <div style={{fontSize:".78rem",color:"var(--green)",fontWeight:600}}>{c.val}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Formulaire de contact */}
-            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24}}>
-              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
-              <ContactForm user={user} userData={userData}/>
-            </div>
-
-            {/* Horaires */}
-            <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:11,padding:16,marginTop:16,display:"flex",gap:14,flexWrap:"wrap"}}>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>⏰ Horaires de support</div>
-                {[["Lundi – Vendredi","8h – 20h"],["Samedi","9h – 18h"],["Dimanche","10h – 16h"]].map(([j,h])=>(
-                  <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:".75rem",padding:"3px 0",borderBottom:"1px solid var(--border)"}}>
-                    <span style={{color:"var(--gray)"}}>{j}</span><span style={{fontWeight:600,color:"var(--ink)"}}>{h}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>📍 Bureaux</div>
-                <div style={{fontSize:".75rem",color:"var(--gray)",lineHeight:1.7}}>Douala — Akwa, face Hôtel Sawa<br/>Yaoundé — Bastos, rue des Ambassades<br/>📞 +237 696 56 56 54</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ════════ PAGE : CENTRE D'AIDE ════════ */}
-      {page==="aide"&&(
-        <section className="sec anim">
-          <div style={{maxWidth:800,margin:"0 auto"}}>
-            <div style={{textAlign:"center",marginBottom:24}}>
-              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",letterSpacing:"-.5px",marginBottom:8}}>🆘 Centre d'aide Yorix</h1>
-              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Trouvez les réponses à vos questions</p>
-            </div>
-
-            {[
-              {
-                cat:"🛍️ Acheter sur Yorix",
-                questions:[
-                  {q:"Comment passer une commande ?",r:"Cliquez sur un produit → 'Commander via WhatsApp' ou '✅ Commander'. Remplissez votre nom et téléphone. Le vendeur vous contacte sous 1h."},
-                  {q:"Quels modes de paiement sont acceptés ?",r:"MTN Mobile Money (+237 676 93 51 95), Orange Money (+237 696 56 56 54), et paiement en espèces à la livraison dans certaines villes."},
-                  {q:"Comment fonctionne l'Escrow Yorix ?",r:"Votre paiement est sécurisé par Yorix jusqu'à réception du colis. Si le produit n'arrive pas ou n'est pas conforme, vous êtes remboursé sous 48h."},
-                  {q:"Puis-je annuler une commande ?",r:"Oui, dans les 2 heures après la commande. Contactez le support sur WhatsApp : +237 696 56 56 54."},
-                ]
-              },
-              {
-                cat:"🏪 Vendre sur Yorix",
-                questions:[
-                  {q:"Comment créer ma boutique ?",r:"Inscrivez-vous en tant que Vendeur → Dashboard → 'Ajouter produit'. Ajoutez des photos, le prix, la ville. Votre produit est visible instantanément."},
-                  {q:"Comment recevoir mes paiements ?",r:"Vos gains sont versés sur MTN MoMo ou Orange Money dans les 24h après confirmation de la livraison par l'acheteur."},
-                  {q:"Quelle est la commission Yorix ?",r:"5% sur chaque vente. Exemple : produit vendu 10 000 FCFA → vous recevez 9 500 FCFA."},
-                  {q:"Comment obtenir le badge Top Vendeur ?",r:"Automatiquement attribué au vendeur avec le plus de produits actifs. Ou achetez-le 15 000 FCFA/mois pour une visibilité accrue."},
-                ]
-              },
-              {
-                cat:"🚚 Livraison",
-                questions:[
-                  {q:"Quels sont les délais de livraison ?",r:"Intra-ville (Douala/Yaoundé) : 20–60 min. Inter-villes : 1–3 jours. Le livreur vous contacte à l'arrivée."},
-                  {q:"Comment suivre ma livraison ?",r:"Votre livreur vous contacte directement par WhatsApp avec sa position. Suivi en temps réel dans votre dashboard."},
-                  {q:"Que faire si mon colis n'arrive pas ?",r:"Contactez-nous immédiatement : WhatsApp +237 696 56 56 54 ou support@yorix.cm. Enquête ouverte sous 24h."},
-                ]
-              },
-              {
-                cat:"💰 Points & Fidélité",
-                questions:[
-                  {q:"Comment gagner des points ?",r:"5 points par achat, vente, livraison ou prestation. 10 points à l'inscription. 2 points par avis publié. 1 point = 1 FCFA."},
-                  {q:"À partir de combien peut-on échanger ?",r:"Échange possible dès 500 points = 500 FCFA. Utilisables en bons d'achat, livraisons offertes, statuts VIP."},
-                  {q:"Comment obtenir le statut VIP ?",r:"Achetez le statut VIP avec 3 000 points ou 15 000 FCFA/mois. Avantages : badge visible, priorité dans les résultats, support dédié."},
-                ]
-              },
-            ].map(section=>(
-              <div key={section.cat} style={{marginBottom:20}}>
-                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".95rem",color:"var(--ink)",marginBottom:10,padding:"8px 0",borderBottom:"2px solid var(--green-light)"}}>{section.cat}</div>
-                {section.questions.map(({q,r},i)=>(
-                  <details key={i} style={{marginBottom:8,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:9,overflow:"hidden"}}>
-                    <summary style={{padding:"11px 14px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".83rem",color:"var(--ink)",userSelect:"none",listStyle:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      {q}<span style={{color:"var(--green)",fontSize:"1rem"}}>▾</span>
-                    </summary>
-                    <div style={{padding:"10px 14px 14px",fontSize:".8rem",color:"var(--gray)",lineHeight:1.75,borderTop:"1px solid var(--border)"}}>{r}</div>
-                  </details>
-                ))}
-              </div>
-            ))}
-
-            <div style={{textAlign:"center",marginTop:20}}>
-              <p style={{fontSize:".82rem",color:"var(--gray)",marginBottom:12}}>Vous n'avez pas trouvé votre réponse ?</p>
-              <button className="btn-wa" style={{display:"inline-flex",padding:"10px 20px"}} onClick={()=>goPage("contact")}>
-                📞 Contacter le support
-              </button>
-            </div>
-          </div>
-        </section>
       )}
 
       {/* WA FLOAT */}
@@ -4439,6 +4179,117 @@ export default function Yorix() {
         )}
       </div>
 
+
+      {/* ════════ PAGE : ADMIN ════════ */}
+      {page==="admin"&&(
+        <AdminDashboard user={user} userData={userData} goPage={goPage}/>
+      )}
+
+      {/* ════════ PAGE : CONTACT ════════ */}
+      {page==="contact"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:700,margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",marginBottom:8}}>📞 Nous contacter</h1>
+              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Notre équipe répond en moins de 2h · 7j/7</p>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
+              {[
+                {icon:"📱",label:"WhatsApp",val:"+237 696 56 56 54",action:()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`)},
+                {icon:"📞",label:"Téléphone",val:"+237 696 56 56 54",action:()=>window.open("tel:+237696565654")},
+                {icon:"✉️",label:"Email",val:"support@yorix.cm",action:()=>window.open("mailto:support@yorix.cm")},
+              ].map(c=>(
+                <div key={c.label} onClick={c.action} style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",transition:"border-color .2s"}}
+                  onMouseOver={e=>e.currentTarget.style.borderColor="var(--green)"}
+                  onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}
+                >
+                  <div style={{fontSize:"2rem",marginBottom:8}}>{c.icon}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",color:"var(--ink)",marginBottom:4}}>{c.label}</div>
+                  <div style={{fontSize:".78rem",color:"var(--green)",fontWeight:600}}>{c.val}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24,marginBottom:16}}>
+              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
+                <div className="form-group" style={{marginBottom:0}}><label className="form-label">Nom *</label><input className="form-input" placeholder="Votre nom"/></div>
+                <div className="form-group" style={{marginBottom:0}}><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="email@exemple.cm"/></div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Sujet *</label>
+                <select className="form-select">
+                  <option value="">Choisir un sujet...</option>
+                  {["Problème avec une commande","Signaler un vendeur","Remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre"].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label className="form-label">Message *</label><textarea className="form-textarea" style={{minHeight:90}} placeholder="Décrivez votre demande..."/></div>
+              <button className="form-submit" onClick={()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix ! Je vous contacte pour : ")}`)}>📱 Envoyer via WhatsApp</button>
+            </div>
+            <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:11,padding:16,display:"flex",gap:14,flexWrap:"wrap"}}>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>⏰ Horaires</div>
+                {[["Lun – Ven","8h – 20h"],["Samedi","9h – 18h"],["Dimanche","10h – 16h"]].map(([j,h])=>(
+                  <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:".75rem",padding:"3px 0",borderBottom:"1px solid var(--border)"}}>
+                    <span style={{color:"var(--gray)"}}>{j}</span><span style={{fontWeight:600,color:"var(--ink)"}}>{h}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>📍 Bureaux</div>
+                <div style={{fontSize:".75rem",color:"var(--gray)",lineHeight:1.7}}>Douala — Akwa<br/>Yaoundé — Bastos<br/>📞 +237 696 56 56 54</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════ PAGE : CENTRE D'AIDE ════════ */}
+      {page==="aide"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:800,margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",marginBottom:8}}>🆘 Centre d'aide</h1>
+              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Trouvez les réponses à vos questions</p>
+            </div>
+            {[
+              {cat:"🛍️ Acheter sur Yorix",faq:[
+                {q:"Comment passer une commande ?",r:"Cliquez sur un produit → Ajoutez au panier → Commander via WhatsApp. Le vendeur vous contacte sous 1h."},
+                {q:"Quels modes de paiement ?",r:"MTN Mobile Money, Orange Money, et paiement à la livraison dans certaines villes."},
+                {q:"Comment fonctionne l'Escrow ?",r:"Votre paiement est bloqué jusqu'à réception. Si problème, vous êtes remboursé sous 48h."},
+              ]},
+              {cat:"🏪 Vendre sur Yorix",faq:[
+                {q:"Comment créer ma boutique ?",r:"Inscrivez-vous Vendeur → Dashboard → Ajouter produit. Votre produit est visible immédiatement."},
+                {q:"Quelle est la commission Yorix ?",r:"5% sur chaque vente. Exemple : 10 000 FCFA vendus → vous recevez 9 500 FCFA."},
+                {q:"Comment obtenir le badge Top Vendeur ?",r:"Automatique dès 5 produits actifs, ou achetez-le 15 000 FCFA/mois."},
+              ]},
+              {cat:"🚚 Livraison",faq:[
+                {q:"Délais de livraison ?",r:"Intra-ville : 20–60 min. Inter-villes : 1–3 jours."},
+                {q:"Colis non reçu ?",r:"Contactez immédiatement : support@yorix.cm ou WhatsApp +237 696 56 56 54."},
+              ]},
+              {cat:"💰 Points & Fidélité",faq:[
+                {q:"Comment gagner des points ?",r:"5 points par achat, vente, livraison ou prestation. 10 points à l'inscription. 1 pt = 1 FCFA."},
+                {q:"Échange minimum ?",r:"500 points = 500 FCFA. Utilisables en bons d'achat ou livraisons offertes."},
+              ]},
+            ].map(section=>(
+              <div key={section.cat} style={{marginBottom:20}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".95rem",color:"var(--ink)",padding:"8px 0",borderBottom:"2px solid var(--green-light)",marginBottom:10}}>{section.cat}</div>
+                {section.faq.map(({q,r},i)=>(
+                  <details key={i} style={{marginBottom:8,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:9,overflow:"hidden"}}>
+                    <summary style={{padding:"11px 14px",cursor:"pointer",fontWeight:600,fontSize:".83rem",color:"var(--ink)",userSelect:"none",listStyle:"none",display:"flex",justifyContent:"space-between"}}>
+                      {q}<span style={{color:"var(--green)"}}>▾</span>
+                    </summary>
+                    <div style={{padding:"10px 14px 14px",fontSize:".8rem",color:"var(--gray)",lineHeight:1.75,borderTop:"1px solid var(--border)"}}>{r}</div>
+                  </details>
+                ))}
+              </div>
+            ))}
+            <div style={{textAlign:"center",marginTop:20}}>
+              <button className="btn-wa" style={{display:"inline-flex"}} onClick={()=>goPage("contact")}>📞 Contacter le support</button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* FOOTER */}
       <footer className="footer">
         <div className="footer-grid">
@@ -4449,20 +4300,7 @@ export default function Yorix() {
           </div>
           <div className="footer-col"><h4>Marketplace</h4><ul>{[{l:"Tous les produits",p:"produits"},{l:"Offres du jour",p:"produits"},{l:"Devenir vendeur",p:"inscription"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
           <div className="footer-col"><h4>Services</h4><ul>{[{l:"Escrow 🔐",p:"escrow"},{l:"Livraison 🚚",p:"livraison"},{l:"Prestataires 👷",p:"prestataires"},{l:"Business 💼",p:"business"},{l:"Academy 🎓",p:"academy"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
-          <div className="footer-col"><h4>Aide</h4><ul>
-            {[
-              {l:"Centre d'aide",     p:"aide"},
-              {l:"Payer avec MoMo",    p:null, url:"https://www.mtn.cm/momo/"},
-              {l:"Suivi commande",     p:"dashboard"},
-              {l:"Nous contacter",     p:"contact"},
-            ].map(i=><li key={i.l} onClick={()=>{if(i.p)goPage(i.p);else if(i.url)window.open(i.url,"_blank");}} style={{cursor:"pointer"}}>{i.l}</li>)}
-          </ul>
-          <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-            <span onClick={()=>goPage("cgv")}      style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>📜 CGV</span>
-            <span onClick={()=>goPage("mentions")} style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>⚖️ Mentions légales</span>
-            <span onClick={()=>goPage("privacy")}  style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>🔐 Confidentialité</span>
-          </div>
-          </div>
+          <div className="footer-col"><h4>Aide</h4><ul>{["Centre d'aide","Payer avec MoMo","Suivi commande","Nous contacter"].map(i=><li key={i}>{i}</li>)}</ul></div>
         </div>
         <div className="footer-bottom">
           <span>© 2026 Yorix Cameroun — RC: DOUALA/2026/B237</span>
