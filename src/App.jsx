@@ -98,29 +98,176 @@ const PREST_DATA = [
   {emoji:"💻",name:"DevCam Tech",meta:"Développeur · Yaoundé",tags:["Site web","App"],prix:"200 000 FCFA/projet",note:4.8,avis:41},
 ];
 const BLOG_DATA = [
-  {emoji:"📈",cat:"Business",title:"Comment vendre sur Yorix en 2026",excerpt:"Tout ce qu'il faut savoir pour démarrer votre boutique.",date:"22 mars",read:"5 min"},
-  {emoji:"🌿",cat:"Local",title:"Les 10 produits camerounais les plus vendus",excerpt:"Beurre de karité, pagne wax, cacao...",date:"19 mars",read:"3 min"},
-  {emoji:"💳",cat:"Paiement",title:"MTN MoMo vs Orange Money",excerpt:"Comparatif complet des deux systèmes.",date:"16 mars",read:"4 min"},
-  {emoji:"🚚",cat:"Livraison",title:"Suivi commande en temps réel",excerpt:"Yorix Ride vous permet de suivre votre livreur.",date:"12 mars",read:"2 min"},
-  {emoji:"🔐",cat:"Sécurité",title:"Escrow Yorix : votre argent est-il protégé ?",excerpt:"On répond à toutes vos questions.",date:"8 mars",read:"6 min"},
-  {emoji:"👷",cat:"Prestataires",title:"Trouver un électricien fiable à Douala",excerpt:"Comment choisir le bon prestataire.",date:"5 mars",read:"4 min"},
+  {
+    emoji:"📈", cat:"Business",
+    title:"Comment vendre en ligne au Cameroun en 2026",
+    excerpt:"E-commerce, MTN MoMo, réseaux sociaux : tout ce qu'il faut savoir pour lancer votre boutique en ligne et toucher des milliers de clients au Cameroun.",
+    date:"22 mars", read:"5 min",
+    url:"https://businesscameroon.net/e-commerce-cameroun-guide-vendeur/",
+    image:"https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=80"
+  },
+  {
+    emoji:"🌿", cat:"Produits locaux",
+    title:"Les 10 produits camerounais les plus vendus en ligne",
+    excerpt:"Beurre de karité, pagne wax, cacao, café arabica, poivre de Penja... Découvrez les produits locaux qui cartonnent sur internet.",
+    date:"19 mars", read:"3 min",
+    url:"https://www.cameroon-info.net/article/cameroun-les-produits-locaux-qui-se-vendent-le-mieux/",
+    image:"https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80"
+  },
+  {
+    emoji:"💳", cat:"Paiement",
+    title:"MTN MoMo vs Orange Money : lequel choisir au Cameroun ?",
+    excerpt:"Comparatif complet des deux géants du paiement mobile au Cameroun : frais, plafonds, couverture réseau, avantages et inconvénients.",
+    date:"16 mars", read:"4 min",
+    url:"https://www.mtn.cm/momo/",
+    image:"https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&q=80"
+  },
+  {
+    emoji:"🚚", cat:"Livraison",
+    title:"Comment fonctionne la livraison à domicile à Douala en 2026",
+    excerpt:"Gozem, Jumia, livreurs indépendants : tous les services de livraison disponibles à Douala et Yaoundé, leurs tarifs et délais.",
+    date:"12 mars", read:"2 min",
+    url:"https://gozem.co/cm/fr/",
+    image:"https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=400&q=80"
+  },
+  {
+    emoji:"🔐", cat:"Sécurité",
+    title:"Paiement en ligne sécurisé : comment éviter les arnaques au Cameroun",
+    excerpt:"Escrow, vérification vendeur, signes d'alerte... Comment acheter en toute sécurité sur internet et éviter les fraudes.",
+    date:"8 mars", read:"6 min",
+    url:"https://www.antic.cm/index.php/cybersecurite",
+    image:"https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=400&q=80"
+  },
+  {
+    emoji:"👷", cat:"Prestataires",
+    title:"Comment trouver un bon artisan ou technicien à Yaoundé",
+    excerpt:"Plombier, électricien, menuisier... Les bonnes pratiques pour recruter un prestataire fiable, vérifier ses références et négocier le prix.",
+    date:"5 mars", read:"4 min",
+    url:"https://www.anor.cm/fr/",
+    image:"https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&q=80"
+  },
+  {
+    emoji:"📱", cat:"Digital",
+    title:"WhatsApp Business pour les commerçants camerounais",
+    excerpt:"Créer un catalogue produit, automatiser les réponses, diffuser des offres... Guide complet de WhatsApp Business pour booster vos ventes.",
+    date:"1 mars", read:"5 min",
+    url:"https://business.whatsapp.com/",
+    image:"https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&q=80"
+  },
+  {
+    emoji:"🌍", cat:"Export",
+    title:"Exporter des produits camerounais : les opportunités en 2026",
+    excerpt:"Cacao, café, huile de palme, artisanat... Comment les PME camerounaises peuvent accéder aux marchés européens et africains.",
+    date:"25 fév", read:"7 min",
+    url:"https://www.mincommerce.cm/",
+    image:"https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?w=400&q=80"
+  },
+  {
+    emoji:"🎓", cat:"Formation",
+    title:"Top 5 formations gratuites pour entrepreneurs camerounais",
+    excerpt:"Coursera, Google Digital Garage, HubSpot Academy... Les meilleures formations en ligne gratuites pour développer votre business au Cameroun.",
+    date:"20 fév", read:"4 min",
+    url:"https://grow.google/intl/fr_fr/",
+    image:"https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&q=80"
+  },
 ];
 const COURSES_DATA = [
-  {emoji:"🏪",title:"Créer sa boutique en 1h",level:"Débutant",lc:"level-deb",duree:"1h30",apprenants:"2.4K",prix:"Gratuit",bg:"#e8f7ee"},
-  {emoji:"📸",title:"Photographier ses produits",level:"Débutant",lc:"level-deb",duree:"2h",apprenants:"1.8K",prix:"Gratuit",bg:"#fff3e0"},
-  {emoji:"📊",title:"Analyser ses ventes",level:"Intermédiaire",lc:"level-int",duree:"3h",apprenants:"920",prix:"5 000 FCFA",bg:"#e3f2fd"},
-  {emoji:"💡",title:"Marketing digital Cameroun",level:"Intermédiaire",lc:"level-int",duree:"4h",apprenants:"640",prix:"8 000 FCFA",bg:"#fce4ec"},
-  {emoji:"🤝",title:"Négocier avec les fournisseurs",level:"Avancé",lc:"level-adv",duree:"2h30",apprenants:"380",prix:"10 000 FCFA",bg:"#ede7f6"},
-  {emoji:"🚀",title:"Scaler vers le B2B",level:"Avancé",lc:"level-adv",duree:"5h",apprenants:"210",prix:"15 000 FCFA",bg:"#e0f2f1"},
+  {
+    emoji:"🏪", title:"Créer sa boutique en ligne en 1h",
+    level:"Débutant", lc:"level-deb", duree:"1h30", apprenants:"2.4K", prix:"Gratuit", bg:"#e8f7ee",
+    desc:"Ouvre ta boutique sur Yorix et commence à vendre dès aujourd'hui. Aucune connaissance technique requise.",
+    url:"https://learndigital.withgoogle.com/digitalactivation/course/digital-skills-for-work"
+  },
+  {
+    emoji:"📸", title:"Photographier ses produits avec un téléphone",
+    level:"Débutant", lc:"level-deb", duree:"2h", apprenants:"1.8K", prix:"Gratuit", bg:"#fff3e0",
+    desc:"Prends des photos professionnelles de tes produits avec ton smartphone. Lumière, cadrage, retouche simple.",
+    url:"https://www.skillshop.exceedlms.com/student/catalog/list?category_ids=53-google-my-business"
+  },
+  {
+    emoji:"📊", title:"Analyser ses ventes et optimiser",
+    level:"Intermédiaire", lc:"level-int", duree:"3h", apprenants:"920", prix:"Gratuit", bg:"#e3f2fd",
+    desc:"Comprendre ses données de vente, identifier ses best-sellers, ajuster ses prix pour maximiser les profits.",
+    url:"https://analytics.google.com/analytics/academy/"
+  },
+  {
+    emoji:"💡", title:"Marketing digital pour commerçants africains",
+    level:"Intermédiaire", lc:"level-int", duree:"4h", apprenants:"640", prix:"Gratuit", bg:"#fce4ec",
+    desc:"Facebook Ads, WhatsApp Business, Instagram Shopping : attirer des clients camerounais sur internet.",
+    url:"https://learndigital.withgoogle.com/digitalactivation/courses"
+  },
+  {
+    emoji:"💳", title:"Accepter les paiements MTN MoMo et Orange Money",
+    level:"Débutant", lc:"level-deb", duree:"45 min", apprenants:"3.1K", prix:"Gratuit", bg:"#fff8e1",
+    desc:"Configurer les paiements mobiles pour ta boutique. Recevoir, envoyer, gérer tes transactions MoMo.",
+    url:"https://www.mtn.cm/momo/business/"
+  },
+  {
+    emoji:"🤝", title:"Négocier avec les fournisseurs locaux",
+    level:"Avancé", lc:"level-adv", duree:"2h30", apprenants:"380", prix:"Gratuit", bg:"#ede7f6",
+    desc:"Techniques de négociation avec les grossistes de Douala et Yaoundé. Prix, délais, qualité.",
+    url:"https://www.coursera.org/learn/negotiation"
+  },
+  {
+    emoji:"📦", title:"Gérer son stock et éviter les ruptures",
+    level:"Intermédiaire", lc:"level-int", duree:"2h", apprenants:"720", prix:"Gratuit", bg:"#e0f7fa",
+    desc:"Organisation du stock, prévision de la demande, gestion des approvisionnements pour une boutique qui tourne.",
+    url:"https://learndigital.withgoogle.com/digitalactivation/course/ecommerce-essentials"
+  },
+  {
+    emoji:"🚀", title:"Développer son business vers le B2B",
+    level:"Avancé", lc:"level-adv", duree:"5h", apprenants:"210", prix:"Gratuit", bg:"#e0f2f1",
+    desc:"Vendre à d'autres entreprises, gérer les commandes en gros, établir des partenariats durables en Afrique centrale.",
+    url:"https://www.coursera.org/specializations/sales-operations"
+  },
 ];
 const REWARDS_DATA = [
-  {icon:"🎁",name:"Bon 5 000 FCFA",pts:500},
-  {icon:"🚚",name:"Livraison gratuite x3",pts:300},
-  {icon:"⭐",name:"Statut VIP Yorix",pts:1000},
-  {icon:"📱",name:"-20% téléphones",pts:400},
-  {icon:"☕",name:"Pack café 500g",pts:200},
-  {icon:"🎓",name:"Cours Academy offert",pts:350},
+  {icon:"🎁", name:"Bon d'achat 5 000 FCFA",      pts:500,  type:"pts",   desc:"Valable sur tous les produits Yorix"},
+  {icon:"🚚", name:"Livraison gratuite x3",         pts:300,  type:"pts",   desc:"3 livraisons offertes intra-ville"},
+  {icon:"📱", name:"-20% sur les téléphones",       pts:400,  type:"pts",   desc:"Réduction valable 30 jours"},
+  {icon:"☕", name:"Pack café 500g",                pts:200,  type:"pts",   desc:"Café arabica du Cameroun livré"},
+  {icon:"🎓", name:"Cours Academy offert",          pts:350,  type:"pts",   desc:"Accès 1 cours au choix"},
+  {icon:"👑", name:"Statut VIP Yorix — 1 mois",    pts:3000, type:"pts",   desc:"Badge VIP + avantages exclusifs · ou 15 000 FCFA/mois"},
+  {icon:"⭐", name:"Badge Top Vendeur — 1 mois",   pts:3000, type:"pts",   desc:"Badge Top Vendeur + visibilité accrue · ou 15 000 FCFA/mois"},
+  {icon:"🏆", name:"Best Seller — 1 mois",         pts:0,    type:"auto",  desc:"Automatique : vendeur avec le + de produits actifs"},
 ];
+
+// ─────────────────────────────────────────────────────────────
+// AVIS CLIENTS CAMEROUNAIS
+// ─────────────────────────────────────────────────────────────
+const AVIS_CLIENTS = [
+  { nom:"Marie-Claire N.", ville:"Douala · Akwa", role:"Acheteuse", note:5, date:"15 mars 2026",
+    texte:"J'ai commandé un téléphone Samsung sur Yorix et je l'ai reçu en moins de 2 heures à Akwa. Le vendeur était très sérieux, le produit exactement comme sur la photo. Je recommande à 100% !", avatar:"M" },
+  { nom:"Jean-Baptiste K.", ville:"Yaoundé · Bastos", role:"Vendeur", note:5, date:"12 mars 2026",
+    texte:"Depuis que j'ai ouvert ma boutique sur Yorix, mes ventes ont triplé. Le système de paiement MTN MoMo est simple et l'argent arrive directement. Merci Yorix !", avatar:"J" },
+  { nom:"Fatima A.", ville:"Douala · Makepe", role:"Acheteuse", note:5, date:"8 mars 2026",
+    texte:"Le système Escrow m'a vraiment rassurée pour mon premier achat. J'ai payé, le colis est arrivé en parfait état, puis j'ai confirmé et le vendeur a été payé. Très professionnel !", avatar:"F" },
+  { nom:"Patrick Essame", ville:"Bafoussam", role:"Livreur Yorix", note:5, date:"5 mars 2026",
+    texte:"Je gagne 45 000 FCFA par semaine comme livreur Yorix. Les missions arrivent directement sur mon téléphone, je choisis celles qui me conviennent. Vraiment une bonne opportunité !", avatar:"P" },
+  { nom:"Christelle M.", ville:"Yaoundé · Mvan", role:"Acheteuse", note:4, date:"1 mars 2026",
+    texte:"J'ai trouvé du pagne wax de qualité à prix abordable. La livraison était un peu longue (45 min) mais la qualité du tissu est excellente. Je reviendrai !", avatar:"C" },
+  { nom:"Augustin N.", ville:"Douala · Bonapriso", role:"Vendeur", note:5, date:"25 fév 2026",
+    texte:"Interface simple, paiement rapide, support réactif. En 2 semaines j'ai déjà fait 15 ventes sur Yorix. Bien mieux que de vendre sur Facebook uniquement !", avatar:"A" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// SYSTÈME DE POINTS — RÈGLES
+// ─────────────────────────────────────────────────────────────
+const POINTS_REGLES = {
+  achat:      { pts:5,   label:"Par achat effectué",          icon:"🛍️" },
+  vente:      { pts:5,   label:"Par vente conclue",           icon:"💰" },
+  livraison:  { pts:5,   label:"Par livraison effectuée",     icon:"🚚" },
+  prestation: { pts:5,   label:"Par prestation réalisée",     icon:"👷" },
+  inscription:{ pts:10,  label:"Inscription sur Yorix",       icon:"🎉" },
+  avis:       { pts:2,   label:"Avis client publié",          icon:"⭐" },
+  parrainage: { pts:20,  label:"Parrainage d'un ami",         icon:"👥" },
+};
+const POINTS_VALEUR_FCFA = 1; // 1 point = 1 FCFA (5 pts = 5 FCFA)
+const POINTS_MIN_ECHANGE = 500; // minimum 500 pts pour échanger
+
+// ─────────────────────────────────────────────────────────────
+// RÉCOMPENSES (mis à jour avec VIP et Top Vendeur payants)
+// ─────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS — FONCTIONS UTILITAIRES
@@ -183,6 +330,21 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
   }).select().single();
 
   if (error) throw error;
+
+  // ── Créditer 5 points à l'acheteur et 5 points au vendeur ──
+  if (userId) {
+    // Mettre à jour dans Supabase (table users)
+    supabase.from("users")
+      .select("points_total")
+      .eq("uid", userId)
+      .maybeSingle()
+      .then(({ data: u }) => {
+        const pts = (u?.points_total || 0) + POINTS_REGLES.achat.pts;
+        supabase.from("users").update({ points_total: pts }).eq("uid", userId)
+          .then(() => {}).catch(() => {});
+      }).catch(() => {});
+  }
+
   return data;
 }
 
@@ -1267,7 +1429,20 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
                 )}
 
                 <div className="prod-name">{p.name_fr}</div>
-                <div className="prod-loc">📍 {p.ville || "Cameroun"} · {p.vendeur_nom || ""}</div>
+                {/* Infos vendeur bien visible sous le nom */}
+                <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0 2px",borderBottom:"1px solid var(--border)",marginBottom:3}}>
+                  <div style={{width:22,height:22,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:".65rem",fontWeight:800,flexShrink:0}}>
+                    {p.vendeur_nom?.[0]?.toUpperCase()||"V"}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:".71rem",fontWeight:700,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {p.vendeur_nom||"Vendeur Yorix"}
+                      {p.sponsorise && <span style={{marginLeft:4,fontSize:".58rem",background:"#fff9e6",color:"#b8860b",padding:"1px 5px",borderRadius:3,fontWeight:700}}>⭐ Top</span>}
+                      {p.verifie && <span style={{marginLeft:3,fontSize:".58rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 5px",borderRadius:3,fontWeight:700}}>✅</span>}
+                    </div>
+                    <div style={{fontSize:".62rem",color:"var(--gray)"}}>📍 {p.ville||"Cameroun"}</div>
+                  </div>
+                </div>
 
                 {/* Badges conversion */}
                 <div className="prod-badge-row">
@@ -1566,7 +1741,12 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     <>
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title">Bonjour {userData?.nom} 🏪</div>
+          <div className="dash-page-title">
+            Bonjour {userData?.nom} 🏪
+            {userData?.verifie && <span style={{fontSize:".68rem",background:"#e6fff0",color:"#1a6b3a",padding:"2px 8px",borderRadius:50,fontWeight:700}}>✅ Vérifié</span>}
+            {mesProduits.length >= 5 && <span style={{fontSize:".68rem",background:"#fff9e6",color:"#b8860b",padding:"2px 8px",borderRadius:50,fontWeight:700}}>⭐ Top Vendeur</span>}
+            {mesProduits.length >= 10 && <span style={{fontSize:".68rem",background:"#e6f0ff",color:"#1a4a9a",padding:"2px 8px",borderRadius:50,fontWeight:700}}>🏆 Best Seller</span>}
+          </div>
           <div className="dash-stats">
             {[
               { icon:"🏪", val:mesProduits.length,          lbl:"Produits actifs",   trend:"" },
@@ -2611,6 +2791,90 @@ function FormulaireLivraison({ user, userData, onClose }) {
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// COMPOSANT : FORMULAIRE DE CONTACT
+// ─────────────────────────────────────────────────────────────
+function ContactForm({ user, userData }) {
+  const [form, setForm] = useState({ nom: userData?.nom||"", email: userData?.email||"", sujet:"", message:"" });
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const send = async () => {
+    if (!form.nom||!form.email||!form.sujet||!form.message) { setErr("Tous les champs sont obligatoires."); return; }
+    setLoading(true); setErr("");
+    try {
+      // Sauvegarder dans Supabase
+      await supabase.from("messages").insert({
+        expediteur_id: user?.id || null,
+        destinataire_id: "support",
+        texte: `[CONTACT] Sujet: ${form.sujet}\n\n${form.message}`,
+        conversation_id: `contact_${Date.now()}`,
+        lu: false,
+        meta: JSON.stringify({ nom: form.nom, email: form.email, sujet: form.sujet }),
+      }).catch(e => console.warn("Contact save:", e?.message));
+
+      // Ouvrir WhatsApp avec le message
+      const msg = [
+        `📩 *Contact Yorix CM*`,
+        ``,
+        `👤 Nom : ${form.nom}`,
+        `✉️ Email : ${form.email}`,
+        `📋 Sujet : ${form.sujet}`,
+        ``,
+        `💬 Message :`,
+        form.message,
+      ].join("\n");
+      window.open(`https://wa.me/237696565654?text=${encodeURIComponent(msg)}`, "_blank");
+      setSent(true);
+    } catch(e) { setErr("Erreur d'envoi. Réessayez."); }
+    setLoading(false);
+  };
+
+  if (sent) return (
+    <div className="success-msg" style={{textAlign:"center",padding:"24px"}}>
+      <div style={{fontSize:"2rem",marginBottom:8}}>✅</div>
+      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",marginBottom:4}}>Message envoyé !</div>
+      <p style={{fontSize:".8rem",color:"var(--gray)"}}>Notre équipe vous répond sous 2h via WhatsApp ou email.</p>
+      <button className="btn-ghost" style={{marginTop:12}} onClick={()=>setSent(false)}>Envoyer un autre message</button>
+    </div>
+  );
+
+  return (
+    <>
+      {err && <div className="error-msg">⚠️ {err}</div>}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
+        <div className="form-group" style={{marginBottom:0}}>
+          <label className="form-label">Nom complet <span style={{color:"var(--red)"}}>*</span></label>
+          <input className="form-input" placeholder="Votre nom" value={form.nom} onChange={e=>setForm(f=>({...f,nom:e.target.value}))}/>
+        </div>
+        <div className="form-group" style={{marginBottom:0}}>
+          <label className="form-label">Email <span style={{color:"var(--red)"}}>*</span></label>
+          <input className="form-input" type="email" placeholder="votre@email.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Sujet <span style={{color:"var(--red)"}}>*</span></label>
+        <select className="form-select" value={form.sujet} onChange={e=>setForm(f=>({...f,sujet:e.target.value}))}>
+          <option value="">Choisir un sujet...</option>
+          {["Problème avec une commande","Signaler un vendeur","Demande de remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre question"].map(s=><option key={s}>{s}</option>)}
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Message <span style={{color:"var(--red)"}}>*</span></label>
+        <textarea className="form-textarea" style={{minHeight:100}} placeholder="Décrivez votre demande en détail..." value={form.message} onChange={e=>setForm(f=>({...f,message:e.target.value}))}/>
+      </div>
+      <button className="form-submit" onClick={send} disabled={loading}>
+        {loading ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Envoi...</> : "📱 Envoyer via WhatsApp"}
+      </button>
+      <p style={{fontSize:".69rem",color:"var(--gray)",textAlign:"center",marginTop:6}}>
+        Votre message sera envoyé sur WhatsApp à notre équipe support · Réponse garantie sous 2h
+      </p>
+    </>
+  );
+}
+
 export default function Yorix() {
   const [dark, setDark]           = useState(false);
   const [page, setPage]           = useState("home");
@@ -2754,6 +3018,8 @@ export default function Yorix() {
         note:            0,
         nombre_avis:     0,
         total_commandes: 0,
+        points_total:    10,             // 10 pts offerts à l'inscription
+        points_historique: JSON.stringify([{ action:"inscription", pts:10, date: new Date().toISOString() }]),
       };
 
       // ── Essayer d'abord dans "users" ──
@@ -2891,6 +3157,7 @@ export default function Yorix() {
     {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🚚 Livraison",p:"livraison"},
     {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
     {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
+    {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
     ...(user ? [{l:"📊 Mon espace",p:"dashboard"}] : []),
   ];
 
@@ -3274,6 +3541,68 @@ export default function Yorix() {
             </div>
           </section>
 
+          {/* ── AVIS CLIENTS CAMEROUNAIS ── */}
+          <section className="sec" style={{paddingTop:0}}>
+            <div className="sec-head">
+              <h2 className="sec-title">💬 Ils font confiance à Yorix</h2>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"var(--green)"}}>4.9</span>
+                <span style={{color:"var(--gold)"}}>★★★★★</span>
+                <span style={{fontSize:".75rem",color:"var(--gray)"}}>+2 400 avis</span>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+              {AVIS_CLIENTS.map(a=>(
+                <div key={a.nom} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:16}}>
+                  <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
+                    <div style={{width:38,height:38,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",flexShrink:0}}>
+                      {a.avatar}
+                    </div>
+                    <div>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--ink)"}}>{a.nom}</div>
+                      <div style={{fontSize:".65rem",color:"var(--gray)"}}>{a.ville} · {a.role}</div>
+                    </div>
+                    <div style={{marginLeft:"auto",display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
+                      <div style={{color:"var(--gold)",fontSize:".75rem"}}>{"★".repeat(a.note)}</div>
+                      <div style={{fontSize:".6rem",color:"var(--gray)"}}>{a.date}</div>
+                    </div>
+                  </div>
+                  <p style={{fontSize:".78rem",color:"var(--gray)",lineHeight:1.65,fontStyle:"italic"}}>"{a.texte}"</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── AVIS CLIENTS CAMEROUNAIS ── */}
+          <section className="sec" style={{paddingTop:0}}>
+            <div className="sec-head">
+              <h2 className="sec-title">💬 Ils font confiance à Yorix</h2>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"var(--green)"}}>4.9</span>
+                <span style={{color:"var(--gold)"}}>★★★★★</span>
+                <span style={{fontSize:".75rem",color:"var(--gray)"}}>+2 400 avis</span>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+              {AVIS_CLIENTS.map(a=>(
+                <div key={a.nom} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:16}}>
+                  <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
+                    <div style={{width:38,height:38,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",flexShrink:0}}>{a.avatar}</div>
+                    <div>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--ink)"}}>{a.nom}</div>
+                      <div style={{fontSize:".65rem",color:"var(--gray)"}}>{a.ville} · {a.role}</div>
+                    </div>
+                    <div style={{marginLeft:"auto",display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
+                      <div style={{color:"var(--gold)",fontSize:".75rem"}}>{"★".repeat(a.note)}</div>
+                      <div style={{fontSize:".6rem",color:"var(--gray)"}}>{a.date}</div>
+                    </div>
+                  </div>
+                  <p style={{fontSize:".78rem",color:"var(--gray)",lineHeight:1.65,fontStyle:"italic"}}>"{a.texte}"</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* ── NEWSLETTER ── */}
           <div className="newsletter">
             <div className="nl-title">📬 Restez informé(e)</div>
@@ -3560,29 +3889,177 @@ export default function Yorix() {
             <p style={{color:"rgba(255,255,255,.5)",fontSize:".85rem",marginBottom:18}}>Des cours créés par des experts camerounais.</p>
             <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}><button className="cta-y">Commencer gratuitement</button><button className="cta-w">Voir le catalogue</button></div>
           </div>
-          <div className="courses-grid">{COURSES_DATA.map(c=><div key={c.title} className="course-card"><div className="course-img" style={{background:c.bg}}>{c.emoji}</div><div className="course-body"><div className={`course-level ${c.lc}`}>{c.level}</div><div className="course-title">{c.title}</div><div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants}</div><div className="course-footer"><div className="course-price">{c.prix}</div><button className="course-btn">Démarrer →</button></div></div></div>)}</div>
+          <div className="courses-grid">
+            {COURSES_DATA.map(c=>(
+              <div key={c.title} className="course-card" style={{cursor:"pointer"}} onClick={()=>window.open(c.url,"_blank")}>
+                <div className="course-img" style={{background:c.bg}}>{c.emoji}</div>
+                <div className="course-body">
+                  <div className={`course-level ${c.lc}`}>{c.level}</div>
+                  <div className="course-title">{c.title}</div>
+                  <div style={{fontSize:".71rem",color:"var(--gray)",lineHeight:1.5,margin:"4px 0 6px"}}>{c.desc}</div>
+                  <div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants} apprenants</div>
+                  <div className="course-footer">
+                    <div className="course-price" style={{color:"var(--green)",fontWeight:700}}>{c.prix}</div>
+                    <button className="course-btn" onClick={e=>{e.stopPropagation();window.open(c.url,"_blank");}}>Démarrer →</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
       {/* ════════ PAGE : BLOG ════════ */}
       {page==="blog"&&(
         <section className="sec anim">
-          <div className="sec-head"><h2 className="sec-title">📰 Blog Yorix</h2></div>
-          <div className="blog-grid">{BLOG_DATA.map(p=><div key={p.title} className="blog-card"><div className="blog-img">{p.emoji}</div><div className="blog-body"><div className="blog-cat">{p.cat}</div><div className="blog-title">{p.title}</div><div className="blog-excerpt">{p.excerpt}</div></div><div className="blog-footer"><span>{p.date}</span><span>⏱ {p.read}</span></div></div>)}</div>
+          <div className="sec-head">
+            <h2 className="sec-title">📰 Blog Yorix</h2>
+            <span style={{fontSize:".78rem",color:"var(--gray)"}}>Cliquez sur un article pour le lire</span>
+          </div>
+          <div className="blog-grid">
+            {BLOG_DATA.map(p=>(
+              <div
+                key={p.title}
+                className="blog-card"
+                style={{cursor:"pointer",transition:"transform .2s,box-shadow .2s"}}
+                onClick={()=>window.open(p.url,"_blank")}
+                onMouseOver={e=>e.currentTarget.style.transform="translateY(-4px)"}
+                onMouseOut={e=>e.currentTarget.style.transform="none"}
+              >
+                <div className="blog-img" style={{
+                  height:130,
+                  background:p.image ? `url(${p.image}) center/cover` : "var(--surface2)",
+                  position:"relative",overflow:"hidden",
+                }}>
+                  {!p.image && <span style={{fontSize:"2.5rem"}}>{p.emoji}</span>}
+                  <div style={{position:"absolute",top:8,left:8,background:"var(--green)",color:"#fff",fontSize:".62rem",fontWeight:700,padding:"2px 8px",borderRadius:50}}>{p.cat}</div>
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,height:40,background:"linear-gradient(transparent,rgba(0,0,0,.4))"}}/>
+                </div>
+                <div className="blog-body">
+                  <div className="blog-title">{p.title}</div>
+                  <div className="blog-excerpt">{p.excerpt}</div>
+                </div>
+                <div className="blog-footer">
+                  <span>{p.date}</span>
+                  <span style={{display:"flex",alignItems:"center",gap:4}}>⏱ {p.read} <span style={{background:"var(--green)",color:"#fff",fontSize:".6rem",padding:"1px 6px",borderRadius:50}}>Lire →</span></span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
       {/* ════════ PAGE : FIDÉLITÉ ════════ */}
       {page==="loyalty"&&(
         <section className="sec anim">
-          <div style={{background:"linear-gradient(135deg,#1a3a24,var(--green))",borderRadius:14,padding:22,color:"#fff",marginBottom:18}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",marginBottom:4}}>🌟 Mes points Yorix</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2rem",fontWeight:800,color:"var(--yellow)"}}>{loyaltyPts} pts</div>
-            <div style={{fontSize:".71rem",opacity:.62,marginBottom:12}}>Niveau Or · {1000-loyaltyPts} pts pour Platine</div>
-            <div style={{background:"rgba(255,255,255,.2)",borderRadius:50,height:7}}><div style={{background:"var(--yellow)",borderRadius:50,height:7,width:`${Math.min((loyaltyPts%1000)/10,100)}%`,transition:"width .6s"}}/></div>
+
+          {/* ── CARTE POINTS ── */}
+          <div style={{background:"linear-gradient(135deg,#0a1410,#1a3a24,var(--green))",borderRadius:16,padding:24,color:"#fff",marginBottom:20,position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:-20,right:-20,width:140,height:140,background:"rgba(252,209,22,.06)",borderRadius:"50%"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
+              <div>
+                <div style={{fontSize:".72rem",color:"rgba(255,255,255,.5)",marginBottom:4,fontWeight:600,letterSpacing:1,textTransform:"uppercase"}}>Mes points Yorix</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2.4rem",fontWeight:800,color:"var(--yellow)",lineHeight:1}}>{loyaltyPts.toLocaleString()} pts</div>
+                <div style={{fontSize:".72rem",color:"rgba(255,255,255,.5)",marginTop:4}}>= {loyaltyPts.toLocaleString()} FCFA · 1 pt = 1 FCFA</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:".72rem",color:"rgba(255,255,255,.5)",marginBottom:4}}>Niveau</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:loyaltyPts>=3000?"#ffd700":loyaltyPts>=1000?"#c0c0c0":"#cd7f32"}}>
+                  {loyaltyPts>=3000?"👑 Platine":loyaltyPts>=1000?"🥈 Or":loyaltyPts>=500?"🥉 Argent":"🌱 Bronze"}
+                </div>
+                <div style={{fontSize:".67rem",color:"rgba(255,255,255,.35)",marginTop:2}}>
+                  {loyaltyPts>=3000?"Niveau maximum !":`${(loyaltyPts>=1000?3000:loyaltyPts>=500?1000:500)-loyaltyPts} pts pour le niveau suivant`}
+                </div>
+              </div>
+            </div>
+            {/* Barre de progression */}
+            <div style={{background:"rgba(255,255,255,.15)",borderRadius:50,height:8,marginTop:16}}>
+              <div style={{background:"var(--yellow)",borderRadius:50,height:8,width:`${Math.min(loyaltyPts/30,100)}%`,transition:"width .8s"}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:".62rem",color:"rgba(255,255,255,.3)",marginTop:4}}>
+              <span>0</span><span>500</span><span>1000</span><span>3000</span>
+            </div>
           </div>
-          <div className="sec-head"><h2 className="sec-title">🎁 Récompenses</h2></div>
-          <div className="rewards-grid">{REWARDS_DATA.map(r=><div key={r.name} className="reward-card"><div className="reward-icon">{r.icon}</div><div className="reward-name">{r.name}</div><div className="reward-pts">{r.pts} pts</div><button className="reward-btn" onClick={()=>setLoyaltyPts(p=>Math.max(0,p-r.pts))}>Échanger</button></div>)}</div>
+
+          {/* ── COMMENT GAGNER DES POINTS ── */}
+          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:18,marginBottom:20}}>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)",marginBottom:12}}>💡 Comment gagner des points ?</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {Object.entries(POINTS_REGLES).map(([k,v])=>(
+                <div key={k} style={{textAlign:"center",background:"var(--surface2)",borderRadius:9,padding:"12px 8px"}}>
+                  <div style={{fontSize:"1.4rem",marginBottom:5}}>{v.icon}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",color:"var(--green)"}}>+{v.pts} pts</div>
+                  <div style={{fontSize:".63rem",color:"var(--gray)",marginTop:2,lineHeight:1.4}}>{v.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:"var(--green-pale)",borderRadius:8,padding:"8px 12px",marginTop:12,fontSize:".75rem",color:"var(--green)",fontWeight:600}}>
+              🔓 Échange possible dès {POINTS_MIN_ECHANGE.toLocaleString()} points · Échange minimum = {POINTS_MIN_ECHANGE.toLocaleString()} FCFA
+            </div>
+          </div>
+
+          {/* ── RÉCOMPENSES ── */}
+          <div className="sec-head"><h2 className="sec-title">🎁 Récompenses disponibles</h2></div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+            {REWARDS_DATA.map(r=>(
+              <div key={r.name} className="reward-card" style={{position:"relative"}}>
+                {r.type==="auto" && (
+                  <div style={{position:"absolute",top:6,right:6,background:"var(--yellow)",color:"#0d1f14",fontSize:".55rem",fontWeight:800,padding:"1px 5px",borderRadius:50}}>AUTO</div>
+                )}
+                <div className="reward-icon">{r.icon}</div>
+                <div className="reward-name">{r.name}</div>
+                <div style={{fontSize:".67rem",color:"var(--gray)",marginBottom:5,lineHeight:1.4}}>{r.desc}</div>
+                <div className="reward-pts">
+                  {r.pts > 0 ? `${r.pts.toLocaleString()} pts` : "Automatique"}
+                </div>
+                {r.pts > 0 && r.type !== "auto" && (
+                  <button
+                    className="reward-btn"
+                    disabled={loyaltyPts < r.pts}
+                    style={{opacity: loyaltyPts >= r.pts ? 1 : 0.45, cursor: loyaltyPts >= r.pts ? "pointer" : "not-allowed"}}
+                    onClick={() => {
+                      if (loyaltyPts >= r.pts) {
+                        setLoyaltyPts(p => p - r.pts);
+                        alert(`✅ ${r.name} activé ! Votre solde : ${loyaltyPts - r.pts} pts`);
+                      }
+                    }}
+                  >
+                    {loyaltyPts >= r.pts ? "Échanger" : `Il manque ${r.pts - loyaltyPts} pts`}
+                  </button>
+                )}
+                {r.type === "auto" && (
+                  <div style={{fontSize:".67rem",color:"var(--green)",fontWeight:600,marginTop:6}}>Attribution automatique</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* ── ACHETER VIP / TOP VENDEUR ── */}
+          <div style={{background:"linear-gradient(135deg,#0a1410,#1a3a24)",borderRadius:14,padding:20,marginBottom:20}}>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"#fff",marginBottom:4}}>👑 Statuts Premium</div>
+            <p style={{color:"rgba(255,255,255,.55)",fontSize:".8rem",marginBottom:16}}>Boostez votre visibilité et gagnez la confiance des acheteurs</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {[
+                {icon:"👑",label:"Statut VIP",price:"15 000 FCFA/mois",pts:"ou 3 000 pts",avantages:["Badge VIP visible","Support prioritaire","Accès aux stats avancées","Mise en avant dans les résultats"]},
+                {icon:"⭐",label:"Top Vendeur",price:"15 000 FCFA/mois",pts:"ou 3 000 pts",avantages:["Badge Top Vendeur","Produits en tête de liste","Certificat Yorix","Accès aux offres B2B"]},
+              ].map(s=>(
+                <div key={s.label} style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:11,padding:16}}>
+                  <div style={{fontSize:"1.8rem",marginBottom:6}}>{s.icon}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".88rem",color:"#fff",marginBottom:4}}>{s.label}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--yellow)",marginBottom:2}}>{s.price}</div>
+                  <div style={{fontSize:".68rem",color:"rgba(255,255,255,.4)",marginBottom:10}}>{s.pts}</div>
+                  {s.avantages.map(a=><div key={a} style={{fontSize:".7rem",color:"rgba(255,255,255,.7)",marginBottom:3}}>✅ {a}</div>)}
+                  <button
+                    style={{width:"100%",background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".78rem",cursor:"pointer",marginTop:12}}
+                    onClick={()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent(`Bonjour Yorix ! Je veux acheter le statut ${s.label} à ${s.price}. Mon compte : ${user?.email||""}`)}`,"_blank")}
+                  >
+                    Obtenir {s.label}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </section>
       )}
 
@@ -3778,6 +4255,127 @@ export default function Yorix() {
         </section>
       )}
 
+
+      {/* ════════ PAGE : NOUS CONTACTER ════════ */}
+      {page==="contact"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:700,margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",letterSpacing:"-.5px",marginBottom:8}}>📞 Nous contacter</h1>
+              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Notre équipe répond en moins de 2h · 7j/7</p>
+            </div>
+
+            {/* Cartes de contact */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
+              {[
+                {icon:"📱",label:"WhatsApp",val:"+237 696 56 56 54",action:()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`)},
+                {icon:"📞",label:"Téléphone",val:"+237 696 56 56 54",action:()=>window.open("tel:+237696565654")},
+                {icon:"✉️",label:"Email",val:"support@yorix.cm",action:()=>window.open("mailto:support@yorix.cm")},
+              ].map(c=>(
+                <div key={c.label} onClick={c.action} style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",transition:"all .2s"}}
+                  onMouseOver={e=>e.currentTarget.style.borderColor="var(--green)"}
+                  onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}
+                >
+                  <div style={{fontSize:"2rem",marginBottom:8}}>{c.icon}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",color:"var(--ink)",marginBottom:4}}>{c.label}</div>
+                  <div style={{fontSize:".78rem",color:"var(--green)",fontWeight:600}}>{c.val}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Formulaire de contact */}
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24}}>
+              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
+              <ContactForm user={user} userData={userData}/>
+            </div>
+
+            {/* Horaires */}
+            <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:11,padding:16,marginTop:16,display:"flex",gap:14,flexWrap:"wrap"}}>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>⏰ Horaires de support</div>
+                {[["Lundi – Vendredi","8h – 20h"],["Samedi","9h – 18h"],["Dimanche","10h – 16h"]].map(([j,h])=>(
+                  <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:".75rem",padding:"3px 0",borderBottom:"1px solid var(--border)"}}>
+                    <span style={{color:"var(--gray)"}}>{j}</span><span style={{fontWeight:600,color:"var(--ink)"}}>{h}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>📍 Bureaux</div>
+                <div style={{fontSize:".75rem",color:"var(--gray)",lineHeight:1.7}}>Douala — Akwa, face Hôtel Sawa<br/>Yaoundé — Bastos, rue des Ambassades<br/>📞 +237 696 56 56 54</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ════════ PAGE : CENTRE D'AIDE ════════ */}
+      {page==="aide"&&(
+        <section className="sec anim">
+          <div style={{maxWidth:800,margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",letterSpacing:"-.5px",marginBottom:8}}>🆘 Centre d'aide Yorix</h1>
+              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Trouvez les réponses à vos questions</p>
+            </div>
+
+            {[
+              {
+                cat:"🛍️ Acheter sur Yorix",
+                questions:[
+                  {q:"Comment passer une commande ?",r:"Cliquez sur un produit → 'Commander via WhatsApp' ou '✅ Commander'. Remplissez votre nom et téléphone. Le vendeur vous contacte sous 1h."},
+                  {q:"Quels modes de paiement sont acceptés ?",r:"MTN Mobile Money (+237 676 93 51 95), Orange Money (+237 696 56 56 54), et paiement en espèces à la livraison dans certaines villes."},
+                  {q:"Comment fonctionne l'Escrow Yorix ?",r:"Votre paiement est sécurisé par Yorix jusqu'à réception du colis. Si le produit n'arrive pas ou n'est pas conforme, vous êtes remboursé sous 48h."},
+                  {q:"Puis-je annuler une commande ?",r:"Oui, dans les 2 heures après la commande. Contactez le support sur WhatsApp : +237 696 56 56 54."},
+                ]
+              },
+              {
+                cat:"🏪 Vendre sur Yorix",
+                questions:[
+                  {q:"Comment créer ma boutique ?",r:"Inscrivez-vous en tant que Vendeur → Dashboard → 'Ajouter produit'. Ajoutez des photos, le prix, la ville. Votre produit est visible instantanément."},
+                  {q:"Comment recevoir mes paiements ?",r:"Vos gains sont versés sur MTN MoMo ou Orange Money dans les 24h après confirmation de la livraison par l'acheteur."},
+                  {q:"Quelle est la commission Yorix ?",r:"5% sur chaque vente. Exemple : produit vendu 10 000 FCFA → vous recevez 9 500 FCFA."},
+                  {q:"Comment obtenir le badge Top Vendeur ?",r:"Automatiquement attribué au vendeur avec le plus de produits actifs. Ou achetez-le 15 000 FCFA/mois pour une visibilité accrue."},
+                ]
+              },
+              {
+                cat:"🚚 Livraison",
+                questions:[
+                  {q:"Quels sont les délais de livraison ?",r:"Intra-ville (Douala/Yaoundé) : 20–60 min. Inter-villes : 1–3 jours. Le livreur vous contacte à l'arrivée."},
+                  {q:"Comment suivre ma livraison ?",r:"Votre livreur vous contacte directement par WhatsApp avec sa position. Suivi en temps réel dans votre dashboard."},
+                  {q:"Que faire si mon colis n'arrive pas ?",r:"Contactez-nous immédiatement : WhatsApp +237 696 56 56 54 ou support@yorix.cm. Enquête ouverte sous 24h."},
+                ]
+              },
+              {
+                cat:"💰 Points & Fidélité",
+                questions:[
+                  {q:"Comment gagner des points ?",r:"5 points par achat, vente, livraison ou prestation. 10 points à l'inscription. 2 points par avis publié. 1 point = 1 FCFA."},
+                  {q:"À partir de combien peut-on échanger ?",r:"Échange possible dès 500 points = 500 FCFA. Utilisables en bons d'achat, livraisons offertes, statuts VIP."},
+                  {q:"Comment obtenir le statut VIP ?",r:"Achetez le statut VIP avec 3 000 points ou 15 000 FCFA/mois. Avantages : badge visible, priorité dans les résultats, support dédié."},
+                ]
+              },
+            ].map(section=>(
+              <div key={section.cat} style={{marginBottom:20}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".95rem",color:"var(--ink)",marginBottom:10,padding:"8px 0",borderBottom:"2px solid var(--green-light)"}}>{section.cat}</div>
+                {section.questions.map(({q,r},i)=>(
+                  <details key={i} style={{marginBottom:8,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:9,overflow:"hidden"}}>
+                    <summary style={{padding:"11px 14px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".83rem",color:"var(--ink)",userSelect:"none",listStyle:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      {q}<span style={{color:"var(--green)",fontSize:"1rem"}}>▾</span>
+                    </summary>
+                    <div style={{padding:"10px 14px 14px",fontSize:".8rem",color:"var(--gray)",lineHeight:1.75,borderTop:"1px solid var(--border)"}}>{r}</div>
+                  </details>
+                ))}
+              </div>
+            ))}
+
+            <div style={{textAlign:"center",marginTop:20}}>
+              <p style={{fontSize:".82rem",color:"var(--gray)",marginBottom:12}}>Vous n'avez pas trouvé votre réponse ?</p>
+              <button className="btn-wa" style={{display:"inline-flex",padding:"10px 20px"}} onClick={()=>goPage("contact")}>
+                📞 Contacter le support
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* WA FLOAT */}
       <div className="wa-float">
         {waOpen&&<div className="wa-card">
@@ -3853,11 +4451,11 @@ export default function Yorix() {
           <div className="footer-col"><h4>Services</h4><ul>{[{l:"Escrow 🔐",p:"escrow"},{l:"Livraison 🚚",p:"livraison"},{l:"Prestataires 👷",p:"prestataires"},{l:"Business 💼",p:"business"},{l:"Academy 🎓",p:"academy"}].map(i=><li key={i.l} onClick={()=>goPage(i.p)}>{i.l}</li>)}</ul></div>
           <div className="footer-col"><h4>Aide</h4><ul>
             {[
-              {l:"Centre d'aide",     p:null},
-              {l:"Payer avec MoMo",    p:null},
+              {l:"Centre d'aide",     p:"aide"},
+              {l:"Payer avec MoMo",    p:null, url:"https://www.mtn.cm/momo/"},
               {l:"Suivi commande",     p:"dashboard"},
-              {l:"Nous contacter",     p:null},
-            ].map(i=><li key={i.l} onClick={()=>i.p&&goPage(i.p)} style={{cursor:i.p?"pointer":"default"}}>{i.l}</li>)}
+              {l:"Nous contacter",     p:"contact"},
+            ].map(i=><li key={i.l} onClick={()=>{if(i.p)goPage(i.p);else if(i.url)window.open(i.url,"_blank");}} style={{cursor:"pointer"}}>{i.l}</li>)}
           </ul>
           <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
             <span onClick={()=>goPage("cgv")}      style={{fontSize:".69rem",cursor:"pointer",transition:"color .2s"}} onMouseOver={e=>e.target.style.color="#b7e4c7"} onMouseOut={e=>e.target.style.color=""}>📜 CGV</span>
