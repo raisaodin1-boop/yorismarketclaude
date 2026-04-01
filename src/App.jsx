@@ -150,7 +150,7 @@ async function getUserProfile(uid) {
 }
 
 function getUserRole(profileData) {
-  const valid = ["buyer", "seller", "delivery", "provider"];
+  const valid = ["buyer", "seller", "delivery", "provider" , "admin"];
   const role  = profileData?.role;
   if (role && valid.includes(role)) {
     console.log("ROLE FINAL:", role);
