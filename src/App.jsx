@@ -3463,29 +3463,7 @@ export default function Yorix() {
       ))
     }
   </div>
-
-  {cartItems.length > 0 && (
-    <div className="cart-footer">
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"var(--gray)",marginBottom:"6px"}}>
-        <span>Sous-total ({totalQty} article{totalQty>1?"s":""})</span>
-        <span>{totalPrice.toLocaleString()} FCFA</span>
-      </div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"var(--gray)",marginBottom:"12px"}}>
-        <span>Commission Yorix (5%)</span>
-        <span>{Math.round(totalPrice*0.05).toLocaleString()} FCFA</span>
-      </div>
-      <div style={{display:"flex",justifyContent:"space-between",fontWeight:600,fontSize:"15px",marginBottom:"16px",paddingTop:"10px",borderTop:"1px solid var(--border)"}}>
-        <span>Total</span>
-        <span>{totalPrice.toLocaleString()} FCFA</span>
-      </div>
-      <button className="btn-primary" style={{width:"100%",padding:"12px",fontSize:"15px"}} onClick={passerCommande}>
-        ✅ Commander
-      </button>
-    </div>
-  )}
 </div>
-          }
-        </div>
         {cartItems.length === 0 && (
           <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:32}}>
             <div style={{fontSize:"3rem"}}>🛒</div>
