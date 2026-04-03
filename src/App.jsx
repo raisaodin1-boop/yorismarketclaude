@@ -3114,7 +3114,7 @@ function AdminDashboard({ user, userData, goPage }) {
                       </div>
                       <div style={{marginLeft:"auto",display:"flex",gap:4}}>
                         <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
-                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, votre produit "" + (p.name_fr) + "" est en rupture de stock sur Yorix.")}`)}>📱</button>}
+                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Bonjour, votre produit "+((p.name_fr)||"")+" est en rupture de stock sur Yorix. Merci de le rapprovisionner."))}>📱</button>}
                       </div>
                     </div>
                   ))
@@ -3199,7 +3199,7 @@ function ContactForm() {
   const f = k => e => setCf(p=>({...p,[k]:e.target.value}));
   const send = () => {
     if(!cf.nom.trim()||!cf.sujet||!cf.message.trim()){return;}
-    const msg = ["Message Yorix","Nom: "+cf.nom,"Email: "+cf.email,"Sujet: "+cf.sujet,"","Message:",""+cf.message].join("\n");
+    const msg = ["Message Yorix","Nom: "+cf.nom,"Email: "+cf.email,"Sujet: "+cf.sujet,"","Message:",cf.message].join("\n");
     window.open("https://wa.me/237696565654?text="+encodeURIComponent(msg),"_blank");
     setCfSent(true);
     setTimeout(()=>setCfSent(false),5000);
@@ -3410,7 +3410,7 @@ export default function Yorix() {
       const img = p.image_urls?.[0] || p.image || null;
       return [...prev, { id:p.id, name:p.name_fr, image:img, prix:p.prix, qty:1, vendeur_id:p.vendeur_id }];
     });
-    setCartToast("🛒 "" + (p.name_fr||"Produit") + "" ajouté !");
+    setCartToast("🛒 " + (p.name_fr||"Produit") + " ajouté !");
     setTimeout(()=>setCartToast(""),2500);
     setCartOpen(true);
   }, []);
