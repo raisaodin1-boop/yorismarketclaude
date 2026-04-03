@@ -3509,11 +3509,19 @@ export default function Yorix() {
                   "Merci ✅",
                 ].join("\n");
                 if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
-                  window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-                }
-              }}
-          {/* ── CART OVERLAY + DRAWER ── */}
-      <div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
+                  }}
+            >
+              📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
+            </button>
+
+            <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
+              ✅ Confirmer la commande (paiement en ligne)
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── CART OVERLAY + DRAWER ── */}
       <div className={`cart-drawer${cartOpen?" open":""}`}>
         <div className="cart-header">
           <span className="cart-title">🛒 Panier ({totalQty})</span>
