@@ -809,6 +809,33 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 `;
 
 // ─────────────────────────────────────────────────────────────
+// COMPOSANT : MODAL DE CONFIRMATION (remplace window.confirm)
+// ─────────────────────────────────────────────────────────────
+function ConfirmModal({ title, message, confirmLabel = "Confirmer", cancelLabel = "Annuler", onConfirm, onCancel, danger = false }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="modal" style={{ maxWidth: 380 }}>
+        <div style={{ textAlign:"center", marginBottom:16 }}>
+          <div style={{ fontSize:"2.2rem", marginBottom:8 }}>{danger ? "⚠️" : "❓"}</div>
+          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1rem", color:"var(--ink)", marginBottom:6 }}>{title}</div>
+          {message && <p style={{ fontSize:".82rem", color:"var(--gray)", lineHeight:1.6 }}>{message}</p>}
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <button
+            onClick={onCancel}
+            style={{ flex:1, padding:"10px", borderRadius:8, border:"1.5px solid var(--border)", background:"var(--surface)", color:"var(--ink)", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".82rem", cursor:"pointer" }}
+          >{cancelLabel}</button>
+          <button
+            onClick={onConfirm}
+            style={{ flex:2, padding:"10px", borderRadius:8, border:"none", background:danger?"var(--red)":"var(--green)", color:"#fff", fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", cursor:"pointer" }}
+          >{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // COMPOSANT : ÉTOILES (rating)
 // ─────────────────────────────────────────────────────────────
 function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) {
@@ -857,7 +884,7 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
       setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
     } catch (err) {
       console.error("creerCommande:", err);
-      alert("Erreur lors de la commande : " + err.message);
+      setErrors({ _global: "Erreur lors de la commande. Vérifiez votre connexion et réessayez." });
     }
     setLoading(false);
   };
@@ -903,6 +930,8 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
               {errors.tel && <span className="form-error-text">{errors.tel}</span>}
             </div>
 
+            {errors._global && <div className="error-msg">❌ {errors._global}</div>}
+
             <button className="form-submit" onClick={handleCommander} disabled={loading}>
               {loading ? <><div className="spinner" style={{ width:16, height:16, borderWidth:2 }}/>Enregistrement...</> : "✅ Confirmer la commande"}
             </button>
@@ -926,11 +955,12 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
   const [texte, setTexte]     = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
+  const [err, setErr]         = useState("");
 
   const submit = async () => {
-    if (!note) { alert("Choisissez une note !"); return; }
-    if (!texte.trim()) { alert("Rédigez un commentaire !"); return; }
-    setLoading(true);
+    if (!note) { setErr("Veuillez choisir une note (1 à 5 étoiles)."); return; }
+    if (!texte.trim()) { setErr("Rédigez un commentaire avant de publier."); return; }
+    setErr(""); setLoading(true);
     try {
       await supabase.from("reviews").insert({
         product_id: productId,
@@ -941,9 +971,7 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
       });
       setDone(true);
       onSubmit?.({ auteur: userName || "Anonyme", note, texte });
-    } catch (err) {
-      console.error("FormulaireAvis:", err);
-    }
+    } catch (e) { setErr("Erreur lors de l'envoi. Réessayez."); }
     setLoading(false);
   };
 
@@ -952,9 +980,10 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
   return (
     <div style={{ background:"var(--surface2)", borderRadius:12, padding:16, marginBottom:12 }}>
       <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:10 }}>Laisser un avis</div>
+      {err && <div className="error-msg" style={{marginBottom:8}}>⚠️ {err}</div>}
       <div style={{ marginBottom:10 }}>
         <div style={{ fontSize:".73rem", fontWeight:600, color:"var(--ink)", marginBottom:5 }}>Note :</div>
-        <Stars value={note} onSelect={setNote} size="lg" />
+        <Stars value={note} onSelect={n => { setNote(n); setErr(""); }} size="lg" />
       </div>
       <textarea
         className="form-textarea"
@@ -1531,7 +1560,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       setMesProduits(prev => prev.map(p => p.id === editProd.id ? { ...p, ...editForm, prix: Number(editForm.prix), stock: Number(editForm.stock) } : p));
       setEditSaved(true);
       setTimeout(() => { setEditProd(null); setEditSaved(false); }, 1500);
-    } catch (err) { alert("Erreur : " + err.message); }
+    } catch (err) { setEditForm(f => ({...f, _error: "Erreur : " + err.message})); }
     setEditSaving(false);
   };
 
@@ -1556,6 +1585,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
             <div className="modal-title">✏️ Modifier le produit</div>
             <p className="modal-sub">{editProd.name_fr}</p>
             {editSaved && <div className="success-msg">✅ Produit mis à jour !</div>}
+            {editForm._error && <div className="error-msg">❌ {editForm._error}</div>}
             <div className="form-group"><label className="form-label">Nom du produit *</label>
               <input className="form-input" value={editForm.name_fr} onChange={e => setEditForm(f=>({...f,name_fr:e.target.value}))}/>
             </div>
@@ -1765,9 +1795,10 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     {c.status === "accepted" && (<>
                       <button
                         style={{background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={()=>window.open(`https://wa.me/${(c.telephone||"").replace(/\D/g,"")}?text=${encodeURIComponent(
-                          `Bonjour ${c.client_nom} ! 🎉 Votre commande Yorix est *ACCEPTÉE*.\n\n💰 Montant : ${c.montant?.toLocaleString()} FCFA\n\n*Modes de paiement acceptés :*\n📱 MTN MoMo : ${YORIX_WA_NUMBER}\n🔶 Orange Money : ${YORIX_WA_NUMBER}\n\nEnvoyez la preuve de paiement sur ce WhatsApp. Merci ! ✅`
-                        )},"_blank")}
+                        onClick={()=>{
+                          const msgPaiement = "Bonjour " + c.client_nom + " ! \uD83C\uDF89 Votre commande Yorix est *ACCEPT\u00C9E*.\n\n\uD83D\uDCB0 Montant : " + (c.montant||0).toLocaleString() + " FCFA\n\n*Modes de paiement accept\u00E9s :*\n\uD83D\uDCF1 MTN MoMo : " + YORIX_WA_NUMBER + "\n\uD83D\uDD36 Orange Money : " + YORIX_WA_NUMBER + "\n\nEnvoyez la preuve de paiement sur ce WhatsApp. Merci ! \u2705";
+                          window.open("https://wa.me/" + (c.telephone||"").replace(/\D/g,"") + "?text=" + encodeURIComponent(msgPaiement), "_blank");
+                        }}
                       >📱 Envoyer options paiement (WA)</button>
                       <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","paid")}>✅ Marquer payée</button>
                     </>)}
@@ -1788,7 +1819,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     {/* Contacter client */}
                     <button
                       className="btn-wa-sm"
-                      onClick={()=>window.open(`https://wa.me/${(c.telephone||"").replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${c.client_nom||""} ! Votre commande Yorix #${String(c.id).slice(-8)} est en cours. 🛍️`)}`, "_blank")}
+                      onClick={()=>window.open(`https://wa.me/${(c.telephone||"").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (c.client_nom||"") + " ! Votre commande Yorix #" + (String(c.id).slice(-8)) + " est en cours. 🛍️")}`, "_blank")}
                     >📱 Contacter client</button>
                   </div>
                 </div>
@@ -1904,15 +1935,15 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                         <button
                           style={{background:"#ffd700",color:"#000",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
-                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`💳 Paiement MTN MoMo\nCommande #${String(c.id).slice(-8)}\nMontant : ${c.montant?.toLocaleString()} FCFA\n\nJe viens d'effectuer le paiement MTN MoMo. Voici ma preuve :`)}`, "_blank")}
+                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("💳 Paiement MTN MoMo\nCommande #" + (String(c.id).slice(-8)) + "\nMontant : " + (c.montant?.toLocaleString()) + " FCFA\n\nJe viens d'effectuer le paiement MTN MoMo. Voici ma preuve :")}`, "_blank")}
                         >📱 MTN MoMo</button>
                         <button
                           style={{background:"#ff6600",color:"#fff",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
-                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`🔶 Paiement Orange Money\nCommande #${String(c.id).slice(-8)}\nMontant : ${c.montant?.toLocaleString()} FCFA\n\nJe viens d'effectuer le paiement Orange Money. Voici ma preuve :`)}`, "_blank")}
+                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("🔶 Paiement Orange Money\nCommande #" + (String(c.id).slice(-8)) + "\nMontant : " + (c.montant?.toLocaleString()) + " FCFA\n\nJe viens d'effectuer le paiement Orange Money. Voici ma preuve :")}`, "_blank")}
                         >🔶 Orange Money</button>
                         <button
                           className="btn-wa"
-                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`📸 Preuve de paiement\nCommande Yorix #${String(c.id).slice(-8)}\nMontant : ${c.montant?.toLocaleString()} FCFA`)}`, "_blank")}
+                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("📸 Preuve de paiement\nCommande Yorix #" + (String(c.id).slice(-8)) + "\nMontant : " + (c.montant?.toLocaleString()) + " FCFA")}`, "_blank")}
                         >📸 Envoyer preuve WA</button>
                       </div>
                     </div>
@@ -2110,7 +2141,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
         <div style={{display:"flex",gap:8}}>
           <button
             style={{flex:1,background:"#1565c0",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
-            onClick={() => window.open(`https://wa.me/${l.telephone?.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${l.client} ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans ${l.temps_estime}.`)}`, "_blank")}
+            onClick={() => window.open(`https://wa.me/${l.telephone?.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (l.client) + " ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans " + (l.temps_estime) + ".")}`, "_blank")}
           >📱 Contacter client</button>
           <button
             style={{flex:1,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
@@ -2849,7 +2880,7 @@ function AdminDashboard({ user, userData, goPage }) {
                         <td style={{display:"flex",gap:3,flexWrap:"wrap"}}>
                           {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
                           {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
-                          {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""}, votre commande Yorix est en cours. 📦`)}`)}>📱</button>}
+                          {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (o.client_nom||"") + ", votre commande Yorix est en cours. 📦")}`)}>📱</button>}
                         </td>
                       </tr>
                     ))}
@@ -3015,7 +3046,7 @@ function AdminDashboard({ user, userData, goPage }) {
                           {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
                           {!["livre","annulee"].includes(o.status) && <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>annulerCommande(o.id)}>❌</button>}
                           {o.telephone && (
-                            <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""} ! Votre commande Yorix est en cours. 📦`)}`)}>📱</button>
+                            <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (o.client_nom||"") + " ! Votre commande Yorix est en cours. 📦")}`)}>📱</button>
                           )}
                         </div>
                       </td>
@@ -3164,7 +3195,7 @@ function AdminDashboard({ user, userData, goPage }) {
                             <button className="admin-action-btn" style={{background:u.actif!==false?"#fff0f0":"#e6fff0",color:u.actif!==false?"#ce1126":"#1a6b3a"}} onClick={()=>toggleVendeur(uid,u.actif!==false)}>
                               {u.actif!==false?"⛔":"✅"}
                             </button>
-                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${u.nom||""}, l'équipe Yorix vous contacte.`)}`)}>📱</button>}
+                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (u.nom||"") + ", l'équipe Yorix vous contacte.")}`)}>📱</button>}
                             {u.email && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>window.open(`mailto:${u.email}`)}>✉️</button>}
                           </div>
                         </td>
@@ -3299,7 +3330,7 @@ function AdminDashboard({ user, userData, goPage }) {
                       </div>
                       <div style={{marginLeft:"auto",display:"flex",gap:4}}>
                         <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
-                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, votre produit "${p.name_fr}" est en rupture de stock sur Yorix.`)}`)}>📱</button>}
+                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, votre produit "" + (p.name_fr) + "" est en rupture de stock sur Yorix.")}`)}>📱</button>}
                       </div>
                     </div>
                   ))
@@ -3523,7 +3554,7 @@ function BlogPage({ goPage }) {
               {BLOG_CONTENT[article.title] || article.excerpt + "\n\nContenu complet de l'article bientôt disponible."}
             </div>
             <div style={{marginTop:20,paddingTop:14,borderTop:"1px solid var(--border)",display:"flex",gap:8,flexWrap:"wrap"}}>
-              <button className="btn-wa" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`J'ai lu l'article Yorix : "${article.title}" et j'ai des questions !`)}`)}>
+              <button className="btn-wa" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("J'ai lu l'article Yorix : "" + (article.title) + "" et j'ai des questions !")}`)}>
                 📱 Poser une question
               </button>
               <button className="btn-ghost" onClick={()=>setArticle(null)}>← Retour au blog</button>
@@ -3616,7 +3647,7 @@ function AcademyPage({ goPage, setAuthOpen }) {
                 {selectedCourse.prix!=="Gratuit" && <span style={{fontSize:".72rem",color:"var(--gray)"}}>Paiement MoMo/Orange accepté</span>}
               </div>
               <button className="form-submit"
-                onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour ! Je veux m'inscrire au cours Yorix Academy :\n\n🎓 *${selectedCourse.title}*\n⏱ Durée : ${selectedCourse.duree}\n💰 Prix : ${selectedCourse.prix}\n\nComment procéder ?`)}`, "_blank")}
+                onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour ! Je veux m'inscrire au cours Yorix Academy :\n\n🎓 *" + (selectedCourse.title) + "*\n⏱ Durée : " + (selectedCourse.duree) + "\n💰 Prix : " + (selectedCourse.prix) + "\n\nComment procéder ?")}`, "_blank")}
               >{selectedCourse.prix==="Gratuit" ? "🚀 Commencer maintenant (Gratuit)" : `💳 S'inscrire — ${selectedCourse.prix}`}</button>
             </div>
           </div>
@@ -4437,7 +4468,7 @@ export default function Yorix() {
                   <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
                   <div className="prest-footer">
                     <div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div>
-                    <button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire : ${p.name}`)}`, "_blank")}>📱 Contacter</button>
+                    <button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, je cherche un prestataire : " + (p.name) + "")}`, "_blank")}>📱 Contacter</button>
                   </div>
                 </div>
               ))}
@@ -4607,7 +4638,7 @@ export default function Yorix() {
                     </div>
                     <button
                       style={{width:"100%",background:d.dispo?"var(--green)":"var(--border)",color:d.dispo?"#fff":"var(--gray)",border:"none",padding:"8px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",cursor:d.dispo?"pointer":"default"}}
-                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour ! Je veux une livraison avec ${d.name} (${d.vehicule}) 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : `)}`, "_blank")}
+                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour ! Je veux une livraison avec " + (d.name) + " (" + (d.vehicule) + ") 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : ")}`, "_blank")}
                     >{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
                   </div>
                 ))}
@@ -4661,7 +4692,7 @@ export default function Yorix() {
               <div key={p.name} className="prest-card">
                 <div className="prest-top"><div className="prest-av">{p.emoji}</div><div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div></div>
                 <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
-                <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je souhaite contacter ${p.name} pour ${p.tags[0]}`)}`,'_blank')}>WhatsApp</button></div>
+                <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, je souhaite contacter " + (p.name) + " pour " + (p.tags[0]) + "")}`,'_blank')}>WhatsApp</button></div>
               </div>
             ))}
           </div>
