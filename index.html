@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
   <head>
+    <!-- ══════════════════════════════════════════════
+         1. GOOGLE ANALYTICS 4 — G-ZL6KY5F1PW
+         Tracking visiteurs, pages vues, conversions
+    ══════════════════════════════════════════════ -->
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZL6KY5F1PW"></script>
     <script>
@@ -9,6 +13,12 @@
       gtag('js', new Date());
       gtag('config', 'G-ZL6KY5F1PW');
     </script>
+
+    <!-- ══════════════════════════════════════════════
+         2. CONTENTSQUARE — Heatmaps & Session Replay
+         Voir où cliquent tes visiteurs, rejouer les sessions
+    ══════════════════════════════════════════════ -->
+    <script src="https://t.contentsquare.net/uxa/62d0f3d7bf94b.js"></script>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -78,17 +88,15 @@
     <link rel="preconnect" href="https://res.cloudinary.com" />
     <link rel="preconnect" href="https://www.googletagmanager.com" />
     <link rel="dns-prefetch" href="https://msrymchhhxitdevthvdi.supabase.co" />
+    <link rel="dns-prefetch" href="https://t.contentsquare.net" />
 
-    <!-- ═══════════════════════════════════════════════
-         SERVICE WORKER — REQUIS POUR PWA
-         Sans ce script, Chrome ne propose PAS l'installation
-    ═══════════════════════════════════════════════ -->
+    <!-- Service Worker PWA -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js')
             .then(function(reg) {
-              console.log('[Yorix PWA] Service Worker enregistré :', reg.scope);
+              console.log('[Yorix PWA] SW enregistré :', reg.scope);
             })
             .catch(function(err) {
               console.warn('[Yorix PWA] Erreur SW :', err);
