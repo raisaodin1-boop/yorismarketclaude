@@ -15,18 +15,20 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(
+  "https://msrymchhhxitdevthvdi.supabase.co",
+  "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA"
+)
 
 // ─────────────────────────────────────────────────────────────
-// CONFIG — une seule instance Supabase
+// CONFIG
 // ─────────────────────────────────────────────────────────────
-const SUPABASE_URL      = "https://msrymchhhxitdevthvdi.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA";
-const CLOUD_NAME        = "";
-const UPLOAD_PRESET     = "yorix_unsigned";
+const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
+const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
 const YORIX_WA_NUMBER   = "237696565654";
-const COMMISSION_RATE   = 0.05;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
 
 
@@ -139,20 +141,23 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
   return data;
 }
 
-/** Charger le profil utilisateur — cherche dans profiles puis users */
+/** Charger le profil utilisateur + son rôle depuis Supabase */
 async function getUserProfile(uid) {
-  try {
-    const { data: p } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-    if (p) return p;
-    const { data: u } = await supabase.from("users").select("*").or("uid.eq." + uid + ",id.eq." + uid).maybeSingle();
-    return u || null;
-  } catch(e) { console.error("getUserProfile:", e); return null; }
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+  if (error) { console.error("getUserProfile ERROR:", error); return null; }
+  console.log("USER DATA:", data);
+  return data;
 }
 
 function getUserRole(profileData) {
-  const valid = ["buyer","seller","delivery","provider","admin","superadmin"];
+  const valid = ["buyer", "seller", "delivery", "provider" , "admin"];
   const role  = profileData?.role;
-  return (role && valid.includes(role)) ? role : "seller";
+  if (role && valid.includes(role)) {
+    console.log("ROLE FINAL:", role);
+    return role;
+  }
+  console.log("ROLE FINAL: seller (fallback — aucun rôle défini)");
+  return "seller"; // fallback : vendeur par défaut
 }
 
 /** Filtre anti-contournement messages */
@@ -423,8 +428,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .s-shipped{background:#cce5ff;color:#004085;}
 .s-delivered,.s-livre{background:#d4edda;color:#1a6b3a;}
 .s-dispute,.s-echec{background:#f8d7da;color:#721c24;}
-.s-accepted{background:#dcfce7;color:#166534;}
-.s-cancelled,.s-refused{background:#fee2e2;color:#991b1b;}
+.s-cancelled{background:#e2e3e5;color:#383d41;}
 .s-securise{background:#ede7f6;color:#6a1b9a;}
 .s-libere{background:#d4edda;color:#1a6b3a;}
 .s-rembourse{background:#cce5ff;color:#004085;}
@@ -899,20 +903,24 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
   const [texte, setTexte]     = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
-  const [errAvis, setErrAvis] = useState("");
 
   const submit = async () => {
-    if (!note) { setErrAvis("Veuillez choisir une note."); return; }
-    if (!texte.trim()) { setErrAvis("Rédigez un commentaire."); return; }
-    setErrAvis(""); setLoading(true);
+    if (!note) { alert("Choisissez une note !"); return; }
+    if (!texte.trim()) { alert("Rédigez un commentaire !"); return; }
+    setLoading(true);
     try {
       await supabase.from("reviews").insert({
-        product_id: productId, user_id: userId || null,
-        auteur: userName || "Anonyme", note, texte,
+        product_id: productId,
+        user_id: userId || null,
+        auteur: userName || "Anonyme",
+        note,
+        texte,
       });
       setDone(true);
       onSubmit?.({ auteur: userName || "Anonyme", note, texte });
-    } catch (err) { setErrAvis("Erreur lors de l'envoi."); }
+    } catch (err) {
+      console.error("FormulaireAvis:", err);
+    }
     setLoading(false);
   };
 
@@ -921,10 +929,9 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
   return (
     <div style={{ background:"var(--surface2)", borderRadius:12, padding:16, marginBottom:12 }}>
       <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:10 }}>Laisser un avis</div>
-      {errAvis && <div className="error-msg" style={{marginBottom:8}}>⚠️ {errAvis}</div>}
       <div style={{ marginBottom:10 }}>
         <div style={{ fontSize:".73rem", fontWeight:600, color:"var(--ink)", marginBottom:5 }}>Note :</div>
-        <Stars value={note} onSelect={n=>{setNote(n);setErrAvis("");}} size="lg" />
+        <Stars value={note} onSelect={setNote} size="lg" />
       </div>
       <textarea
         className="form-textarea"
@@ -1451,129 +1458,52 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const [mesCommandes, setMesCommandes] = useState([]);
   const [wallet, setWallet]             = useState({ solde:0, total_gagne:0 });
   const [loadingData, setLoadingData]   = useState(true);
-  const [editProd, setEditProd]         = useState(null);
-  const [editForm, setEditForm]         = useState({});
-  const [editSaving, setEditSaving]     = useState(false);
-
-  const loadAll = async () => {
-    setLoadingData(true);
-    const [{ data: prods }, { data: cmds }, { data: wal }] = await Promise.all([
-      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at",{ascending:false}),
-      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at",{ascending:false}),
-      supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
-    ]);
-    setMesProduits(prods || []);
-    setMesCommandes(cmds || []);
-    if (wal) setWallet(wal);
-    setLoadingData(false);
-  };
 
   useEffect(() => {
+    const loadAll = async () => {
+      setLoadingData(true);
+      const [{ data: prods }, { data: cmds }, { data: wal }] = await Promise.all([
+        supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+        supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+        supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
+      ]);
+      setMesProduits(prods || []);
+      setMesCommandes(cmds || []);
+      if (wal) setWallet(wal);
+      setLoadingData(false);
+    };
     loadAll();
-    // Temps réel nouvelles commandes
-    const ch = supabase.channel("seller_cmd_" + user.id)
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"orders",filter:"vendeur_id=eq."+user.id}, loadAll)
-      .subscribe();
-    return () => supabase.removeChannel(ch);
   }, [user.id]);
 
-  const revenusTotal     = mesCommandes.filter(c=>c.status==="delivered").reduce((a,c)=>a+(c.montant_vendeur||0),0);
-  const commandesActives = mesCommandes.filter(c=>["pending","accepted","paid","shipped"].includes(c.status)).length;
-  const pendingCount     = mesCommandes.filter(c=>c.status==="pending").length;
+  const revenusTotal    = mesCommandes.filter(c => c.status === "delivered").reduce((a, c) => a + (c.montant_vendeur || 0), 0);
+  const commandesActives = mesCommandes.filter(c => ["pending","paid","shipped"].includes(c.status)).length;
 
   const updateOrderStatus = async (orderId, field, value) => {
-    await supabase.from("orders").update({[field]:value}).eq("id",orderId);
-    setMesCommandes(prev=>prev.map(c=>c.id===orderId?{...c,[field]:value}:c));
-  };
-
-  const saveEditProd = async () => {
-    if (!editProd) return;
-    setEditSaving(true);
-    try {
-      await supabase.from("products").update({
-        name_fr:editForm.name_fr, description_fr:editForm.description_fr,
-        prix:Number(editForm.prix), stock:Number(editForm.stock),
-        categorie:editForm.categorie, ville:editForm.ville,
-      }).eq("id", editProd.id);
-      setMesProduits(prev=>prev.map(p=>p.id===editProd.id?{...p,...editForm,prix:Number(editForm.prix),stock:Number(editForm.stock)}:p));
-      setEditProd(null);
-    } catch(e){ console.error(e); }
-    setEditSaving(false);
-  };
-
-  const notifPaiement = (c) => {
-    const tel = (c.telephone||"").replace(/\D/g,"");
-    const msg = "Bonjour " + (c.client_nom||"") + " ! Votre commande Yorix a ete acceptee. Veuillez payer " + (c.montant||0).toLocaleString() + " FCFA via MTN MoMo ou Orange Money au " + YORIX_WA_NUMBER + " puis envoyez votre preuve ici. Merci !";
-    window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(msg), "_blank");
+    await supabase.from("orders").update({ [field]: value }).eq("id", orderId);
+    setMesCommandes(prev => prev.map(c => c.id === orderId ? {...c, [field]: value} : c));
   };
 
   if (loadingData) return <div className="loading"><div className="spinner"/>Chargement...</div>;
 
   return (
     <>
-      {/* ── MODAL ÉDITION PRODUIT ── */}
-      {editProd && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setEditProd(null)}>
-          <div className="modal">
-            <button className="modal-close" onClick={()=>setEditProd(null)}>✕</button>
-            <div className="modal-title">✏️ Modifier le produit</div>
-            <p className="modal-sub">{editProd.name_fr}</p>
-            <div className="form-group"><label className="form-label">Nom *</label>
-              <input className="form-input" value={editForm.name_fr||""} onChange={e=>setEditForm(f=>({...f,name_fr:e.target.value}))}/>
-            </div>
-            <div className="form-group"><label className="form-label">Description</label>
-              <textarea className="form-textarea" style={{minHeight:65}} value={editForm.description_fr||""} onChange={e=>setEditForm(f=>({...f,description_fr:e.target.value}))}/>
-            </div>
-            <div className="form-row">
-              <div className="form-group"><label className="form-label">Prix (FCFA) *</label>
-                <input className="form-input" type="number" value={editForm.prix||""} onChange={e=>setEditForm(f=>({...f,prix:e.target.value}))}/>
-              </div>
-              <div className="form-group"><label className="form-label">Stock</label>
-                <input className="form-input" type="number" min="0" value={editForm.stock||""} onChange={e=>setEditForm(f=>({...f,stock:e.target.value}))}/>
-              </div>
-              <div className="form-group"><label className="form-label">Catégorie</label>
-                <select className="form-select" value={editForm.categorie||""} onChange={e=>setEditForm(f=>({...f,categorie:e.target.value}))}>
-                  <option value="">—</option>{CATS.map(c=><option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="form-group"><label className="form-label">Ville</label>
-                <select className="form-select" value={editForm.ville||""} onChange={e=>setEditForm(f=>({...f,ville:e.target.value}))}>
-                  <option value="">—</option>{CITIES.filter(c=>c!=="Toutes les villes").map(c=><option key={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
-            <button className="form-submit" onClick={saveEditProd} disabled={editSaving}>
-              {editSaving?<><div className="spinner" style={{width:14,height:14,borderWidth:2}}/>Sauvegarde...</>:"💾 Enregistrer"}
-            </button>
-          </div>
-        </div>
-      )}
-
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span>Bonjour {userData?.nom} 🏪</span>
-            {pendingCount>0&&<span onClick={()=>setDashTab("commandes")} style={{cursor:"pointer",background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",borderRadius:50,padding:"4px 12px",fontSize:".73rem",fontWeight:700}}>📦 {pendingCount} commande{pendingCount>1?"s":""} en attente !</span>}
-          </div>
+          <div className="dash-page-title">Bonjour {userData?.nom} 🏪</div>
           <div className="dash-stats">
             {[
-              {icon:"🏪",val:mesProduits.filter(p=>p.actif!==false).length,lbl:"Produits actifs",trend:"",click:()=>setDashTab("mesProduits")},
-              {icon:"📦",val:commandesActives,lbl:"Commandes actives",trend:pendingCount>0?"⚠️ "+pendingCount+" en attente":"",click:()=>setDashTab("commandes")},
-              {icon:"✅",val:mesCommandes.filter(c=>c.status==="delivered").length,lbl:"Livrées",trend:"",click:null},
-              {icon:"💰",val:revenusTotal.toLocaleString()+" F",lbl:"Revenus nets",trend:"Commission 5% déduite",click:()=>setDashTab("wallet")},
+              { icon:"🏪", val:mesProduits.length,          lbl:"Produits actifs",   trend:"" },
+              { icon:"📦", val:commandesActives,            lbl:"Commandes actives", trend:"" },
+              { icon:"✅", val:mesCommandes.filter(c=>c.status==="delivered").length, lbl:"Livrées", trend:"" },
+              { icon:"💰", val:`${revenusTotal.toLocaleString()} F`, lbl:"Revenus nets", trend:"+5%" },
             ].map(s => (
-              <div key={s.lbl} className="dstat" onClick={s.click} style={{cursor:s.click?"pointer":"default"}}>
+              <div key={s.lbl} className="dstat">
                 <div className="dstat-icon">{s.icon}</div>
                 <div className="dstat-val">{s.val}</div>
                 <div className="dstat-lbl">{s.lbl}</div>
-                {s.trend&&<div className="dstat-trend" style={{color:s.trend.includes("⚠️")?"#854d0e":undefined}}>{s.trend}</div>}
+                {s.trend && <div className="dstat-trend">{s.trend}</div>}
               </div>
             ))}
-          </div>
-          <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-            <button className="btn-green" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter produit</button>
-            <button className="btn-ghost" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("commandes")}>📦 Commandes{pendingCount>0?" ("+pendingCount+")":""}</button>
-            <button className="btn-ghost" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("wallet")}>💰 Wallet</button>
           </div>
 
           {/* Dernières commandes */}
@@ -1602,10 +1532,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
       {dashTab === "mesProduits" && (
         <>
-          <div className="dash-page-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span>🏪 Mes produits ({mesProduits.length})</span>
-            <button className="btn-green" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter un produit</button>
-          </div>
+          <div className="dash-page-title">🏪 Mes produits ({mesProduits.length})</div>
           {mesProduits.length === 0
             ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter</button></div>
             : <div className="prod-grid">
@@ -1624,15 +1551,13 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     </div>
                     <div className="prod-info">
                       <div className="prod-name">{p.name_fr}</div>
-                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock!=null?p.stock:"—"}</div>
+                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock != null ? p.stock : "-"}</div>
                       <div className="prod-price-row">
                         <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
-                        <div style={{display:"flex",gap:4}}>
-                          <button title="Modifier" style={{background:"#e6f0ff",color:"#1a4a9a",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".78rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                            onClick={()=>{setEditProd(p);setEditForm({name_fr:p.name_fr,description_fr:p.description_fr||"",prix:p.prix,stock:p.stock||0,categorie:p.categorie||"",ville:p.ville||""});}}>✏️</button>
-                          <button title="Supprimer" style={{background:"#fef2f2",color:"var(--red)",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                            onClick={async()=>{ if(!window.confirm("Supprimer ce produit ?"))return; await supabase.from("products").update({actif:false}).eq("id",p.id); setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); }}>🗑</button>
-                        </div>
+                        <button
+                          style={{background:"var(--red)",color:"#fff",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
+                          onClick={async () => { if (!window.confirm("Supprimer ?")) return; await supabase.from("products").update({actif:false}).eq("id",p.id); setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); }}
+                        >🗑</button>
                       </div>
                     </div>
                   </div>
@@ -1643,57 +1568,55 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       )}
 
       {dashTab === "ajouterProduit" && (
-        <FormulaireProduit user={user} userData={userData} onSaved={() => { loadAll(); setDashTab("mesProduits"); }} />
+        <FormulaireProduit user={user} userData={userData} onSaved={() => setDashTab("mesProduits")} />
       )}
 
       {dashTab === "commandes" && (
         <>
-          <div className="dash-page-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-            <span>📦 Commandes reçues ({mesCommandes.length})</span>
-            {pendingCount > 0 && <span style={{background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",borderRadius:50,padding:"4px 12px",fontSize:".73rem",fontWeight:700}}>⚠️ {pendingCount} en attente</span>}
-          </div>
+          <div className="dash-page-title">📦 Toutes les commandes ({mesCommandes.length})</div>
           {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande reçue</p></div>
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p></div>
             : mesCommandes.map(c => (
-                <div key={c.id} className="order-card" style={{flexDirection:"column",alignItems:"stretch",marginBottom:10}}>
-                  <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                    <div className="oc-icon">{c.status==="cancelled"?"❌":c.status==="accepted"?"✅":"📦"}</div>
-                    <div className="oc-info" style={{flex:1}}>
-                      <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom||"Client"}</div>
+                <div key={c.id} className="order-card" style={{ flexDirection:"column", alignItems:"stretch" }}>
+                  <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+                    <div className="oc-icon">📦</div>
+                    <div className="oc-info">
+                      <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom}</div>
                       <div className="oc-meta">
-                        💰 {c.montant?.toLocaleString()} FCFA · Net : <strong style={{color:"var(--green)"}}>{c.montant_vendeur?.toLocaleString()} FCFA</strong><br/>
-                        📞 {c.telephone||"—"} · 🗓 {c.created_at?new Date(c.created_at).toLocaleDateString("fr-FR"):""}
+                        💰 {c.montant?.toLocaleString()} FCFA · Net vendeur: {c.montant_vendeur?.toLocaleString()} FCFA<br/>
+                        📞 {c.telephone} · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
                       </div>
                     </div>
                     <div className="oc-actions">
-                      <span className={`status-badge s-${c.status}`}>{
-                        {pending:"⏳ En attente",accepted:"✅ Acceptée",paid:"💳 Payée",shipped:"🚚 Expédiée",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status]||c.status
-                      }</span>
+                      <span className={`status-badge s-${c.status}`}>{c.status}</span>
+                      <span className={`status-badge s-${c.escrow_status}`}>{c.escrow_status}</span>
+                      <span className={`status-badge s-${c.livraison_status}`}>{c.livraison_status}</span>
                     </div>
                   </div>
-                  <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
-                    {/* ÉTAPE 3 : Accepter ou Refuser */}
-                    {c.status==="pending" && (<>
-                      <button style={{background:"#dcfce7",color:"#166534",border:"1px solid #86efac",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={async()=>{ await updateOrderStatus(c.id,"status","accepted"); notifPaiement(c); }}>✅ ACCEPTER</button>
-                      <button style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fca5a5",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={()=>updateOrderStatus(c.id,"status","cancelled")}>❌ REFUSER</button>
-                    </>)}
-                    {/* ÉTAPE 4 : Marquer payée */}
-                    {c.status==="accepted" && (
-                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","paid")}>💳 Marquer payée</button>
+                  {/* Actions rapides */}
+                  <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
+                    {c.status === "pending" && (
+                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "status", "paid")}>✅ Marquer payée</button>
                     )}
-                    {c.status==="paid" && (
-                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","shipped")}>🚚 Expédier</button>
+                    {c.status === "paid" && (
+                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "status", "shipped")}>🚚 Marquer expédiée</button>
                     )}
-                    {c.livraison_status==="pending" && c.status!=="pending" && c.status!=="cancelled" && (
-                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"livraison_status","en_cours")}>🏍️ Déclencher livraison</button>
+                    {c.escrow_status === "pending" && c.status === "paid" && (
+                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "escrow_status", "securise")}>🔐 Sécuriser Escrow</button>
                     )}
-                    {c.livraison_status==="en_cours" && (
-                      <button className="btn-action-sm" onClick={()=>{updateOrderStatus(c.id,"livraison_status","livre");updateOrderStatus(c.id,"status","delivered");}}>✅ Confirmer livraison</button>
+                    {c.escrow_status === "securise" && c.status === "shipped" && (
+                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "escrow_status", "libere")}>💰 Libérer Escrow</button>
                     )}
-                    <button className="btn-wa-sm"
-                      onClick={()=>window.open("https://wa.me/"+((c.telephone||"").replace(/\D/g,""))+"?text="+encodeURIComponent("Bonjour "+(c.client_nom||"")+" ! Votre commande Yorix est en cours. 🛍️"),"_blank")}>
+                    {c.livraison_status === "pending" && (
+                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "livraison_status", "en_cours")}>🏍️ Livraison en cours</button>
+                    )}
+                    {c.livraison_status === "en_cours" && (
+                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "livraison_status", "livre")}>✅ Marquer livré</button>
+                    )}
+                    <button
+                      className="btn-wa-sm"
+                      onClick={() => window.open(`https://wa.me/${c.telephone?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Bonjour ${c.client_nom} ! Votre commande Yorix est en cours de traitement. 🛍️`)}`, "_blank")}
+                    >
                       📱 Contacter client
                     </button>
                   </div>
@@ -1776,64 +1699,22 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
         </>
       )}
 
-      {dashTab === "favoris" && (
-        <>
-          <div className="dash-page-title">❤️ Mes favoris ({wishlist.size})</div>
-          {wishlist.size === 0
-            ? <div className="empty-state"><div className="empty-icon">🤍</div><p>Aucun favori</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>goPage("produits")}>🛍️ Découvrir les produits</button></div>
-            : <div style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 16px",fontSize:".82rem",color:"var(--gray)"}}>
-                ❤️ Vous avez {wishlist.size} produit{wishlist.size>1?"s":""} en favoris — retrouvez-les sur la page Produits.
-                <br/><button className="form-submit" style={{width:"auto",padding:"8px 18px",marginTop:10,fontSize:".78rem"}} onClick={()=>goPage("produits")}>Voir le catalogue →</button>
-              </div>
-          }
-        </>
-      )}
-
       {dashTab === "commandes" && (
         <>
-          <div className="dash-page-title">📦 Mes commandes ({mesCommandes.length})</div>
+          <div className="dash-page-title">📦 Mes commandes</div>
           {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>goPage("produits")}>🛍️ Commander maintenant</button></div>
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p></div>
             : mesCommandes.map(c => (
-                <div key={c.id} className="order-card" style={{flexDirection:"column",alignItems:"stretch",marginBottom:10}}>
-                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                    <div className="oc-icon">{c.status==="cancelled"?"❌":c.status==="delivered"?"✅":"📦"}</div>
-                    <div className="oc-info" style={{flex:1}}>
-                      <div className="oc-name">Commande #{String(c.id).slice(-8)}</div>
-                      <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at?new Date(c.created_at).toLocaleDateString("fr-FR"):""}</div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                      <span className={`status-badge s-${c.status}`}>{
-                        {pending:"⏳ En attente",accepted:"✅ Acceptée",paid:"💳 Payée",shipped:"🚚 En livraison",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status]||c.status
-                      }</span>
-                      {c.livraison_status&&c.livraison_status!=="pending"&&<span className={`status-badge s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status]||c.livraison_status}</span>}
-                    </div>
+                <div key={c.id} className="order-card">
+                  <div className="oc-icon">📦</div>
+                  <div className="oc-info">
+                    <div className="oc-name">#{String(c.id).slice(-8)}</div>
+                    <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
                   </div>
-                  {/* ÉTAPE 5 : Si acceptée → options de paiement */}
-                  {c.status==="accepted" && (
-                    <div style={{marginTop:10,background:"#f0fdf4",border:"1px solid #86efac",borderRadius:9,padding:12}}>
-                      <div style={{fontWeight:700,fontSize:".8rem",color:"#166534",marginBottom:8}}>🎉 Commande acceptée ! Payez maintenant :</div>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        <button style={{background:"#ffd700",color:"#000",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
-                          onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement MTN MoMo\nCommande #"+String(c.id).slice(-8)+"\nMontant : "+c.montant?.toLocaleString()+" FCFA\nJe vous envoie la preuve."),"_blank")}>📱 MTN MoMo</button>
-                        <button style={{background:"#ff6600",color:"#fff",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
-                          onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement Orange Money\nCommande #"+String(c.id).slice(-8)+"\nMontant : "+c.montant?.toLocaleString()+" FCFA\nJe vous envoie la preuve."),"_blank")}>🔶 Orange Money</button>
-                        <button className="btn-wa" style={{fontSize:".75rem",padding:"8px 12px"}}
-                          onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Preuve de paiement pour commande #"+String(c.id).slice(-8)),"_blank")}>📸 Envoyer preuve</button>
-                      </div>
-                    </div>
-                  )}
-                  {/* ÉTAPE 7 : Confirmer réception */}
-                  {c.status==="shipped" && (
-                    <div style={{marginTop:10,background:"#eff6ff",border:"1px solid #93c5fd",borderRadius:9,padding:12}}>
-                      <div style={{fontSize:".8rem",color:"#1d4ed8",marginBottom:8}}>🚚 Votre colis est en route !</div>
-                      <button style={{background:"var(--green)",color:"#fff",border:"none",padding:"8px 16px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={async()=>{
-                          await supabase.from("orders").update({status:"delivered",livraison_status:"livre",escrow_status:"libere"}).eq("id",c.id);
-                          setMesCommandes(prev=>prev.map(o=>o.id===c.id?{...o,status:"delivered",livraison_status:"livre",escrow_status:"libere"}:o));
-                        }}>✅ Confirmer la réception</button>
-                    </div>
-                  )}
+                  <div className="oc-actions">
+                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
+                    <span className={`status-badge s-${c.escrow_status}`}>{ESCROW_STATUSES[c.escrow_status] || c.escrow_status}</span>
+                  </div>
                 </div>
               ))
           }
@@ -1882,7 +1763,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
   const actionLivraison = async (id, newStatus) => {
     try {
-      await supabase.from("orders").update({livraison_status:newStatus==="in_progress"?"en_cours":newStatus==="delivered"?"livre":newStatus,livreur_id:user.id}).eq("id",id).catch(e=>console.warn(e?.message));
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id)(console.error);
       setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
     } catch (err) {
       console.error("actionLivraison:", err);
@@ -1945,7 +1826,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
         <div style={{display:"flex",gap:8}}>
           <button
             style={{flex:1,background:"#1565c0",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
-            onClick={() => window.open(`https://wa.me/${l.telephone?.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (l.client) + " ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans " + (l.temps_estime) + ".")}`, "_blank")}
+            onClick={() => window.open(`https://wa.me/${l.telephone?.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${l.client} ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans ${l.temps_estime}.`)}`, "_blank")}
           >📱 Contacter client</button>
           <button
             style={{flex:1,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
@@ -2664,7 +2545,7 @@ function AdminDashboard({ user, userData, goPage }) {
                         <td style={{display:"flex",gap:3,flexWrap:"wrap"}}>
                           {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
                           {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
-                          {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (o.client_nom||"") + ", votre commande Yorix est en cours. 📦")}`)}>📱</button>}
+                          {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""}, votre commande Yorix est en cours. 📦`)}`)}>📱</button>}
                         </td>
                       </tr>
                     ))}
@@ -2830,7 +2711,7 @@ function AdminDashboard({ user, userData, goPage }) {
                           {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
                           {!["livre","annulee"].includes(o.status) && <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>annulerCommande(o.id)}>❌</button>}
                           {o.telephone && (
-                            <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (o.client_nom||"") + " ! Votre commande Yorix est en cours. 📦")}`)}>📱</button>
+                            <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""} ! Votre commande Yorix est en cours. 📦`)}`)}>📱</button>
                           )}
                         </div>
                       </td>
@@ -2979,7 +2860,7 @@ function AdminDashboard({ user, userData, goPage }) {
                             <button className="admin-action-btn" style={{background:u.actif!==false?"#fff0f0":"#e6fff0",color:u.actif!==false?"#ce1126":"#1a6b3a"}} onClick={()=>toggleVendeur(uid,u.actif!==false)}>
                               {u.actif!==false?"⛔":"✅"}
                             </button>
-                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (u.nom||"") + ", l'équipe Yorix vous contacte.")}`)}>📱</button>}
+                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${u.nom||""}, l'équipe Yorix vous contacte.`)}`)}>📱</button>}
                             {u.email && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>window.open(`mailto:${u.email}`)}>✉️</button>}
                           </div>
                         </td>
@@ -3114,7 +2995,7 @@ function AdminDashboard({ user, userData, goPage }) {
                       </div>
                       <div style={{marginLeft:"auto",display:"flex",gap:4}}>
                         <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
-                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Bonjour, votre produit "+((p.name_fr)||"")+" est en rupture de stock sur Yorix. Merci de le rapprovisionner."))}>📱</button>}
+                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, votre produit "${p.name_fr}" est en rupture de stock sur Yorix.`)}`)}>📱</button>}
                       </div>
                     </div>
                   ))
@@ -3186,41 +3067,6 @@ function AdminDashboard({ user, userData, goPage }) {
         )}
 
       </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : CONTACT FORM (contrôlé)
-// ─────────────────────────────────────────────────────────────
-function ContactForm() {
-  const [cf, setCf] = useState({nom:"",email:"",sujet:"",message:""});
-  const [cfSent, setCfSent] = useState(false);
-  const f = k => e => setCf(p=>({...p,[k]:e.target.value}));
-  const send = () => {
-    if(!cf.nom.trim()||!cf.sujet||!cf.message.trim()){return;}
-    const msg = ["Message Yorix","Nom: "+cf.nom,"Email: "+cf.email,"Sujet: "+cf.sujet,"","Message:",cf.message].join("\n");
-    window.open("https://wa.me/237696565654?text="+encodeURIComponent(msg),"_blank");
-    setCfSent(true);
-    setTimeout(()=>setCfSent(false),5000);
-  };
-  return (
-    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24,marginBottom:16}}>
-      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
-      {cfSent&&<div className="success-msg">✅ Redirection WhatsApp...</div>}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
-        <div className="form-group" style={{marginBottom:0}}><label className="form-label">Nom *</label><input className="form-input" placeholder="Votre nom" value={cf.nom} onChange={f("nom")}/></div>
-        <div className="form-group" style={{marginBottom:0}}><label className="form-label">Email</label><input className="form-input" type="email" placeholder="email@exemple.cm" value={cf.email} onChange={f("email")}/></div>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Sujet *</label>
-        <select className="form-select" value={cf.sujet} onChange={f("sujet")}>
-          <option value="">Choisir un sujet...</option>
-          {["Problème avec une commande","Signaler un vendeur","Remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre"].map(s=><option key={s}>{s}</option>)}
-        </select>
-      </div>
-      <div className="form-group"><label className="form-label">Message *</label><textarea className="form-textarea" style={{minHeight:90}} placeholder="Décrivez votre demande..." value={cf.message} onChange={f("message")}/></div>
-      <button className="form-submit" onClick={send}>📱 Envoyer via WhatsApp</button>
     </div>
   );
 }
@@ -3364,21 +3210,7 @@ export default function Yorix() {
       });
       if (profileError) console.error("Profile insert error:", profileError);
 
-      // Insérer aussi dans profiles pour compatibilité getUserProfile
-      await supabase.from("profiles").insert({
-        id: uid, nom:authForm.nom, email:authForm.email,
-        telephone:authForm.tel, role:selectedRole, actif:true,
-      }).catch(()=>{});
-
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(e=>console.warn(e?.message));
-
-      // Notification de bienvenue
-      await supabase.from("notifications").insert({
-        user_id:uid, type:"bienvenue", icon:"🎉",
-        title:"Bienvenue sur Yorix !", lu:false,
-        message:"Votre compte "+( ROLE_LABELS[selectedRole]||selectedRole )+" est prêt. Explorez la marketplace !",
-      }).catch(()=>{});
-
+      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" })(console.error);
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
@@ -3402,7 +3234,6 @@ export default function Yorix() {
   };
 
   // ── PANIER ──
-  const [cartToast, setCartToast] = useState("");
   const addToCart = useCallback((p) => {
     setCartItems(prev => {
       const ex = prev.find(i => i.id === p.id);
@@ -3410,8 +3241,6 @@ export default function Yorix() {
       const img = p.image_urls?.[0] || p.image || null;
       return [...prev, { id:p.id, name:p.name_fr, image:img, prix:p.prix, qty:1, vendeur_id:p.vendeur_id }];
     });
-    setCartToast("🛒 " + (p.name_fr||"Produit") + " ajouté !");
-    setTimeout(()=>setCartToast(""),2500);
     setCartOpen(true);
   }, []);
   const changeQty = (id, d) => setCartItems(prev => prev.map(i => i.id===id ? {...i, qty:Math.max(1,i.qty+d)} : i));
@@ -3419,51 +3248,26 @@ export default function Yorix() {
   const totalQty   = cartItems.reduce((a,i) => a+i.qty, 0);
   const totalPrice = cartItems.reduce((a,i) => a+(i.prix*i.qty), 0);
 
-  const [cmdLoading, setCmdLoading]   = useState(false);
-  const [cmdSuccess, setCmdSuccess]   = useState(false);
-
   const passerCommande = async () => {
     if (!user) { setAuthOpen(true); setCartOpen(false); return; }
-    if (cartItems.length === 0) return;
-    setCmdLoading(true);
     try {
-      // Étape 1 : créer les commandes
-      const insertResults = await Promise.all(cartItems.map(item =>
+      const batch = cartItems.map(item =>
         supabase.from("orders").insert({
-          product_id:item.id, vendeur_id:item.vendeur_id,
-          client_id:user.id, client_nom:userData?.nom||user.email,
-          telephone:userData?.telephone||"",
-          montant:item.prix*item.qty,
-          commission:Math.round(item.prix*item.qty*COMMISSION_RATE),
-          montant_vendeur:Math.round(item.prix*item.qty*(1-COMMISSION_RATE)),
-          quantite:item.qty,
-          status:"pending",livraison_status:"pending",escrow_status:"pending",
-        }).select().single()
-      ));
-
-      // Étape 1b : décrémenter le stock
-      await Promise.all(cartItems.map(async item => {
-        const {data:prod} = await supabase.from("products").select("stock").eq("id",item.id).single();
-        if (prod?.stock != null) {
-          await supabase.from("products").update({stock:Math.max(0,(prod.stock||0)-item.qty)}).eq("id",item.id);
-        }
-      }));
-
-      // Étape 2 : notifier les vendeurs
-      const vendeurs = [...new Set(cartItems.map(i=>i.vendeur_id).filter(Boolean))];
-      await Promise.all(vendeurs.map(vid =>
-        supabase.from("notifications").insert({
-          user_id:vid, type:"nouvelle_commande", icon:"📦",
-          title:"Nouvelle commande !", lu:false,
-          message:"Commande de "+(userData?.nom||user.email)+" — "+(cartItems.filter(i=>i.vendeur_id===vid).reduce((s,i)=>s+(i.prix*i.qty),0)).toLocaleString()+" FCFA",
-        }).catch(()=>{})
-      ));
-
+          product_id: item.id, vendeur_id: item.vendeur_id,
+          client_id: user.id, client_nom: userData?.nom || user.email,
+          telephone: userData?.telephone || "",
+          montant: item.prix * item.qty,
+          commission: Math.round(item.prix * item.qty * COMMISSION_RATE),
+          montant_vendeur: Math.round(item.prix * item.qty * (1-COMMISSION_RATE)),
+          status:"pending", livraison_status:"pending", escrow_status:"pending",
+        })
+      );
+      await Promise.all(batch);
       setCartItems([]);
-      setCmdSuccess(true);
-      setTimeout(()=>{setCmdSuccess(false);setCartOpen(false);goPage("dashboard");},2500);
-    } catch (err) { console.error("passerCommande:",err); }
-    setCmdLoading(false);
+      setCartOpen(false);
+      alert("✅ Commande créée ! Vous serez contacté(e) pour le paiement.");
+      goPage("dashboard");
+    } catch (err) { alert("Erreur : " + err.message); }
   };
 
   // ── CHAT ──
@@ -3527,13 +3331,6 @@ export default function Yorix() {
   return (
     <>
       <style>{makeCSS(dark)}</style>
-
-      {/* ── TOAST GLOBAL ── */}
-      {cartToast && (
-        <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",zIndex:9998,background:"var(--green)",color:"#fff",padding:"10px 22px",borderRadius:50,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".82rem",boxShadow:"0 4px 20px rgba(0,0,0,.25)",whiteSpace:"nowrap",animation:"fadeUp .3s ease"}}>
-          {cartToast}
-        </div>
-      )}
 
       {/* ── AUTH MODAL ── */}
       {authOpen && (
@@ -3685,16 +3482,9 @@ export default function Yorix() {
             >
               📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
             </button>
-            {cmdSuccess && <div className="success-msg" style={{marginTop:8,textAlign:"center"}}>✅ Commande créée ! Redirection...</div>}
-            <button className="cart-checkout" onClick={passerCommande} disabled={cmdLoading||cmdSuccess} style={{marginTop:6,background:cmdSuccess?"var(--green)":"var(--surface2)",color:cmdSuccess?"#fff":"var(--ink)",border:"1.5px solid var(--border)",transition:"all .3s"}}>
-              {cmdLoading?<><div className="spinner" style={{width:14,height:14,borderWidth:2,display:"inline-block",marginRight:6}}/>Traitement...</>:cmdSuccess?"✅ Commande créée !":"✅ Confirmer la commande"}
+            <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
+              ✅ Confirmer la commande (paiement en ligne)
             </button>
-            <div style={{marginTop:8,display:"flex",gap:6}}>
-              <button style={{flex:1,background:"#ffd700",color:"#000",border:"none",padding:"7px",borderRadius:7,fontWeight:700,fontSize:".7rem",cursor:"pointer"}}
-                onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement MTN MoMo — "+totalPrice.toLocaleString()+" FCFA. Preuve jointe."),"_blank")}>📱 MTN MoMo</button>
-              <button style={{flex:1,background:"#ff6600",color:"#fff",border:"none",padding:"7px",borderRadius:7,fontWeight:700,fontSize:".7rem",cursor:"pointer"}}
-                onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement Orange Money — "+totalPrice.toLocaleString()+" FCFA. Preuve jointe."),"_blank")}>🔶 Orange Money</button>
-            </div>
           </div>
         )}
       </div>
@@ -3943,7 +3733,7 @@ export default function Yorix() {
                   <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
                   <div className="prest-footer">
                     <div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div>
-                    <button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, je cherche un prestataire : " + (p.name) + "")}`, "_blank")}>📱 Contacter</button>
+                    <button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire : ${p.name}`)}`, "_blank")}>📱 Contacter</button>
                   </div>
                 </div>
               ))}
@@ -4113,7 +3903,7 @@ export default function Yorix() {
                     </div>
                     <button
                       style={{width:"100%",background:d.dispo?"var(--green)":"var(--border)",color:d.dispo?"#fff":"var(--gray)",border:"none",padding:"8px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",cursor:d.dispo?"pointer":"default"}}
-                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour ! Je veux une livraison avec " + (d.name) + " (" + (d.vehicule) + ") 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : ")}`, "_blank")}
+                      onClick={()=>d.dispo&&window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour ! Je veux une livraison avec ${d.name} (${d.vehicule}) 🛵\n\n📍 Adresse collecte : \n📍 Adresse livraison : \n📦 Description colis : `)}`, "_blank")}
                     >{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
                   </div>
                 ))}
@@ -4167,7 +3957,7 @@ export default function Yorix() {
               <div key={p.name} className="prest-card">
                 <div className="prest-top"><div className="prest-av">{p.emoji}</div><div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div></div>
                 <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
-                <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, je souhaite contacter " + (p.name) + " pour " + (p.tags[0]) + "")}`,'_blank')}>WhatsApp</button></div>
+                <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je souhaite contacter ${p.name} pour ${p.tags[0]}`)}`,'_blank')}>WhatsApp</button></div>
               </div>
             ))}
           </div>
@@ -4216,20 +4006,13 @@ export default function Yorix() {
             <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:4}}>📋 Demande d'accès Business</h3>
             <p style={{fontSize:".78rem",color:"var(--gray)",marginBottom:16}}>Notre équipe B2B vous contacte sous 24h.</p>
             <div className="form-row">
-              <div className="form-group"><label className="form-label">Entreprise *</label><input className="form-input biz-form-input" placeholder="Nom de l'entreprise"/></div>
-              <div className="form-group"><label className="form-label">Contact</label><input className="form-input biz-form-input" placeholder="Votre nom"/></div>
-              <div className="form-group"><label className="form-label">Email pro</label><input className="form-input biz-form-input" placeholder="contact@entreprise.cm"/></div>
-              <div className="form-group"><label className="form-label">Téléphone *</label><input className="form-input biz-form-input" placeholder="+237 ..."/></div>
-              <div className="form-group full"><label className="form-label">Besoins principaux</label><textarea className="form-textarea biz-form-input" style={{minHeight:65}} placeholder="Décrivez vos besoins..."/></div>
+              <div className="form-group"><label className="form-label">Entreprise *</label><input className="form-input" placeholder="Nom de l'entreprise"/></div>
+              <div className="form-group"><label className="form-label">Contact</label><input className="form-input" placeholder="Votre nom"/></div>
+              <div className="form-group"><label className="form-label">Email pro</label><input className="form-input" placeholder="contact@entreprise.cm"/></div>
+              <div className="form-group"><label className="form-label">Téléphone</label><input className="form-input" placeholder="+237 ..."/></div>
+              <div className="form-group full"><label className="form-label">Besoins principaux</label><textarea className="form-textarea" style={{minHeight:65}} placeholder="Décrivez vos besoins..."/></div>
             </div>
-            <button className="form-submit" onClick={async()=>{
-              const f=document.querySelectorAll(".biz-form-input");
-              const vals=[...f].map(i=>i.value.trim());
-              if(!vals[0]||!vals[3]){alert("Entreprise et téléphone obligatoires !");return;}
-              const msg="Demande Business\nEntreprise: "+vals[0]+"\nContact: "+vals[1]+"\nEmail: "+vals[2]+"\nTél: "+vals[3]+"\nBesoins: "+vals[4];
-              await supabase.from("business_leads").insert({entreprise:vals[0],contact:vals[1],email:vals[2],telephone:vals[3],besoins:vals[4]||""}).catch(()=>{});
-              window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent(msg),"_blank");
-            }}>💼 Soumettre ma demande</button>
+            <button className="form-submit">💼 Soumettre ma demande</button>
           </div>
         </section>
       )}
@@ -4427,7 +4210,22 @@ export default function Yorix() {
                 </div>
               ))}
             </div>
-            <ContactForm/>
+            <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24,marginBottom:16}}>
+              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
+                <div className="form-group" style={{marginBottom:0}}><label className="form-label">Nom *</label><input className="form-input" placeholder="Votre nom"/></div>
+                <div className="form-group" style={{marginBottom:0}}><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="email@exemple.cm"/></div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Sujet *</label>
+                <select className="form-select">
+                  <option value="">Choisir un sujet...</option>
+                  {["Problème avec une commande","Signaler un vendeur","Remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre"].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label className="form-label">Message *</label><textarea className="form-textarea" style={{minHeight:90}} placeholder="Décrivez votre demande..."/></div>
+              <button className="form-submit" onClick={()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix ! Je vous contacte pour : ")}`)}>📱 Envoyer via WhatsApp</button>
+            </div>
             <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:11,padding:16,display:"flex",gap:14,flexWrap:"wrap"}}>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>⏰ Horaires</div>
