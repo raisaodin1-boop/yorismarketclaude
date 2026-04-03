@@ -460,8 +460,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .cart-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.98rem;color:var(--ink);}
 .cart-close{background:var(--surface2);border:none;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray);}
 .cart-items{flex:1;overflow-y:auto;padding:12px 18px;}
-.cart-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
-.ci-img{width:42px;height:42px;background:var(--surface2);border-radius:9px;flex-shrink:0;overflow:hidden;}
+.cart-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.ci-img{width:56px;height:56px;background:var(--surface2);border-radius:9px;flex-shrink:0;overflow:hidden;}
 .ci-img img{width:100%;height:100%;object-fit:cover;}
 .ci-info{flex:1;}
 .ci-name{font-size:.77rem;font-weight:500;color:var(--ink);margin-bottom:2px;}
@@ -3239,7 +3239,18 @@ export default function Yorix() {
       const ex = prev.find(i => i.id === p.id);
       if (ex) return prev.map(i => i.id === p.id ? {...i, qty:i.qty+1} : i);
       const img = p.image_urls?.[0] || p.image || null;
-      return [...prev, { id:p.id, name:p.name_fr, image:img, prix:p.prix, qty:1, vendeur_id:p.vendeur_id }];
+      return [...prev, { 
+  id: p.id, 
+  name: p.name_fr, 
+  image: img, 
+  prix: p.prix, 
+  qty: 1, 
+  vendeur_id: p.vendeur_id,
+  vendeur_nom: p.vendeur_nom || "",   // ← ajouter
+  categorie: p.categorie || "",        // ← ajouter
+  ville: p.ville || "",                // ← ajouter
+  stock: p.stock || null               // ← ajouter
+}];
     });
     setCartOpen(true);
   }, []);
@@ -3411,24 +3422,68 @@ export default function Yorix() {
         </div>
       )}
 
-      {/* ── CART ── */}
-      <div className={`cart-overlay${cartOpen?" open":""}`} onClick={() => setCartOpen(false)}/>
-      <div className={`cart-drawer${cartOpen?" open":""}`}>
-        <div className="cart-header"><span className="cart-title">🛒 Panier ({totalQty})</span><button className="cart-close" onClick={() => setCartOpen(false)}>✕</button></div>
-        <div className="cart-items">
-          {cartItems.length === 0
-            ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}><div style={{fontSize:"2.4rem"}}>🛒</div><p>Panier vide</p></div>
-            : cartItems.map(item => (
-                <div key={item.id} className="cart-item">
-                  <div className="ci-img">{item.image && item.image.startsWith("http") ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/42?text=📦";}}/> : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--surface2)",fontSize:"1.4rem"}}>📦</div>}</div>
-                  <div className="ci-info">
-                    <div className="ci-name">{item.name}</div>
-                    <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
-                    <div className="ci-qty"><button className="qty-btn" onClick={()=>changeQty(item.id,-1)}>−</button><span className="qty-val">{item.qty}</span><button className="qty-btn" onClick={()=>changeQty(item.id,1)}>+</button></div>
-                  </div>
-                  <button className="ci-del" onClick={()=>removeItem(item.id)}>🗑️</button>
-                </div>
-              ))
+     {/* — CART — */}
+<div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
+<div className={`cart-drawer${cartOpen?" open":""}`}>
+  <div className="cart-header">
+    <span className="cart-title">🛒 Panier ({totalQty})</span>
+    <button className="cart-close" onClick={()=>setCartOpen(false)}>✕</button>
+  </div>
+
+  <div className="cart-items">
+    {cartItems.length === 0
+      ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}>
+          <div style={{fontSize:"2.4rem"}}>🛒</div>
+          <p>Panier vide</p>
+        </div>
+      : cartItems.map(item => (
+        <div key={item.id} className="cart-item">
+          <div className="ci-img">
+            {item.image && item.image.startsWith("http")
+              ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.style.display="none"}}/>
+              : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem",background:"var(--bg-light)",borderRadius:"8px"}}>🛍</div>
+            }
+          </div>
+          <div className="ci-info">
+            <div className="ci-name">{item.name}</div>
+            {item.categorie && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"2px"}}>{item.categorie} · {item.ville||""}</div>}
+            {item.vendeur_nom && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"4px"}}>Vendeur : {item.vendeur_nom}</div>}
+            <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
+            {item.stock && item.qty >= item.stock &&
+              <div style={{fontSize:"10px",color:"var(--warning,#e67e22)",marginTop:"2px"}}>⚠ Stock limité</div>
+            }
+            <div className="ci-qty">
+              <button className="qty-btn" onClick={()=>changeQty(item.id,-1)}>−</button>
+              <span className="qty-val">{item.qty}</span>
+              <button className="qty-btn" onClick={()=>changeQty(item.id,1)}>+</button>
+            </div>
+          </div>
+          <button className="ci-del" onClick={()=>removeItem(item.id)}>🗑</button>
+        </div>
+      ))
+    }
+  </div>
+
+  {cartItems.length > 0 && (
+    <div className="cart-footer">
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"var(--gray)",marginBottom:"6px"}}>
+        <span>Sous-total ({totalQty} article{totalQty>1?"s":""})</span>
+        <span>{totalPrice.toLocaleString()} FCFA</span>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"var(--gray)",marginBottom:"12px"}}>
+        <span>Commission Yorix (5%)</span>
+        <span>{Math.round(totalPrice*0.05).toLocaleString()} FCFA</span>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",fontWeight:600,fontSize:"15px",marginBottom:"16px",paddingTop:"10px",borderTop:"1px solid var(--border)"}}>
+        <span>Total</span>
+        <span>{totalPrice.toLocaleString()} FCFA</span>
+      </div>
+      <button className="btn-primary" style={{width:"100%",padding:"12px",fontSize:"15px"}} onClick={passerCommande}>
+        ✅ Commander
+      </button>
+    </div>
+  )}
+</div>
           }
         </div>
         {cartItems.length === 0 && (
