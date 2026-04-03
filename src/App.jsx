@@ -1,53 +1,31 @@
 // ═══════════════════════════════════════════════════════════════
-//  YORIX CM — VERSION CORRIGÉE & COMPLÈTE v2.0
-//  ✅ Bug double Supabase client → corrigé
-//  ✅ Bug syntax wallet/delivery insert → corrigé
-//  ✅ Formulaires contrôlés (Business, Contact) → corrigés
-//  ✅ Like/Wishlist isolé par produit → OK
-//  ✅ Panier multi-articles avec quantités → OK
-//  ✅ Commande → stock décrémenté → notification vendeur
-//  ✅ Workflow ACCEPTER / REFUSER commandes
-//  ✅ Paiement MTN MoMo / Orange Money / WhatsApp
-//  ✅ Confirmation réception client (étape 7)
-//  ✅ Dashboard vendeur : édition produit ✏️ + temps réel
-//  ✅ Dashboard livreur : données Supabase réelles
-//  ✅ Dashboard acheteur : onglet favoris + suivi commande
-//  ✅ Admin : temps réel nouvelles commandes/inscriptions
-//  ✅ Academy, Blog, Business : pages avec composants complets
-//  ✅ getUserProfile : fallback profiles → users
-//  ✅ Register : insert profiles + users + notification bienvenue
-//  ✅ Global toast système feedback utilisateur
-//
-//  ── TABLES SUPABASE NÉCESSAIRES ──────────────────────────────
-//  profiles (id, nom, email, telephone, role, actif, verifie)
-//  users    (uid, nom, email, telephone, role, actif, verifie)
-//  products (id, name_fr, prix, stock, vendeur_id, actif, ...)
-//  orders   (id, product_id, vendeur_id, client_id, montant,
-//            commission, montant_vendeur, status, livraison_status,
-//            escrow_status, livreur_id, client_nom, telephone)
-//  notifications (id, user_id, type, icon, title, message, lu)
-//  wallets  (id, user_id, solde, total_gagne, devise)
-//  reviews  (id, product_id, user_id, auteur, note, texte)
-//  messages (id, expediteur_id, destinataire_id, texte, lu)
-//  newsletter (id, email, created_at)
-//  business_leads (entreprise, contact, email, telephone, besoins)
-//  prestataires   (nom, prenom, tel, email, metier, ville, ...)
+//  YORIX CM — VERSION PROFESSIONNELLE COMPLÈTE
+//  ✅ WhatsApp Commander
+//  ✅ Upload multiple Cloudinary
+//  ✅ Commandes Supabase (orders)
+//  ✅ Avis / Étoiles / Commentaires
+//  ✅ Avis / Étoiles / Commentaires
+//  ✅ Commission automatique 5%
+//  ✅ Livraison avec statuts
+//  ✅ Escrow simulé
+//  ✅ Dashboard vendeur complet
+//  ✅ Notifications temps réel
+//  ✅ 4 rôles : buyer / seller / delivery / provider
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─────────────────────────────────────────────────────────────
-// CONFIG — Supabase (une seule instance, pas de doublon)
+// CONFIG — une seule instance Supabase
 // ─────────────────────────────────────────────────────────────
-const SUPABASE_URL      = (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL)      || "https://msrymchhhxitdevthvdi.supabase.co";
-const SUPABASE_ANON_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA";
-const CLOUD_NAME        = (typeof import.meta !== "undefined" && import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME)    || "";
-const UPLOAD_PRESET     = (typeof import.meta !== "undefined" && import.meta.env?.VITE_CLOUDINARY_UPLOAD_PRESET) || "yorix_unsigned";
+const SUPABASE_URL      = "https://msrymchhhxitdevthvdi.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA";
+const CLOUD_NAME        = "";
+const UPLOAD_PRESET     = "yorix_unsigned";
 const YORIX_WA_NUMBER   = "237696565654";
-const COMMISSION_RATE   = 0.05; // 5% commission Yorix
+const COMMISSION_RATE   = 0.05;
 
-// Instance Supabase unique — évite les erreurs "Multiple GoTrueClient instances"
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
@@ -161,25 +139,20 @@ async function creerCommandeSupabase({ product, clientNom, telephone, userId = n
   return data;
 }
 
-/** Charger le profil utilisateur + son rôle depuis Supabase */
-/** Charge le profil depuis "profiles" puis "users" en fallback */
+/** Charger le profil utilisateur — cherche dans profiles puis users */
 async function getUserProfile(uid) {
-  // Essayer d'abord la table "profiles"
-  const { data: profileData } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle().catch(() => ({ data: null }));
-  if (profileData) return profileData;
-
-  // Fallback sur la table "users" (uid = uid ou id)
-  const { data: userData } = await supabase.from("users").select("*").or(`uid.eq.${uid},id.eq.${uid}`).maybeSingle().catch(() => ({ data: null }));
-  if (userData) return userData;
-
-  return null;
+  try {
+    const { data: p } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+    if (p) return p;
+    const { data: u } = await supabase.from("users").select("*").or("uid.eq." + uid + ",id.eq." + uid).maybeSingle();
+    return u || null;
+  } catch(e) { console.error("getUserProfile:", e); return null; }
 }
 
 function getUserRole(profileData) {
-  const valid = ["buyer", "seller", "delivery", "provider", "admin", "superadmin"];
+  const valid = ["buyer","seller","delivery","provider","admin","superadmin"];
   const role  = profileData?.role;
-  if (role && valid.includes(role)) return role;
-  return "buyer"; // fallback : acheteur (plus sûr que seller)
+  return (role && valid.includes(role)) ? role : "seller";
 }
 
 /** Filtre anti-contournement messages */
@@ -809,33 +782,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 `;
 
 // ─────────────────────────────────────────────────────────────
-// COMPOSANT : MODAL DE CONFIRMATION (remplace window.confirm)
-// ─────────────────────────────────────────────────────────────
-function ConfirmModal({ title, message, confirmLabel = "Confirmer", cancelLabel = "Annuler", onConfirm, onCancel, danger = false }) {
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
-      <div className="modal" style={{ maxWidth: 380 }}>
-        <div style={{ textAlign:"center", marginBottom:16 }}>
-          <div style={{ fontSize:"2.2rem", marginBottom:8 }}>{danger ? "⚠️" : "❓"}</div>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1rem", color:"var(--ink)", marginBottom:6 }}>{title}</div>
-          {message && <p style={{ fontSize:".82rem", color:"var(--gray)", lineHeight:1.6 }}>{message}</p>}
-        </div>
-        <div style={{ display:"flex", gap:8 }}>
-          <button
-            onClick={onCancel}
-            style={{ flex:1, padding:"10px", borderRadius:8, border:"1.5px solid var(--border)", background:"var(--surface)", color:"var(--ink)", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".82rem", cursor:"pointer" }}
-          >{cancelLabel}</button>
-          <button
-            onClick={onConfirm}
-            style={{ flex:2, padding:"10px", borderRadius:8, border:"none", background:danger?"var(--red)":"var(--green)", color:"#fff", fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".82rem", cursor:"pointer" }}
-          >{confirmLabel}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // COMPOSANT : ÉTOILES (rating)
 // ─────────────────────────────────────────────────────────────
 function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) {
@@ -884,7 +830,7 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
       setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
     } catch (err) {
       console.error("creerCommande:", err);
-      setErrors({ _global: "Erreur lors de la commande. Vérifiez votre connexion et réessayez." });
+      alert("Erreur lors de la commande : " + err.message);
     }
     setLoading(false);
   };
@@ -930,8 +876,6 @@ function ModalCommander({ product, user, userData, onClose, onSuccess }) {
               {errors.tel && <span className="form-error-text">{errors.tel}</span>}
             </div>
 
-            {errors._global && <div className="error-msg">❌ {errors._global}</div>}
-
             <button className="form-submit" onClick={handleCommander} disabled={loading}>
               {loading ? <><div className="spinner" style={{ width:16, height:16, borderWidth:2 }}/>Enregistrement...</> : "✅ Confirmer la commande"}
             </button>
@@ -955,23 +899,20 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
   const [texte, setTexte]     = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
-  const [err, setErr]         = useState("");
+  const [errAvis, setErrAvis] = useState("");
 
   const submit = async () => {
-    if (!note) { setErr("Veuillez choisir une note (1 à 5 étoiles)."); return; }
-    if (!texte.trim()) { setErr("Rédigez un commentaire avant de publier."); return; }
-    setErr(""); setLoading(true);
+    if (!note) { setErrAvis("Veuillez choisir une note."); return; }
+    if (!texte.trim()) { setErrAvis("Rédigez un commentaire."); return; }
+    setErrAvis(""); setLoading(true);
     try {
       await supabase.from("reviews").insert({
-        product_id: productId,
-        user_id: userId || null,
-        auteur: userName || "Anonyme",
-        note,
-        texte,
+        product_id: productId, user_id: userId || null,
+        auteur: userName || "Anonyme", note, texte,
       });
       setDone(true);
       onSubmit?.({ auteur: userName || "Anonyme", note, texte });
-    } catch (e) { setErr("Erreur lors de l'envoi. Réessayez."); }
+    } catch (err) { setErrAvis("Erreur lors de l'envoi."); }
     setLoading(false);
   };
 
@@ -980,10 +921,10 @@ function FormulaireAvis({ productId, userId, userName, onSubmit }) {
   return (
     <div style={{ background:"var(--surface2)", borderRadius:12, padding:16, marginBottom:12 }}>
       <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:10 }}>Laisser un avis</div>
-      {err && <div className="error-msg" style={{marginBottom:8}}>⚠️ {err}</div>}
+      {errAvis && <div className="error-msg" style={{marginBottom:8}}>⚠️ {errAvis}</div>}
       <div style={{ marginBottom:10 }}>
         <div style={{ fontSize:".73rem", fontWeight:600, color:"var(--ink)", marginBottom:5 }}>Note :</div>
-        <Stars value={note} onSelect={n => { setNote(n); setErr(""); }} size="lg" />
+        <Stars value={note} onSelect={n=>{setNote(n);setErrAvis("");}} size="lg" />
       </div>
       <textarea
         className="form-textarea"
@@ -1510,16 +1451,15 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const [mesCommandes, setMesCommandes] = useState([]);
   const [wallet, setWallet]             = useState({ solde:0, total_gagne:0 });
   const [loadingData, setLoadingData]   = useState(true);
-  const [editProd, setEditProd]         = useState(null);   // produit en cours d'édition
+  const [editProd, setEditProd]         = useState(null);
   const [editForm, setEditForm]         = useState({});
   const [editSaving, setEditSaving]     = useState(false);
-  const [editSaved, setEditSaved]       = useState(false);
 
   const loadAll = async () => {
     setLoadingData(true);
     const [{ data: prods }, { data: cmds }, { data: wal }] = await Promise.all([
-      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
-      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at",{ascending:false}),
+      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at",{ascending:false}),
       supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
     ]);
     setMesProduits(prods || []);
@@ -1530,47 +1470,41 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
   useEffect(() => {
     loadAll();
-    // Temps réel : nouvelles commandes pour ce vendeur
-    const channel = supabase.channel(`seller_${user.id}`)
-      .on("postgres_changes", { event:"INSERT", schema:"public", table:"orders", filter:`vendeur_id=eq.${user.id}` },
-        () => { loadAll(); })
+    // Temps réel nouvelles commandes
+    const ch = supabase.channel("seller_cmd_" + user.id)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"orders",filter:"vendeur_id=eq."+user.id}, loadAll)
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => supabase.removeChannel(ch);
   }, [user.id]);
 
-  const openEdit = (p) => {
-    setEditProd(p);
-    setEditForm({ name_fr: p.name_fr, description_fr: p.description_fr||"", prix: p.prix||"", stock: p.stock||0, categorie: p.categorie||"", ville: p.ville||"" });
-    setEditSaved(false);
+  const revenusTotal     = mesCommandes.filter(c=>c.status==="delivered").reduce((a,c)=>a+(c.montant_vendeur||0),0);
+  const commandesActives = mesCommandes.filter(c=>["pending","accepted","paid","shipped"].includes(c.status)).length;
+  const pendingCount     = mesCommandes.filter(c=>c.status==="pending").length;
+
+  const updateOrderStatus = async (orderId, field, value) => {
+    await supabase.from("orders").update({[field]:value}).eq("id",orderId);
+    setMesCommandes(prev=>prev.map(c=>c.id===orderId?{...c,[field]:value}:c));
   };
 
-  const saveEdit = async () => {
+  const saveEditProd = async () => {
     if (!editProd) return;
     setEditSaving(true);
     try {
-      const { error } = await supabase.from("products").update({
-        name_fr:        editForm.name_fr,
-        description_fr: editForm.description_fr,
-        prix:           Number(editForm.prix),
-        stock:          Number(editForm.stock),
-        categorie:      editForm.categorie,
-        ville:          editForm.ville,
+      await supabase.from("products").update({
+        name_fr:editForm.name_fr, description_fr:editForm.description_fr,
+        prix:Number(editForm.prix), stock:Number(editForm.stock),
+        categorie:editForm.categorie, ville:editForm.ville,
       }).eq("id", editProd.id);
-      if (error) throw error;
-      setMesProduits(prev => prev.map(p => p.id === editProd.id ? { ...p, ...editForm, prix: Number(editForm.prix), stock: Number(editForm.stock) } : p));
-      setEditSaved(true);
-      setTimeout(() => { setEditProd(null); setEditSaved(false); }, 1500);
-    } catch (err) { setEditForm(f => ({...f, _error: "Erreur : " + err.message})); }
+      setMesProduits(prev=>prev.map(p=>p.id===editProd.id?{...p,...editForm,prix:Number(editForm.prix),stock:Number(editForm.stock)}:p));
+      setEditProd(null);
+    } catch(e){ console.error(e); }
     setEditSaving(false);
   };
 
-  const revenusTotal     = mesCommandes.filter(c => c.status === "delivered").reduce((a, c) => a + (c.montant_vendeur || 0), 0);
-  const commandesActives = mesCommandes.filter(c => ["pending","accepted","paid","shipped"].includes(c.status)).length;
-  const commandesEnAttente = mesCommandes.filter(c => c.status === "pending").length;
-
-  const updateOrderStatus = async (orderId, field, value) => {
-    await supabase.from("orders").update({ [field]: value }).eq("id", orderId);
-    setMesCommandes(prev => prev.map(c => c.id === orderId ? {...c, [field]: value} : c));
+  const notifPaiement = (c) => {
+    const tel = (c.telephone||"").replace(/\D/g,"");
+    const msg = "Bonjour " + (c.client_nom||"") + " ! Votre commande Yorix a ete acceptee. Veuillez payer " + (c.montant||0).toLocaleString() + " FCFA via MTN MoMo ou Orange Money au " + YORIX_WA_NUMBER + " puis envoyez votre preuve ici. Merci !";
+    window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(msg), "_blank");
   };
 
   if (loadingData) return <div className="loading"><div className="spinner"/>Chargement...</div>;
@@ -1579,39 +1513,37 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     <>
       {/* ── MODAL ÉDITION PRODUIT ── */}
       {editProd && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditProd(null)}>
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setEditProd(null)}>
           <div className="modal">
-            <button className="modal-close" onClick={() => setEditProd(null)}>✕</button>
+            <button className="modal-close" onClick={()=>setEditProd(null)}>✕</button>
             <div className="modal-title">✏️ Modifier le produit</div>
             <p className="modal-sub">{editProd.name_fr}</p>
-            {editSaved && <div className="success-msg">✅ Produit mis à jour !</div>}
-            {editForm._error && <div className="error-msg">❌ {editForm._error}</div>}
-            <div className="form-group"><label className="form-label">Nom du produit *</label>
-              <input className="form-input" value={editForm.name_fr} onChange={e => setEditForm(f=>({...f,name_fr:e.target.value}))}/>
+            <div className="form-group"><label className="form-label">Nom *</label>
+              <input className="form-input" value={editForm.name_fr||""} onChange={e=>setEditForm(f=>({...f,name_fr:e.target.value}))}/>
             </div>
             <div className="form-group"><label className="form-label">Description</label>
-              <textarea className="form-textarea" style={{minHeight:70}} value={editForm.description_fr} onChange={e => setEditForm(f=>({...f,description_fr:e.target.value}))}/>
+              <textarea className="form-textarea" style={{minHeight:65}} value={editForm.description_fr||""} onChange={e=>setEditForm(f=>({...f,description_fr:e.target.value}))}/>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Prix (FCFA) *</label>
-                <input className="form-input" type="number" value={editForm.prix} onChange={e => setEditForm(f=>({...f,prix:e.target.value}))}/>
+                <input className="form-input" type="number" value={editForm.prix||""} onChange={e=>setEditForm(f=>({...f,prix:e.target.value}))}/>
               </div>
               <div className="form-group"><label className="form-label">Stock</label>
-                <input className="form-input" type="number" min="0" value={editForm.stock} onChange={e => setEditForm(f=>({...f,stock:e.target.value}))}/>
+                <input className="form-input" type="number" min="0" value={editForm.stock||""} onChange={e=>setEditForm(f=>({...f,stock:e.target.value}))}/>
               </div>
               <div className="form-group"><label className="form-label">Catégorie</label>
-                <select className="form-select" value={editForm.categorie} onChange={e => setEditForm(f=>({...f,categorie:e.target.value}))}>
+                <select className="form-select" value={editForm.categorie||""} onChange={e=>setEditForm(f=>({...f,categorie:e.target.value}))}>
                   <option value="">—</option>{CATS.map(c=><option key={c}>{c}</option>)}
                 </select>
               </div>
               <div className="form-group"><label className="form-label">Ville</label>
-                <select className="form-select" value={editForm.ville} onChange={e => setEditForm(f=>({...f,ville:e.target.value}))}>
+                <select className="form-select" value={editForm.ville||""} onChange={e=>setEditForm(f=>({...f,ville:e.target.value}))}>
                   <option value="">—</option>{CITIES.filter(c=>c!=="Toutes les villes").map(c=><option key={c}>{c}</option>)}
                 </select>
               </div>
             </div>
-            <button className="form-submit" onClick={saveEdit} disabled={editSaving}>
-              {editSaving ? <><div className="spinner" style={{width:14,height:14,borderWidth:2}}/>Enregistrement...</> : "💾 Sauvegarder les modifications"}
+            <button className="form-submit" onClick={saveEditProd} disabled={editSaving}>
+              {editSaving?<><div className="spinner" style={{width:14,height:14,borderWidth:2}}/>Sauvegarde...</>:"💾 Enregistrer"}
             </button>
           </div>
         </div>
@@ -1619,59 +1551,48 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title" style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <div className="dash-page-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
             <span>Bonjour {userData?.nom} 🏪</span>
-            {commandesEnAttente > 0 && (
-              <span
-                onClick={() => setDashTab("commandes")}
-                style={{cursor:"pointer",background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",borderRadius:50,padding:"4px 12px",fontSize:".73rem",fontWeight:700,animation:"flashPulse 2s infinite"}}
-              >📦 {commandesEnAttente} commande{commandesEnAttente>1?"s":""} en attente !</span>
-            )}
+            {pendingCount>0&&<span onClick={()=>setDashTab("commandes")} style={{cursor:"pointer",background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",borderRadius:50,padding:"4px 12px",fontSize:".73rem",fontWeight:700}}>📦 {pendingCount} commande{pendingCount>1?"s":""} en attente !</span>}
           </div>
           <div className="dash-stats">
             {[
-              { icon:"🏪", val:mesProduits.filter(p=>p.actif!==false).length, lbl:"Produits actifs",  trend:"", click:()=>setDashTab("mesProduits") },
-              { icon:"📦", val:commandesActives,            lbl:"Commandes actives", trend:commandesEnAttente>0?`⚠️ ${commandesEnAttente} en attente`:"", click:()=>setDashTab("commandes") },
-              { icon:"✅", val:mesCommandes.filter(c=>c.status==="delivered").length, lbl:"Livrées", trend:"", click:null },
-              { icon:"💰", val:`${revenusTotal.toLocaleString()} F`, lbl:"Revenus nets", trend:"Commission 5% déduite", click:()=>setDashTab("wallet") },
+              {icon:"🏪",val:mesProduits.filter(p=>p.actif!==false).length,lbl:"Produits actifs",trend:"",click:()=>setDashTab("mesProduits")},
+              {icon:"📦",val:commandesActives,lbl:"Commandes actives",trend:pendingCount>0?"⚠️ "+pendingCount+" en attente":"",click:()=>setDashTab("commandes")},
+              {icon:"✅",val:mesCommandes.filter(c=>c.status==="delivered").length,lbl:"Livrées",trend:"",click:null},
+              {icon:"💰",val:revenusTotal.toLocaleString()+" F",lbl:"Revenus nets",trend:"Commission 5% déduite",click:()=>setDashTab("wallet")},
             ].map(s => (
               <div key={s.lbl} className="dstat" onClick={s.click} style={{cursor:s.click?"pointer":"default"}}>
                 <div className="dstat-icon">{s.icon}</div>
                 <div className="dstat-val">{s.val}</div>
                 <div className="dstat-lbl">{s.lbl}</div>
-                {s.trend && <div className="dstat-trend" style={{color:s.trend.includes("⚠️")?"#854d0e":undefined}}>{s.trend}</div>}
+                {s.trend&&<div className="dstat-trend" style={{color:s.trend.includes("⚠️")?"#854d0e":undefined}}>{s.trend}</div>}
               </div>
             ))}
           </div>
-
-          {/* Raccourcis rapides */}
-          <div style={{display:"flex",gap:8,marginBottom:18,flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
             <button className="btn-green" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter produit</button>
-            <button className="btn-ghost" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("commandes")}>📦 Voir commandes {commandesEnAttente>0&&`(${commandesEnAttente})`}</button>
-            <button className="btn-ghost" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("wallet")}>💰 Mon wallet</button>
+            <button className="btn-ghost" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("commandes")}>📦 Commandes{pendingCount>0?" ("+pendingCount+")":""}</button>
+            <button className="btn-ghost" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("wallet")}>💰 Wallet</button>
           </div>
 
           {/* Dernières commandes */}
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>
-            📦 Dernières commandes reçues
-            {mesCommandes.length > 0 && <span onClick={()=>setDashTab("commandes")} style={{fontFamily:"'DM Sans'",fontWeight:400,fontSize:".72rem",color:"var(--green)",marginLeft:10,cursor:"pointer"}}>Voir tout →</span>}
-          </div>
+          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>Dernières commandes reçues</div>
           {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p><p style={{fontSize:".74rem",color:"var(--gray)",marginTop:4}}>Partagez vos produits pour attirer des clients !</p></div>
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p></div>
             : mesCommandes.slice(0, 5).map(c => (
-                <div key={c.id} className="order-card" style={{cursor:"pointer"}} onClick={()=>setDashTab("commandes")}>
-                  <div className="oc-icon">{c.status==="pending"?"🔔":c.status==="accepted"?"✅":c.status==="cancelled"?"❌":"📦"}</div>
+                <div key={c.id} className="order-card">
+                  <div className="oc-icon">📦</div>
                   <div className="oc-info">
                     <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom || "Client"}</div>
                     <div className="oc-meta">
-                      💰 {c.montant?.toLocaleString()} FCFA · Net: <strong>{c.montant_vendeur?.toLocaleString()} F</strong>
-                      {c.created_at && ` · ${new Date(c.created_at).toLocaleDateString("fr-FR")}`}
+                      {c.montant?.toLocaleString()} FCFA · Commission: {c.commission?.toLocaleString()} F · Net: {c.montant_vendeur?.toLocaleString()} F
+                      <br/>📞 {c.telephone || "-"} · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
                     </div>
                   </div>
                   <div className="oc-actions">
-                    <span className={`status-badge s-${c.status}`}>{
-                      {pending:"⏳ En attente",accepted:"✅ Acceptée",paid:"💳 Payée",shipped:"🚚 Envoyée",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status]||c.status
-                    }</span>
+                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
+                    <span className={`status-badge s-${c.escrow_status}`}>{ESCROW_STATUSES[c.escrow_status] || c.escrow_status}</span>
                   </div>
                 </div>
               ))
@@ -1681,61 +1602,38 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
       {dashTab === "mesProduits" && (
         <>
-          <div className="dash-page-title" style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <div className="dash-page-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
             <span>🏪 Mes produits ({mesProduits.length})</span>
-            <button className="btn-green" style={{fontSize:".78rem",padding:"7px 14px"}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter un produit</button>
+            <button className="btn-green" style={{fontSize:".76rem",padding:"7px 14px"}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter un produit</button>
           </div>
           {mesProduits.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit publié</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter mon premier produit</button></div>
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter</button></div>
             : <div className="prod-grid">
                 {mesProduits.map(p => (
-                  <div key={p.id} className="prod-card" style={{opacity:p.actif===false?0.6:1}}>
+                  <div key={p.id} className="prod-card">
                     <div className="prod-img-wrap">
                       {(p.image && p.image.startsWith("http")) || (p.image_urls?.[0] && p.image_urls[0].startsWith("http"))
-                        ? <img src={p.image && p.image.startsWith("http") ? p.image : p.image_urls[0]} alt={p.name_fr}
-                            onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/300?text=📦";}}/>
+                        ? <img
+                            src={p.image && p.image.startsWith("http") ? p.image : p.image_urls[0]}
+                            alt={p.name_fr}
+                            onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/300?text=📦";}}
+                          />
                         : <div className="prod-img-placeholder">📦</div>
                       }
-                      {p.actif===false && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700,borderRadius:8}}>⏸ Désactivé</div>}
+                      {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
                     </div>
                     <div className="prod-info">
                       <div className="prod-name">{p.name_fr}</div>
-                      <div className="prod-loc">👁 {p.vues||0} vues · 📦 Stock: {p.stock != null ? p.stock : "–"}</div>
+                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock!=null?p.stock:"—"}</div>
                       <div className="prod-price-row">
                         <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
                         <div style={{display:"flex",gap:4}}>
-                          {/* Toggle actif/inactif */}
-                          <button
-                            title={p.actif===false?"Réactiver":"Désactiver"}
-                            style={{background:p.actif===false?"var(--green)":"var(--surface2)",color:p.actif===false?"#fff":"var(--gray)",border:"1px solid var(--border)",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".75rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                            onClick={async(e)=>{ e.stopPropagation(); await supabase.from("products").update({actif:p.actif===false}).eq("id",p.id); setMesProduits(prev=>prev.map(x=>x.id===p.id?{...x,actif:p.actif===false}:x)); }}
-                          >{p.actif===false?"✅":"⏸"}</button>
-                          {/* Supprimer */}
-                          <button
-                            title="Supprimer"
-                            style={{background:"#fef2f2",color:"var(--red)",border:"1px solid #fecaca",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".8rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                            onClick={async(e)=>{ e.stopPropagation(); if(!window.confirm(`Supprimer "${p.name_fr}" ?`))return; await supabase.from("products").update({actif:false}).eq("id",p.id); setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); }}
-                          >🗑</button>
+                          <button title="Modifier" style={{background:"#e6f0ff",color:"#1a4a9a",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".78rem",display:"flex",alignItems:"center",justifyContent:"center"}}
+                            onClick={()=>{setEditProd(p);setEditForm({name_fr:p.name_fr,description_fr:p.description_fr||"",prix:p.prix,stock:p.stock||0,categorie:p.categorie||"",ville:p.ville||""});}}>✏️</button>
+                          <button title="Supprimer" style={{background:"#fef2f2",color:"var(--red)",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
+                            onClick={async()=>{ if(!window.confirm("Supprimer ce produit ?"))return; await supabase.from("products").update({actif:false}).eq("id",p.id); setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); }}>🗑</button>
                         </div>
                       </div>
-                      {/* Modifier le stock directement */}
-                      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6,fontSize:".72rem"}}>
-                        <span style={{color:"var(--gray)"}}>Stock :</span>
-                        <input
-                          type="number" min="0"
-                          style={{width:55,padding:"2px 6px",border:"1px solid var(--border)",borderRadius:5,fontSize:".72rem",background:"var(--surface)",color:"var(--ink)"}}
-                          defaultValue={p.stock||0}
-                          onBlur={async(e)=>{ const v=Number(e.target.value); await supabase.from("products").update({stock:v}).eq("id",p.id); setMesProduits(prev=>prev.map(x=>x.id===p.id?{...x,stock:v}:x)); }}
-                        />
-                        <span style={{color:"var(--gray)"}}>unités</span>
-                      </div>
-                      {/* Bouton Modifier */}
-                      <button
-                        style={{marginTop:8,width:"100%",background:"var(--surface2)",color:"var(--ink)",border:"1px solid var(--border)",borderRadius:7,padding:"6px 8px",fontSize:".72rem",cursor:"pointer",fontWeight:600,transition:"all .2s"}}
-                        onClick={e=>{e.stopPropagation();openEdit(p);}}
-                        onMouseOver={e=>{e.currentTarget.style.borderColor="var(--green)";e.currentTarget.style.color="var(--green)";}}
-                        onMouseOut={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--ink)";}}
-                      >✏️ Modifier ce produit</button>
                     </div>
                   </div>
                 ))}
@@ -1750,77 +1648,54 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
       {dashTab === "commandes" && (
         <>
-          <div className="dash-page-title">📦 Commandes reçues ({mesCommandes.length})</div>
+          <div className="dash-page-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+            <span>📦 Commandes reçues ({mesCommandes.length})</span>
+            {pendingCount > 0 && <span style={{background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",borderRadius:50,padding:"4px 12px",fontSize:".73rem",fontWeight:700}}>⚠️ {pendingCount} en attente</span>}
+          </div>
           {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande reçue</p><p style={{fontSize:".75rem",color:"var(--gray)",marginTop:4}}>Les commandes clients apparaîtront ici</p></div>
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande reçue</p></div>
             : mesCommandes.map(c => (
-                <div key={c.id} className="order-card" style={{ flexDirection:"column", alignItems:"stretch", marginBottom:12 }}>
-                  <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                <div key={c.id} className="order-card" style={{flexDirection:"column",alignItems:"stretch",marginBottom:10}}>
+                  <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
                     <div className="oc-icon">{c.status==="cancelled"?"❌":c.status==="accepted"?"✅":"📦"}</div>
                     <div className="oc-info" style={{flex:1}}>
-                      <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom || "Client"}</div>
+                      <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom||"Client"}</div>
                       <div className="oc-meta">
                         💰 {c.montant?.toLocaleString()} FCFA · Net : <strong style={{color:"var(--green)"}}>{c.montant_vendeur?.toLocaleString()} FCFA</strong><br/>
-                        📞 {c.telephone || "—"} · 🗓 {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
+                        📞 {c.telephone||"—"} · 🗓 {c.created_at?new Date(c.created_at).toLocaleDateString("fr-FR"):""}
                       </div>
                     </div>
-                    <div className="oc-actions" style={{flexDirection:"column",gap:3}}>
+                    <div className="oc-actions">
                       <span className={`status-badge s-${c.status}`}>{
-                        {pending:"⏳ En attente",accepted:"✅ Acceptée",paid:"💳 Payée",shipped:"🚚 Expédiée",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status] || c.status
+                        {pending:"⏳ En attente",accepted:"✅ Acceptée",paid:"💳 Payée",shipped:"🚚 Expédiée",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status]||c.status
                       }</span>
-                      {c.livraison_status && c.livraison_status!=="pending" && (
-                        <span className={`status-badge s-${c.livraison_status}`}>{
-                          {en_cours:"🚚 En livraison",livre:"✅ Livré",echec:"❌ Échec"}[c.livraison_status] || c.livraison_status
-                        }</span>
-                      )}
                     </div>
                   </div>
-
-                  {/* ── WORKFLOW ACTIONS ── */}
-                  <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
-
-                    {/* ÉTAPE 3 : Vendeur ACCEPTE ou REFUSE */}
-                    {c.status === "pending" && (<>
-                      <button
-                        style={{background:"#dcfce7",color:"#166534",border:"1px solid #86efac",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={async()=>{ await updateOrderStatus(c.id,"status","accepted"); }}
-                      >✅ ACCEPTER la commande</button>
-                      <button
-                        style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fca5a5",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={async()=>{ await updateOrderStatus(c.id,"status","cancelled"); }}
-                      >❌ REFUSER</button>
+                  <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+                    {/* ÉTAPE 3 : Accepter ou Refuser */}
+                    {c.status==="pending" && (<>
+                      <button style={{background:"#dcfce7",color:"#166534",border:"1px solid #86efac",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
+                        onClick={async()=>{ await updateOrderStatus(c.id,"status","accepted"); notifPaiement(c); }}>✅ ACCEPTER</button>
+                      <button style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fca5a5",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
+                        onClick={()=>updateOrderStatus(c.id,"status","cancelled")}>❌ REFUSER</button>
                     </>)}
-
-                    {/* ÉTAPE 4 : Commande acceptée → envoyer options paiement */}
-                    {c.status === "accepted" && (<>
-                      <button
-                        style={{background:"#fef9c3",color:"#854d0e",border:"1px solid #fde047",padding:"7px 14px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={()=>{
-                          const msgPaiement = "Bonjour " + c.client_nom + " ! \uD83C\uDF89 Votre commande Yorix est *ACCEPT\u00C9E*.\n\n\uD83D\uDCB0 Montant : " + (c.montant||0).toLocaleString() + " FCFA\n\n*Modes de paiement accept\u00E9s :*\n\uD83D\uDCF1 MTN MoMo : " + YORIX_WA_NUMBER + "\n\uD83D\uDD36 Orange Money : " + YORIX_WA_NUMBER + "\n\nEnvoyez la preuve de paiement sur ce WhatsApp. Merci ! \u2705";
-                          window.open("https://wa.me/" + (c.telephone||"").replace(/\D/g,"") + "?text=" + encodeURIComponent(msgPaiement), "_blank");
-                        }}
-                      >📱 Envoyer options paiement (WA)</button>
-                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","paid")}>✅ Marquer payée</button>
-                    </>)}
-
-                    {/* ÉTAPE 5-6 : Payée → Expédition */}
-                    {c.status === "paid" && (
-                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","shipped")}>🚚 Marquer expédiée</button>
+                    {/* ÉTAPE 4 : Marquer payée */}
+                    {c.status==="accepted" && (
+                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","paid")}>💳 Marquer payée</button>
                     )}
-
-                    {/* Livraison */}
-                    {c.livraison_status === "pending" && c.status !== "pending" && c.status !== "cancelled" && (
-                      <button className="btn-action-sm" style={{background:"#fffbeb",color:"#92400e",border:"1px solid #fde68a"}} onClick={()=>updateOrderStatus(c.id,"livraison_status","en_cours")}>🏍️ Déclencher livraison</button>
+                    {c.status==="paid" && (
+                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"status","shipped")}>🚚 Expédier</button>
                     )}
-                    {c.livraison_status === "en_cours" && (
-                      <button className="btn-action-sm" onClick={()=>{ updateOrderStatus(c.id,"livraison_status","livre"); updateOrderStatus(c.id,"status","delivered"); }}>✅ Confirmer livraison</button>
+                    {c.livraison_status==="pending" && c.status!=="pending" && c.status!=="cancelled" && (
+                      <button className="btn-action-sm" onClick={()=>updateOrderStatus(c.id,"livraison_status","en_cours")}>🏍️ Déclencher livraison</button>
                     )}
-
-                    {/* Contacter client */}
-                    <button
-                      className="btn-wa-sm"
-                      onClick={()=>window.open(`https://wa.me/${(c.telephone||"").replace(/\D/g,"")}?text=${encodeURIComponent("Bonjour " + (c.client_nom||"") + " ! Votre commande Yorix #" + (String(c.id).slice(-8)) + " est en cours. 🛍️")}`, "_blank")}
-                    >📱 Contacter client</button>
+                    {c.livraison_status==="en_cours" && (
+                      <button className="btn-action-sm" onClick={()=>{updateOrderStatus(c.id,"livraison_status","livre");updateOrderStatus(c.id,"status","delivered");}}>✅ Confirmer livraison</button>
+                    )}
+                    <button className="btn-wa-sm"
+                      onClick={()=>window.open("https://wa.me/"+((c.telephone||"").replace(/\D/g,""))+"?text="+encodeURIComponent("Bonjour "+(c.client_nom||"")+" ! Votre commande Yorix est en cours. 🛍️"),"_blank")}>
+                      📱 Contacter client
+                    </button>
                   </div>
                 </div>
               ))
@@ -1901,82 +1776,66 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
         </>
       )}
 
-      {dashTab === "commandes" && (
-        <>
-          <div className="dash-page-title">📦 Mes commandes ({mesCommandes.length})</div>
-          {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p><p style={{fontSize:".75rem",color:"var(--gray)",marginTop:4}}>Vos commandes apparaîtront ici après achat</p></div>
-            : mesCommandes.map(c => (
-                <div key={c.id} className="order-card" style={{flexDirection:"column",alignItems:"stretch",marginBottom:12}}>
-                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                    <div className="oc-icon">{c.status==="cancelled"?"❌":c.status==="delivered"?"✅":"📦"}</div>
-                    <div className="oc-info" style={{flex:1}}>
-                      <div className="oc-name">Commande #{String(c.id).slice(-8)}</div>
-                      <div className="oc-meta">
-                        {c.montant?.toLocaleString()} FCFA · 🗓 {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
-                      </div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:3,alignItems:"flex-end"}}>
-                      <span className={`status-badge s-${c.status}`}>{
-                        {pending:"⏳ En attente",accepted:"✅ Acceptée — À payer",paid:"💳 Payée",shipped:"🚚 En livraison",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status] || c.status
-                      }</span>
-                      {c.livraison_status && c.livraison_status!=="pending" && (
-                        <span className={`status-badge s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status]||c.livraison_status}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ÉTAPE 5 : Si acceptée → options de paiement MTN/Orange/WhatsApp */}
-                  {c.status === "accepted" && (
-                    <div style={{marginTop:10,background:"#f0fdf4",border:"1px solid #86efac",borderRadius:9,padding:12}}>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"#166534",marginBottom:8}}>
-                        🎉 Commande acceptée ! Choisissez votre mode de paiement :
-                      </div>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        <button
-                          style={{background:"#ffd700",color:"#000",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
-                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("💳 Paiement MTN MoMo\nCommande #" + (String(c.id).slice(-8)) + "\nMontant : " + (c.montant?.toLocaleString()) + " FCFA\n\nJe viens d'effectuer le paiement MTN MoMo. Voici ma preuve :")}`, "_blank")}
-                        >📱 MTN MoMo</button>
-                        <button
-                          style={{background:"#ff6600",color:"#fff",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
-                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("🔶 Paiement Orange Money\nCommande #" + (String(c.id).slice(-8)) + "\nMontant : " + (c.montant?.toLocaleString()) + " FCFA\n\nJe viens d'effectuer le paiement Orange Money. Voici ma preuve :")}`, "_blank")}
-                        >🔶 Orange Money</button>
-                        <button
-                          className="btn-wa"
-                          onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("📸 Preuve de paiement\nCommande Yorix #" + (String(c.id).slice(-8)) + "\nMontant : " + (c.montant?.toLocaleString()) + " FCFA")}`, "_blank")}
-                        >📸 Envoyer preuve WA</button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ÉTAPE 7 : Confirmer réception */}
-                  {c.status === "shipped" && (
-                    <div style={{marginTop:10,background:"#eff6ff",border:"1px solid #93c5fd",borderRadius:9,padding:12}}>
-                      <div style={{fontSize:".8rem",color:"#1d4ed8",marginBottom:8}}>🚚 Votre colis est en cours de livraison</div>
-                      <button
-                        style={{background:"var(--green)",color:"#fff",border:"none",padding:"8px 16px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
-                        onClick={async()=>{
-                          await supabase.from("orders").update({status:"delivered",livraison_status:"livre",escrow_status:"libere"}).eq("id",c.id);
-                          setMesCommandes(prev=>prev.map(o=>o.id===c.id?{...o,status:"delivered",livraison_status:"livre",escrow_status:"libere"}:o));
-                        }}
-                      >✅ Confirmer la réception</button>
-                    </div>
-                  )}
-                </div>
-              ))
-          }
-        </>
-      )}
-
       {dashTab === "favoris" && (
         <>
           <div className="dash-page-title">❤️ Mes favoris ({wishlist.size})</div>
           {wishlist.size === 0
-            ? <div className="empty-state"><div className="empty-icon">🤍</div><p>Aucun favori enregistré</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>goPage("produits")}>🛍️ Découvrir les produits</button></div>
-            : <div style={{fontSize:".82rem",color:"var(--gray)",background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 16px",marginBottom:16}}>
-                ❤️ Vous avez {wishlist.size} produit{wishlist.size>1?"s":""} en favoris. Retrouvez-les dans le catalogue en cliquant sur ❤️.
+            ? <div className="empty-state"><div className="empty-icon">🤍</div><p>Aucun favori</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>goPage("produits")}>🛍️ Découvrir les produits</button></div>
+            : <div style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 16px",fontSize:".82rem",color:"var(--gray)"}}>
+                ❤️ Vous avez {wishlist.size} produit{wishlist.size>1?"s":""} en favoris — retrouvez-les sur la page Produits.
                 <br/><button className="form-submit" style={{width:"auto",padding:"8px 18px",marginTop:10,fontSize:".78rem"}} onClick={()=>goPage("produits")}>Voir le catalogue →</button>
               </div>
+          }
+        </>
+      )}
+
+      {dashTab === "commandes" && (
+        <>
+          <div className="dash-page-title">📦 Mes commandes ({mesCommandes.length})</div>
+          {mesCommandes.length === 0
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>goPage("produits")}>🛍️ Commander maintenant</button></div>
+            : mesCommandes.map(c => (
+                <div key={c.id} className="order-card" style={{flexDirection:"column",alignItems:"stretch",marginBottom:10}}>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <div className="oc-icon">{c.status==="cancelled"?"❌":c.status==="delivered"?"✅":"📦"}</div>
+                    <div className="oc-info" style={{flex:1}}>
+                      <div className="oc-name">Commande #{String(c.id).slice(-8)}</div>
+                      <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at?new Date(c.created_at).toLocaleDateString("fr-FR"):""}</div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                      <span className={`status-badge s-${c.status}`}>{
+                        {pending:"⏳ En attente",accepted:"✅ Acceptée",paid:"💳 Payée",shipped:"🚚 En livraison",delivered:"✅ Livrée",cancelled:"❌ Annulée"}[c.status]||c.status
+                      }</span>
+                      {c.livraison_status&&c.livraison_status!=="pending"&&<span className={`status-badge s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status]||c.livraison_status}</span>}
+                    </div>
+                  </div>
+                  {/* ÉTAPE 5 : Si acceptée → options de paiement */}
+                  {c.status==="accepted" && (
+                    <div style={{marginTop:10,background:"#f0fdf4",border:"1px solid #86efac",borderRadius:9,padding:12}}>
+                      <div style={{fontWeight:700,fontSize:".8rem",color:"#166534",marginBottom:8}}>🎉 Commande acceptée ! Payez maintenant :</div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <button style={{background:"#ffd700",color:"#000",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
+                          onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement MTN MoMo\nCommande #"+String(c.id).slice(-8)+"\nMontant : "+c.montant?.toLocaleString()+" FCFA\nJe vous envoie la preuve."),"_blank")}>📱 MTN MoMo</button>
+                        <button style={{background:"#ff6600",color:"#fff",border:"none",padding:"8px 14px",borderRadius:7,fontWeight:700,fontSize:".75rem",cursor:"pointer"}}
+                          onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement Orange Money\nCommande #"+String(c.id).slice(-8)+"\nMontant : "+c.montant?.toLocaleString()+" FCFA\nJe vous envoie la preuve."),"_blank")}>🔶 Orange Money</button>
+                        <button className="btn-wa" style={{fontSize:".75rem",padding:"8px 12px"}}
+                          onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Preuve de paiement pour commande #"+String(c.id).slice(-8)),"_blank")}>📸 Envoyer preuve</button>
+                      </div>
+                    </div>
+                  )}
+                  {/* ÉTAPE 7 : Confirmer réception */}
+                  {c.status==="shipped" && (
+                    <div style={{marginTop:10,background:"#eff6ff",border:"1px solid #93c5fd",borderRadius:9,padding:12}}>
+                      <div style={{fontSize:".8rem",color:"#1d4ed8",marginBottom:8}}>🚚 Votre colis est en route !</div>
+                      <button style={{background:"var(--green)",color:"#fff",border:"none",padding:"8px 16px",borderRadius:7,fontWeight:700,fontSize:".76rem",cursor:"pointer"}}
+                        onClick={async()=>{
+                          await supabase.from("orders").update({status:"delivered",livraison_status:"livre",escrow_status:"libere"}).eq("id",c.id);
+                          setMesCommandes(prev=>prev.map(o=>o.id===c.id?{...o,status:"delivered",livraison_status:"livre",escrow_status:"libere"}:o));
+                        }}>✅ Confirmer la réception</button>
+                    </div>
+                  )}
+                </div>
+              ))
           }
         </>
       )}
@@ -2012,78 +1871,23 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
 // DASHBOARD DELIVERY — Système Uber Yorix Ride
 // ─────────────────────────────────────────────────────────────
 function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
-  const [livraisons, setLivraisons] = useState([]);
-  const [loadingLiv, setLoadingLiv] = useState(true);
-  const [gainsTotal, setGainsTotal] = useState(0);
-  const [gainsMois, setGainsMois]   = useState(0);
-
-  useEffect(() => {
-    const loadLivraisons = async () => {
-      setLoadingLiv(true);
-      try {
-        const [{ data: miennes }, { data: disponibles }] = await Promise.all([
-          supabase.from("orders").select("*").eq("livreur_id", user.id).order("created_at", { ascending: false }),
-          supabase.from("orders").select("*").is("livreur_id", null)
-            .in("status", ["accepted", "shipped"]).order("created_at", { ascending: false }).limit(20),
-        ]);
-        const formatOrder = (o, status_override) => ({
-          id: o.id, supabase_id: o.id,
-          client: o.client_nom || "Client", telephone: o.telephone || "",
-          adresse_collecte: o.adresse_collecte || "Adresse vendeur",
-          adresse_livraison: o.adresse_livraison || "Adresse client",
-          produit: `Commande #${String(o.id).slice(-6)}`,
-          montant: o.montant || 0,
-          commission_livreur: Math.round((o.montant || 0) * 0.08),
-          status: status_override || (o.livraison_status === "en_cours" ? "in_progress" : o.livraison_status === "livre" ? "delivered" : "available"),
-          distance: "—", temps_estime: "~20 min",
-        });
-        const mesLivraisons = (miennes || []).map(o => formatOrder(o));
-        const dispLivraisons = (disponibles || [])
-          .filter(o => !mesLivraisons.find(m => m.supabase_id === o.id))
-          .map(o => formatOrder(o, "available"));
-        setLivraisons([...mesLivraisons, ...dispLivraisons]);
-        const livrees = mesLivraisons.filter(l => l.status === "delivered");
-        setGainsTotal(livrees.reduce((s,l) => s + l.commission_livreur, 0));
-        const now = new Date();
-        setGainsMois(livrees.filter(l => {
-          const o = miennes?.find(o => o.id === l.supabase_id);
-          return o && new Date(o.created_at).getMonth() === now.getMonth();
-        }).reduce((s,l) => s + l.commission_livreur, 0));
-      } catch (err) {
-        console.error("DeliveryDashboard load:", err);
-        setLivraisons([
-          { id:"YX-2847", client:"Amina T.", telephone:"655112233", adresse_collecte:"Marché Central, Douala", adresse_livraison:"Akwa, Douala", produit:"iPhone 14 128GB", montant:287500, commission_livreur:2500, status:"available", distance:"2.4 km", temps_estime:"~15 min" },
-          { id:"YX-2835", client:"Bertrand K.", telephone:"677884455", adresse_collecte:"Boutique Ngoa-Ekélé, Yaoundé", adresse_livraison:"Bastos, Yaoundé", produit:"Robe Pagne Wax", montant:20500, commission_livreur:1500, status:"available", distance:"5.1 km", temps_estime:"~25 min" },
-        ]);
-      }
-      setLoadingLiv(false);
-    };
-    loadLivraisons();
-    const interval = setInterval(loadLivraisons, 30000);
-    return () => clearInterval(interval);
-  }, [user.id]);
+  const [livraisons, setLivraisons] = useState([
+    { id:"YX-2847", client:"Amina T.", telephone:"655112233", adresse_collecte:"Marché Central, Douala", adresse_livraison:"Akwa, Douala", produit:"iPhone 14 128GB", montant:287500, commission_livreur:2500, status:"available", distance:"2.4 km", temps_estime:"~15 min" },
+    { id:"YX-2835", client:"Bertrand K.", telephone:"677884455", adresse_collecte:"Boutique Ngoa-Ekélé, Yaoundé", adresse_livraison:"Bastos, Yaoundé", produit:"Robe Pagne Wax", montant:20500, commission_livreur:1500, status:"available", distance:"5.1 km", temps_estime:"~25 min" },
+    { id:"YX-2801", client:"Célestine M.", telephone:"699001122", adresse_collecte:"Mall de Douala", adresse_livraison:"Bonanjo, Douala", produit:"Ventilateur 40cm", montant:25000, commission_livreur:1200, status:"in_progress", distance:"1.2 km", temps_estime:"~8 min" },
+    { id:"YX-2799", client:"Rodrigue E.", telephone:"670223344", adresse_collecte:"Centre Ville, Bafoussam", adresse_livraison:"Quartier Mtcheu, Bafoussam", produit:"Sac à main cuir", montant:15000, commission_livreur:800, status:"delivered", distance:"3.0 km", temps_estime:"Livré" },
+  ]);
+  const [gainsTotal]  = useState(47500);
+  const [gainsMois]   = useState(127000);
 
   const actionLivraison = async (id, newStatus) => {
-    const livraison = livraisons.find(l => l.id === id);
     try {
-      if (livraison?.supabase_id && typeof livraison.supabase_id === "string" && livraison.supabase_id.length > 10) {
-        const updates = {
-          livraison_status: newStatus === "in_progress" ? "en_cours" : newStatus === "delivered" ? "livre" : newStatus,
-          livreur_id: user.id,
-        };
-        await supabase.from("orders").update(updates).eq("id", livraison.supabase_id).catch(e => console.warn(e?.message));
-        if (newStatus === "delivered") {
-          const { data: ord } = await supabase.from("orders").select("client_id,client_nom").eq("id", livraison.supabase_id).single();
-          if (ord?.client_id) {
-            await supabase.from("notifications").insert({
-              user_id: ord.client_id, type:"livraison", icon:"🚚",
-              title:"Votre commande est arrivée !", message:"Confirmez la réception dans votre dashboard.", lu:false,
-            }).catch(() => {});
-          }
-        }
-      }
-    } catch (err) { console.error("actionLivraison:", err); }
-    setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+      await supabase.from("orders").update({livraison_status:newStatus==="in_progress"?"en_cours":newStatus==="delivered"?"livre":newStatus,livreur_id:user.id}).eq("id",id).catch(e=>console.warn(e?.message));
+      setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+    } catch (err) {
+      console.error("actionLivraison:", err);
+      setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+    }
   };
 
   const dispo     = livraisons.filter(l => l.status === "available");
@@ -2151,8 +1955,6 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
       )}
     </div>
   );
-
-  if (loadingLiv) return <div className="loading"><div className="spinner"/>Chargement des livraisons...</div>;
 
   return (
     <>
@@ -2406,20 +2208,6 @@ function AdminDashboard({ user, userData, goPage }) {
   // ─── Chargement des données ───
   useEffect(() => { loadAll(); }, [refreshKey]);
 
-  // ─── Temps réel : nouvelles commandes admin ───
-  useEffect(() => {
-    const channel = supabase.channel("admin_orders_rt")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (payload) => {
-        showToast(`📦 Nouvelle commande ! Client: ${payload.new?.client_nom || "—"} — ${(payload.new?.montant||0).toLocaleString()} FCFA`, "success");
-        setRefreshKey(k => k + 1);
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "users" }, (payload) => {
-        showToast(`👤 Nouvel utilisateur inscrit : ${payload.new?.nom || payload.new?.email || "—"}`, "info");
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, []);
-
   const loadAll = async () => {
     setLoading(true);
     try {
@@ -2635,13 +2423,13 @@ function AdminDashboard({ user, userData, goPage }) {
       {toast && (
         <div style={{
           position:"fixed",bottom:24,right:24,zIndex:9999,
-          background:toast.type==="error"?"#ce1126":toast.type==="info"?"#1565c0":"var(--green)",
+          background:toast.type==="error"?"#ce1126":"var(--green)",
           color:"#fff",padding:"12px 20px",borderRadius:10,
           fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",
           boxShadow:"0 4px 20px rgba(0,0,0,.2)",animation:"fadeUp .3s ease",
-          display:"flex",alignItems:"center",gap:8,maxWidth:380,
+          display:"flex",alignItems:"center",gap:8,
         }}>
-          {toast.type==="error"?"❌":toast.type==="info"?"ℹ️":"✅"} {toast.msg}
+          {toast.type==="error"?"❌":"✅"} {toast.msg}
         </div>
       )}
 
@@ -3326,7 +3114,7 @@ function AdminDashboard({ user, userData, goPage }) {
                       </div>
                       <div style={{marginLeft:"auto",display:"flex",gap:4}}>
                         <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
-                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open("https://wa.me/" + YORIX_WA_NUMBER + "?text=" + encodeURIComponent("Bonjour, votre produit \u00AB" + (p.name_fr||"") + "\u00BB est en rupture de stock sur Yorix. Merci de r\u00E9approvisionner !"))}>📱</button>}
+                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, votre produit "" + (p.name_fr) + "" est en rupture de stock sur Yorix.")}`)}>📱</button>}
                       </div>
                     </div>
                   ))
@@ -3403,327 +3191,37 @@ function AdminDashboard({ user, userData, goPage }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// COMPOSANT : PAGE CONTACT (formulaire contrôlé + WA enrichi)
+// COMPOSANT : CONTACT FORM (contrôlé)
 // ─────────────────────────────────────────────────────────────
-function ContactPage() {
-  const INIT = { nom:"", email:"", sujet:"", message:"" };
-  const [form, setForm] = useState(INIT);
-  const [sent, setSent] = useState(false);
-  const [err, setErr]   = useState("");
-  const f = k => e => setForm(p => ({...p, [k]: e.target.value}));
-
-  const envoyer = () => {
-    if (!form.nom.trim() || !form.message.trim() || !form.sujet) { setErr("Veuillez remplir tous les champs obligatoires."); return; }
-    setErr("");
-    const msg = [`📩 *Message Yorix Support*`, `👤 Nom : ${form.nom}`, form.email?`📧 Email : ${form.email}`:"", `📌 Sujet : ${form.sujet}`, ``, `💬 Message :`, form.message].filter(Boolean).join("\n");
-    window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-    setSent(true);
-    setTimeout(() => { setSent(false); setForm(INIT); }, 5000);
+function ContactForm() {
+  const [cf, setCf] = useState({nom:"",email:"",sujet:"",message:""});
+  const [cfSent, setCfSent] = useState(false);
+  const f = k => e => setCf(p=>({...p,[k]:e.target.value}));
+  const send = () => {
+    if(!cf.nom.trim()||!cf.sujet||!cf.message.trim()){return;}
+    const msg = ["Message Yorix","Nom: "+cf.nom,"Email: "+cf.email,"Sujet: "+cf.sujet,"","Message:",""+cf.message].join("\n");
+    window.open("https://wa.me/237696565654?text="+encodeURIComponent(msg),"_blank");
+    setCfSent(true);
+    setTimeout(()=>setCfSent(false),5000);
   };
-
   return (
-    <section className="sec anim">
-      <div style={{maxWidth:700,margin:"0 auto"}}>
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",marginBottom:8}}>📞 Nous contacter</h1>
-          <p style={{color:"var(--gray)",fontSize:".86rem"}}>Notre équipe répond en moins de 2h · 7j/7</p>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
-          {[
-            {icon:"📱",label:"WhatsApp",val:"+237 696 56 56 54",action:()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`)},
-            {icon:"📞",label:"Téléphone",val:"+237 696 56 56 54",action:()=>window.open("tel:+237696565654")},
-            {icon:"✉️",label:"Email",val:"support@yorix.cm",action:()=>window.open("mailto:support@yorix.cm")},
-          ].map(c=>(
-            <div key={c.label} onClick={c.action}
-              style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",transition:"border-color .2s"}}
-              onMouseOver={e=>e.currentTarget.style.borderColor="var(--green)"}
-              onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}
-            >
-              <div style={{fontSize:"2rem",marginBottom:8}}>{c.icon}</div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",color:"var(--ink)",marginBottom:4}}>{c.label}</div>
-              <div style={{fontSize:".78rem",color:"var(--green)",fontWeight:600}}>{c.val}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24,marginBottom:16}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
-          {sent && <div className="success-msg">✅ Message envoyé ! Vous allez être redirigé vers WhatsApp. Nous répondons sous 2h.</div>}
-          {err  && <div className="error-msg">⚠️ {err}</div>}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
-            <div className="form-group" style={{marginBottom:0}}><label className="form-label">Nom *</label><input className="form-input" placeholder="Votre nom" value={form.nom} onChange={f("nom")}/></div>
-            <div className="form-group" style={{marginBottom:0}}><label className="form-label">Email</label><input className="form-input" type="email" placeholder="email@exemple.cm" value={form.email} onChange={f("email")}/></div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Sujet *</label>
-            <select className="form-select" value={form.sujet} onChange={f("sujet")}>
-              <option value="">Choisir un sujet...</option>
-              {["Problème avec une commande","Signaler un vendeur","Remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre"].map(s=><option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="form-group"><label className="form-label">Message *</label><textarea className="form-textarea" style={{minHeight:90}} placeholder="Décrivez votre demande..." value={form.message} onChange={f("message")}/></div>
-          <button className="form-submit" onClick={envoyer}>📱 Envoyer via WhatsApp</button>
-        </div>
-        <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:11,padding:16,display:"flex",gap:14,flexWrap:"wrap"}}>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>⏰ Horaires</div>
-            {[["Lun – Ven","8h – 20h"],["Samedi","9h – 18h"],["Dimanche","10h – 16h"]].map(([j,h])=>(
-              <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:".75rem",padding:"3px 0",borderBottom:"1px solid var(--border)"}}>
-                <span style={{color:"var(--gray)"}}>{j}</span><span style={{fontWeight:600,color:"var(--ink)"}}>{h}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>📍 Bureaux</div>
-            <div style={{fontSize:".75rem",color:"var(--gray)",lineHeight:1.7}}>Douala — Akwa<br/>Yaoundé — Bastos<br/>📞 +237 696 56 56 54</div>
-          </div>
-        </div>
+    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24,marginBottom:16}}>
+      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",color:"var(--ink)",marginBottom:16}}>💬 Envoyer un message</div>
+      {cfSent&&<div className="success-msg">✅ Redirection WhatsApp...</div>}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:11}}>
+        <div className="form-group" style={{marginBottom:0}}><label className="form-label">Nom *</label><input className="form-input" placeholder="Votre nom" value={cf.nom} onChange={f("nom")}/></div>
+        <div className="form-group" style={{marginBottom:0}}><label className="form-label">Email</label><input className="form-input" type="email" placeholder="email@exemple.cm" value={cf.email} onChange={f("email")}/></div>
       </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : PAGE BLOG (articles cliquables avec modal de lecture)
-// ─────────────────────────────────────────────────────────────
-const BLOG_CONTENT = {
-  "Comment vendre sur Yorix en 2026": `Démarrer votre boutique sur Yorix est simple et gratuit. Voici les étapes clés :\n\n1. Inscrivez-vous en tant que Vendeur\n2. Ajoutez vos produits avec de belles photos\n3. Définissez vos prix en tenant compte de la commission 5%\n4. Activez la protection Escrow pour rassurer vos clients\n5. Répondez rapidement aux commandes via WhatsApp\n\nLes vendeurs qui publient au moins 5 produits reçoivent le badge ⭐ Top Vendeur automatiquement, ce qui augmente leur visibilité de 40%.`,
-  "Les 10 produits camerounais les plus vendus": `Le marché local camerounais est riche. Voici les best-sellers 2026 :\n\n🥇 Téléphones reconditionnés iPhone/Samsung\n🥈 Pagne wax et tissus traditionnels\n🥉 Beurre de karité bio\n4. Cacao en poudre artisanal\n5. Accessoires de mode locaux\n6. Aliments transformés locaux\n7. Appareils électroménagers\n8. Produits de beauté naturels\n9. Matériaux de construction\n10. Plantes médicinales\n\nLes produits avec photos de qualité se vendent 3x plus vite !`,
-  "MTN MoMo vs Orange Money": `Comparatif 2026 pour les vendeurs Yorix :\n\n📱 MTN MoMo\n• Réseau : 18M+ utilisateurs au Cameroun\n• Frais retrait : 1-2%\n• Disponibilité : 7j/7 24h/24\n• Limite journalière : 2M FCFA\n\n🔶 Orange Money\n• Réseau : 12M+ utilisateurs\n• Frais retrait : 1-1.5%\n• Disponibilité : 7j/7 24h/24\n• Limite journalière : 1.5M FCFA\n\n✅ Recommandation Yorix : Accepter les deux pour maximiser vos ventes.`,
-  "Suivi commande en temps réel": `Yorix Ride vous permet de suivre vos livraisons en direct.\n\n📍 Comment ça marche :\n1. Passez votre commande sur Yorix\n2. Un livreur proche accepte la mission\n3. Vous recevez une notification WhatsApp\n4. Suivez la progression dans votre dashboard\n5. Confirmez la réception pour libérer le paiement\n\n⏱ Délais moyens :\n• Intra-ville : 20-45 min\n• Inter-quartiers : 1-2h\n• Inter-villes : J+1`,
-  "Escrow Yorix : votre argent est-il protégé ?": `L'Escrow Yorix est votre garantie de sécurité.\n\n🔐 Principe :\nVotre argent est bloqué chez Yorix jusqu'à la confirmation de réception. Ni le vendeur, ni le livreur ne peut y accéder avant que vous confirmiez avoir reçu votre commande.\n\n📋 Processus :\n1. Vous payez → fonds bloqués chez Yorix\n2. Vendeur expédie → fonds "sécurisés"\n3. Vous confirmez réception → fonds libérés au vendeur\n4. Litige ? → Yorix arbitre et rembourse sous 48h\n\n✅ 100% des commandes avec Escrow sont protégées.`,
-  "Trouver un électricien fiable à Douala": `Critères pour choisir un bon prestataire sur Yorix :\n\n✅ Vérifiez le badge "Vérifié Yorix"\n⭐ Lisez les avis (minimum 4.5/5)\n📞 Appelez avant de confirmer\n💰 Comparez 2-3 devis\n🔐 Payez via Escrow pour être protégé\n\n🏆 Prestataires recommandés à Douala :\n• Électriciens certifiés : dès 10 000 FCFA/h\n• Plombiers : dès 8 000 FCFA/h\n• Peintres : dès 5 000 FCFA/m²\n\nUtilisez la page Prestataires pour trouver le bon expert près de chez vous.`,
-};
-
-function BlogPage({ goPage }) {
-  const [article, setArticle] = useState(null);
-  const [filterCat, setFilterCat] = useState("Tous");
-
-  const cats = ["Tous", ...new Set(BLOG_DATA.map(b => b.cat))];
-  const filtered = filterCat === "Tous" ? BLOG_DATA : BLOG_DATA.filter(b => b.cat === filterCat);
-
-  return (
-    <section className="sec anim">
-      <div className="sec-head">
-        <h2 className="sec-title">📰 Blog Yorix</h2>
-        <span style={{fontSize:".75rem",color:"var(--gray)"}}>{BLOG_DATA.length} articles</span>
+      <div className="form-group">
+        <label className="form-label">Sujet *</label>
+        <select className="form-select" value={cf.sujet} onChange={f("sujet")}>
+          <option value="">Choisir un sujet...</option>
+          {["Problème avec une commande","Signaler un vendeur","Remboursement","Problème de paiement","Devenir vendeur","Devenir livreur","Autre"].map(s=><option key={s}>{s}</option>)}
+        </select>
       </div>
-
-      {/* Filtre catégories */}
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-        {cats.map(cat=>(
-          <button key={cat} onClick={()=>setFilterCat(cat)}
-            style={{padding:"5px 12px",borderRadius:50,fontSize:".72rem",fontWeight:600,cursor:"pointer",border:"1.5px solid",
-              borderColor: filterCat===cat ? "var(--green)" : "var(--border)",
-              background: filterCat===cat ? "var(--green)" : "var(--surface)",
-              color: filterCat===cat ? "#fff" : "var(--ink)",transition:"all .2s"}}
-          >{cat}</button>
-        ))}
-      </div>
-
-      <div className="blog-grid">
-        {filtered.map(p=>(
-          <div key={p.title} className="blog-card" style={{cursor:"pointer"}} onClick={()=>setArticle(p)}>
-            <div className="blog-img">{p.emoji}</div>
-            <div className="blog-body">
-              <div className="blog-cat">{p.cat}</div>
-              <div className="blog-title">{p.title}</div>
-              <div className="blog-excerpt">{p.excerpt}</div>
-            </div>
-            <div className="blog-footer">
-              <span>{p.date}</span>
-              <span>⏱ {p.read}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal article */}
-      {article && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setArticle(null)}>
-          <div className="modal modal-lg" style={{maxHeight:"80vh",overflowY:"auto"}}>
-            <button className="modal-close" onClick={()=>setArticle(null)}>✕</button>
-            <div style={{textAlign:"center",fontSize:"2.5rem",marginBottom:8}}>{article.emoji}</div>
-            <div style={{display:"inline-block",background:"var(--green-pale)",color:"var(--green)",borderRadius:50,padding:"3px 10px",fontSize:".68rem",fontWeight:700,marginBottom:10}}>{article.cat}</div>
-            <div className="modal-title" style={{fontSize:"1.1rem",marginBottom:6}}>{article.title}</div>
-            <div style={{fontSize:".72rem",color:"var(--gray)",marginBottom:16}}>🗓 {article.date} · ⏱ {article.read} de lecture</div>
-            <div style={{fontSize:".83rem",color:"var(--ink)",lineHeight:1.9,whiteSpace:"pre-line",borderTop:"1px solid var(--border)",paddingTop:16}}>
-              {BLOG_CONTENT[article.title] || article.excerpt + "\n\nContenu complet de l'article bientôt disponible."}
-            </div>
-            <div style={{marginTop:20,paddingTop:14,borderTop:"1px solid var(--border)",display:"flex",gap:8,flexWrap:"wrap"}}>
-              <button className="btn-wa" onClick={()=>window.open("https://wa.me/" + YORIX_WA_NUMBER + "?text=" + encodeURIComponent("J'ai lu l'article Yorix : \u00AB" + (article.title||"") + "\u00BB et j'ai des questions !"))}>
-                📱 Poser une question
-              </button>
-              <button className="btn-ghost" onClick={()=>setArticle(null)}>← Retour au blog</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : PAGE ACADEMY (cours avec boutons fonctionnels)
-// ─────────────────────────────────────────────────────────────
-function AcademyPage({ goPage, setAuthOpen }) {
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [filter, setFilter] = useState("Tous");
-
-  const levels = ["Tous", "Débutant", "Intermédiaire", "Avancé"];
-  const filtered = filter === "Tous" ? COURSES_DATA : COURSES_DATA.filter(c => c.level === filter);
-
-  return (
-    <section className="sec anim">
-      {/* Hero */}
-      <div style={{background:"linear-gradient(135deg,#1a3a24,#0a1410)",borderRadius:14,padding:28,marginBottom:20,textAlign:"center"}}>
-        <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🎓 Yorix Academy</div>
-        <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.45rem",fontWeight:800,color:"#fff",marginBottom:6,letterSpacing:"-.5px"}}>Formez-vous pour vendre mieux</h2>
-        <p style={{color:"rgba(255,255,255,.5)",fontSize:".85rem",marginBottom:18}}>Des cours créés par des experts camerounais du commerce digital.</p>
-        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:20}}>
-          {[["🎓","2 400+","Apprenants"],["📚","18","Cours disponibles"],["⭐","4.8/5","Note moyenne"],["🏆","85%","Taux de réussite"]].map(([ic,val,lbl])=>(
-            <div key={lbl} style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 16px",minWidth:90}}>
-              <div style={{fontSize:"1rem",marginBottom:2}}>{ic}</div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--yellow)"}}>{val}</div>
-              <div style={{fontSize:".62rem",color:"rgba(255,255,255,.45)"}}>{lbl}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-          <button className="cta-y" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour ! Je veux commencer la formation Yorix Academy gratuitement 🎓")}`)}>Commencer gratuitement</button>
-          <button className="cta-w" onClick={()=>document.getElementById("academy-courses")?.scrollIntoView({behavior:"smooth"})}>Voir le catalogue</button>
-        </div>
-      </div>
-
-      {/* Filtre par niveau */}
-      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}} id="academy-courses">
-        {levels.map(l=>(
-          <button key={l} onClick={()=>setFilter(l)}
-            style={{padding:"6px 14px",borderRadius:50,fontSize:".75rem",fontWeight:700,cursor:"pointer",border:"1.5px solid",
-              borderColor: filter===l ? "var(--green)" : "var(--border)",
-              background: filter===l ? "var(--green)" : "var(--surface)",
-              color: filter===l ? "#fff" : "var(--ink)",
-              transition:"all .2s"}}
-          >{l}</button>
-        ))}
-      </div>
-
-      {/* Grille de cours */}
-      <div className="courses-grid">
-        {filtered.map(c=>(
-          <div key={c.title} className="course-card" style={{cursor:"pointer"}} onClick={()=>setSelectedCourse(c)}>
-            <div className="course-img" style={{background:c.bg}}>{c.emoji}</div>
-            <div className="course-body">
-              <div className={`course-level ${c.lc}`}>{c.level}</div>
-              <div className="course-title">{c.title}</div>
-              <div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants} apprenants</div>
-              <div className="course-footer">
-                <div className="course-price" style={{color:c.prix==="Gratuit"?"var(--green)":"var(--ink)"}}>{c.prix}</div>
-                <button className="course-btn" onClick={e=>{e.stopPropagation();setSelectedCourse(c);}}>Voir →</button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal cours sélectionné */}
-      {selectedCourse && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedCourse(null)}>
-          <div className="modal">
-            <button className="modal-close" onClick={()=>setSelectedCourse(null)}>✕</button>
-            <div style={{textAlign:"center",padding:"20px 0 14px"}}>
-              <div style={{fontSize:"3rem",marginBottom:8}}>{selectedCourse.emoji}</div>
-              <div className={`course-level ${selectedCourse.lc}`} style={{display:"inline-block",marginBottom:8}}>{selectedCourse.level}</div>
-              <div className="modal-title">{selectedCourse.title}</div>
-              <div style={{color:"var(--gray)",fontSize:".8rem",margin:"6px 0 16px"}}>⏱ {selectedCourse.duree} · 👥 {selectedCourse.apprenants} apprenants</div>
-              <div style={{background:"var(--surface2)",borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:".82rem",color:"var(--ink)",lineHeight:1.7}}>
-                Ce cours vous apprend les meilleures pratiques pour développer votre activité sur Yorix et sur le marché camerounais. Accédez à des vidéos, exercices pratiques et un certificat à la fin.
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:selectedCourse.prix==="Gratuit"?"var(--green)":"var(--ink)"}}>{selectedCourse.prix}</span>
-                {selectedCourse.prix!=="Gratuit" && <span style={{fontSize:".72rem",color:"var(--gray)"}}>Paiement MoMo/Orange accepté</span>}
-              </div>
-              <button className="form-submit"
-                onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour ! Je veux m'inscrire au cours Yorix Academy :\n\n🎓 *" + (selectedCourse.title) + "*\n⏱ Durée : " + (selectedCourse.duree) + "\n💰 Prix : " + (selectedCourse.prix) + "\n\nComment procéder ?")}`, "_blank")}
-              >{selectedCourse.prix==="Gratuit" ? "🚀 Commencer maintenant (Gratuit)" : `💳 S'inscrire — ${selectedCourse.prix}`}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : PAGE BUSINESS (formulaire contrôlé + submit fonctionnel)
-// ─────────────────────────────────────────────────────────────
-function BizPage({ goPage, setAuthOpen, setAuthTab, setSelectedRole }) {
-  const INIT = { entreprise:"", contact:"", email:"", telephone:"", besoins:"" };
-  const [form, setForm]       = useState(INIT);
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent]       = useState(false);
-  const [error, setError]     = useState("");
-
-  const f = (k) => (e) => setForm(prev => ({ ...prev, [k]: e.target.value }));
-
-  const submit = async () => {
-    if (!form.entreprise.trim() || !form.telephone.trim()) {
-      setError("Le nom d'entreprise et le téléphone sont obligatoires.");
-      return;
-    }
-    setError(""); setLoading(true);
-    try {
-      // Envoi en base + WhatsApp
-      await supabase.from("business_leads").insert({ ...form }).catch(() => {});
-      const msg = [
-        "💼 *Demande Yorix Business*",
-        `🏢 Entreprise : ${form.entreprise}`,
-        `👤 Contact : ${form.contact}`,
-        `📧 Email : ${form.email}`,
-        `📞 Téléphone : ${form.telephone}`,
-        `📝 Besoins : ${form.besoins}`,
-      ].join("\n");
-      window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-      setSent(true);
-    } catch (err) {
-      setError("Erreur lors de l'envoi. Réessayez ou contactez-nous sur WhatsApp.");
-    }
-    setLoading(false);
-  };
-
-  return (
-    <section className="sec anim">
-      <div className="biz-hero">
-        <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>💼 Yorix Business</div>
-        <div className="biz-title">La solution B2B pour les entreprises camerounaises</div>
-        <p className="biz-sub">Achetez en gros, gérez vos fournisseurs et accédez à des tarifs professionnels exclusifs.</p>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          <button className="cta-y" onClick={submit}>Démarrer gratuitement</button>
-          <button className="cta-w" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je voudrais une démo Business 💼")}`)}>Voir une démo</button>
-        </div>
-        <div className="biz-feats">{[{icon:"📦",t:"Achats en gros",p:"Tarifs dégressifs dès 10 unités"},{icon:"🤝",t:"Fournisseurs vérifiés",p:"500+ fournisseurs certifiés"},{icon:"📊",t:"Tableaux de bord",p:"Suivi en temps réel"},{icon:"🔐",t:"Facturation pro",p:"Factures automatiques"}].map(f2=><div key={f2.t} className="biz-feat"><div style={{fontSize:"1.25rem",marginBottom:4}}>{f2.icon}</div><h4>{f2.t}</h4><p>{f2.p}</p></div>)}</div>
-      </div>
-      <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:22}}>
-        <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:4}}>📋 Demande d'accès Business</h3>
-        <p style={{fontSize:".78rem",color:"var(--gray)",marginBottom:16}}>Notre équipe B2B vous contacte sous 24h.</p>
-        {sent ? (
-          <div className="success-msg">🎉 Demande envoyée ! Notre équipe B2B vous contacte sous 24h. Vous allez être redirigé vers WhatsApp.</div>
-        ) : (
-          <>
-            {error && <div className="error-msg">⚠️ {error}</div>}
-            <div className="form-row">
-              <div className="form-group"><label className="form-label">Entreprise *</label><input className="form-input" placeholder="Nom de l'entreprise" value={form.entreprise} onChange={f("entreprise")}/></div>
-              <div className="form-group"><label className="form-label">Contact</label><input className="form-input" placeholder="Votre nom" value={form.contact} onChange={f("contact")}/></div>
-              <div className="form-group"><label className="form-label">Email pro</label><input className="form-input" type="email" placeholder="contact@entreprise.cm" value={form.email} onChange={f("email")}/></div>
-              <div className="form-group"><label className="form-label">Téléphone *</label><input className="form-input" placeholder="+237 ..." value={form.telephone} onChange={f("telephone")}/></div>
-              <div className="form-group full"><label className="form-label">Besoins principaux</label><textarea className="form-textarea" style={{minHeight:65}} placeholder="Décrivez vos besoins..." value={form.besoins} onChange={f("besoins")}/></div>
-            </div>
-            <button className="form-submit" onClick={submit} disabled={loading}>
-              {loading ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Envoi en cours...</> : "💼 Soumettre ma demande"}
-            </button>
-          </>
-        )}
-      </div>
-    </section>
+      <div className="form-group"><label className="form-label">Message *</label><textarea className="form-textarea" style={{minHeight:90}} placeholder="Décrivez votre demande..." value={cf.message} onChange={f("message")}/></div>
+      <button className="form-submit" onClick={send}>📱 Envoyer via WhatsApp</button>
+    </div>
   );
 }
 
@@ -3768,13 +3266,6 @@ export default function Yorix() {
   const [loyaltyPts, setLoyaltyPts]         = useState(320);
   const [inscriptionSent, setInscriptionSent] = useState(false);
   const [inscriptionForm, setInscriptionForm] = useState({ nom:"",prenom:"",tel:"",email:"",metier:"",ville:"",experience:"",tarif:"",bio:"" });
-  const [globalToast, setGlobalToast]       = useState(null);
-
-  // Helper toast global
-  const showGlobalToast = useCallback((msg, type="success") => {
-    setGlobalToast({ msg, type });
-    setTimeout(() => setGlobalToast(null), 3500);
-  }, []);
 
   const [chatMessages, setChatMessages] = useState([{ text:"Bonjour ! Comment puis-je vous aider ?", me:false, time:"10:02" }]);
   const [chatMsg, setChatMsg]       = useState("");
@@ -3838,7 +3329,6 @@ export default function Yorix() {
       setUser(data.user);
       await chargerProfil(data.user.id);
       setAuthOpen(false);
-      showGlobalToast("✅ Connexion réussie ! Bienvenue.");
     } catch (err) { setAuthError("Email ou mot de passe incorrect."); }
     setAuthLoading(false);
   };
@@ -3848,7 +3338,6 @@ export default function Yorix() {
     try {
       if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
       if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
-      if (authForm.password.length < 6) throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
 
       const { data, error } = await supabase.auth.signUp({
         email: authForm.email,
@@ -3860,40 +3349,39 @@ export default function Yorix() {
       const uid = data.user?.id;
       if (!uid) throw new Error("Erreur création compte.");
 
-      const userPayload = {
+      const { error: profileError } = await supabase.from("users").insert({
+        uid,
         nom:          authForm.nom,
         email:        authForm.email,
         telephone:    authForm.tel,
-        role:         selectedRole,
+        role:         selectedRole,   // ← rôle EXACTEMENT choisi par l'utilisateur
         langue:       "fr",
         actif:        true,
         verifie:      false,
         note:         0,
         nombre_avis:  0,
         total_commandes: 0,
-      };
+      });
+      if (profileError) console.error("Profile insert error:", profileError);
 
-      // Insérer dans "users" (avec uid)
-      await supabase.from("users").insert({ uid, ...userPayload }).catch(e => console.warn("users insert:", e?.message));
+      // Insérer aussi dans profiles pour compatibilité getUserProfile
+      await supabase.from("profiles").insert({
+        id: uid, nom:authForm.nom, email:authForm.email,
+        telephone:authForm.tel, role:selectedRole, actif:true,
+      }).catch(()=>{});
 
-      // Insérer dans "profiles" (avec id = uid) pour compatibilité getUserProfile
-      await supabase.from("profiles").insert({ id: uid, ...userPayload }).catch(e => console.warn("profiles insert:", e?.message));
-
-      // Créer wallet
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(e => console.warn("wallet insert:", e?.message));
+      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).catch(e=>console.warn(e?.message));
 
       // Notification de bienvenue
       await supabase.from("notifications").insert({
-        user_id: uid, type:"bienvenue", icon:"🎉",
-        title: `Bienvenue sur Yorix, ${authForm.nom} !`,
-        message: `Votre compte ${ROLE_LABELS[selectedRole]||selectedRole} est activé. Bonne expérience !`,
-        lu: false,
-      }).catch(() => {});
+        user_id:uid, type:"bienvenue", icon:"🎉",
+        title:"Bienvenue sur Yorix !", lu:false,
+        message:"Votre compte "+( ROLE_LABELS[selectedRole]||selectedRole )+" est prêt. Explorez la marketplace !",
+      }).catch(()=>{});
 
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
-      showGlobalToast(`🎉 Bienvenue ${authForm.nom} ! Compte créé avec succès.`);
     } catch (err) {
       console.error("Register error:", err);
       setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message);
@@ -3914,6 +3402,7 @@ export default function Yorix() {
   };
 
   // ── PANIER ──
+  const [cartToast, setCartToast] = useState("");
   const addToCart = useCallback((p) => {
     setCartItems(prev => {
       const ex = prev.find(i => i.id === p.id);
@@ -3921,69 +3410,59 @@ export default function Yorix() {
       const img = p.image_urls?.[0] || p.image || null;
       return [...prev, { id:p.id, name:p.name_fr, image:img, prix:p.prix, qty:1, vendeur_id:p.vendeur_id }];
     });
-    showGlobalToast(`🛒 "${p.name_fr}" ajouté au panier !`);
+    setCartToast("🛒 "" + (p.name_fr||"Produit") + "" ajouté !");
+    setTimeout(()=>setCartToast(""),2500);
     setCartOpen(true);
-  }, [showGlobalToast]);
+  }, []);
   const changeQty = (id, d) => setCartItems(prev => prev.map(i => i.id===id ? {...i, qty:Math.max(1,i.qty+d)} : i));
   const removeItem = (id) => setCartItems(prev => prev.filter(i => i.id!==id));
   const totalQty   = cartItems.reduce((a,i) => a+i.qty, 0);
   const totalPrice = cartItems.reduce((a,i) => a+(i.prix*i.qty), 0);
 
-  const [cmdSuccess, setCmdSuccess] = useState(false);
-  const [cmdLoading, setCmdLoading] = useState(false);
+  const [cmdLoading, setCmdLoading]   = useState(false);
+  const [cmdSuccess, setCmdSuccess]   = useState(false);
 
   const passerCommande = async () => {
     if (!user) { setAuthOpen(true); setCartOpen(false); return; }
     if (cartItems.length === 0) return;
     setCmdLoading(true);
     try {
-      // ÉTAPE 1 : Créer les commandes + décrémenter le stock
-      const batch = cartItems.map(item =>
+      // Étape 1 : créer les commandes
+      const insertResults = await Promise.all(cartItems.map(item =>
         supabase.from("orders").insert({
-          product_id:      item.id,
-          vendeur_id:      item.vendeur_id,
-          client_id:       user.id,
-          client_nom:      userData?.nom || user.email,
-          telephone:       userData?.telephone || "",
-          montant:         item.prix * item.qty,
-          commission:      Math.round(item.prix * item.qty * COMMISSION_RATE),
-          montant_vendeur: Math.round(item.prix * item.qty * (1 - COMMISSION_RATE)),
-          quantite:        item.qty,
-          status:          "pending",
-          livraison_status:"pending",
-          escrow_status:   "pending",
-        })
-      );
-      await Promise.all(batch);
-
-      // ÉTAPE 1b : Décrémenter le stock pour chaque produit
-      await Promise.all(cartItems.map(item =>
-        supabase.rpc("decrement_stock", { product_id: item.id, qty: item.qty })
-          .catch(() => supabase.from("products").select("stock").eq("id",item.id).single()
-            .then(({data}) => supabase.from("products").update({stock: Math.max(0,(data?.stock||0)-item.qty)}).eq("id",item.id))
-          )
+          product_id:item.id, vendeur_id:item.vendeur_id,
+          client_id:user.id, client_nom:userData?.nom||user.email,
+          telephone:userData?.telephone||"",
+          montant:item.prix*item.qty,
+          commission:Math.round(item.prix*item.qty*COMMISSION_RATE),
+          montant_vendeur:Math.round(item.prix*item.qty*(1-COMMISSION_RATE)),
+          quantite:item.qty,
+          status:"pending",livraison_status:"pending",escrow_status:"pending",
+        }).select().single()
       ));
 
-      // ÉTAPE 2 : Notification vendeur(s)
-      const vendeurIds = [...new Set(cartItems.map(i => i.vendeur_id).filter(Boolean))];
-      await Promise.all(vendeurIds.map(vid =>
+      // Étape 1b : décrémenter le stock
+      await Promise.all(cartItems.map(async item => {
+        const {data:prod} = await supabase.from("products").select("stock").eq("id",item.id).single();
+        if (prod?.stock != null) {
+          await supabase.from("products").update({stock:Math.max(0,(prod.stock||0)-item.qty)}).eq("id",item.id);
+        }
+      }));
+
+      // Étape 2 : notifier les vendeurs
+      const vendeurs = [...new Set(cartItems.map(i=>i.vendeur_id).filter(Boolean))];
+      await Promise.all(vendeurs.map(vid =>
         supabase.from("notifications").insert({
-          user_id: vid,
-          type: "nouvelle_commande",
-          icon: "📦",
-          title: "Nouvelle commande !",
-          message: `Commande de ${userData?.nom || "client"} — ${cartItems.filter(i=>i.vendeur_id===vid).reduce((s,i)=>s+(i.prix*i.qty),0).toLocaleString()} FCFA`,
-          lu: false,
-        }).catch(() => {})
+          user_id:vid, type:"nouvelle_commande", icon:"📦",
+          title:"Nouvelle commande !", lu:false,
+          message:"Commande de "+(userData?.nom||user.email)+" — "+(cartItems.filter(i=>i.vendeur_id===vid).reduce((s,i)=>s+(i.prix*i.qty),0)).toLocaleString()+" FCFA",
+        }).catch(()=>{})
       ));
 
-      setCmdSuccess(true);
       setCartItems([]);
-      setTimeout(() => { setCmdSuccess(false); setCartOpen(false); goPage("dashboard"); }, 3000);
-    } catch (err) {
-      console.error("passerCommande:", err);
-      alert("Erreur lors de la commande : " + err.message);
-    }
+      setCmdSuccess(true);
+      setTimeout(()=>{setCmdSuccess(false);setCartOpen(false);goPage("dashboard");},2500);
+    } catch (err) { console.error("passerCommande:",err); }
     setCmdLoading(false);
   };
 
@@ -4049,17 +3528,10 @@ export default function Yorix() {
     <>
       <style>{makeCSS(dark)}</style>
 
-      {/* ── GLOBAL TOAST ── */}
-      {globalToast && (
-        <div style={{
-          position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",
-          zIndex:9998,background:globalToast.type==="error"?"#ce1126":globalToast.type==="info"?"#1565c0":"var(--green)",
-          color:"#fff",padding:"11px 22px",borderRadius:50,
-          fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".82rem",
-          boxShadow:"0 4px 24px rgba(0,0,0,.25)",animation:"fadeUp .3s ease",
-          whiteSpace:"nowrap",maxWidth:"90vw",textAlign:"center",
-        }}>
-          {globalToast.msg}
+      {/* ── TOAST GLOBAL ── */}
+      {cartToast && (
+        <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",zIndex:9998,background:"var(--green)",color:"#fff",padding:"10px 22px",borderRadius:50,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".82rem",boxShadow:"0 4px 20px rgba(0,0,0,.25)",whiteSpace:"nowrap",animation:"fadeUp .3s ease"}}>
+          {cartToast}
         </div>
       )}
 
@@ -4213,9 +3685,16 @@ export default function Yorix() {
             >
               📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
             </button>
-            <button className="cart-checkout" onClick={passerCommande} disabled={cmdLoading} style={{marginTop:6,background:cmdSuccess?"var(--green)":"var(--surface2)",color:cmdSuccess?"#fff":"var(--ink)",border:"1.5px solid var(--border)",transition:"all .3s"}}>
-              {cmdLoading ? <><div className="spinner" style={{width:14,height:14,borderWidth:2,display:"inline-block",marginRight:6}}/>Traitement...</> : cmdSuccess ? "✅ Commande créée !" : "✅ Confirmer la commande (paiement en ligne)"}
+            {cmdSuccess && <div className="success-msg" style={{marginTop:8,textAlign:"center"}}>✅ Commande créée ! Redirection...</div>}
+            <button className="cart-checkout" onClick={passerCommande} disabled={cmdLoading||cmdSuccess} style={{marginTop:6,background:cmdSuccess?"var(--green)":"var(--surface2)",color:cmdSuccess?"#fff":"var(--ink)",border:"1.5px solid var(--border)",transition:"all .3s"}}>
+              {cmdLoading?<><div className="spinner" style={{width:14,height:14,borderWidth:2,display:"inline-block",marginRight:6}}/>Traitement...</>:cmdSuccess?"✅ Commande créée !":"✅ Confirmer la commande"}
             </button>
+            <div style={{marginTop:8,display:"flex",gap:6}}>
+              <button style={{flex:1,background:"#ffd700",color:"#000",border:"none",padding:"7px",borderRadius:7,fontWeight:700,fontSize:".7rem",cursor:"pointer"}}
+                onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement MTN MoMo — "+totalPrice.toLocaleString()+" FCFA. Preuve jointe."),"_blank")}>📱 MTN MoMo</button>
+              <button style={{flex:1,background:"#ff6600",color:"#fff",border:"none",padding:"7px",borderRadius:7,fontWeight:700,fontSize:".7rem",cursor:"pointer"}}
+                onClick={()=>window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent("Paiement Orange Money — "+totalPrice.toLocaleString()+" FCFA. Preuve jointe."),"_blank")}>🔶 Orange Money</button>
+            </div>
           </div>
         )}
       </div>
@@ -4725,17 +4204,55 @@ export default function Yorix() {
 
       {/* ════════ PAGE : BUSINESS ════════ */}
       {page==="business"&&(
-        <BizPage goPage={goPage} setAuthOpen={setAuthOpen} setAuthTab={setAuthTab} setSelectedRole={setSelectedRole}/>
+        <section className="sec anim">
+          <div className="biz-hero">
+            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>💼 Yorix Business</div>
+            <div className="biz-title">La solution B2B pour les entreprises camerounaises</div>
+            <p className="biz-sub">Achetez en gros, gérez vos fournisseurs et accédez à des tarifs professionnels exclusifs.</p>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="cta-y">Démarrer gratuitement</button><button className="cta-w">Voir une démo</button></div>
+            <div className="biz-feats">{[{icon:"📦",t:"Achats en gros",p:"Tarifs dégressifs dès 10 unités"},{icon:"🤝",t:"Fournisseurs vérifiés",p:"500+ fournisseurs certifiés"},{icon:"📊",t:"Tableaux de bord",p:"Suivi en temps réel"},{icon:"🔐",t:"Facturation pro",p:"Factures automatiques"}].map(f=><div key={f.t} className="biz-feat"><div style={{fontSize:"1.25rem",marginBottom:4}}>{f.icon}</div><h4>{f.t}</h4><p>{f.p}</p></div>)}</div>
+          </div>
+          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:22}}>
+            <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:4}}>📋 Demande d'accès Business</h3>
+            <p style={{fontSize:".78rem",color:"var(--gray)",marginBottom:16}}>Notre équipe B2B vous contacte sous 24h.</p>
+            <div className="form-row">
+              <div className="form-group"><label className="form-label">Entreprise *</label><input className="form-input biz-form-input" placeholder="Nom de l'entreprise"/></div>
+              <div className="form-group"><label className="form-label">Contact</label><input className="form-input biz-form-input" placeholder="Votre nom"/></div>
+              <div className="form-group"><label className="form-label">Email pro</label><input className="form-input biz-form-input" placeholder="contact@entreprise.cm"/></div>
+              <div className="form-group"><label className="form-label">Téléphone *</label><input className="form-input biz-form-input" placeholder="+237 ..."/></div>
+              <div className="form-group full"><label className="form-label">Besoins principaux</label><textarea className="form-textarea biz-form-input" style={{minHeight:65}} placeholder="Décrivez vos besoins..."/></div>
+            </div>
+            <button className="form-submit" onClick={async()=>{
+              const f=document.querySelectorAll(".biz-form-input");
+              const vals=[...f].map(i=>i.value.trim());
+              if(!vals[0]||!vals[3]){alert("Entreprise et téléphone obligatoires !");return;}
+              const msg="Demande Business\nEntreprise: "+vals[0]+"\nContact: "+vals[1]+"\nEmail: "+vals[2]+"\nTél: "+vals[3]+"\nBesoins: "+vals[4];
+              await supabase.from("business_leads").insert({entreprise:vals[0],contact:vals[1],email:vals[2],telephone:vals[3],besoins:vals[4]||""}).catch(()=>{});
+              window.open("https://wa.me/"+YORIX_WA_NUMBER+"?text="+encodeURIComponent(msg),"_blank");
+            }}>💼 Soumettre ma demande</button>
+          </div>
+        </section>
       )}
 
       {/* ════════ PAGE : ACADEMY ════════ */}
       {page==="academy"&&(
-        <AcademyPage goPage={goPage} setAuthOpen={setAuthOpen}/>
+        <section className="sec anim">
+          <div style={{background:"linear-gradient(135deg,#1a3a24,#0a1410)",borderRadius:14,padding:28,marginBottom:20,textAlign:"center"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🎓 Yorix Academy</div>
+            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.45rem",fontWeight:800,color:"#fff",marginBottom:6,letterSpacing:"-.5px"}}>Formez-vous pour vendre mieux</h2>
+            <p style={{color:"rgba(255,255,255,.5)",fontSize:".85rem",marginBottom:18}}>Des cours créés par des experts camerounais.</p>
+            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}><button className="cta-y">Commencer gratuitement</button><button className="cta-w">Voir le catalogue</button></div>
+          </div>
+          <div className="courses-grid">{COURSES_DATA.map(c=><div key={c.title} className="course-card"><div className="course-img" style={{background:c.bg}}>{c.emoji}</div><div className="course-body"><div className={`course-level ${c.lc}`}>{c.level}</div><div className="course-title">{c.title}</div><div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants}</div><div className="course-footer"><div className="course-price">{c.prix}</div><button className="course-btn">Démarrer →</button></div></div></div>)}</div>
+        </section>
       )}
 
       {/* ════════ PAGE : BLOG ════════ */}
       {page==="blog"&&(
-        <BlogPage goPage={goPage}/>
+        <section className="sec anim">
+          <div className="sec-head"><h2 className="sec-title">📰 Blog Yorix</h2></div>
+          <div className="blog-grid">{BLOG_DATA.map(p=><div key={p.title} className="blog-card"><div className="blog-img">{p.emoji}</div><div className="blog-body"><div className="blog-cat">{p.cat}</div><div className="blog-title">{p.title}</div><div className="blog-excerpt">{p.excerpt}</div></div><div className="blog-footer"><span>{p.date}</span><span>⏱ {p.read}</span></div></div>)}</div>
+        </section>
       )}
 
       {/* ════════ PAGE : FIDÉLITÉ ════════ */}
@@ -4888,7 +4405,45 @@ export default function Yorix() {
 
       {/* ════════ PAGE : CONTACT ════════ */}
       {page==="contact"&&(
-        <ContactPage/>
+        <section className="sec anim">
+          <div style={{maxWidth:700,margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.5rem",color:"var(--ink)",marginBottom:8}}>📞 Nous contacter</h1>
+              <p style={{color:"var(--gray)",fontSize:".86rem"}}>Notre équipe répond en moins de 2h · 7j/7</p>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
+              {[
+                {icon:"📱",label:"WhatsApp",val:"+237 696 56 56 54",action:()=>window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`)},
+                {icon:"📞",label:"Téléphone",val:"+237 696 56 56 54",action:()=>window.open("tel:+237696565654")},
+                {icon:"✉️",label:"Email",val:"support@yorix.cm",action:()=>window.open("mailto:support@yorix.cm")},
+              ].map(c=>(
+                <div key={c.label} onClick={c.action} style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",transition:"border-color .2s"}}
+                  onMouseOver={e=>e.currentTarget.style.borderColor="var(--green)"}
+                  onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}
+                >
+                  <div style={{fontSize:"2rem",marginBottom:8}}>{c.icon}</div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".85rem",color:"var(--ink)",marginBottom:4}}>{c.label}</div>
+                  <div style={{fontSize:".78rem",color:"var(--green)",fontWeight:600}}>{c.val}</div>
+                </div>
+              ))}
+            </div>
+            <ContactForm/>
+            <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:11,padding:16,display:"flex",gap:14,flexWrap:"wrap"}}>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>⏰ Horaires</div>
+                {[["Lun – Ven","8h – 20h"],["Samedi","9h – 18h"],["Dimanche","10h – 16h"]].map(([j,h])=>(
+                  <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:".75rem",padding:"3px 0",borderBottom:"1px solid var(--border)"}}>
+                    <span style={{color:"var(--gray)"}}>{j}</span><span style={{fontWeight:600,color:"var(--ink)"}}>{h}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--green)",marginBottom:6}}>📍 Bureaux</div>
+                <div style={{fontSize:".75rem",color:"var(--gray)",lineHeight:1.7}}>Douala — Akwa<br/>Yaoundé — Bastos<br/>📞 +237 696 56 56 54</div>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* ════════ PAGE : CENTRE D'AIDE ════════ */}
