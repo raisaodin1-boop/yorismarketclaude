@@ -3509,8 +3509,7 @@ export default function Yorix() {
                   "Merci ✅",
                 ].join("\n");
                 if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
-                  }}
-            >
+                  }}>
               📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
             </button>
 
