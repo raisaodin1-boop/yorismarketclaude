@@ -2152,10 +2152,6 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
     </div>
   );
 
-  const dispo   = livraisons.filter(l => l.status === "available");
-  const enCours = livraisons.filter(l => l.status === "in_progress");
-  const livrees = livraisons.filter(l => l.status === "delivered");
-
   if (loadingLiv) return <div className="loading"><div className="spinner"/>Chargement des livraisons...</div>;
 
   return (
@@ -3330,7 +3326,7 @@ function AdminDashboard({ user, userData, goPage }) {
                       </div>
                       <div style={{marginLeft:"auto",display:"flex",gap:4}}>
                         <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
-                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour, votre produit "" + (p.name_fr) + "" est en rupture de stock sur Yorix.")}`)}>📱</button>}
+                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open("https://wa.me/" + YORIX_WA_NUMBER + "?text=" + encodeURIComponent("Bonjour, votre produit \u00AB" + (p.name_fr||"") + "\u00BB est en rupture de stock sur Yorix. Merci de r\u00E9approvisionner !"))}>📱</button>}
                       </div>
                     </div>
                   ))
@@ -3554,7 +3550,7 @@ function BlogPage({ goPage }) {
               {BLOG_CONTENT[article.title] || article.excerpt + "\n\nContenu complet de l'article bientôt disponible."}
             </div>
             <div style={{marginTop:20,paddingTop:14,borderTop:"1px solid var(--border)",display:"flex",gap:8,flexWrap:"wrap"}}>
-              <button className="btn-wa" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("J'ai lu l'article Yorix : "" + (article.title) + "" et j'ai des questions !")}`)}>
+              <button className="btn-wa" onClick={()=>window.open("https://wa.me/" + YORIX_WA_NUMBER + "?text=" + encodeURIComponent("J'ai lu l'article Yorix : \u00AB" + (article.title||"") + "\u00BB et j'ai des questions !"))}>
                 📱 Poser une question
               </button>
               <button className="btn-ghost" onClick={()=>setArticle(null)}>← Retour au blog</button>
