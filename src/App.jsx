@@ -3512,105 +3512,109 @@ export default function Yorix() {
                   window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
                 }
               }}
-           {/* — CART — */}
-<div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
-<div className={`cart-drawer${cartOpen?" open":""}`}>
-  <div className="cart-header">
-    <span className="cart-title">🛒 Panier ({totalQty})</span>
-    <button className="cart-close" onClick={()=>setCartOpen(false)}>✕</button>
-  </div>
-
-  <div className="cart-items">
-    {cartItems.length === 0
-      ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}>
-          <div style={{fontSize:"2.4rem"}}>🛒</div>
-          <p>Panier vide</p>
+          {/* ── CART OVERLAY + DRAWER ── */}
+      <div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
+      <div className={`cart-drawer${cartOpen?" open":""}`}>
+        <div className="cart-header">
+          <span className="cart-title">🛒 Panier ({totalQty})</span>
+          <button className="cart-close" onClick={()=>setCartOpen(false)}>✕</button>
         </div>
-      : cartItems.map(item => (
-        <div key={item.id} className="cart-item">
-          <div className="ci-img">
-            {item.image && item.image.startsWith("http")
-              ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.style.display="none"}}/>
-              : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem"}}>🛍</div>
-            }
-          </div>
-          <div className="ci-info">
-            <div className="ci-name">{item.name}</div>
-            {item.categorie && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"2px"}}>{item.categorie}{item.ville?` · ${item.ville}`:""}</div>}
-            {item.vendeur_nom && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"4px"}}>Vendeur : {item.vendeur_nom}</div>}
-            <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
-            {item.stock && item.qty >= item.stock &&
-              <div style={{fontSize:"10px",color:"#e67e22",marginTop:"2px"}}>⚠ Stock limité</div>
-            }
-            <div className="ci-qty">
-              <button className="qty-btn" onClick={()=>changeQty(item.id,-1)}>−</button>
-              <span className="qty-val">{item.qty}</span>
-              <button className="qty-btn" onClick={()=>changeQty(item.id,1)}>+</button>
-            </div>
-          </div>
-          <button className="ci-del" onClick={()=>removeItem(item.id)}>🗑</button>
-        </div>
-      ))
-    }
-  </div>
 
-  {cartItems.length === 0 && (
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:32}}>
-      <div style={{fontSize:"3rem"}}>🛒</div>
-      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)"}}>Votre panier est vide</div>
-      <p style={{fontSize:".78rem",color:"var(--gray)",textAlign:"center"}}>Ajoutez des produits depuis le catalogue</p>
-      <button className="form-submit" style={{padding:"9px 20px",width:"auto"}} onClick={()=>{setCartOpen(false);goPage("produits");}}>
-        🛍️ Voir les produits
-      </button>
-    </div>
-  )}
-
-  {cartItems.length > 0 && (
-    <div className="cart-footer">
-      <div className="cart-note note-escrow">🔐 Paiement protégé Escrow Yorix</div>
-      <div className="cart-total-row"><span>Sous-total ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})</span><span>{totalPrice.toLocaleString()} FCFA</span></div>
-      <div className="cart-total-row"><span>Livraison estimée</span><span style={{color:"var(--green)"}}>2 500 FCFA</span></div>
-      <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
-      <button
-        className="cart-wa"
-        style={{marginTop:10,fontSize:".88rem",padding:"13px",fontWeight:800}}
-        onClick={() => {
-          const lignes = cartItems.map(i =>
-            `• ${i.name_fr||i.name} (x${i.qty}) — ${(i.prix*i.qty).toLocaleString()} FCFA`
-          ).join("\n");
-          const clientNom = userData?.nom || "Client";
-          const clientTel = userData?.telephone || "";
-          const msg = [
-            "Bonjour Yorix ! Je souhaite commander :",
-            "",
-            "🛒 *Produits :*",
-            lignes,
-            "",
-            `💰 *Sous-total :* ${totalPrice.toLocaleString()} FCFA`,
-            `🚚 *Livraison :* 2 500 FCFA`,
-            `💵 *Total :* ${(totalPrice+2500).toLocaleString()} FCFA`,
-            "",
-            "📍 *Informations client :*",
-            `Nom : ${clientNom}`,
-            clientTel ? `Téléphone : ${clientTel}` : "Téléphone : ",
-            "Adresse de livraison : ",
-            "",
-            "Merci ✅",
-          ].join("\n");
-          if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
-            window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+        <div className="cart-items">
+          {cartItems.length === 0
+            ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}>
+                <div style={{fontSize:"2.4rem"}}>🛒</div>
+                <p>Panier vide</p>
+              </div>
+            : cartItems.map(item => (
+              <div key={item.id} className="cart-item">
+                <div className="ci-img">
+                  {item.image && item.image.startsWith("http")
+                    ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.style.display="none"}}/>
+                    : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem"}}>🛍</div>
+                  }
+                </div>
+                <div className="ci-info">
+                  <div className="ci-name">{item.name}</div>
+                  {item.categorie && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"2px"}}>{item.categorie}{item.ville?` · ${item.ville}`:""}</div>}
+                  {item.vendeur_nom && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"4px"}}>Vendeur : {item.vendeur_nom}</div>}
+                  <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
+                  {item.stock && item.qty >= item.stock &&
+                    <div style={{fontSize:"10px",color:"#e67e22",marginTop:"2px"}}>⚠ Stock limité</div>
+                  }
+                  <div className="ci-qty">
+                    <button className="qty-btn" onClick={()=>changeQty(item.id,-1)}>−</button>
+                    <span className="qty-val">{item.qty}</span>
+                    <button className="qty-btn" onClick={()=>changeQty(item.id,1)}>+</button>
+                  </div>
+                </div>
+                <button className="ci-del" onClick={()=>removeItem(item.id)}>🗑</button>
+              </div>
+            ))
           }
-        }}
-      >
-        📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
-      </button>
-      <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
-        ✅ Confirmer la commande (paiement en ligne)
-      </button>
-    </div>
-  )}
-</div>
-          {user ? (
+        </div>
+
+        {cartItems.length === 0 && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:32}}>
+            <div style={{fontSize:"3rem"}}>🛒</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)"}}>Votre panier est vide</div>
+            <p style={{fontSize:".78rem",color:"var(--gray)",textAlign:"center"}}>Ajoutez des produits depuis le catalogue</p>
+            <button className="form-submit" style={{padding:"9px 20px",width:"auto"}} onClick={()=>{setCartOpen(false);goPage("produits");}}>
+              🛍️ Voir les produits
+            </button>
+          </div>
+        )}
+
+        {cartItems.length > 0 && (
+          <div className="cart-footer">
+            <div className="cart-note note-escrow">🔐 Paiement protégé Escrow Yorix</div>
+            <div className="cart-total-row">
+              <span>Sous-total ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})</span>
+              <span>{totalPrice.toLocaleString()} FCFA</span>
+            </div>
+            <div className="cart-total-row"><span>Livraison estimée</span><span style={{color:"var(--green)"}}>2 500 FCFA</span></div>
+            <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
+
+            <button
+              className="cart-wa"
+              style={{marginTop:10,fontSize:".88rem",padding:"13px",fontWeight:800}}
+              onClick={() => {
+                const lignes = cartItems.map(i =>
+                  `• ${i.name_fr||i.name} (x${i.qty}) — ${(i.prix*i.qty).toLocaleString()} FCFA`
+                ).join("\n");
+                const clientNom = userData?.nom || "Client";
+                const clientTel = userData?.telephone || "";
+                const msg = [
+                  "Bonjour Yorix ! Je souhaite commander :",
+                  "",
+                  "🛒 *Produits :*",
+                  lignes,
+                  "",
+                  `💰 *Sous-total :* ${totalPrice.toLocaleString()} FCFA`,
+                  `🚚 *Livraison :* 2 500 FCFA`,
+                  `💵 *Total :* ${(totalPrice+2500).toLocaleString()} FCFA`,
+                  "",
+                  "📍 *Informations client :*",
+                  `Nom : ${clientNom}`,
+                  clientTel ? `Téléphone : ${clientTel}` : "Téléphone : ",
+                  "Adresse de livraison : ",
+                  "",
+                  "Merci ✅",
+                ].join("\n");
+                if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
+                  window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+                }
+              }}
+            >
+              📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
+            </button>
+
+            <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
+              ✅ Confirmer la commande (paiement en ligne)
+            </button>
+          </div>
+        )}
+      </div>
             <>
               {userRole && <span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole]}</span>}
               <div className="user-av" onClick={()=>goPage("dashboard")}>{userData?.nom?.[0]||user.email?.[0]?.toUpperCase()||"U"}</div>
