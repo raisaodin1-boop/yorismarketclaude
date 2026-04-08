@@ -28,6 +28,10 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
 const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
 const YORIX_WA_NUMBER   = "237696565654";
+const MOMO_NUMBER         = "676935195";   // MTN Mobile Money
+const ORANGE_NUMBER       = "696565654";   // Orange Money
+const PAYMENT_WA_NUMBER   = "237696565654"; // WhatsApp pour envoyer capture paiement
+const LIVRAISON_FEE       = 1500;           // Frais de livraison par défaut
 const COMMISSION_RATE   = 0.05; // 5% commission Yorix
 
 
@@ -452,32 +456,111 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .commission-box strong{font-family:'Syne',sans-serif;}
 
 /* CART */
-.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350;opacity:0;pointer-events:none;transition:opacity .3s;}
+/* ═══ CART AMAZON STYLE ═══ */
+.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:350;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(2px);}
 .cart-overlay.open{opacity:1;pointer-events:all;}
-.cart-drawer{position:fixed;top:0;right:0;width:min(380px,100vw);height:100vh;background:var(--surface);z-index:351;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 28px rgba(0,0,0,.13);}
+.cart-drawer{position:fixed;top:0;right:0;width:min(440px,100vw);height:100vh;background:var(--bg);z-index:351;transform:translateX(100%);transition:transform .4s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.2);}
 .cart-drawer.open{transform:none;}
-.cart-header{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.cart-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.98rem;color:var(--ink);}
-.cart-close{background:var(--surface2);border:none;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray);}
-.cart-items{flex:1;overflow-y:auto;padding:12px 18px;}
-.cart-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
-.ci-img{width:56px;height:56px;background:var(--surface2);border-radius:9px;flex-shrink:0;overflow:hidden;}
+
+/* Header */
+.cart-header{background:linear-gradient(135deg,var(--green),#0f4a28);padding:16px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.1);}
+.cart-header-left{display:flex;align-items:center;gap:10px;}
+.cart-header-icon{width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+.cart-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:#fff;margin:0;}
+.cart-subtitle{font-size:.68rem;color:rgba(255,255,255,.75);margin-top:1px;}
+.cart-close{background:rgba(255,255,255,.15);border:none;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;transition:background .2s;}
+.cart-close:hover{background:rgba(255,255,255,.25);}
+
+/* Trust bar */
+.cart-trust-bar{background:var(--green-pale);padding:8px 16px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--green);font-weight:600;border-bottom:1px solid var(--border);}
+.cart-trust-bar span{flex:1;text-align:center;}
+
+/* Empty state */
+.cart-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 30px;text-align:center;}
+.cart-empty-icon{font-size:4rem;opacity:.4;}
+.cart-empty-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;color:var(--ink);}
+.cart-empty-sub{font-size:.8rem;color:var(--gray);line-height:1.6;max-width:260px;}
+.cart-empty-btn{background:var(--green);color:#fff;border:none;padding:11px 24px;border-radius:9px;font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;margin-top:6px;transition:all .2s;}
+.cart-empty-btn:hover{background:#0f4a28;transform:translateY(-1px);}
+
+/* Items list */
+.cart-items{flex:1;overflow-y:auto;padding:12px 16px;background:var(--surface2);}
+.cart-items::-webkit-scrollbar{width:6px;}
+.cart-items::-webkit-scrollbar-track{background:transparent;}
+.cart-items::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* Item card */
+.cart-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;gap:12px;position:relative;transition:all .2s;}
+.cart-item:hover{border-color:var(--green-light);box-shadow:0 3px 12px rgba(26,107,58,.08);}
+
+.ci-img{width:78px;height:78px;background:var(--surface2);border-radius:10px;flex-shrink:0;overflow:hidden;border:1px solid var(--border);}
 .ci-img img{width:100%;height:100%;object-fit:cover;}
-.ci-info{flex:1;}
-.ci-name{font-size:.77rem;font-weight:500;color:var(--ink);margin-bottom:2px;}
-.ci-price{font-family:'Syne',sans-serif;font-size:.84rem;font-weight:700;color:var(--green);}
-.ci-qty{display:flex;align-items:center;gap:6px;margin-top:4px;}
-.qty-btn{width:22px;height:22px;border:1.5px solid var(--border);background:var(--surface);border-radius:5px;cursor:pointer;font-size:.84rem;display:flex;align-items:center;justify-content:center;color:var(--ink);}
-.qty-btn:hover{border-color:var(--green);}
-.qty-val{font-size:.77rem;font-weight:600;min-width:16px;text-align:center;}
-.ci-del{background:none;border:none;cursor:pointer;font-size:.88rem;color:var(--gray);}
-.cart-footer{padding:14px 18px;border-top:1px solid var(--border);}
-.cart-note{border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:7px;margin-bottom:9px;font-size:.72rem;font-weight:500;}
-.note-escrow{background:var(--green-pale);color:var(--green);}
-.cart-total-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.8rem;}
-.cart-total-row.big{font-family:'Syne',sans-serif;font-size:.98rem;font-weight:800;color:var(--ink);}
-.cart-checkout{width:100%;background:var(--green);color:#fff;border:none;padding:11px;border-radius:9px;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:7px;}
-.cart-wa{width:100%;background:var(--wa);color:#fff;border:none;padding:10px;border-radius:9px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.ci-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:.4;}
+
+.ci-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.ci-name{font-size:.82rem;font-weight:700;color:var(--ink);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ci-vendeur{font-size:.67rem;color:var(--gray);display:flex;align-items:center;gap:4px;}
+.ci-vendeur strong{color:var(--green);font-weight:600;}
+.ci-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;}
+.ci-tag{background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-size:.6rem;color:var(--gray);font-weight:500;}
+.ci-tag-stock-ok{background:#e6fff0;color:#1a6b3a;border-color:#b7e4c7;}
+.ci-tag-stock-low{background:#fff3cd;color:#856404;border-color:#ffe8a1;}
+.ci-tag-stock-out{background:#f8d7da;color:#721c24;border-color:#f5c6cb;}
+
+.ci-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:8px;}
+.ci-price-block{display:flex;flex-direction:column;}
+.ci-unit-price{font-size:.62rem;color:var(--gray);}
+.ci-total-price{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--green);line-height:1;}
+
+.ci-qty{display:flex;align-items:center;gap:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.qty-btn{width:26px;height:26px;background:transparent;border:none;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;color:var(--ink);font-weight:700;transition:background .15s;}
+.qty-btn:hover{background:var(--green-pale);color:var(--green);}
+.qty-val{font-size:.78rem;font-weight:700;min-width:24px;text-align:center;color:var(--ink);padding:0 2px;}
+
+.ci-del{position:absolute;top:8px;right:8px;background:transparent;border:none;cursor:pointer;font-size:.9rem;color:var(--gray);width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.ci-del:hover{background:#f8d7da;color:var(--red);}
+
+/* Footer */
+.cart-footer{background:var(--surface);border-top:2px solid var(--border);padding:14px 18px;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+
+.cart-promo-row{background:var(--green-pale);border:1px dashed var(--green-light);border-radius:9px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:.73rem;color:var(--green);font-weight:600;}
+.cart-promo-row strong{font-family:'Syne',sans-serif;}
+
+.cart-summary{margin-bottom:10px;}
+.cart-total-row{display:flex;justify-content:space-between;padding:4px 0;font-size:.82rem;color:var(--gray);}
+.cart-total-row strong{color:var(--ink);font-weight:600;}
+.cart-total-row.discount strong{color:var(--green);}
+.cart-divider{height:1px;background:var(--border);margin:6px 0;}
+.cart-total-row.grand{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--ink);padding:6px 0 2px;}
+.cart-total-row.grand strong{color:var(--green);font-size:1.15rem;}
+.cart-savings{font-size:.68rem;color:var(--green);font-weight:600;text-align:right;margin-top:-2px;}
+
+/* Payment methods */
+.cart-payment-section{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+.cart-payment-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.cart-payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.cart-pay-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:'DM Sans',sans-serif;}
+.cart-pay-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);}
+.cart-pay-btn.momo{border-color:#ffcc00;background:linear-gradient(135deg,#fffbe6,#fff3b0);}
+.cart-pay-btn.momo:hover{background:linear-gradient(135deg,#fff3b0,#ffe066);}
+.cart-pay-btn.orange{border-color:#ff6600;background:linear-gradient(135deg,#fff4e6,#ffd9b3);}
+.cart-pay-btn.orange:hover{background:linear-gradient(135deg,#ffd9b3,#ffbf80);}
+.cart-pay-icon{font-size:1.3rem;}
+.cart-pay-label{font-size:.68rem;font-weight:700;color:#1a1a1a;}
+.cart-pay-number{font-size:.64rem;color:#444;font-weight:600;}
+
+.cart-wa-confirm{width:100%;background:linear-gradient(135deg,var(--wa),#1ebe5d);color:#fff;border:none;padding:13px;border-radius:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 4px 14px rgba(37,211,102,.3);}
+.cart-wa-confirm:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,211,102,.4);}
+
+.cart-info-text{font-size:.67rem;color:var(--gray);text-align:center;margin-top:8px;line-height:1.5;}
+.cart-info-text strong{color:var(--green);}
+
+@media(max-width:768px){
+  .cart-drawer{width:100vw;}
+  .cart-items{padding:10px 12px;}
+  .cart-item{padding:10px;gap:10px;}
+  .ci-img{width:66px;height:66px;}
+}
 
 /* NOTIFS */
 .notif-drawer{position:fixed;top:64px;right:16px;width:min(320px,calc(100vw - 32px));background:var(--surface);border-radius:12px;border:1px solid var(--border);box-shadow:0 6px 26px var(--shadow);z-index:400;overflow:hidden;}
@@ -1763,7 +1846,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
   const actionLivraison = async (id, newStatus) => {
     try {
-      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id)(console.error);
+      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).then(r => r.error && console.error(r.error));
       setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
     } catch (err) {
       console.error("actionLivraison:", err);
@@ -3048,7 +3131,7 @@ function AdminDashboard({ user, userData, goPage }) {
             {/* Stock faible */}
             <div className="admin-section">
               <div className="admin-section-title">
-                ⚠️ Stock faible (1–5 unités)
+                ⚠️ Stock faible (1–2 unités)
                 <span className="admin-badge admin-badge-yellow">{produits.filter(p=>p.stock>0&&p.stock<=5).length}</span>
               </div>
               {produits.filter(p=>p.stock>0&&p.stock<=5).length===0
@@ -3210,7 +3293,7 @@ export default function Yorix() {
       });
       if (profileError) console.error("Profile insert error:", profileError);
 
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" })(console.error);
+      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).then(r => r.error && console.error(r.error));
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
@@ -3423,217 +3506,242 @@ export default function Yorix() {
       )}
 
      {/* — CART — */}
+      {/* ═══ CART DRAWER AMAZON STYLE ═══ */}
 <div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
 <div className={`cart-drawer${cartOpen?" open":""}`}>
+  {/* Header */}
   <div className="cart-header">
-    <span className="cart-title">🛒 Panier ({totalQty})</span>
-    <button className="cart-close" onClick={()=>setCartOpen(false)}>✕</button>
-  </div>
-
-  <div className="cart-items">
-    {cartItems.length === 0
-      ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}>
-          <div style={{fontSize:"2.4rem"}}>🛒</div>
-          <p>Panier vide</p>
+    <div className="cart-header-left">
+      <div className="cart-header-icon">🛒</div>
+      <div>
+        <div className="cart-title">Mon panier</div>
+        <div className="cart-subtitle">
+          {totalQty === 0 ? "Vide" : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
         </div>
-      : cartItems.map(item => (
-        <div key={item.id} className="cart-item">
-          <div className="ci-img">
-            {item.image && item.image.startsWith("http")
-              ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.style.display="none"}}/>
-              : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem",background:"var(--bg-light)",borderRadius:"8px"}}>🛍</div>
-            }
-          </div>
-          <div className="ci-info">
-            <div className="ci-name">{item.name}</div>
-            {item.categorie && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"2px"}}>{item.categorie} · {item.ville||""}</div>}
-            {item.vendeur_nom && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"4px"}}>Vendeur : {item.vendeur_nom}</div>}
-            <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
-            {item.stock && item.qty >= item.stock &&
-              <div style={{fontSize:"10px",color:"var(--warning,#e67e22)",marginTop:"2px"}}>⚠ Stock limité</div>
-            }
-            <div className="ci-qty">
-              <button className="qty-btn" onClick={()=>changeQty(item.id,-1)}>−</button>
-              <span className="qty-val">{item.qty}</span>
-              <button className="qty-btn" onClick={()=>changeQty(item.id,1)}>+</button>
-            </div>
-          </div>
-          <button className="ci-del" onClick={()=>removeItem(item.id)}>🗑</button>
-        </div>
-      ))
-    }
-  </div>
-</div>
-        {cartItems.length === 0 && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:32}}>
-            <div style={{fontSize:"3rem"}}>🛒</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)"}}>Votre panier est vide</div>
-            <p style={{fontSize:".78rem",color:"var(--gray)",textAlign:"center"}}>Ajoutez des produits depuis le catalogue</p>
-            <button className="form-submit" style={{padding:"9px 20px",width:"auto"}} onClick={()=>{setCartOpen(false);goPage("produits");}}>
-              🛍️ Voir les produits
-            </button>
-          </div>
-        )}
-        {cartItems.length > 0 && (
-          <div className="cart-footer">
-            <div className="cart-note note-escrow">🔐 Paiement protégé Escrow Yorix</div>
-            <div className="cart-total-row"><span>Sous-total ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})</span><span>{totalPrice.toLocaleString()} FCFA</span></div>
-            <div className="cart-total-row"><span>Livraison estimée</span><span style={{color:"var(--green)"}}>2 500 FCFA</span></div>
-            <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
-
-            {/* Bouton principal WhatsApp — message complet auto-généré */}
-            <button
-              className="cart-wa"
-              style={{marginTop:10,fontSize:".88rem",padding:"13px",fontWeight:800}}
-              onClick={() => {
-                const lignes = cartItems.map(i =>
-                  `• ${i.name_fr||i.name} (x${i.qty}) — ${(i.prix*i.qty).toLocaleString()} FCFA`
-                ).join("\n");
-                const clientNom = userData?.nom || "Client";
-                const clientTel = userData?.telephone || "";
-                const msg = [
-                  "Bonjour Yorix ! Je souhaite commander :",
-                  "",
-                  "🛒 *Produits :*",
-                  lignes,
-                  "",
-                  `💰 *Sous-total :* ${totalPrice.toLocaleString()} FCFA`,
-                  `🚚 *Livraison :* 2 500 FCFA`,
-                  `💵 *Total :* ${(totalPrice+2500).toLocaleString()} FCFA`,
-                  "",
-                  "📍 *Informations client :*",
-                  `Nom : ${clientNom}`,
-                  clientTel ? `Téléphone : ${clientTel}` : "Téléphone : ",
-                  "Adresse de livraison : ",
-                  "",
-                  "Merci ✅",
-                ].join("\n");
-                if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
-                  }}>
-              📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
-            </button>
-
-            <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
-              ✅ Confirmer la commande (paiement en ligne)
-            </button>
-          </div>
-        )}
       </div>
+    </div>
+    <button className="cart-close" onClick={() => setCartOpen(false)}>✕</button>
+  </div>
 
-      {/* ── CART OVERLAY + DRAWER ── */}
-      <div className={`cart-drawer${cartOpen?" open":""}`}>
-        <div className="cart-header">
-          <span className="cart-title">🛒 Panier ({totalQty})</span>
-          <button className="cart-close" onClick={()=>setCartOpen(false)}>✕</button>
-        </div>
+  {/* Trust bar */}
+  {cartItems.length > 0 && (
+    <div className="cart-trust-bar">
+      <span>🔒 Paiement sécurisé</span>
+      <span>🚚 Livraison rapide</span>
+      <span>✅ Garantie Yorix</span>
+    </div>
+  )}
 
-        <div className="cart-items">
-          {cartItems.length === 0
-            ? <div style={{textAlign:"center",padding:"36px 0",color:"var(--gray)"}}>
-                <div style={{fontSize:"2.4rem"}}>🛒</div>
-                <p>Panier vide</p>
+  {/* Empty state */}
+  {cartItems.length === 0 ? (
+    <div className="cart-empty">
+      <div className="cart-empty-icon">🛒</div>
+      <div className="cart-empty-title">Votre panier est vide</div>
+      <div className="cart-empty-sub">
+        Parcourez notre catalogue et ajoutez vos produits préférés pour commander.
+      </div>
+      <button className="cart-empty-btn" onClick={() => { setCartOpen(false); goPage("produits"); }}>
+        🛍️ Explorer les produits
+      </button>
+    </div>
+  ) : (
+    <>
+      {/* Items list */}
+      <div className="cart-items">
+        {cartItems.map(item => {
+          const sousTotal = item.prix * item.qty;
+          const stockBadge =
+            item.stock == null ? null :
+            item.stock === 0 ? { cls: "ci-tag-stock-out", txt: "❌ Rupture" } :
+            item.stock <= 5 ? { cls: "ci-tag-stock-low", txt: `⚠️ ${item.stock} restants` } :
+            { cls: "ci-tag-stock-ok", txt: "✅ En stock" };
+
+          return (
+            <div key={item.id} className="cart-item">
+              <div className="ci-img">
+                {item.image && item.image.startsWith("http")
+                  ? <img src={item.image} alt={item.name} onError={e => { e.currentTarget.style.display = "none"; }} />
+                  : <div className="ci-img-placeholder">📦</div>
+                }
               </div>
-            : cartItems.map(item => (
-              <div key={item.id} className="cart-item">
-                <div className="ci-img">
-                  {item.image && item.image.startsWith("http")
-                    ? <img src={item.image} alt={item.name} onError={e=>{e.currentTarget.style.display="none"}}/>
-                    : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem"}}>🛍</div>
-                  }
+              <div className="ci-info">
+                <div className="ci-name">{item.name}</div>
+                {item.vendeur_nom && (
+                  <div className="ci-vendeur">🏪 Vendeur : <strong>{item.vendeur_nom}</strong></div>
+                )}
+                <div className="ci-meta">
+                  {item.categorie && <span className="ci-tag">{item.categorie}</span>}
+                  {item.ville && <span className="ci-tag">📍 {item.ville}</span>}
+                  {stockBadge && <span className={`ci-tag ${stockBadge.cls}`}>{stockBadge.txt}</span>}
                 </div>
-                <div className="ci-info">
-                  <div className="ci-name">{item.name}</div>
-                  {item.categorie && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"2px"}}>{item.categorie}{item.ville?` · ${item.ville}`:""}</div>}
-                  {item.vendeur_nom && <div style={{fontSize:"11px",color:"var(--gray)",marginBottom:"4px"}}>Vendeur : {item.vendeur_nom}</div>}
-                  <div className="ci-price">{(item.prix*item.qty).toLocaleString()} FCFA</div>
-                  {item.stock && item.qty >= item.stock &&
-                    <div style={{fontSize:"10px",color:"#e67e22",marginTop:"2px"}}>⚠ Stock limité</div>
-                  }
+                <div className="ci-bottom">
+                  <div className="ci-price-block">
+                    <span className="ci-unit-price">{item.prix?.toLocaleString()} FCFA / unité</span>
+                    <span className="ci-total-price">{sousTotal.toLocaleString()} FCFA</span>
+                  </div>
                   <div className="ci-qty">
-                    <button className="qty-btn" onClick={()=>changeQty(item.id,-1)}>−</button>
+                    <button className="qty-btn" onClick={() => changeQty(item.id, -1)}>−</button>
                     <span className="qty-val">{item.qty}</span>
-                    <button className="qty-btn" onClick={()=>changeQty(item.id,1)}>+</button>
+                    <button className="qty-btn" onClick={() => changeQty(item.id, 1)}>+</button>
                   </div>
                 </div>
-                <button className="ci-del" onClick={()=>removeItem(item.id)}>🗑</button>
               </div>
-            ))
-          }
+              <button className="ci-del" onClick={() => removeItem(item.id)} title="Retirer">🗑</button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="cart-footer">
+        <div className="cart-promo-row">
+          🎁 <strong>Plus que {Math.max(0, 50000 - totalPrice).toLocaleString()} FCFA</strong> pour la livraison offerte !
         </div>
 
-        {cartItems.length === 0 && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:32}}>
-            <div style={{fontSize:"3rem"}}>🛒</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".9rem",color:"var(--ink)"}}>Votre panier est vide</div>
-            <p style={{fontSize:".78rem",color:"var(--gray)",textAlign:"center"}}>Ajoutez des produits depuis le catalogue</p>
-            <button className="form-submit" style={{padding:"9px 20px",width:"auto"}} onClick={()=>{setCartOpen(false);goPage("produits");}}>
-              🛍️ Voir les produits
-            </button>
+        <div className="cart-summary">
+          <div className="cart-total-row">
+            <span>Sous-total ({totalQty} article{totalQty > 1 ? "s" : ""})</span>
+            <strong>{totalPrice.toLocaleString()} FCFA</strong>
           </div>
-        )}
+          <div className="cart-total-row">
+            <span>🚚 Livraison estimée</span>
+            <strong>{totalPrice >= 50000 ? "Offerte ✨" : `${LIVRAISON_FEE.toLocaleString()} FCFA`}</strong>
+          </div>
+          <div className="cart-total-row discount">
+            <span>🔐 Protection Escrow</span>
+            <strong>Incluse</strong>
+          </div>
+          <div className="cart-divider" />
+          <div className="cart-total-row grand">
+            <span>TOTAL À PAYER</span>
+            <strong>{(totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE)).toLocaleString()} FCFA</strong>
+          </div>
+        </div>
 
-        {cartItems.length > 0 && (
-          <div className="cart-footer">
-            <div className="cart-note note-escrow">🔐 Paiement protégé Escrow Yorix</div>
-            <div className="cart-total-row">
-              <span>Sous-total ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})</span>
-              <span>{totalPrice.toLocaleString()} FCFA</span>
-            </div>
-            <div className="cart-total-row"><span>Livraison estimée</span><span style={{color:"var(--green)"}}>2 500 FCFA</span></div>
-            <div className="cart-total-row big"><span>Total</span><span>{(totalPrice+2500).toLocaleString()} FCFA</span></div>
-
+        {/* Payment methods */}
+        <div className="cart-payment-section">
+          <div className="cart-payment-title">💳 Choisir un mode de paiement</div>
+          <div className="cart-payment-grid">
             <button
-              className="cart-wa"
-              style={{marginTop:10,fontSize:".88rem",padding:"13px",fontWeight:800}}
+              className="cart-pay-btn momo"
               onClick={() => {
-                const lignes = cartItems.map(i =>
-                  `• ${i.name_fr||i.name} (x${i.qty}) — ${(i.prix*i.qty).toLocaleString()} FCFA`
-                ).join("\n");
-                const clientNom = userData?.nom || "Client";
-                const clientTel = userData?.telephone || "";
+                const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
+                const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
                 const msg = [
-                  "Bonjour Yorix ! Je souhaite commander :",
+                  "🛒 *NOUVELLE COMMANDE YORIX*",
                   "",
-                  "🛒 *Produits :*",
+                  "💳 *Mode de paiement :* MTN Mobile Money",
+                  `📱 *Numéro MoMo :* ${MOMO_NUMBER}`,
+                  "",
+                  "📦 *Produits commandés :*",
                   lignes,
                   "",
-                  `💰 *Sous-total :* ${totalPrice.toLocaleString()} FCFA`,
-                  `🚚 *Livraison :* 2 500 FCFA`,
-                  `💵 *Total :* ${(totalPrice+2500).toLocaleString()} FCFA`,
+                  `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
+                  `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
+                  `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
                   "",
-                  "📍 *Informations client :*",
-                  `Nom : ${clientNom}`,
-                  clientTel ? `Téléphone : ${clientTel}` : "Téléphone : ",
-                  "Adresse de livraison : ",
+                  "👤 *Client :*",
+                  `Nom : ${userData?.nom || "____"}`,
+                  `Téléphone : ${userData?.telephone || "____"}`,
+                  `Adresse : ____`,
                   "",
-                  "Merci ✅",
+                  "✅ *Instructions :*",
+                  `1. J'effectue le paiement MoMo au ${MOMO_NUMBER}`,
+                  "2. J'envoie la capture du paiement sur ce WhatsApp",
+                  "3. Je confirme mon adresse de livraison",
+                  "",
+                  "Merci Yorix ! 🇨🇲",
                 ].join("\n");
-                if (window.confirm(`✅ Envoyer votre commande de ${cartItems.reduce((s,i)=>s+i.qty,0)} article(s) via WhatsApp ?`)) {
-                  window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-                }
+                window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
               }}
             >
-              📱 Commander via WhatsApp ({cartItems.reduce((s,i)=>s+i.qty,0)} article{cartItems.reduce((s,i)=>s+i.qty,0)>1?"s":""})
+              <div className="cart-pay-icon">📱</div>
+              <div className="cart-pay-label">MTN MoMo</div>
+              <div className="cart-pay-number">{MOMO_NUMBER}</div>
             </button>
 
-            <button className="cart-checkout" onClick={passerCommande} style={{marginTop:6,background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)"}}>
-              ✅ Confirmer la commande (paiement en ligne)
+            <button
+              className="cart-pay-btn orange"
+              onClick={() => {
+                const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
+                const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
+                const msg = [
+                  "🛒 *NOUVELLE COMMANDE YORIX*",
+                  "",
+                  "💳 *Mode de paiement :* Orange Money",
+                  `📱 *Numéro Orange Money :* ${ORANGE_NUMBER}`,
+                  "",
+                  "📦 *Produits commandés :*",
+                  lignes,
+                  "",
+                  `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
+                  `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
+                  `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
+                  "",
+                  "👤 *Client :*",
+                  `Nom : ${userData?.nom || "____"}`,
+                  `Téléphone : ${userData?.telephone || "____"}`,
+                  `Adresse : ____`,
+                  "",
+                  "✅ *Instructions :*",
+                  `1. J'effectue le paiement Orange Money au ${ORANGE_NUMBER}`,
+                  "2. J'envoie la capture du paiement sur ce WhatsApp",
+                  "3. Je confirme mon adresse de livraison",
+                  "",
+                  "Merci Yorix ! 🇨🇲",
+                ].join("\n");
+                window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+              }}
+            >
+              <div className="cart-pay-icon">🔶</div>
+              <div className="cart-pay-label">Orange Money</div>
+              <div className="cart-pay-number">{ORANGE_NUMBER}</div>
             </button>
           </div>
-        )}
-      </div>
-            <>
-              {userRole && <span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole]}</span>}
-              <div className="user-av" onClick={()=>goPage("dashboard")}>{userData?.nom?.[0]||user.email?.[0]?.toUpperCase()||"U"}</div>
-              <button className="btn-ghost" onClick={doLogout}>Déco.</button>
-            </>
-          ) : (
-            <><button className="btn-ghost" onClick={()=>{setAuthTab("login");setAuthOpen(true);}}>Connexion</button><button className="btn-green" onClick={()=>{setAuthTab("register");setAuthOpen(true);}}>S'inscrire</button></>
-          )}
-          <button className="btn-red" onClick={()=>goPage("inscription")}>+ Prestataire</button>
-        </div>
-      </nav>
 
+          <button
+            className="cart-wa-confirm"
+            onClick={() => {
+              const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
+              const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
+              const msg = [
+                "🛒 *NOUVELLE COMMANDE YORIX*",
+                "",
+                "📦 *Produits commandés :*",
+                lignes,
+                "",
+                `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
+                `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
+                `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
+                "",
+                "👤 *Client :*",
+                `Nom : ${userData?.nom || "____"}`,
+                `Téléphone : ${userData?.telephone || "____"}`,
+                `Adresse : ____`,
+                "",
+                "💳 *Modes de paiement disponibles :*",
+                `📱 MTN MoMo : ${MOMO_NUMBER}`,
+                `🔶 Orange Money : ${ORANGE_NUMBER}`,
+                "",
+                "👉 Après paiement, j'envoie la capture sur ce WhatsApp.",
+                "",
+                "Merci Yorix ! 🇨🇲",
+              ].join("\n");
+              window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+            }}
+          >
+            💬 Commander via WhatsApp
+          </button>
+
+          <div className="cart-info-text">
+            Après paiement, envoyez la capture au <strong>+237 {PAYMENT_WA_NUMBER.slice(3)}</strong><br/>
+            pour valider votre commande.
+          </div>
+        </div>
+      </div>
+    </>
+  )}
+</div>
       {/* ── TABS ── */}
       <div className="nav-tabs">{TABS.map(t=><div key={t.p} className={`tab${page===t.p?" active":""}`} onClick={()=>goPage(t.p)}>{t.l}</div>)}</div>
 
