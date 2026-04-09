@@ -555,12 +555,54 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .cart-info-text{font-size:.67rem;color:var(--gray);text-align:center;margin-top:8px;line-height:1.5;}
 .cart-info-text strong{color:var(--green);}
 
-@media(max-width:768px){
-  .cart-drawer{width:100vw;}
-  .cart-items{padding:10px 12px;}
-  .cart-item{padding:10px;gap:10px;}
-  .ci-img{width:66px;height:66px;}
+@media(max-width:900px){
+  .admin-layout{flex-direction:column;}
+  .admin-sidebar{
+    width:100%;height:auto;position:relative;
+    padding:10px 0;overflow-x:auto;overflow-y:hidden;
+    display:flex;flex-direction:row;align-items:center;
+    white-space:nowrap;
+  }
+  .admin-sidebar-logo{display:none;}
+  .admin-nav-item{
+    flex-direction:column;gap:2px;padding:8px 14px;
+    border-left:none;border-bottom:3px solid transparent;
+    font-size:.68rem;min-width:72px;text-align:center;
+  }
+  .admin-nav-item.active{border-left:none;border-bottom-color:#4fd17d;}
+  .admin-nav-item span:first-child{font-size:1.1rem;}
+  .admin-content{padding:14px;}
+  .admin-page-title{font-size:1.05rem;flex-wrap:wrap;}
+  .stat-cards-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .stat-card{padding:12px;}
+  .stat-card-val{font-size:1.1rem;}
+  .stat-card-lbl{font-size:.65rem;}
+  .admin-table{font-size:.7rem;}
+  .admin-table th,.admin-table td{padding:6px 7px;}
+  .admin-filter-row{gap:6px;}
+  .admin-search{font-size:.72rem;padding:6px 9px;}
+  .admin-action-btn{padding:3px 6px;font-size:.62rem;}
+  .admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 }
+@media(max-width:500px){
+  .stat-cards-grid{grid-template-columns:1fr;}
+  .admin-content{padding:10px;}
+}
+/* Navbar mobile optimisée */
+  .navbar{padding:0 10px;gap:6px;height:54px;}
+  .logo-txt{font-size:1.2rem;}
+  .logo-txt sup{display:none;}
+  .nav-search{max-width:none;flex:1;}
+  .nav-search select{display:none;}
+  .nav-search input{padding:7px 9px;font-size:.75rem;}
+  .nav-search button{padding:0 10px;font-size:.85rem;}
+  .nav-actions{gap:5px;}
+  .nav-actions .dark-toggle{display:none;}
+  .btn-ghost,.btn-green,.btn-red{font-size:.68rem;padding:6px 8px;}
+  .btn-ghost span,.btn-green span,.btn-red span{display:none;}
+  .user-av{width:30px;height:30px;font-size:.72rem;}
+  .role-chip{display:none;}
+  .icon-btn{width:34px;height:34px;font-size:.88rem;}
 
 /* NOTIFS */
 .notif-drawer{position:fixed;top:64px;right:16px;width:min(320px,calc(100vw - 32px));background:var(--surface);border-radius:12px;border:1px solid var(--border);box-shadow:0 6px 26px var(--shadow);z-index:400;overflow:hidden;}
@@ -2136,11 +2178,16 @@ function AdminDashboard({ user, userData, goPage }) {
   const [filterOrder, setFilterOrder] = useState("");
   const [sortOrder, setSortOrder]     = useState("desc");
 
-  // ── Modal produit détail ──
+  // ── Modals détails ──
   const [selectedProd, setSelectedProd] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   // ── Toast notifications ──
   const [toast, setToast]             = useState(null);
+  // ── Recherche globale ──
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [showGlobalResults, setShowGlobalResults] = useState(false);
 
   // ─── Sécurité admin ───
   if (!user || (userData?.role !== "admin" && userData?.role !== "superadmin")) {
@@ -2301,6 +2348,38 @@ function AdminDashboard({ user, userData, goPage }) {
     setCommandes(c => c.map(x=>x.id===id?{...x,status:"annulee"}:x));
     showToast("Commande annulée");
   };
+  const rembourserCommande = async (id) => {
+    if (!window.confirm("Rembourser cette commande ? Le client sera contacté.")) return;
+    await supabase.from("orders").update({
+      status:"rembourse",
+      escrow_status:"rembourse",
+    }).eq("id",id).catch(()=>{});
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"rembourse",escrow_status:"rembourse"}:x));
+    showToast("Commande remboursée 💸");
+  };
+
+  const changerLivraison = async (id, newStatus) => {
+    await supabase.from("orders").update({livraison_status:newStatus}).eq("id",id).catch(()=>{});
+    setCommandes(c => c.map(x=>x.id===id?{...x,livraison_status:newStatus}:x));
+    showToast(`Livraison → ${newStatus}`);
+  };
+
+  const verifierUser = async (uid, verifie) => {
+    await supabase.from("users").update({verifie:!verifie}).eq("uid",uid).catch(()=>{});
+    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,verifie:!verifie}:x));
+    showToast(verifie ? "Vérification retirée" : "Utilisateur vérifié ✅");
+  };
+
+  const envoyerNotifUser = async (uid, titre, message) => {
+    await supabase.from("notifications").insert({
+      user_id: uid,
+      titre,
+      message,
+      lu: false,
+      icon: "📢",
+    }).catch(()=>{});
+    showToast("Notification envoyée 📢");
+  };
 
   // ─── Export CSV ───
   const exportCSV = (data, filename) => {
@@ -2394,6 +2473,145 @@ function AdminDashboard({ user, userData, goPage }) {
           display:"flex",alignItems:"center",gap:8,
         }}>
           {toast.type==="error"?"❌":"✅"} {toast.msg}
+        </div>
+      )}
+      {/* ── MODAL DÉTAIL COMMANDE ── */}
+      {selectedOrder && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedOrder(null)}>
+          <div className="modal modal-lg">
+            <button className="modal-close" onClick={()=>setSelectedOrder(null)}>✕</button>
+            <div className="modal-title">🛍️ Commande #{String(selectedOrder.id).slice(-8)}</div>
+            <div className="modal-sub">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleString("fr-FR") : ""}</div>
+
+            {/* Statuts */}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+              <BadgeStatut statut={selectedOrder.status}/>
+              <BadgeStatut statut={selectedOrder.escrow_status}/>
+              <BadgeStatut statut={selectedOrder.livraison_status}/>
+            </div>
+
+            {/* Infos client + vendeur */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+              <div style={{background:"var(--surface2)",borderRadius:10,padding:12}}>
+                <div style={{fontSize:".7rem",color:"var(--gray)",fontWeight:700,marginBottom:6}}>👤 CLIENT</div>
+                <div style={{fontSize:".82rem",fontWeight:600}}>{selectedOrder.client_nom||"—"}</div>
+                <div style={{fontSize:".72rem",color:"var(--gray)",marginTop:3}}>📞 {selectedOrder.telephone||"—"}</div>
+                {selectedOrder.adresse && <div style={{fontSize:".72rem",color:"var(--gray)",marginTop:3}}>📍 {selectedOrder.adresse}</div>}
+              </div>
+              <div style={{background:"var(--surface2)",borderRadius:10,padding:12}}>
+                <div style={{fontSize:".7rem",color:"var(--gray)",fontWeight:700,marginBottom:6}}>🏪 VENDEUR</div>
+                <div style={{fontSize:".82rem",fontWeight:600}}>
+                  {utilisateurs.find(u=>(u.uid||u.id)===selectedOrder.vendeur_id)?.nom||"—"}
+                </div>
+                <div style={{fontSize:".72rem",color:"var(--gray)",marginTop:3}}>
+                  {utilisateurs.find(u=>(u.uid||u.id)===selectedOrder.vendeur_id)?.telephone||"—"}
+                </div>
+              </div>
+            </div>
+
+            {/* Produit */}
+            {(() => {
+              const prod = produits.find(p=>p.id===selectedOrder.product_id);
+              return prod ? (
+                <div style={{background:"var(--surface2)",borderRadius:10,padding:12,marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
+                  {prod.image && <img src={prod.image} alt="" style={{width:60,height:60,borderRadius:8,objectFit:"cover"}}/>}
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:".85rem"}}>{prod.name_fr}</div>
+                    <div style={{fontSize:".7rem",color:"var(--gray)"}}>{prod.categorie} · {prod.ville}</div>
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Montants */}
+            <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:10,padding:14,marginBottom:16}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:".8rem",marginBottom:5}}>
+                <span style={{color:"var(--gray)"}}>Montant total</span>
+                <strong>{(selectedOrder.montant||0).toLocaleString()} FCFA</strong>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:".8rem",marginBottom:5}}>
+                <span style={{color:"var(--gray)"}}>Commission Yorix (5%)</span>
+                <strong style={{color:"var(--red)"}}>−{(selectedOrder.commission||0).toLocaleString()} FCFA</strong>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:".9rem",fontWeight:800,color:"var(--green)",paddingTop:6,borderTop:"1px dashed var(--green-light)"}}>
+                <span>Net vendeur</span>
+                <span>{(selectedOrder.montant_vendeur||0).toLocaleString()} FCFA</span>
+              </div>
+            </div>
+
+            {/* Actions rapides */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+              {selectedOrder.status==="pending" && (
+                <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"8px"}} onClick={()=>{validerCommande(selectedOrder.id);setSelectedOrder(null);}}>✅ Valider commande</button>
+              )}
+              {selectedOrder.status==="validee" && (
+                <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a",padding:"8px"}} onClick={()=>{marquerLivre(selectedOrder.id);setSelectedOrder(null);}}>📦 Marquer livrée</button>
+              )}
+              {selectedOrder.livraison_status!=="en_cours" && selectedOrder.livraison_status!=="livre" && (
+                <button className="admin-action-btn" style={{background:"#fff9e6",color:"#b8860b",padding:"8px"}} onClick={()=>changerLivraison(selectedOrder.id,"en_cours")}>🏍️ Livraison en cours</button>
+              )}
+              {!["rembourse","annulee"].includes(selectedOrder.status) && (
+                <button className="admin-action-btn" style={{background:"#e0f2f1",color:"#00695c",padding:"8px"}} onClick={()=>{rembourserCommande(selectedOrder.id);setSelectedOrder(null);}}>💸 Rembourser</button>
+              )}
+              {!["livre","annulee"].includes(selectedOrder.status) && (
+                <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126",padding:"8px"}} onClick={()=>{annulerCommande(selectedOrder.id);setSelectedOrder(null);}}>❌ Annuler</button>
+              )}
+              {selectedOrder.telephone && (
+                <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",padding:"8px",gridColumn:"1/-1"}} onClick={()=>window.open(`https://wa.me/${selectedOrder.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${selectedOrder.client_nom||""}, concernant votre commande Yorix #${String(selectedOrder.id).slice(-8)}`)}`)}>📱 Contacter client WhatsApp</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DÉTAIL UTILISATEUR ── */}
+      {selectedUser && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedUser(null)}>
+          <div className="modal">
+            <button className="modal-close" onClick={()=>setSelectedUser(null)}>✕</button>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+              <div style={{width:56,height:56,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.6rem",fontWeight:800}}>
+                {(selectedUser.nom||selectedUser.email||"?")[0].toUpperCase()}
+              </div>
+              <div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem"}}>{selectedUser.nom||"—"}</div>
+                <div style={{fontSize:".75rem",color:"var(--gray)"}}>{selectedUser.email||"—"}</div>
+                <span className={`role-chip chip-${selectedUser.role||"buyer"}`} style={{marginTop:4,display:"inline-block"}}>{ROLE_LABELS[selectedUser.role]||selectedUser.role}</span>
+              </div>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:6,background:"var(--surface2)",borderRadius:10,padding:12,marginBottom:14}}>
+              {[
+                ["📞 Téléphone", selectedUser.telephone||"—"],
+                ["📍 Ville", selectedUser.ville||"—"],
+                ["✅ Vérifié", selectedUser.verifie?"Oui":"Non"],
+                ["🟢 Actif", selectedUser.actif!==false?"Oui":"Non"],
+                ["📅 Inscription", selectedUser.created_at?new Date(selectedUser.created_at).toLocaleDateString("fr-FR"):"—"],
+                ["🛍️ Commandes", commandes.filter(o=>o.client_id===(selectedUser.uid||selectedUser.id)||o.vendeur_id===(selectedUser.uid||selectedUser.id)).length],
+              ].map(([k,v])=>(
+                <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",padding:"3px 0"}}>
+                  <span style={{color:"var(--gray)"}}>{k}</span>
+                  <strong>{v}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              <button className="admin-action-btn" style={{background:selectedUser.verifie?"#fff9e6":"#e6fff0",color:selectedUser.verifie?"#b8860b":"#1a6b3a",padding:"8px"}} onClick={()=>{verifierUser(selectedUser.uid||selectedUser.id,selectedUser.verifie);setSelectedUser({...selectedUser,verifie:!selectedUser.verifie});}}>
+                {selectedUser.verifie?"❌ Retirer vérif":"✅ Vérifier"}
+              </button>
+              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"8px"}} onClick={()=>{
+                const titre = prompt("Titre de la notification :");
+                if (!titre) return;
+                const msg = prompt("Message :");
+                if (!msg) return;
+                envoyerNotifUser(selectedUser.uid||selectedUser.id, titre, msg);
+              }}>📢 Notifier</button>
+              {selectedUser.telephone && (
+                <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",padding:"8px",gridColumn:"1/-1"}} onClick={()=>window.open(`https://wa.me/${selectedUser.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${selectedUser.nom||""}, l'équipe Yorix vous contacte.`)}`)}>📱 WhatsApp</button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -2777,7 +2995,7 @@ function AdminDashboard({ user, userData, goPage }) {
                 <thead><tr><th>Client</th><th>Montant</th><th>Commission</th><th>Escrow</th><th>Livraison</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
                 <tbody>
                   {commandesFiltrees.map(o=>(
-                    <tr key={o.id}>
+                    <tr key={o.id} style={{cursor:"pointer"}} onClick={e=>{if(e.target.tagName!=="BUTTON")setSelectedOrder(o);}}>
                       <td>
                         <strong style={{fontSize:".8rem"}}>{o.client_nom||"—"}</strong>
                         {o.telephone && <div style={{fontSize:".65rem",color:"var(--gray)"}}>{o.telephone}</div>}
@@ -2846,10 +3064,10 @@ function AdminDashboard({ user, userData, goPage }) {
                   {usersFiltres.map(u=>{
                     const uid = u.uid||u.id;
                     return (
-                      <tr key={uid}>
+                      <tr key={uid} style={{cursor:"pointer"}} onClick={e=>{if(e.target.tagName!=="BUTTON"&&e.target.tagName!=="SELECT")setSelectedUser(u);}}>
                         <td>
                           <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".8rem",flexShrink:0}}>
+                            <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,
                               {(u.nom||u.email||"?")[0].toUpperCase()}
                             </div>
                             <div>
@@ -3409,8 +3627,8 @@ export default function Yorix() {
     {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
     {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
     {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
-    ...(user ? [{l:"📊 Mon espace",p:"dashboard"}] : []),
-    ...(user && userData?.role==="admin" 
+    ...(user && (userData?.role==="admin" || userData?.role==="superadmin")
+      ? [{l:"⚙️ Admin",p:"admin"}] : []), 
   ? [{l:"⚙️ Admin",p:"admin"}] : []),
   ];
 
@@ -3501,6 +3719,132 @@ export default function Yorix() {
             )}
             <div className="divider">ou</div>
             <button className="social-btn" onClick={doGoogle}><span>🇬</span> Continuer avec Google</button>
+          </div>
+        </div>
+      )}
+      {/* ── TOPBAR ── */}
+      <div className="topbar">
+        <div className="topbar-l">
+          <div className="flag-wrap">
+            <span className="flag"><span className="fg"/><span className="fr"/><span className="fy"/></span>
+            <span>Cameroun 🇨🇲</span>
+          </div>
+          <span>FR / EN</span>
+          <span>📞 +237 696 56 56 54</span>
+        </div>
+        <div className="topbar-r">
+          <span onClick={()=>goPage("aide")}>🆘 Aide</span>
+          <span onClick={()=>goPage("contact")}>📞 Contact</span>
+          {user
+            ? <span style={{color:"#b7e4c7"}}>👤 {userData?.nom || user.email?.split("@")[0]}</span>
+            : <span onClick={()=>{ setAuthTab("login"); setAuthOpen(true); }}>🔑 Se connecter</span>
+          }
+        </div>
+      </div>
+
+      {/* ── NAVBAR ── */}
+      <nav className="navbar">
+        <div className="logo-wrap" onClick={()=>goPage("home")}>
+          <div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div>
+        </div>
+
+        <div className="nav-search">
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}>
+            <option value="">Tout</option>
+            {CATS.map(c=><option key={c}>{c}</option>)}
+          </select>
+          <input
+            placeholder="Rechercher un produit..."
+            value={search}
+            onChange={e=>setSearch(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
+          />
+          <button onClick={()=>goPage("produits")}>🔍</button>
+        </div>
+
+        <div className="nav-actions">
+          {/* Dark mode */}
+          <button
+            className="dark-toggle"
+            onClick={()=>setDark(d=>!d)}
+            title={dark?"Mode clair":"Mode sombre"}
+          >
+            {dark?"☀️":"🌙"}
+          </button>
+
+          {/* Notifs (si connecté) */}
+          {user && (
+            <button className="icon-btn" onClick={()=>setNotifOpen(o=>!o)} title="Notifications">
+              🔔{unread>0 && <span className="ibadge">{unread}</span>}
+            </button>
+          )}
+
+          {/* Panier */}
+          <button className="icon-btn" onClick={()=>setCartOpen(true)} title="Mon panier">
+            🛒{totalQty>0 && <span className="ibadge">{totalQty}</span>}
+          </button>
+
+          {/* Boutons Auth */}
+          {!user ? (
+            <>
+              <button
+                className="btn-ghost"
+                onClick={()=>{ setAuthTab("login"); setAuthOpen(true); }}
+              >
+                🔑 Connexion
+              </button>
+              <button
+                className="btn-green"
+                onClick={()=>{ setAuthTab("register"); setSelectedRole("buyer"); setAuthOpen(true); }}
+              >
+                🚀 S'inscrire
+              </button>
+            </>
+          ) : (
+            <>
+              <span className={`role-chip ${roleChipClass()}`}>
+                {ROLE_LABELS[userRole||"buyer"]}
+              </span>
+              <div
+                className="user-av"
+                onClick={()=>goPage("dashboard")}
+                title="Mon espace"
+              >
+                {(userData?.nom||user.email||"?")[0].toUpperCase()}
+              </div>
+              <button className="btn-red" onClick={doLogout} title="Déconnexion">
+                🚪 Déconnexion
+              </button>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* ── NOTIFICATIONS DRAWER ── */}
+      {notifOpen && user && (
+        <div className="notif-drawer">
+          <div className="notif-header">
+            <span className="notif-title">🔔 Notifications</span>
+            {unread>0 && <span className="notif-clear" onClick={marquerToutesLues}>Tout marquer lu</span>}
+          </div>
+          <div className="notif-list">
+            {notifs.length===0
+              ? <div style={{padding:"24px 14px",textAlign:"center",color:"var(--gray)",fontSize:".78rem"}}>Aucune notification</div>
+              : notifs.map(n=>(
+                  <div
+                    key={n.id}
+                    className={`notif-item${!n.lu?" unread":""}`}
+                    onClick={()=>marquerNotifLue(n.id)}
+                  >
+                    <div className="notif-icon">{n.icon||"🔔"}</div>
+                    <div className="notif-body">
+                      <h4>{n.titre||"Notification"}</h4>
+                      <p>{n.message||""}</p>
+                      <div className="notif-time">{n.created_at ? new Date(n.created_at).toLocaleString("fr-FR") : ""}</div>
+                    </div>
+                  </div>
+                ))
+            }
           </div>
         </div>
       )}
