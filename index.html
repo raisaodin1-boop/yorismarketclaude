@@ -104,7 +104,15 @@
         });
       }
     </script>
-
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "07f6b246-5850-41e1-b77c-3d634c9435c6",
+    });
+  });
+</script>
   </head>
   <!--Start of Tawk.to Script-->
 <script>
