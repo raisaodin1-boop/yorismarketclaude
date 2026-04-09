@@ -1687,7 +1687,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const { error } = await supabase.from("products").update({actif:false}).eq("id",p.id);
   if (error) { alert("Erreur suppression : " + error.message); return; }
   setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); 
-}
+}}
                         >🗑</button>
                       </div>
                     </div>
