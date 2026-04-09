@@ -3069,7 +3069,7 @@ function AdminDashboard({ user, userData, goPage }) {
                             </div>
                             <div>
                               <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
-                              {u.verifie && }}>✓</span>} style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                             {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
                             </div>
                           </div>
                         </td>
@@ -3620,14 +3620,14 @@ export default function Yorix() {
   };
 
   const TABS = [
-    {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🚚 Livraison",p:"livraison"},
-    {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
-    {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
-    {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
-    ...(user && (userData?.role==="admin" || userData?.role==="superadmin")
-      ? [{l:"⚙️ Admin",p:"admin"}] : []), 
-  ? [{l:"⚙️ Admin",p:"admin"}] : []),
-  ];
+  {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🚚 Livraison",p:"livraison"},
+  {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
+  {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
+  {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
+  ...(user && (userData?.role==="admin" || userData?.role==="superadmin")
+    ? [{l:"⚙️ Admin",p:"admin"}]
+    : []),
+];
 
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
