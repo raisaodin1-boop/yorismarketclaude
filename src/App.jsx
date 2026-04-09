@@ -3064,12 +3064,12 @@ function AdminDashboard({ user, userData, goPage }) {
                       <tr key={uid} style={{cursor:"pointer"}} onClick={e=>{if(e.target.tagName!=="BUTTON"&&e.target.tagName!=="SELECT")setSelectedUser(u);}}>
                         <td>
                           <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,
-                              {(u.nom||u.email||"?")[0].toUpperCase()}
+                            <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:".8rem"}}>
+                  {(u.nom||u.email||"?")[0].toUpperCase()}
                             </div>
                             <div>
                               <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
-                              {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                              {u.verifie && }}>✓</span>} style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
                             </div>
                           </div>
                         </td>
