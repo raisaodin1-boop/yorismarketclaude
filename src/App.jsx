@@ -2222,12 +2222,27 @@ function AdminDashboard({ user, userData, goPage }) {
       const today = new Date(); today.setHours(0,0,0,0);
       const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
 
-      const [usersRes, prodRes, ordersRes] = await Promise.all([
-        supabase.from("users").select("*").order("created_at",{ascending:false}).limit(500),
-        supabase.from("products").select("*").order("created_at",{ascending:false}).limit(500),
-        supabase.from("orders").select("*").order("created_at",{ascending:false}).limit(500),
-      ]);
+      const [usersRes, profilesRes, prodRes, ordersRes] = await Promise.all([
+  supabase.from("users").select("*").order("created_at",{ascending:false}).limit(500),
+  supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(500),
+  supabase.from("products").select("*").order("created_at",{ascending:false}).limit(500),
+  supabase.from("orders").select("*").order("created_at",{ascending:false}).limit(500),
+]);
 
+// Fusionner users + profiles (dédupliquer par id/uid)
+const rawUsers    = usersRes.data    || [];
+const rawProfiles = profilesRes.data || [];
+const mergedMap = new Map();
+[...rawUsers, ...rawProfiles].forEach(u => {
+  const key = u.uid || u.id;
+  if (!key) return;
+  const existing = mergedMap.get(key) || {};
+  mergedMap.set(key, { ...existing, ...u, uid: key });
+});
+const usersData = Array.from(mergedMap.values());
+console.log("[Admin] usersRes:", usersRes.error, "count:", rawUsers.length);
+console.log("[Admin] profilesRes:", profilesRes.error, "count:", rawProfiles.length);
+console.log("[Admin] merged users:", usersData.length);
       const usersData   = usersRes.data   || [];
       const prodsData   = prodRes.data    || [];
       const ordersData  = ordersRes.data  || [];
@@ -2290,61 +2305,71 @@ function AdminDashboard({ user, userData, goPage }) {
   };
 
   // ─── Actions ───
-  const supprimerProduit = async (id, nom) => {
-    if (!window.confirm(`Supprimer "${nom}" ? Cette action est irréversible.`)) return;
-    await supabase.from("products").delete().eq("id",id).catch(()=>{});
-    setProduits(p => p.filter(x=>x.id!==id));
-    setProduitsFull(p => p.filter(x=>x.id!==id));
-    showToast(`Produit "${nom}" supprimé`);
-  };
+ const supprimerProduit = async (id, nom) => {
+  if (!window.confirm(`Supprimer "${nom}" ? Cette action est irréversible.`)) return;
+  const { error } = await supabase.from("products").delete().eq("id",id);
+  if (error) { console.error("supprimerProduit:", error); showToast("Erreur : "+error.message, "error"); return; }
+  setProduits(p => p.filter(x=>x.id!==id));
+  setProduitsFull(p => p.filter(x=>x.id!==id));
+  showToast(`Produit "${nom}" supprimé`);
+};
 
   const toggleActifProduit = async (id, actif) => {
-    await supabase.from("products").update({actif:!actif}).eq("id",id).catch(()=>{});
-    const update = p => p.map(x=>x.id===id?{...x,actif:!actif}:x);
-    setProduits(update); setProduitsFull(update);
-    showToast(actif ? "Produit désactivé" : "Produit activé");
-  };
+  const { error } = await supabase.from("products").update({actif:!actif}).eq("id",id);
+  if (error) { console.error("toggleActifProduit:", error); showToast("Erreur : "+error.message, "error"); return; }
+  const update = p => p.map(x=>x.id===id?{...x,actif:!actif}:x);
+  setProduits(update); setProduitsFull(update);
+  showToast(actif ? "Produit désactivé" : "Produit activé");
+};
 
-  const changerRole = async (uid, newRole) => {
-    await Promise.all([
-      supabase.from("users").update({role:newRole}).eq("uid",uid).catch(()=>{}),
-      supabase.from("profiles").update({role:newRole}).eq("id",uid).catch(()=>{}),
-    ]);
-    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
-    showToast(`Rôle changé → ${newRole}`);
-  };
 
-  const supprimerUser = async (uid, email) => {
-    if (!window.confirm(`Supprimer l'utilisateur "${email}" ?`)) return;
-    await supabase.from("users").delete().eq("uid",uid).catch(()=>{});
-    setUtilisateurs(u => u.filter(x=>(x.uid||x.id)!==uid));
-    showToast(`Utilisateur supprimé`);
-  };
+ const changerRole = async (uid, newRole) => {
+  const [r1, r2] = await Promise.all([
+    supabase.from("users").update({role:newRole}).eq("uid",uid),
+    supabase.from("profiles").update({role:newRole}).eq("id",uid),
+  ]);
+  if (r1.error && r2.error) { console.error("changerRole:", r1.error, r2.error); showToast("Erreur changement rôle", "error"); return; }
+  setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
+  showToast(`Rôle changé → ${newRole}`);
+};
 
-  const toggleVendeur = async (uid, actif) => {
-    await supabase.from("users").update({actif:!actif}).eq("uid",uid).catch(()=>{});
-    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,actif:!actif}:x));
-    showToast(actif ? "Vendeur suspendu" : "Vendeur réactivé");
-  };
 
-  const validerCommande = async (id) => {
-    await supabase.from("orders").update({status:"validee"}).eq("id",id).catch(()=>{});
-    setCommandes(c => c.map(x=>x.id===id?{...x,status:"validee"}:x));
-    showToast("Commande validée ✅");
-  };
+ const supprimerUser = async (uid, email) => {
+  if (!window.confirm(`Supprimer l'utilisateur "${email}" ?`)) return;
+  const { error } = await supabase.from("users").delete().eq("uid",uid);
+  if (error) { console.error("supprimerUser:", error); showToast("Erreur : "+error.message, "error"); return; }
+  setUtilisateurs(u => u.filter(x=>(x.uid||x.id)!==uid));
+  showToast(`Utilisateur supprimé`);
+};
+
+ const toggleVendeur = async (uid, actif) => {
+  const { error } = await supabase.from("users").update({actif:!actif}).eq("uid",uid);
+  if (error) { console.error("toggleVendeur:", error); showToast("Erreur : "+error.message, "error"); return; }
+  setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,actif:!actif}:x));
+  showToast(actif ? "Vendeur suspendu" : "Vendeur réactivé");
+};
+
+ const validerCommande = async (id) => {
+  const { error } = await supabase.from("orders").update({status:"validee"}).eq("id",id);
+  if (error) { console.error("validerCommande:", error); showToast("Erreur : "+error.message, "error"); return; }
+  setCommandes(c => c.map(x=>x.id===id?{...x,status:"validee"}:x));
+  showToast("Commande validée ✅");
+};
 
   const marquerLivre = async (id) => {
-    await supabase.from("orders").update({status:"livre",livraison_status:"livre",escrow_status:"libere"}).eq("id",id).catch(()=>{});
-    setCommandes(c => c.map(x=>x.id===id?{...x,status:"livre",livraison_status:"livre"}:x));
-    showToast("Commande marquée livrée 📦");
-  };
+  const { error } = await supabase.from("orders").update({status:"livre",livraison_status:"livre",escrow_status:"libere"}).eq("id",id);
+  if (error) { console.error("marquerLivre:", error); showToast("Erreur : "+error.message, "error"); return; }
+  setCommandes(c => c.map(x=>x.id===id?{...x,status:"livre",livraison_status:"livre",escrow_status:"libere"}:x));
+  showToast("Commande marquée livrée 📦");
+};
 
   const annulerCommande = async (id) => {
-    if (!window.confirm("Annuler cette commande ?")) return;
-    await supabase.from("orders").update({status:"annulee"}).eq("id",id).catch(()=>{});
-    setCommandes(c => c.map(x=>x.id===id?{...x,status:"annulee"}:x));
-    showToast("Commande annulée");
-  };
+  if (!window.confirm("Annuler cette commande ?")) return;
+  const { error } = await supabase.from("orders").update({status:"annulee"}).eq("id",id);
+  if (error) { console.error("annulerCommande:", error); showToast("Erreur : "+error.message, "error"); return; }
+  setCommandes(c => c.map(x=>x.id===id?{...x,status:"annulee"}:x));
+  showToast("Commande annulée");
+};
   const rembourserCommande = async (id) => {
     if (!window.confirm("Rembourser cette commande ? Le client sera contacté.")) return;
     await supabase.from("orders").update({
