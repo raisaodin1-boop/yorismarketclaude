@@ -2243,7 +2243,6 @@ const usersData = Array.from(mergedMap.values());
 console.log("[Admin] usersRes:", usersRes.error, "count:", rawUsers.length);
 console.log("[Admin] profilesRes:", profilesRes.error, "count:", rawProfiles.length);
 console.log("[Admin] merged users:", usersData.length);
-      const usersData   = usersRes.data   || [];
       const prodsData   = prodRes.data    || [];
       const ordersData  = ordersRes.data  || [];
 
