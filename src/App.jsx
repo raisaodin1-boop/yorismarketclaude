@@ -397,9 +397,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 
 /* DASHBOARD */
 .dash-layout{display:grid;grid-template-columns:220px 1fr;gap:0;min-height:75vh;max-width:1200px;margin:22px auto;padding:0 24px;}
-.dash-sidebar{background:var(--surface);border-radius:13px;padding:18px;border:1px solid var(--border);height:fit-content;position:sticky;top:88px;}
+.dash-sidebar{background:var(--surface);border-radius:13px;padding:18px;border:1px solid var(--border);height:fit-content;position:sticky;top:88px;overflow:hidden;min-width:0;}
 .dash-avatar{width:60px;height:60px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 8px;}
-.dash-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.92rem;text-align:center;color:var(--ink);margin-bottom:4px;}
+.dash-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.92rem;text-align:center;color:var(--ink);margin-bottom:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px;}
 .dash-role-badge{text-align:center;margin-bottom:14px;}
 .dash-nav{display:flex;flex-direction:column;gap:2px;}
 .dash-nav-item{display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:8px;cursor:pointer;font-size:.8rem;color:var(--gray);font-weight:500;transition:all .2s;}
@@ -1747,7 +1747,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
     <>
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title">Bonjour {userData?.nom || user.email} 🛍️</div>
+         <div className="dash-page-title">Bonjour {userData?.nom || user.email?.split("@")[0] || "cher client"} 🛍️</div>
           <div className="dash-stats">
             {[
               { icon:"📦", val:mesCommandes.length,  lbl:"Commandes" },
@@ -4262,7 +4262,9 @@ export default function Yorix() {
           <div className="dash-layout anim">
             <div className="dash-sidebar">
               <div className="dash-avatar">{userData?.nom?.[0]||"U"}</div>
-              <div className="dash-name">{userData?.nom||user.email}</div>
+              <div className="dash-name" title={userData?.nom || user.email}>
+  {userData?.nom || user.email?.split("@")[0] || "Utilisateur"}
+</div>
               <div className="dash-role-badge"><span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole||"buyer"]}</span></div>
               <div className="dash-nav">
                 {getDashNav().map(item=>(
