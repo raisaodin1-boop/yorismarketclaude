@@ -2185,9 +2185,6 @@ function AdminDashboard({ user, userData, goPage }) {
 
   // ── Toast notifications ──
   const [toast, setToast]             = useState(null);
-  // ── Recherche globale ──
-  const [globalSearch, setGlobalSearch] = useState("");
-  const [showGlobalResults, setShowGlobalResults] = useState(false);
 
   // ─── Sécurité admin ───
   if (!user || (userData?.role !== "admin" && userData?.role !== "superadmin")) {
