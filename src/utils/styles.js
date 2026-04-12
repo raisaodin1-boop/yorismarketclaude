@@ -826,4 +826,87 @@ input, select, textarea {
   }
   h1 { font-size: 1.5rem !important; }
 }
+/* =========================================================
+   YORIX CM - FIX "VERSION ORDINATEUR FORCÉE" SUR MOBILE
+   Ce bloc écrase toutes les largeurs fixes problématiques
+   ========================================================= */
+
+@media (max-width: 768px) {
+  
+  /* FORCE toutes les largeurs fixes à devenir flexibles */
+  * {
+    max-width: 100vw !important;
+  }
+  
+  /* Écrase les min-width qui cassent tout */
+  body, #root, main, section, header, footer, nav, aside, div {
+    min-width: 0 !important;
+  }
+  
+  /* TOPBAR : force le wrap */
+  .topbar,
+  [class*="topbar"],
+  [class*="top-bar"] {
+    flex-wrap: wrap !important;
+    padding: 8px !important;
+    font-size: 11px !important;
+    gap: 6px !important;
+    height: auto !important;
+  }
+  
+  /* NAVBAR principale : scrollable horizontalement */
+  header nav,
+  .navbar,
+  [class*="navbar"] {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  header nav::-webkit-scrollbar,
+  .navbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Tous les containers flex : permettre le wrap */
+  [style*="display:flex"],
+  [style*="display: flex"] {
+    flex-wrap: wrap !important;
+  }
+  
+  /* HERO / titre principal */
+  h1 {
+    font-size: 1.8rem !important;
+    word-wrap: break-word;
+  }
+  
+  /* Force images à être responsive */
+  img, video {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Tout contenu = largeur max écran */
+  body {
+    width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
+  #root {
+    width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Encore plus agressif sur très petit écran */
+  .topbar,
+  [class*="topbar"] {
+    font-size: 10px !important;
+  }
+  
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.2rem !important; }
+}
 `;
