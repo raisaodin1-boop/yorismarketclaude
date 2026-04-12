@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 //  YORIX CM — VERSION PROFESSIONNELLE COMPLÈTE
 //  ✅ WhatsApp Commander
 //  ✅ Upload multiple Cloudinary
