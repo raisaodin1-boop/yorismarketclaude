@@ -1,10 +1,19 @@
 import { supabase, COMMISSION_RATE, CLOUD_NAME, UPLOAD_PRESET, YORIX_WA_NUMBER } from "../lib/supabase";
+const getOptimizedImageUrl = (url, width = 400) => {
+  if (!url || !url.includes('cloudinary.com')) return url
+  // Si l'URL a déjà des transformations, on ne les duplique pas
+  if (url.includes('f_auto')) return url
+  return url.replace(
+    '/upload/',
+    `/upload/f_auto,q_auto,w_${width},c_limit/`
+  )
+}
 
 export async function uploadSingleImage(file) {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", UPLOAD_PRESET);
-  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:"POST", body:fd });
+  const res  = await fetch(`https://res.cloudinary.com/TON_CLOUD/image/upload/f_auto,q_auto,w_400/v123456/photo.jpg`, { method:"POST", body:fd });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data.secure_url;
