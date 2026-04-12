@@ -52,7 +52,9 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('cloudinary.com') ||
     url.hostname.includes('googletagmanager.com') ||
     url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('wa.me')
+    url.hostname.includes('wa.me') ||
+      url.hostname.includes('tawk.to') ||
+      url.hostname.includes('embed.tawk.to')
   ) return;
 
   event.respondWith(
