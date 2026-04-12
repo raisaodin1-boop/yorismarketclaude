@@ -452,7 +452,7 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpen
                 </button>
               </div>
 
-              {/* ── INFOS ── */}
+              (/* ── INFOS ── */)
              onClick={() => onOpenProd ? onOpenProd(p) : setFicheOpen(p)}>
                 (/* Badges vendeur */)
                 {vendBadges.length > 0 && (
