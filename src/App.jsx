@@ -1787,9 +1787,11 @@ console.log("[Admin] merged users:", usersData.length);
 
       {/* ── MODAL DÉTAIL PRODUIT ── */}
       {selectedProd && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedProd(null)}>
-          <div className="modal modal-lg">
-            <button className="modal-close" onClick={()=>setSelectedProd(null)}>✕</button>
+  <div style={{position:"fixed",inset:0,zIndex:999,background:"var(--bg)",overflowY:"auto"}}>
+         <div style={{maxWidth:1100,margin:"0 auto",padding:"16px 16px 40px"}}>
+           <button onClick={()=>setSelectedProd(null)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"var(--gray)",fontSize:"14px",marginBottom:20,padding:"8px 0",fontWeight:500}}>
+        ← Retour aux produits
+      </button>
             <div className="modal-title">{selectedProd.name_fr||"Produit"}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}}>
               {selectedProd.image && (
