@@ -14,27 +14,17 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
-const supabase = createClient(
-  "https://msrymchhhxitdevthvdi.supabase.co",
-  "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA"
-)
-
-// ─────────────────────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────────────────────
-const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const CLOUD_NAME        = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME    || "";
-const UPLOAD_PRESET     = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
-const YORIX_WA_NUMBER   = "237696565654";
-const MOMO_NUMBER         = "676935195";   // MTN Mobile Money
-const ORANGE_NUMBER       = "696565654";   // Orange Money
-const PAYMENT_WA_NUMBER   = "237696565654"; // WhatsApp pour envoyer capture paiement
-const LIVRAISON_FEE       = 1500;           // Frais de livraison par défaut
-const COMMISSION_RATE   = 0.05; // 5% commission Yorix
-
-
+import {
+  supabase,
+  COMMISSION_RATE,
+  YORIX_WA_NUMBER,
+  MOMO_NUMBER,
+  ORANGE_NUMBER,
+  PAYMENT_WA_NUMBER,
+  LIVRAISON_FEE,
+  CLOUD_NAME,
+  UPLOAD_PRESET,
+} from "./lib/supabase";
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTES
