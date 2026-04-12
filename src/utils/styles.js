@@ -728,4 +728,102 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .prod-badge-row{gap:3px;}
   .pb{font-size:.55rem;}
 }
+/* ========================================
+   YORIX CM - MOBILE FIXES
+   ======================================== */
+
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+*{ box-sizing: border-box; }
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+button, a[role="button"], input[type="submit"] {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+input, select, textarea {
+  font-size: 16px !important;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+
+  body { font-size: 14px; padding-bottom: 70px; }
+
+  h1 { font-size: 1.75rem !important; line-height: 1.2; }
+  h2 { font-size: 1.4rem !important; line-height: 1.3; }
+  h3 { font-size: 1.15rem !important; }
+
+  .container, main, section {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  [class*="grid-cols-4"],
+  [class*="grid-cols-3"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  nav {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  form { width: 100%; padding: 12px; }
+  form input, form select, form textarea {
+    width: 100% !important;
+    padding: 12px !important;
+    margin-bottom: 10px !important;
+    border-radius: 8px;
+  }
+  form button { width: 100%; padding: 14px !important; margin-top: 8px; }
+
+  [role="dialog"], .modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  iframe[src*="whatsapp"],
+  iframe[title*="chat"],
+  [class*="chat"],
+  [id*="whatsapp"] {
+    bottom: 80px !important;
+    right: 10px !important;
+    transform: scale(0.8);
+    transform-origin: bottom right;
+  }
+
+  .cart-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+}
+
+@media (max-width: 400px) {
+  [class*="grid-cols-2"] {
+    grid-template-columns: 1fr !important;
+  }
+  h1 { font-size: 1.5rem !important; }
+}
 `;
