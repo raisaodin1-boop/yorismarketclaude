@@ -1583,7 +1583,6 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const [mesCommandes, setMesCommandes] = useState([]);
   const [wallet, setWallet]             = useState({ solde:0, total_gagne:0 });
   const [loadingData, setLoadingData]   = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -1682,12 +1681,7 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                         <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
                         <button
                           style={{background:"var(--red)",color:"#fff",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                          onClick={async () => { 
-  if (!window.confirm("Supprimer ce produit ?")) return; 
-  const { error } = await supabase.from("products").update({actif:false}).eq("id",p.id);
-  if (error) { alert("Erreur suppression : " + error.message); return; }
-  setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); 
-}}
+                          onClick={async () => { if (!window.confirm("Supprimer ?")) return; await supabase.from("products").update({actif:false}).eq("id",p.id); setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); }}
                         >🗑</button>
                       </div>
                     </div>
@@ -1697,267 +1691,6 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
           }
         </>
       )}
-      // ─────────────────────────────────────────────────────────────
-// COMPOSANT : MODAL ÉDITION PRODUIT (admin + vendeur)
-// ─────────────────────────────────────────────────────────────
-function ModalEditProduit({ product, onClose, onSaved }) {
-  const [form, setForm] = useState({
-    name_fr:        product.name_fr || "",
-    name_en:        product.name_en || "",
-    description_fr: product.description_fr || "",
-    prix:           product.prix || "",
-    stock:          product.stock ?? "",
-    categorie:      product.categorie || "",
-    ville:          product.ville || "",
-    escrow:         product.escrow !== false,
-    actif:          product.actif !== false,
-  });
-  const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [newImages, setNewImages] = useState([]);
-  const [newPreviews, setNewPreviews] = useState([]);
-  const [existingImages, setExistingImages] = useState(
-    product.image_urls?.length ? product.image_urls : (product.image ? [product.image] : [])
-  );
-  const inputRef = useRef(null);
-
-  const handleFiles = (files) => {
-    const arr = Array.from(files).slice(0, 8 - existingImages.length - newImages.length);
-    setNewImages(prev => [...prev, ...arr]);
-    setNewPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))]);
-  };
-
-  const removeExistingImage = (i) => {
-    setExistingImages(prev => prev.filter((_, idx) => idx !== i));
-  };
-
-  const removeNewImage = (i) => {
-    setNewImages(prev => prev.filter((_, idx) => idx !== i));
-    setNewPreviews(prev => prev.filter((_, idx) => idx !== i));
-  };
-
-  const validate = () => {
-    const e = {};
-    if (!form.name_fr.trim()) e.name_fr = "Nom obligatoire";
-    if (!form.prix || isNaN(Number(form.prix)) || Number(form.prix) <= 0) e.prix = "Prix invalide";
-    if (form.stock !== "" && (isNaN(Number(form.stock)) || Number(form.stock) < 0)) e.stock = "Stock invalide";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const save = async () => {
-    if (!validate()) return;
-    setSaving(true);
-    try {
-      // 1. Upload des nouvelles images si présentes
-      let uploadedUrls = [];
-      if (newImages.length > 0) {
-        uploadedUrls = await Promise.all(newImages.map(f => uploadSingleImage(f)));
-      }
-
-      // 2. Construire la liste finale d'images
-      const finalImages = [...existingImages, ...uploadedUrls];
-
-      // 3. Update dans Supabase
-      const { error } = await supabase.from("products").update({
-        name_fr:        form.name_fr,
-        name_en:        form.name_en || form.name_fr,
-        description_fr: form.description_fr,
-        prix:           Number(form.prix),
-        stock:          form.stock === "" ? 0 : Number(form.stock),
-        categorie:      form.categorie,
-        ville:          form.ville,
-        escrow:         form.escrow,
-        actif:          form.actif,
-        image:          finalImages[0] || null,
-        image_urls:     finalImages,
-        updated_at:     new Date().toISOString(),
-      }).eq("id", product.id);
-
-      if (error) throw error;
-      onSaved?.();
-      onClose();
-    } catch (err) {
-      console.error("ModalEditProduit save:", err);
-      alert("Erreur modification : " + err.message);
-    }
-    setSaving(false);
-  };
-
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg">
-        <button className="modal-close" onClick={onClose}>✕</button>
-        <div className="modal-title">✏️ Modifier le produit</div>
-        <p className="modal-sub">Mettez à jour les informations de votre produit</p>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Nom du produit (FR) <span>*</span></label>
-            <input
-              className={`form-input${errors.name_fr ? " error" : ""}`}
-              value={form.name_fr}
-              onChange={e => setForm(f => ({...f, name_fr: e.target.value}))}
-            />
-            {errors.name_fr && <span className="form-error-text">{errors.name_fr}</span>}
-          </div>
-          <div className="form-group">
-            <label className="form-label">Nom (EN)</label>
-            <input
-              className="form-input"
-              value={form.name_en}
-              onChange={e => setForm(f => ({...f, name_en: e.target.value}))}
-            />
-          </div>
-          <div className="form-group full">
-            <label className="form-label">Description</label>
-            <textarea
-              className="form-textarea"
-              value={form.description_fr}
-              onChange={e => setForm(f => ({...f, description_fr: e.target.value}))}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Prix (FCFA) <span>*</span></label>
-            <input
-              className={`form-input${errors.prix ? " error" : ""}`}
-              type="number"
-              min="0"
-              value={form.prix}
-              onChange={e => setForm(f => ({...f, prix: e.target.value}))}
-            />
-            {errors.prix && <span className="form-error-text">{errors.prix}</span>}
-          </div>
-          <div className="form-group">
-            <label className="form-label">Stock</label>
-            <input
-              className={`form-input${errors.stock ? " error" : ""}`}
-              type="number"
-              min="0"
-              value={form.stock}
-              onChange={e => setForm(f => ({...f, stock: e.target.value}))}
-            />
-            {errors.stock && <span className="form-error-text">{errors.stock}</span>}
-          </div>
-          <div className="form-group">
-            <label className="form-label">Catégorie</label>
-            <select
-              className="form-select"
-              value={form.categorie}
-              onChange={e => setForm(f => ({...f, categorie: e.target.value}))}
-            >
-              <option value="">Choisir...</option>
-              {CATS.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Ville</label>
-            <select
-              className="form-select"
-              value={form.ville}
-              onChange={e => setForm(f => ({...f, ville: e.target.value}))}
-            >
-              <option value="">Choisir...</option>
-              {CITIES.filter(c => c !== "Toutes les villes").map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-
-          {/* Images existantes */}
-          {existingImages.length > 0 && (
-            <div className="form-group full">
-              <label className="form-label">Photos actuelles</label>
-              <div className="img-previews">
-                {existingImages.map((url, i) => (
-                  <div key={`existing-${i}`} className="img-preview-item">
-                    <img src={url} alt="" onError={e => e.currentTarget.src = "https://via.placeholder.com/70?text=📦"}/>
-                    <button className="img-preview-del" onClick={() => removeExistingImage(i)}>×</button>
-                    {i === 0 && (
-                      <span style={{position:"absolute",bottom:2,left:2,background:"var(--green)",color:"#fff",fontSize:".5rem",fontWeight:700,padding:"1px 4px",borderRadius:3}}>
-                        PRINCIPALE
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Ajouter de nouvelles images */}
-          <div className="form-group full">
-            <label className="form-label">📸 Ajouter des photos (optionnel)</label>
-            <div
-              className="img-upload-area"
-              onClick={() => inputRef.current?.click()}
-              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add("dragover"); }}
-              onDragLeave={e => e.currentTarget.classList.remove("dragover")}
-              onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove("dragover"); handleFiles(e.dataTransfer.files); }}
-            >
-              <div className="img-upload-icon">📸</div>
-              <div className="img-upload-text">Cliquer ou glisser-déposer</div>
-              <div className="img-upload-hint">
-                {8 - existingImages.length - newImages.length} emplacement(s) disponible(s)
-              </div>
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              style={{display:"none"}}
-              onChange={e => handleFiles(e.target.files)}
-            />
-            {newPreviews.length > 0 && (
-              <div className="img-previews">
-                {newPreviews.map((url, i) => (
-                  <div key={`new-${i}`} className="img-preview-item">
-                    <img src={url} alt=""/>
-                    <button className="img-preview-del" onClick={() => removeNewImage(i)}>×</button>
-                    <span style={{position:"absolute",bottom:2,left:2,background:"#1a4a9a",color:"#fff",fontSize:".5rem",fontWeight:700,padding:"1px 4px",borderRadius:3}}>
-                      NOUVEAU
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="form-group full">
-            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:".82rem",fontWeight:600,color:"var(--ink)"}}>
-              <input
-                type="checkbox"
-                checked={form.escrow}
-                onChange={e => setForm(f => ({...f, escrow: e.target.checked}))}
-              />
-              🔐 Protection Escrow activée
-            </label>
-          </div>
-          <div className="form-group full">
-            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:".82rem",fontWeight:600,color:"var(--ink)"}}>
-              <input
-                type="checkbox"
-                checked={form.actif}
-                onChange={e => setForm(f => ({...f, actif: e.target.checked}))}
-              />
-              ✅ Produit actif (visible sur la plateforme)
-            </label>
-          </div>
-        </div>
-
-        <div style={{display:"flex",gap:8,marginTop:16}}>
-          <button className="btn-ghost" style={{flex:1}} onClick={onClose} disabled={saving}>
-            Annuler
-          </button>
-          <button className="form-submit" style={{flex:2,marginTop:0}} onClick={save} disabled={saving}>
-            {saving
-              ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Enregistrement...</>
-              : "💾 Enregistrer les modifications"
-            }
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
       {dashTab === "ajouterProduit" && (
         <FormulaireProduit user={user} userData={userData} onSaved={() => setDashTab("mesProduits")} />
@@ -2449,7 +2182,6 @@ function AdminDashboard({ user, userData, goPage }) {
   const [selectedProd, setSelectedProd] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editingProd, setEditingProd] = useState(null);
 
   // ── Toast notifications ──
   const [toast, setToast]             = useState(null);
@@ -2935,27 +2667,16 @@ console.log("[Admin] merged users:", usersData.length);
             {selectedProd.description_fr && (
               <div style={{marginTop:14,fontSize:".8rem",color:"var(--gray)",lineHeight:1.7}}>{selectedProd.description_fr}</div>
             )}
-           <div style={{display:"flex",gap:8,marginTop:16}}>
-              <button className="form-submit" style={{flex:1,marginTop:0}} onClick={()=>{setEditingProd(selectedProd);setSelectedProd(null);}}>
-                ✏️ Modifier
-              </button>
-              <button className="btn-ghost" style={{flex:1}} onClick={()=>{toggleActifProduit(selectedProd.id,selectedProd.actif);setSelectedProd(null);}}>
+            <div style={{display:"flex",gap:8,marginTop:16}}>
+              <button className="form-submit" style={{flex:1}} onClick={()=>{toggleActifProduit(selectedProd.id,selectedProd.actif);setSelectedProd(null);}}>
                 {selectedProd.actif?"⛔ Désactiver":"✅ Activer"}
               </button>
-              <button className="btn-ghost" style={{flex:1,color:"var(--red)",borderColor:"var(--red)"}} onClick={()=>{supprimerProduit(selectedProd.id,selectedProd.name_fr);setSelectedProd(null);}}>
+              <button className="btn-ghost" style={{flex:1}} onClick={()=>{supprimerProduit(selectedProd.id,selectedProd.name_fr);setSelectedProd(null);}}>
                 🗑️ Supprimer
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {editingProd && (
-        <ModalEditProduit
-          product={editingProd}
-          onClose={() => setEditingProd(null)}
-          onSaved={() => { setEditingProd(null); setRefreshKey(k => k + 1); }}
-        />
       )}
 
       {/* ── SIDEBAR ── */}
