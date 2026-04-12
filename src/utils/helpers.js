@@ -80,7 +80,7 @@ export function getUserRole(profileData) {
     return role;
   }
   console.log("ROLE FINAL: seller (fallback)");
-  return "seller";
+  return "buyer";
 }
 
 const FORBIDDEN_PATTERNS = [
