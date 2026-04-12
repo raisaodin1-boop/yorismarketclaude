@@ -231,6 +231,17 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const avgNote = avis.length ? (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1) : product.note || 0;
 
   return (
+      <>
+        <Helmet>
+          <title>{product.name} — Yorix CM</title>
+          <meta name="description" content={`${product.name} à ${product.prix?.toLocaleString()} FCFA. Achetez sur Yorix CM.`} />
+          <meta property="og:title" content={`${product.name} — Yorix CM`} />
+          <meta property="og:description" content={`${product.name} à ${product.prix?.toLocaleString()} FCFA`} />
+          <meta property="og:image" content={product.image || "https://yorix.cm/icons/icon-512.png"} />
+          <meta property="og:url" content="https://yorix.cm" />
+          <meta property="og:type" content="product" />
+          <meta property="og:site_name" content="Yorix CM" />
+        </Helmet>
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal modal-lg">
         <button className="modal-close" onClick={onClose}>✕</button>
@@ -344,8 +355,9 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
           <ModalCommander product={product} user={user} userData={userData} onClose={() => setShowCmdModal(false)} />
         )}
       </div>
-    </div>
-  );
+   </div>
+      </>
+    );
 }
 
 // ─────────────────────────────────────────────────────────────
