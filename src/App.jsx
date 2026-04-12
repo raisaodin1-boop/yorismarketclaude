@@ -14,6 +14,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Helmet } from 'react-helmet-async';
 import {
   supabase,
   COMMISSION_RATE,
@@ -3258,6 +3259,17 @@ export default function Yorix() {
       {/* ════════ PAGE : ACCUEIL ════════ */}
       {page==="home"&&(
         <div className="anim">
+          <Helmet>
+  <title>Yorix CM — Marketplace #1 au Cameroun</title>
+  <meta name="description" content="Achetez et vendez en ligne au Cameroun. 
+    Paiement MTN MoMo et Orange Money. Livraison rapide à Yaoundé et Douala." />
+  <meta property="og:title" content="Yorix CM — Marketplace #1 au Cameroun" />
+  <meta property="og:description" content="La marketplace camerounaise 
+    avec paiement mobile." />
+  <meta property="og:image" content="https://yorix.cm/icons/icon-512.png" />
+  <meta property="og:url" content="https://yorix.cm" />
+  <meta property="og:type" content="website" />
+</Helmet>
 
           {/* ── TRUST BANNER ── */}
           <div className="trust-banner">
