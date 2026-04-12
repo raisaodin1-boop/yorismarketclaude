@@ -880,33 +880,4 @@ input, select, textarea {
     font-size: 1.8rem !important;
     word-wrap: break-word;
   }
-  
-  /* Force images à être responsive */
-  img, video {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-  
-  /* Tout contenu = largeur max écran */
-  body {
-    width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-  
-  #root {
-    width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-}
-
-@media (max-width: 480px) {
-  /* Encore plus agressif sur très petit écran */
-  .topbar,
-  [class*="topbar"] {
-    font-size: 10px !important;
-  }
-  
-  h1 { font-size: 1.5rem !important; }
-  h2 { font-size: 1.2rem !important; }
-}
 `;
