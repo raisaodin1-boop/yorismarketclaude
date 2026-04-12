@@ -47,6 +47,7 @@ import {
 } from "./utils/helpers";
 
 import { makeCSS } from "./utils/styles";
+
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : ÉTOILES (rating)
 // ─────────────────────────────────────────────────────────────
