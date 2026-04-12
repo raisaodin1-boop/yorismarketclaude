@@ -992,4 +992,41 @@ input, select, textarea {
     display: none !important;
   }
 }
+/* =========================================================
+   FIX NAVBAR .nav-tabs SUR MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  
+  /* Navbar principale = .nav-tabs → scroll horizontal */
+  .nav-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    white-space: nowrap !important;
+    gap: 4px !important;
+    padding: 6px 10px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    justify-content: flex-start !important;
+  }
+  
+  .nav-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Chaque onglet : taille fixe, ne se compresse pas */
+  .nav-tabs .tab {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    font-size: 0.85rem !important;
+    padding: 8px 12px !important;
+    min-width: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+}
 `;
