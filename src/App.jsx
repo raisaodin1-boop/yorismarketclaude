@@ -219,9 +219,16 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const [avis, setAvis]             = useState([]);
   const [showCmdModal, setShowCmdModal] = useState(false);
   // Priorité : p.image en premier, puis image_urls[], filtrer les URL non-http
-  const rawImgs = product.image && product.image.startsWith("http")
-    ? [product.image, ...(product.image_urls || []).filter(u => u && u.startsWith("http") && u !== product.image)]
-    : (product.image_urls || []).filter(u => u && u.startsWith("http"));
+  const parseImageUrls = (val) => {
+      if (!val) return []
+      if (Array.isArray(val)) return val
+      try { const p = JSON.parse(val); return Array.isArray(p) ? p : [] }
+      catch { return [] }
+    }
+    const imgArr = parseImageUrls(product.image_urls)
+    const rawImgs = product.image && product.image.startsWith("http")
+      ? [product.image, ...imgArr.filter(u => u && u.startsWith("http") && u !== product.image)]
+      : imgArr.filter(u => u && u.startsWith("http"));
   const images = rawImgs.length > 0 ? rawImgs : [];
 
   useEffect(() => {
