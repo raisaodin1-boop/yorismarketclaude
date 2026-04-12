@@ -238,9 +238,12 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const avgNote = avis.length ? (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1) : product.note || 0;
 
  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg">
-        <button className="modal-close" onClick={onClose}>✕</button>
+   <div style={{minHeight:"100vh",background:"var(--bg)",paddingBottom:40}}>
+        <div style={{maxWidth:1100,margin:"0 auto",padding:"16px"}}>
+          <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"var(--gray)",fontSize:"14px",marginBottom:16,padding:"8px 0"}}>
+            ← Retour
+          </button>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,alignItems:"start"}}>
 
         {/* Images */}
         {images.length > 0 ? (
@@ -351,7 +354,8 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
           <ModalCommander product={product} user={user} userData={userData} onClose={() => setShowCmdModal(false)} />
         )}
       </div>
-   </div>
+        </div>
+      </div>
     );
 }
 
