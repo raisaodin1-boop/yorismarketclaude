@@ -393,7 +393,7 @@ function FlashCountdown() {
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : GRILLE PRODUITS
 // ─────────────────────────────────────────────────────────────
-function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
+function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpenProd }) {
   const [ficheOpen, setFicheOpen] = useState(null);
   const [cmdOpen, setCmdOpen]     = useState(null);
 
@@ -428,7 +428,7 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
             <div key={p.id} className={`prod-card${p.flash?" prod-card-flash":""}`}>
 
               {/* ── IMAGE ── */}
-              <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
+            onClick={() => onOpenProd ? onOpenProd(p) : setFicheOpen(p)}>
                 {safeImg ? (
                   <img
                     src={safeImg}
@@ -453,7 +453,7 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist }) {
               </div>
 
               {/* ── INFOS ── */}
-              <div className="prod-info" onClick={() => setFicheOpen(p)}>
+             onClick={() => onOpenProd ? onOpenProd(p) : setFicheOpen(p)}>
                 {/* Badges vendeur */}
                 {vendBadges.length > 0 && (
                   <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>
