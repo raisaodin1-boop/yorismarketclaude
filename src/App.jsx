@@ -2907,7 +2907,7 @@ export default function Yorix() {
           <div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div>
         </div>
 
-        <div className="nav-search">
+        <div className="nav-search" style={{position:"relative"}}>
           <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}>
             <option value="">Tout</option>
             {CATS.map(c=><option key={c}>{c}</option>)}
@@ -2917,7 +2917,61 @@ export default function Yorix() {
             value={search}
             onChange={e=>setSearch(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
+            autoComplete="off"
           />
+          {search.trim().length >= 2 && (
+            <div style={{
+              position:"absolute",
+              top:"100%",
+              left:0,
+              right:0,
+              background:"var(--bg)",
+              border:"1px solid var(--border)",
+              borderRadius:"10px",
+              boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
+              zIndex:9999,
+              maxHeight:"320px",
+              overflowY:"auto",
+              marginTop:"4px"
+            }}>
+              {produit.filter(p=>
+                p.name?.toLowerCase().includes(search.toLowerCase())
+              ).slice(0,8).map(p=>(
+                <div
+                  key={p.id}
+                  onClick={()=>{
+                    setProduit(p)
+                    goPage("produit")
+                    setSearch("")
+                  }}
+                  style={{
+                    display:"flex",
+                    alignItems:"center",
+                    gap:"10px",
+                    padding:"10px 14px",
+                    cursor:"pointer",
+                    borderBottom:"1px solid var(--border)",
+                    fontSize:"13px"
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--bg2)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                >
+                  {p.image&&<img src={p.image} style={{width:36,height:36,objectFit:"cover",borderRadius:6}} alt=""/>}
+                  <div>
+                    <div style={{fontWeight:500}}>{p.name}</div>
+                    <div style={{color:"var(--gray)",fontSize:"12px"}}>{p.prix?.toLocaleString()} FCFA</div>
+                  </div>
+                </div>
+              ))}
+              {produit.filter(p=>
+                p.name?.toLowerCase().includes(search.toLowerCase())
+              ).length===0&&(
+                <div style={{padding:"14px",color:"var(--gray)",fontSize:"13px",textAlign:"center"}}>
+                  Aucun résultat pour "{search}"
+                </div>
+              )}
+            </div>
+          )}
           <button onClick={()=>goPage("produits")}>🔍</button>
         </div>
 
