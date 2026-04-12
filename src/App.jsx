@@ -1566,129 +1566,6 @@ function FormulaireProduit({ user, userData, onSaved }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────
-// DASHBOARD SELLER
-// ─────────────────────────────────────────────────────────────
-function SellerDashboard({ user, userData, dashTab, setDashTab }) {
-  const [mesProduits, setMesProduits]   = useState([]);
-  const [mesCommandes, setMesCommandes] = useState([]);
-  const [wallet, setWallet]             = useState({ solde:0, total_gagne:0 });
-  const [loadingData, setLoadingData]   = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
-
-  useEffect(() => {
-    const loadAll = async () => {
-      setLoadingData(true);
-      const [{ data: prods }, { data: cmds }, { data: wal }] = await Promise.all([
-        supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
-        supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
-        supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
-      ]);
-      setMesProduits(prods || []);
-      setMesCommandes(cmds || []);
-      if (wal) setWallet(wal);
-      setLoadingData(false);
-    };
-    loadAll();
-  }, [user.id]);
-
-  const revenusTotal    = mesCommandes.filter(c => c.status === "delivered").reduce((a, c) => a + (c.montant_vendeur || 0), 0);
-  const commandesActives = mesCommandes.filter(c => ["pending","paid","shipped"].includes(c.status)).length;
-
-  const updateOrderStatus = async (orderId, field, value) => {
-    await supabase.from("orders").update({ [field]: value }).eq("id", orderId);
-    setMesCommandes(prev => prev.map(c => c.id === orderId ? {...c, [field]: value} : c));
-  };
-
-  if (loadingData) return <div className="loading"><div className="spinner"/>Chargement...</div>;
-
-  return (
-    <>
-      {dashTab === "overview" && (
-        <>
-          <div className="dash-page-title">Bonjour {userData?.nom} 🏪</div>
-          <div className="dash-stats">
-            {[
-              { icon:"🏪", val:mesProduits.length,          lbl:"Produits actifs",   trend:"" },
-              { icon:"📦", val:commandesActives,            lbl:"Commandes actives", trend:"" },
-              { icon:"✅", val:mesCommandes.filter(c=>c.status==="delivered").length, lbl:"Livrées", trend:"" },
-              { icon:"💰", val:`${revenusTotal.toLocaleString()} F`, lbl:"Revenus nets", trend:"+5%" },
-            ].map(s => (
-              <div key={s.lbl} className="dstat">
-                <div className="dstat-icon">{s.icon}</div>
-                <div className="dstat-val">{s.val}</div>
-                <div className="dstat-lbl">{s.lbl}</div>
-                {s.trend && <div className="dstat-trend">{s.trend}</div>}
-              </div>
-            ))}
-          </div>
-
-          {/* Dernières commandes */}
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>Dernières commandes reçues</div>
-          {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p></div>
-            : mesCommandes.slice(0, 5).map(c => (
-                <div key={c.id} className="order-card">
-                  <div className="oc-icon">📦</div>
-                  <div className="oc-info">
-                    <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom || "Client"}</div>
-                    <div className="oc-meta">
-                      {c.montant?.toLocaleString()} FCFA · Commission: {c.commission?.toLocaleString()} F · Net: {c.montant_vendeur?.toLocaleString()} F
-                      <br/>📞 {c.telephone || "-"} · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
-                    </div>
-                  </div>
-                  <div className="oc-actions">
-                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
-                    <span className={`status-badge s-${c.escrow_status}`}>{ESCROW_STATUSES[c.escrow_status] || c.escrow_status}</span>
-                  </div>
-                </div>
-              ))
-          }
-        </>
-      )}
-
-      {dashTab === "mesProduits" && (
-        <>
-          <div className="dash-page-title">🏪 Mes produits ({mesProduits.length})</div>
-          {mesProduits.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter</button></div>
-            : <div className="prod-grid">
-                {mesProduits.map(p => (
-                  <div key={p.id} className="prod-card">
-                    <div className="prod-img-wrap">
-                      {(p.image && p.image.startsWith("http")) || (p.image_urls?.[0] && p.image_urls[0].startsWith("http"))
-                        ? <img
-                            src={p.image && p.image.startsWith("http") ? p.image : p.image_urls[0]}
-                            alt={p.name_fr}
-                            onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/300?text=📦";}}
-                          />
-                        : <div className="prod-img-placeholder">📦</div>
-                      }
-                      {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
-                    </div>
-                    <div className="prod-info">
-                      <div className="prod-name">{p.name_fr}</div>
-                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock != null ? p.stock : "-"}</div>
-                      <div className="prod-price-row">
-                        <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
-                        <button
-                          style={{background:"var(--red)",color:"#fff",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                          onClick={async () => { 
-  if (!window.confirm("Supprimer ce produit ?")) return; 
-  const { error } = await supabase.from("products").update({actif:false}).eq("id",p.id);
-  if (error) { alert("Erreur suppression : " + error.message); return; }
-  setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); 
-}}
-                        >🗑</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-          }
-        </>
-      )}
       // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL ÉDITION PRODUIT (admin + vendeur)
 // ─────────────────────────────────────────────────────────────
@@ -1873,6 +1750,129 @@ function ModalEditProduit({ product, onClose, onSaved }) {
               </div>
             </div>
           )}
+
+// ─────────────────────────────────────────────────────────────
+// DASHBOARD SELLER
+// ─────────────────────────────────────────────────────────────
+function SellerDashboard({ user, userData, dashTab, setDashTab }) {
+  const [mesProduits, setMesProduits]   = useState([]);
+  const [mesCommandes, setMesCommandes] = useState([]);
+  const [wallet, setWallet]             = useState({ solde:0, total_gagne:0 });
+  const [loadingData, setLoadingData]   = useState(true);
+  const [editingProduct, setEditingProduct] = useState(null);
+
+  useEffect(() => {
+    const loadAll = async () => {
+      setLoadingData(true);
+      const [{ data: prods }, { data: cmds }, { data: wal }] = await Promise.all([
+        supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+        supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+        supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
+      ]);
+      setMesProduits(prods || []);
+      setMesCommandes(cmds || []);
+      if (wal) setWallet(wal);
+      setLoadingData(false);
+    };
+    loadAll();
+  }, [user.id]);
+
+  const revenusTotal    = mesCommandes.filter(c => c.status === "delivered").reduce((a, c) => a + (c.montant_vendeur || 0), 0);
+  const commandesActives = mesCommandes.filter(c => ["pending","paid","shipped"].includes(c.status)).length;
+
+  const updateOrderStatus = async (orderId, field, value) => {
+    await supabase.from("orders").update({ [field]: value }).eq("id", orderId);
+    setMesCommandes(prev => prev.map(c => c.id === orderId ? {...c, [field]: value} : c));
+  };
+
+  if (loadingData) return <div className="loading"><div className="spinner"/>Chargement...</div>;
+
+  return (
+    <>
+      {dashTab === "overview" && (
+        <>
+          <div className="dash-page-title">Bonjour {userData?.nom} 🏪</div>
+          <div className="dash-stats">
+            {[
+              { icon:"🏪", val:mesProduits.length,          lbl:"Produits actifs",   trend:"" },
+              { icon:"📦", val:commandesActives,            lbl:"Commandes actives", trend:"" },
+              { icon:"✅", val:mesCommandes.filter(c=>c.status==="delivered").length, lbl:"Livrées", trend:"" },
+              { icon:"💰", val:`${revenusTotal.toLocaleString()} F`, lbl:"Revenus nets", trend:"+5%" },
+            ].map(s => (
+              <div key={s.lbl} className="dstat">
+                <div className="dstat-icon">{s.icon}</div>
+                <div className="dstat-val">{s.val}</div>
+                <div className="dstat-lbl">{s.lbl}</div>
+                {s.trend && <div className="dstat-trend">{s.trend}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Dernières commandes */}
+          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>Dernières commandes reçues</div>
+          {mesCommandes.length === 0
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p></div>
+            : mesCommandes.slice(0, 5).map(c => (
+                <div key={c.id} className="order-card">
+                  <div className="oc-icon">📦</div>
+                  <div className="oc-info">
+                    <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom || "Client"}</div>
+                    <div className="oc-meta">
+                      {c.montant?.toLocaleString()} FCFA · Commission: {c.commission?.toLocaleString()} F · Net: {c.montant_vendeur?.toLocaleString()} F
+                      <br/>📞 {c.telephone || "-"} · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
+                    </div>
+                  </div>
+                  <div className="oc-actions">
+                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
+                    <span className={`status-badge s-${c.escrow_status}`}>{ESCROW_STATUSES[c.escrow_status] || c.escrow_status}</span>
+                  </div>
+                </div>
+              ))
+          }
+        </>
+      )}
+
+      {dashTab === "mesProduits" && (
+        <>
+          <div className="dash-page-title">🏪 Mes produits ({mesProduits.length})</div>
+          {mesProduits.length === 0
+            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter</button></div>
+            : <div className="prod-grid">
+                {mesProduits.map(p => (
+                  <div key={p.id} className="prod-card">
+                    <div className="prod-img-wrap">
+                      {(p.image && p.image.startsWith("http")) || (p.image_urls?.[0] && p.image_urls[0].startsWith("http"))
+                        ? <img
+                            src={p.image && p.image.startsWith("http") ? p.image : p.image_urls[0]}
+                            alt={p.name_fr}
+                            onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/300?text=📦";}}
+                          />
+                        : <div className="prod-img-placeholder">📦</div>
+                      }
+                      {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
+                    </div>
+                    <div className="prod-info">
+                      <div className="prod-name">{p.name_fr}</div>
+                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock != null ? p.stock : "-"}</div>
+                      <div className="prod-price-row">
+                        <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
+                        <button
+                          style={{background:"var(--red)",color:"#fff",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
+                          onClick={async () => { 
+  if (!window.confirm("Supprimer ce produit ?")) return; 
+  const { error } = await supabase.from("products").update({actif:false}).eq("id",p.id);
+  if (error) { alert("Erreur suppression : " + error.message); return; }
+  setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); 
+}}
+                        >🗑</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+          }
+        </>
+      )}
 
           {/* Ajouter de nouvelles images */}
           <div className="form-group full">
