@@ -2549,7 +2549,7 @@ export default function Yorix() {
   const [page, setPage]           = useState("home");
   const [user, setUser]           = useState(null);
   const [userData, setUserData]   = useState(null);
-  const [userRole, setUserRole]   = useState(null);
+ const [userRole, setUserRole] = useState(null);
   const [loading, setLoading]     = useState(true);
 
   // Auth
@@ -2607,7 +2607,7 @@ export default function Yorix() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session?.user) { setUser(session.user); chargerProfil(session.user.id); }
-      else { setUser(null); setUserData(null); setUserRole(null); setNotifs([]); }
+     else { setUser(null); setUserData(null); setUserRole(null); setNotifs([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
