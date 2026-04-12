@@ -428,7 +428,7 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpen
             <div key={p.id} className={`prod-card${p.flash?" prod-card-flash":""}`}>
 
               {/* ── IMAGE ── */}
-            onClick={() => onOpenProd ? onOpenProd(p) : setFicheOpen(p)}>
+            onClick={function(){ onOpenProd ? onOpenProd(p) : setFicheOpen(p) }}>
                 {safeImg ? (
                   <img
                     src={safeImg}
@@ -453,7 +453,7 @@ function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpen
               </div>
 
               (/* ── INFOS ── */)
-            <div className="prod-info" onClick={() => onOpenProd ? onOpenProd(p) : setFicheOpen(p)}>
+           <div className="prod-info" onClick={function(){ onOpenProd ? onOpenProd(p) : setFicheOpen(p) }}>
                 (/* Badges vendeur */) 
                 {vendBadges.length > 0 && (
                   <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>
