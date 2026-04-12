@@ -238,12 +238,11 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
         {/* Images */}
         {images.length > 0 ? (
           <div style={{ marginBottom:16 }}>
-            <img
-              src={images[activeImg]}
-              alt={product.name_fr}
-              className="img-main"
-              onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = "https://via.placeholder.com/300?text=Yorix"; }}
-            />
+            <img 
+  src={getOptimizedImageUrl(product.image_url, 400)} 
+  alt={product.name}
+  loading="lazy"
+/>
             {images.length > 1 && (
               <div className="img-gallery">
                 {images.map((url, i) => (
