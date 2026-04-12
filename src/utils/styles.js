@@ -880,4 +880,116 @@ input, select, textarea {
     font-size: 1.8rem !important;
     word-wrap: break-word;
   }
+  /* =========================================================
+   FIX CIBLÉ — NAVBAR + PAIEMENT SUR MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  
+  /* ===== NAVBAR PRINCIPALE (Accueil, Produits, Livraison...) ===== */
+  /* Force le scroll horizontal au lieu du chevauchement */
+  
+  nav, 
+  .navbar,
+  [class*="navbar"],
+  header > div:nth-of-type(2),
+  header nav {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    white-space: nowrap !important;
+    gap: 4px !important;
+    padding: 8px 10px !important;
+    justify-content: flex-start !important;
+  }
+  
+  nav::-webkit-scrollbar,
+  .navbar::-webkit-scrollbar { 
+    display: none !important; 
+  }
+  
+  /* Chaque item de navbar : taille fixe lisible */
+  nav a, 
+  nav button,
+  .navbar a,
+  .navbar button {
+    flex-shrink: 0 !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+    white-space: nowrap !important;
+    min-width: auto !important;
+  }
+  
+  /* ===== BARRE PAIEMENT (MTN, Orange, Carte, Cash, J+1...) ===== */
+  
+  /* Cibler le conteneur "Paiement :" */
+  div:has(> :is(.payment-btn, [class*="payment"])),
+  [class*="payment"],
+  [class*="paiement"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    align-items: center !important;
+  }
+  
+  /* Boutons de paiement + labels infos */
+  [class*="payment"] > *,
+  [class*="paiement"] > * {
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
+    padding: 6px 8px !important;
+  }
+  
+  /* ===== TOPBAR (Cameroun CM | FR/EN | +237... | Aide | Contact) ===== */
+  
+  .topbar,
+  [class*="topbar"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    justify-content: space-between !important;
+    height: auto !important;
+  }
+  
+  /* ===== HEADER top (Yorix + search + icônes) ===== */
+  
+  header > div:first-of-type {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  
+  /* Input de recherche prend la largeur dispo */
+  header input[type="search"],
+  header input[type="text"] {
+    flex: 1 !important;
+    min-width: 150px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* ===== VERY SMALL (< 420px) ===== */
+@media (max-width: 420px) {
+  
+  nav a, nav button {
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+  }
+  
+  .topbar, [class*="topbar"] {
+    font-size: 10px !important;
+  }
+  
+  /* Cacher textes secondaires si trop petit */
+  .topbar [class*="help-text"],
+  .topbar [class*="optional"] {
+    display: none !important;
+  }
+}
 `;
