@@ -14,6 +14,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import ReactDOM from 'react-dom'
 import { Helmet } from 'react-helmet-async';
 import {
   supabase,
@@ -1587,8 +1588,7 @@ console.log("[Admin] merged users:", usersData.length);
   const maxChartRev = Math.max(...chartVentes.map(d=>d.revenue), 1);
   const maxChartI   = Math.max(...chartInscrits.map(d=>d.val), 1);
 
-  const CATS_LIST = ["Téléphones","Mode","Alimentation","Maison","Agricole","Beauté","BTP","Automobile","Éducation","Services"];
-
+ const CATS_LIST = ["Téléphones & HighTech","Mode & Accesoires","Alimentation","Maison & Decoration","Agricole","Beauté & Soins","BTP","Automobile","Éducation","Services"];
   // ─── Navigation ───
   const NAV = [
     {id:"overview",    icon:"📊", label:"Vue d'ensemble"},
@@ -1786,7 +1786,7 @@ console.log("[Admin] merged users:", usersData.length);
       )}
 
       {/* ── MODAL DÉTAIL PRODUIT ── */}
-      {selectedProd && (
+      {selectedProd && typeof document !== 'undefined' && ReactDOM.createPortal(
   <div style={{position:"fixed",inset:0,zIndex:999,background:"var(--bg)",overflowY:"auto"}}>
          <div style={{maxWidth:1100,margin:"0 auto",padding:"16px 16px 40px"}}>
            <button onClick={()=>setSelectedProd(null)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"var(--gray)",fontSize:"14px",marginBottom:20,padding:"8px 0",fontWeight:500}}>
@@ -1828,7 +1828,7 @@ console.log("[Admin] merged users:", usersData.length);
             </div>
           </div>
         </div>
-      )}
+     , document.body)}
 
       {/* ── SIDEBAR ── */}
       <div className="admin-sidebar">
