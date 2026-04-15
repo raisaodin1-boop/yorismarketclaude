@@ -1135,13 +1135,24 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
         padding: "9px",
         borderRadius: 8
       }}
-      onClick={() =>
-  window.open(
-    `https://wa.me/696565654?text=${encodeURIComponent(
+      <button
+  style={{
+    flex: 1,
+    background: "#1565c0",
+    color: "#fff",
+    border: "none",
+    padding: "9px",
+    borderRadius: 8
+  }}
+  onClick={() => {
+    const url = `https://wa.me/696565654?text=${encodeURIComponent(
       `Bonjour ${l.client} ! Je suis votre livreur`
-    )}`
-  )
-}
+    )}`;
+    window.open(url, "_blank");
+  }}
+>
+  Contacter
+</button>
     >
       Contacter
     </button>
