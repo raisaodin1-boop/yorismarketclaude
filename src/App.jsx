@@ -1634,7 +1634,7 @@ console.log("[Admin] merged users:", usersData.length);
  // --- Actions ---
 const supprimerProduit = async (id, nom) => {
   const confirmation = window.confirm(
-    `; ";{nom}" ? Cette action est irréversible.`
+    `; ";{nom}" ?`
   );
 
   if (!confirmation) return;
