@@ -2691,6 +2691,20 @@ export default function Yorix() {
   // Produits
   const [produits, setProduits]                 = useState([]);
   const [produitsLoading, setProduitsLoading]   = useState(true);
+  const [allServices, setAllServices] = useState([]);
+
+useEffect(() => {
+  const loadServices = async () => {
+    const { data, error } = await supabase
+      .from("services")
+      .select("*")
+      .eq("actif", true)
+      .eq("disponible", true)
+      .order("created_at", { ascending: false });
+    if (!error) setAllServices(data || []);
+  };
+  loadServices();
+}, []);
   const [search, setSearch]                     = useState("");
   const [filterCat, setFilterCat]               = useState("");
 
