@@ -725,205 +725,232 @@ function FormulaireProduit({ user, userData, onSaved }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// DASHBOARD SELLER
-// ─────────────────────────────────────────────────────────────
+/```txt
 function SellerDashboard({ user, userData, dashTab, setDashTab }) {
-  const [mesProduits, setMesProduits]   = useState([]);
+
+  const [mesProduits, setMesProduits] = useState([]);
   const [mesCommandes, setMesCommandes] = useState([]);
-  const [wallet, setWallet]             = useState({ solde:0, total_gagne:0 });
-  const [loadingData, setLoadingData]   = useState(true);
+  const [wallet, setWallet] = useState({ solde:0, total_gagne:0 });
 
-  useEffect(() => {
-    const loadAll = async () => {
-      setLoadingData(true);
-      const [{ data: prods }, { data: cmds }, { data: wal }] = await Promise.all([
-        supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
-        supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
-        supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
-      ]);
-      setMesProduits(prods || []);
-      setMesCommandes(cmds || []);
-      if (wal) setWallet(wal);
-      setLoadingData(false);
-    };
-    loadAll();
-  }, [user.id]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadingAction, setLoadingAction] = useState(false);
 
-  const revenusTotal    = mesCommandes.filter(c => c.status === "delivered").reduce((a, c) => a + (c.montant_vendeur || 0), 0);
-  const commandesActives = mesCommandes.filter(c => ["pending","paid","shipped"].includes(c.status)).length;
+  // ================= LOAD DATA =================
+  const loadAll = async () => {
+    if (!user?.id) return;
 
-  const updateOrderStatus = async (orderId, field, value) => {
-    await supabase.from("orders").update({ [field]: value }).eq("id", orderId);
-    setMesCommandes(prev => prev.map(c => c.id === orderId ? {...c, [field]: value} : c));
+    setLoadingData(true);
+
+    const [prodsRes, cmdsRes, walRes] = await Promise.all([
+      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+      supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle()
+    ]);
+
+    if (prodsRes.error) console.error(prodsRes.error);
+    if (cmdsRes.error) console.error(cmdsRes.error);
+    if (walRes.error) console.error(walRes.error);
+
+    setMesProduits(prodsRes.data || []);
+    setMesCommandes(cmdsRes.data || []);
+    if (walRes.data) setWallet(walRes.data);
+
+    setLoadingData(false);
   };
 
-  if (loadingData) return <div className="loading"><div className="spinner"/>Chargement...</div>;
+  useEffect(() => {
+    loadAll();
+  }, [user?.id]);
+
+  // ================= PRODUITS =================
+
+  const updateProduct = async (id, updates) => {
+    setLoadingAction(true);
+
+    const { error } = await supabase
+      .from("products")
+      .update(updates)
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      alert("Erreur modification produit");
+      setLoadingAction(false);
+      return;
+    }
+
+    setMesProduits(prev =>
+      prev.map(p => p.id === id ? { ...p, ...updates } : p)
+    );
+
+    setLoadingAction(false);
+  };
+
+  const deleteProduct = async (id) => {
+    if (!window.confirm("Supprimer ce produit ?")) return;
+
+    setLoadingAction(true);
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      alert("Erreur suppression");
+      setLoadingAction(false);
+      return;
+    }
+
+    setMesProduits(prev => prev.filter(p => p.id !== id));
+
+    setLoadingAction(false);
+  };
+
+  // ================= COMMANDES =================
+
+  const updateOrderStatus = async (orderId, field, value) => {
+    if (!window.confirm("Confirmer ?")) return;
+
+    const { error } = await supabase
+      .from("orders")
+      .update({ [field]: value })
+      .eq("id", orderId);
+
+    if (error) {
+      console.error(error);
+      alert("Erreur mise à jour");
+      return;
+    }
+
+    setMesCommandes(prev =>
+      prev.map(c => c.id === orderId ? { ...c, [field]: value } : c)
+    );
+  };
+
+  // ================= UTILS =================
+
+  const revenusTotal = mesCommandes.reduce((total, c) => {
+    return c.status === "delivered"
+      ? total + (Number(c.montant_vendeur) || 0)
+      : total;
+  }, 0);
+
+  const commandesActives = mesCommandes.filter(c =>
+    ["pending","paid","shipped"].includes(c.status)
+  ).length;
+
+  const formatPhone = (phone) => {
+    const clean = phone?.replace(/[^0-9]/g, "");
+    return clean?.startsWith("237") ? clean : `237${clean}`;
+  };
+
+  if (loadingData) return <div className="loading">Chargement...</div>;
 
   return (
     <>
+
+      {/* ================= OVERVIEW ================= */}
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title">Bonjour {userData?.nom} 🏪</div>
-          <div className="dash-stats">
-            {[
-              { icon:"🏪", val:mesProduits.length,          lbl:"Produits actifs",   trend:"" },
-              { icon:"📦", val:commandesActives,            lbl:"Commandes actives", trend:"" },
-              { icon:"✅", val:mesCommandes.filter(c=>c.status==="delivered").length, lbl:"Livrées", trend:"" },
-              { icon:"💰", val:`${revenusTotal.toLocaleString()} F`, lbl:"Revenus nets", trend:"+5%" },
-            ].map(s => (
-              <div key={s.lbl} className="dstat">
-                <div className="dstat-icon">{s.icon}</div>
-                <div className="dstat-val">{s.val}</div>
-                <div className="dstat-lbl">{s.lbl}</div>
-                {s.trend && <div className="dstat-trend">{s.trend}</div>}
-              </div>
-            ))}
-          </div>
+          <div className="dash-page-title">Bonjour {userData?.nom}</div>
 
-          {/* Dernières commandes */}
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".95rem", color:"var(--ink)", marginBottom:12 }}>Dernières commandes reçues</div>
-          {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande pour l'instant</p></div>
-            : mesCommandes.slice(0, 5).map(c => (
-                <div key={c.id} className="order-card">
-                  <div className="oc-icon">📦</div>
-                  <div className="oc-info">
-                    <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom || "Client"}</div>
-                    <div className="oc-meta">
-                      {c.montant?.toLocaleString()} FCFA · Commission: {c.commission?.toLocaleString()} F · Net: {c.montant_vendeur?.toLocaleString()} F
-                      <br/>📞 {c.telephone || "-"} · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
-                    </div>
-                  </div>
-                  <div className="oc-actions">
-                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
-                    <span className={`status-badge s-${c.escrow_status}`}>{ESCROW_STATUSES[c.escrow_status] || c.escrow_status}</span>
-                  </div>
-                </div>
-              ))
-          }
+          <div className="dash-stats">
+            <div>Produits: {mesProduits.length}</div>
+            <div>Commandes: {commandesActives}</div>
+            <div>Livrées: {mesCommandes.filter(c=>c.status==="delivered").length}</div>
+            <div>Revenus: {revenusTotal.toLocaleString()} FCFA</div>
+          </div>
         </>
       )}
 
+      {/* ================= PRODUITS ================= */}
       {dashTab === "mesProduits" && (
         <>
-          <div className="dash-page-title">🏪 Mes produits ({mesProduits.length})</div>
-          {mesProduits.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucun produit</p><button className="form-submit" style={{width:"auto",padding:"10px 24px",marginTop:12}} onClick={()=>setDashTab("ajouterProduit")}>+ Ajouter</button></div>
-            : <div className="prod-grid">
-                {mesProduits.map(p => (
-                  <div key={p.id} className="prod-card">
-                    <div className="prod-img-wrap">
-                      {(p.image && p.image.startsWith("http")) || (p.image_urls?.[0] && p.image_urls[0].startsWith("http"))
-                        ? <img
-                            src={p.image && p.image.startsWith("http") ? p.image : p.image_urls[0]}
-                            alt={p.name_fr}
-                            onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src="https://via.placeholder.com/300?text=📦";}}
-                          />
-                        : <div className="prod-img-placeholder">📦</div>
-                      }
-                      {!p.actif && <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:".8rem",fontWeight:700}}>Désactivé</div>}
-                    </div>
-                    <div className="prod-info">
-                      <div className="prod-name">{p.name_fr}</div>
-                      <div className="prod-loc">👁 {p.vues||0} vues · Stock: {p.stock != null ? p.stock : "-"}</div>
-                      <div className="prod-price-row">
-                        <span className="price">{p.prix?.toLocaleString()} <span className="price-unit">FCFA</span></span>
-                        <button
-                          style={{background:"var(--red)",color:"#fff",border:"none",width:26,height:26,borderRadius:6,cursor:"pointer",fontSize:".85rem",display:"flex",alignItems:"center",justifyContent:"center"}}
-                          onClick={async () => { if (!window.confirm("Supprimer ?")) return; await supabase.from("products").update({actif:false}).eq("id",p.id); setMesProduits(prev=>prev.filter(x=>x.id!==p.id)); }}
-                        >🗑</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-          }
+          <h2>Mes produits ({mesProduits.length})</h2>
+
+          {mesProduits.map(p => (
+            <div key={p.id} className="prod-card">
+
+              <div>{p.name_fr}</div>
+
+              <input
+                value={p.prix}
+                onChange={(e) => updateProduct(p.id, { prix: Number(e.target.value) })}
+              />
+
+              <input
+                value={p.stock || 0}
+                onChange={(e) => updateProduct(p.id, { stock: Number(e.target.value) })}
+              />
+
+              <textarea
+                value={p.description || ""}
+                onChange={(e) => updateProduct(p.id, { description: e.target.value })}
+              />
+
+              <button onClick={() => updateProduct(p.id, { actif: !p.actif })}>
+                {p.actif ? "Désactiver" : "Activer"}
+              </button>
+
+              <button onClick={() => deleteProduct(p.id)}>
+                Supprimer
+              </button>
+
+            </div>
+          ))}
         </>
       )}
 
-      {dashTab === "ajouterProduit" && (
-        <FormulaireProduit user={user} userData={userData} onSaved={() => setDashTab("mesProduits")} />
-      )}
-
+      {/* ================= COMMANDES ================= */}
       {dashTab === "commandes" && (
         <>
-          <div className="dash-page-title">📦 Toutes les commandes ({mesCommandes.length})</div>
-          {mesCommandes.length === 0
-            ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p></div>
-            : mesCommandes.map(c => (
-                <div key={c.id} className="order-card" style={{ flexDirection:"column", alignItems:"stretch" }}>
-                  <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                    <div className="oc-icon">📦</div>
-                    <div className="oc-info">
-                      <div className="oc-name">#{String(c.id).slice(-8)} — {c.client_nom}</div>
-                      <div className="oc-meta">
-                        💰 {c.montant?.toLocaleString()} FCFA · Net vendeur: {c.montant_vendeur?.toLocaleString()} FCFA<br/>
-                        📞 {c.telephone} · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}
-                      </div>
-                    </div>
-                    <div className="oc-actions">
-                      <span className={`status-badge s-${c.status}`}>{c.status}</span>
-                      <span className={`status-badge s-${c.escrow_status}`}>{c.escrow_status}</span>
-                      <span className={`status-badge s-${c.livraison_status}`}>{c.livraison_status}</span>
-                    </div>
-                  </div>
-                  {/* Actions rapides */}
-                  <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
-                    {c.status === "pending" && (
-                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "status", "paid")}>✅ Marquer payée</button>
-                    )}
-                    {c.status === "paid" && (
-                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "status", "shipped")}>🚚 Marquer expédiée</button>
-                    )}
-                    {c.escrow_status === "pending" && c.status === "paid" && (
-                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "escrow_status", "securise")}>🔐 Sécuriser Escrow</button>
-                    )}
-                    {c.escrow_status === "securise" && c.status === "shipped" && (
-                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "escrow_status", "libere")}>💰 Libérer Escrow</button>
-                    )}
-                    {c.livraison_status === "pending" && (
-                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "livraison_status", "en_cours")}>🏍️ Livraison en cours</button>
-                    )}
-                    {c.livraison_status === "en_cours" && (
-                      <button className="btn-action-sm" onClick={() => updateOrderStatus(c.id, "livraison_status", "livre")}>✅ Marquer livré</button>
-                    )}
-                    <button
-                      className="btn-wa-sm"
-                      onClick={() => window.open(`https://wa.me/${c.telephone?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Bonjour ${c.client_nom} ! Votre commande Yorix est en cours de traitement. 🛍️`)}`, "_blank")}
-                    >
-                      📱 Contacter client
-                    </button>
-                  </div>
-                </div>
-              ))
-          }
+          {mesCommandes.map(c => (
+            <div key={c.id}>
+
+              <div>{c.client_nom}</div>
+
+              <button onClick={() => updateOrderStatus(c.id,"status","paid")}>
+                Payée
+              </button>
+
+              <button onClick={() => updateOrderStatus(c.id,"status","shipped")}>
+                Expédiée
+              </button>
+
+              <button onClick={() => updateOrderStatus(c.id,"status","delivered")}>
+                Livrée
+              </button>
+
+              <button
+                onClick={() =>
+                  window.open(
+                    `https://wa.me/${formatPhone(c.telephone)}`,
+                    "_blank"
+                  )
+                }
+              >
+                WhatsApp
+              </button>
+
+            </div>
+          ))}
         </>
       )}
 
+      {/* ================= WALLET ================= */}
       {dashTab === "wallet" && (
         <>
-          <div className="dash-page-title">💰 Mon Wallet</div>
-          <div className="wallet-card">
-            <div className="wc-label">Solde disponible</div>
-            <div className="wc-amount">{wallet.solde?.toLocaleString() || 0} FCFA</div>
-            <div className="wc-sub">
-              Total gagné : {wallet.total_gagne?.toLocaleString() || 0} FCFA · Commission Yorix {Math.round(COMMISSION_RATE*100)}%
-            </div>
-          </div>
-          <div className="commission-box">
-            <span>Revenus des commandes livrées</span>
-            <strong>{revenusTotal.toLocaleString()} FCFA</strong>
-          </div>
-          <div className="info-box">
-            <div className="info-icon">📱</div>
-            <p>Retrait MTN MoMo et Orange Money — bientôt disponible.</p>
-          </div>
+          <div>Solde: {wallet.solde} FCFA</div>
+          <div>Total gagné: {wallet.total_gagne} FCFA</div>
         </>
       )}
+
     </>
   );
 }
+```
 
 // ─────────────────────────────────────────────────────────────
 // DASHBOARD BUYER
