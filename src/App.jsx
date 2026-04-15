@@ -992,7 +992,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
                   </div>
                   <div className="oc-actions">
                     <span className={`;-$;c.identifier`}>{c.;}</span>
-                    <span className={`status-badge s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}</span>
+                    <span className={`; s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}</span>
                   </div>
                 </div>
               ))
