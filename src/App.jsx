@@ -1124,18 +1124,44 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
         </div>
       )}
       {showActions && l.status === "in_progress" && (
-        <div style={{display:"flex",gap:8}}>
-          <button
-            style={{flex:1,background:"#1565c0",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
-            onClick={() => window.open(`;https://wa.me/696565654(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${l.client} ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans ${l.temps_estime}.`)}`, "_blank")}
-                Contacter ;<identifier button>
-          <button
-            style={{flex:1,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
-            onClick={() => actionLivraison(l.id, "delivered")}
-          >✅ Confirmer livraison</button>
-     </div>
-      )}
+  <div style={{ display: "flex", gap: 8 }}>
+    
+    <button
+      style={{
+        flex: 1,
+        background: "#1565c0",
+        color: "#fff",
+        border: "none",
+        padding: "9px",
+        borderRadius: 8
+      }}
+      onClick={() =>
+        window.open(
+          `https://wa.me/696565654?text=${encodeURIComponent(
+            `Bonjour ${l.client} ! Je suis votre livreur`
+          )}`
+        )
+      }
+    >
+      Contacter
+    </button>
 
+    <button
+      style={{
+        flex: 1,
+        background: "var(--green)",
+        color: "#fff",
+        border: "none",
+        padding: "9px",
+        borderRadius: 8
+      }}
+      onClick={() => actionLivraison(l.id, "delivered")}
+    >
+      ✅ Confirmer livraison
+    </button>
+
+  </div>
+)}
   return (
     <>
       <div className="dash-page-title">Bonjour {userData?.nom} 🏍️ <span style={{fontSize:".75rem",color:"var(--gray)",fontFamily:"'DM Sans',sans-serif",fontWeight:400}}>— Yorix Ride</span></div>
