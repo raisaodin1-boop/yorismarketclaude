@@ -1128,7 +1128,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
           <button
             style={{flex:1,background:"#1565c0",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
             onClick={() => window.open(`;https://wa.me/696565654(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${l.client} ! Je suis votre livreur Yorix, je suis en route. 🚚\n\n📍 J'arrive dans ${l.temps_estime}.`)}`, "_blank")}
-          >📱 Contacter client</button>
+          📱 Contacter client</button>
           <button
             style={{flex:1,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
             onClick={() => actionLivraison(l.id, "delivered")}
