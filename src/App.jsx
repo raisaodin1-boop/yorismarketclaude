@@ -2672,7 +2672,14 @@ export default function Yorix() {
       const { data, error } = await supabase.auth.signUp({
         email: authForm.email,
         password: authForm.password,
-        options: { data: { display_name: authForm.nom } },
+        options: { 
+  data: { 
+    display_name: authForm.nom,
+    nom: authForm.nom,
+    telephone: authForm.tel,
+    role: selectedRole
+  } 
+},
       });
       if (error) throw error;
 
