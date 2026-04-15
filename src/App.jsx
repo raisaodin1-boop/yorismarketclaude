@@ -1220,12 +1220,28 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
   const repondre = (id, accepte) => setDemandes(prev => prev.map(d => d.id === id ? {...d, status: accepte ? "accepted" : "refused"} : d));
 
   const saveService = async () => {
-    if (!serviceForm.nom || !serviceForm.prix) { alert("Nom et prix obligatoires !"); return; }
-    await supabase.from("services").insert({ ...serviceForm, prix: Number(serviceForm.prix), provider_id: user.id, provider_nom: userData?.nom }).catch(e => console.warn(e?.message));
-    setServiceForm({ nom:"", categorie:"", description:"", prix:"", ville:"", disponible:true });
-    setServiceSaved(true);
-    setTimeout(() => setServiceSaved(false), 3000);
-  };
+  if (!serviceForm.nom || !serviceForm.prix) { 
+    alert("Nom et prix obligatoires !"); 
+    return; 
+  }
+  
+  const { error } = await supabase.from("services").insert({ 
+    ...serviceForm, 
+    prix: Number(serviceForm.prix), 
+    provider_id: user.id, 
+    provider_nom: userData?.nom 
+  });
+  
+  if (error) {
+    console.error("Erreur publication service:", error);
+    alert("Erreur : " + error.message);
+    return;
+  }
+  
+  setServiceForm({ nom:"", categorie:"", description:"", prix:"", ville:"", disponible:true });
+  setServicesSaved(true);
+  setTimeout(() => setServicesSaved(false), 3000);
+};
 
   return (
     <>
