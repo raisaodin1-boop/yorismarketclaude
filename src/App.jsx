@@ -1677,7 +1677,7 @@ const supprimerProduit = async (id, nom) => {
 
 
 const supprimerUser = async (uid, email) => {
-  if (!window.confirm(`Supprimer l'utilisateur "${email}" ? Cette action est irréversible.`)) return;
+  if (!window.confirm(`;Supprimerl'utilisateur ";{email}" ?`)) return;
 
   const { error } = await supabase.from("users").delete().eq("uid", uid);
 
