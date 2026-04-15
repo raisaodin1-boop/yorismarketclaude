@@ -1183,7 +1183,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
           { icon:"🟡", val:dispo.length,           lbl:"Disponibles",      trend:"Nouvelles missions" },
           { icon:"🚚", val:enCours.length,          lbl:"En cours",         trend:"" },
           { icon:"✅", val:livrees.length,           lbl:"Livrées",          trend:"+" },
-          { icon:"💰", val:`${gainsTotal.toLocaleString()} F`, lbl:"Gains disponibles", trend:`${gainsMois.toLocaleString()} F ce mois` },
+          { icon:"💰", val:`;{gainsTotal.toLocaleString()} F`, lbl:"Gains disponibles", trend:`${gainsMois.toLocaleString()} F ce mois` },
         ].map(s => (
           <div key={s.lbl} className="dstat">
             <div className="dstat-icon">{s.icon}</div>
