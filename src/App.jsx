@@ -1030,7 +1030,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
             <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"2rem", fontWeight:800, color:"var(--yellow)" }}>{loyaltyPts} pts</div>
             <div style={{ fontSize:".71rem", opacity:.62, marginBottom:12 }}>Niveau Or · {1000 - loyaltyPts} pts pour Platine</div>
             <div style={{ background:"rgba(255,255,255,.2)", borderRadius:50, height:7 }}>
-              <div style={{ background:"var(--yellow)", borderRadius:50, height:7, width:`;{Math.min((loyaltyPts % 1000) / 10, 100)}%`, transition:"width .6s" }} />
+              <div style={{ background:"var(--yellow)", borderRadius:50, height:7, width:`;{Math.min((loyaltyPts % 1000) / 10, 100)}`, transition:"width .6s" }} />
             </div>
           </div>
           <div className="rewards-grid">
