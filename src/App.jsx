@@ -1334,10 +1334,7 @@ const toggleDispo = async (id, current) => {
           </div>
         </>
       )}
-    </>
-  );
-}
-{dashTab === "mesServices" && (
+      {dashTab === "mesServices" && (
   <>
     <div className="dash-page-title">📋 Mes services ({mesServices.length})</div>
     
@@ -1397,6 +1394,10 @@ const toggleDispo = async (id, current) => {
     )}
   </>
 )}
+    </>
+  );
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
@@ -2918,7 +2919,7 @@ export default function Yorix() {
   const getDashNav = () => {
     if (userRole === "seller")   return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🏪",id:"mesProduits",label:"Mes produits"},{icon:"➕",id:"ajouterProduit",label:"Ajouter produit"},{icon:"📦",id:"commandes",label:"Commandes"},{icon:"💰",id:"wallet",label:"Wallet"}];
     if (userRole === "delivery") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🟡",id:"disponibles",label:"Disponibles"},{icon:"🚚",id:"enCours",label:"En cours"},{icon:"✅",id:"historique",label:"Historique"},{icon:"💰",id:"wallet",label:"Gains"}];
-    if (userRole === "provider") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📋",id:"demandes",label:"Demandes"},{icon:"➕",id:"ajouterService",label:"Ajouter service"}];
+    if (userRole === "provider") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📋",id:"demandes",label:"Demandes"},{icon:"🛠️",id:"mesServices",label:"Mes services"},{icon:"+",id:"ajouterService",label:"Ajouter service"}];
     return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📦",id:"commandes",label:"Mes commandes"},{icon:"❤️",id:"favoris",label:"Favoris"},{icon:"🌟",id:"loyalty",label:"Fidélité"}];
   };
 
