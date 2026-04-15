@@ -971,7 +971,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
               { icon:"📦", val:mesCommandes.length,  lbl:"Commandes" },
               { icon:"❤️", val:wishlist.size,         lbl:"Favoris" },
               { icon:"🛒", val:totalQty,              lbl:"Panier" },
-              { icon:"🌟", val:`${loyaltyPts} pts`,   lbl:"Points fidélité" },
+              { icon:"🌟", val:`;{loyaltyPts} pts`,   lbl:"Points fidélité" },
             ].map(s => (
               <div key={s.lbl} className="dstat">
                 <div className="dstat-icon">{s.icon}</div>
