@@ -1087,7 +1087,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
             <div style={{fontSize:".68rem",color:"var(--gray)"}}>👤 {l.client} · 📞 {l.telephone}</div>
           </div>
         </div>
-        <span className={`status-badge s-${l.status==="available"?"pending":l.status==="in_progress"?"en_cours":l.status}`}>
+        <span className={`; s-$;l.status==="available"?"pending":l.status==="in_progress"?"en_cours":l.status`}>
           {l.status==="available"?"🟡 Disponible":l.status==="in_progress"?"🚚 En cours":"✅ Livré"}
         </span>
       </div>
