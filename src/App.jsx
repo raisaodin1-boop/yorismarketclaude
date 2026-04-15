@@ -991,7 +991,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
                     <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
                   </div>
                   <div className="oc-actions">
-                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
+                    <span className={`s-${c.status}`}>{c.status}</span>
                     <span className={`status-badge s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}</span>
                   </div>
                 </div>
