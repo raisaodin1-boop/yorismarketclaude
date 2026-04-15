@@ -1633,7 +1633,7 @@ console.log("[Admin] merged users:", usersData.length);
 
   // ─── Actions ───
  const supprimerProduit = async (id, nom) => {
-  if (!window.confirm(`Supprimer "${nom}" ? Cette action est irréversible.`)) return;
+  if (!window.confirm(`; "${nom}" ? Cette action est irréversible.`)) return;
   const { error } = await supabase.from("products").delete().eq("id",id);
   if (error) { console.error("supprimerProduit:", error); showToast("Erreur : "+error.message, "error"); return; }
   setProduits(p => p.filter(x=>x.id!==id));
