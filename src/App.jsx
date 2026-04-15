@@ -1672,7 +1672,7 @@ const supprimerProduit = async (id, nom) => {
   ]);
   if (r1.error && r2.error) { console.error("changerRole:", r1.error, r2.error); showToast("Erreur changement rôle", "error"); return; }
   setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
-  showToast(`Rôle changé → ${newRole}`);
+  showToast(`;Rôle changé → ;{newRole}`);
 };
 
 
