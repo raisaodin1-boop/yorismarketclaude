@@ -1631,13 +1631,28 @@ console.log("[Admin] merged users:", usersData.length);
     setLoading(false);
   };
 
-  // ─── Actions ───
- const supprimerProduit = async (id, nom) => {
-  if (!window.confirm(`;supprimer ;"${nom}" ? Cette :action ;est ;irréversible.`)) return;
-  const { error } = await supabase.from("products").delete().eq("id",id);
-  if (error) { console.error("supprimerProduit:", error); showToast("Erreur : "+error.message, "error"); return; }
-  setProduits(p => p.filter(x=>x.id!==id));
-  setProduitsFull(p => p.filter(x=>x.id!==id));
+ // --- Actions ---
+const supprimerProduit = async (id, nom) => {
+  const confirmation = window.confirm(
+    `Supprimer "${nom}" ? Cette action est irréversible.`
+  );
+
+  if (!confirmation) return;
+
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("supprimerProduit:", error);
+    showToast("Erreur : " + error.message, "error");
+    return;
+  }
+
+  setProduits(p => p.filter(x => x.id !== id));
+  setProduitsFull(p => p.filter(x => x.id !== id));
+
   showToast(`Produit "${nom}" supprimé`);
 };
 
