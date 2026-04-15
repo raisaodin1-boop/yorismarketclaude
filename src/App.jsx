@@ -1133,10 +1133,8 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
             style={{flex:1,background:"var(--green)",color:"#fff",border:"none",padding:"9px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer"}}
             onClick={() => actionLivraison(l.id, "delivered")}
           >✅ Confirmer livraison</button>
-        </div>
+     </div>
       )}
-    </div>
-  );
 
   return (
     <>
