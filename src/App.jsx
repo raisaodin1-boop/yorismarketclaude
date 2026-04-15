@@ -1231,13 +1231,19 @@ useEffect(() => {
     if (!error) setMesServices(data || []);
   };
   loadMesServices();
-}, [user?.id, servicesSaved]);
+}, [user?.id]);
 
 // Supprimer un service
 const supprimerService = async (id) => {
   if (!confirm("Supprimer ce service ?")) return;
   const { error } = await supabase.from("services").delete().eq("id", id);
   if (error) { alert("Erreur : " + error.message); return; }
+  const { data: refreshed } = await supabase
+  .from("services")
+  .select("*")
+  .eq("provider_id", user.id)
+  .order("created_at", { ascending: false });
+if (refreshed) setMesServices(refreshed);
   setMesServices(prev => prev.filter(s => s.id !== id));
 };
 
