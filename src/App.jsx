@@ -3651,28 +3651,53 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* ── PRESTATAIRES ── */}
-          <section className="sec">
-            <div className="sec-head">
-              <h2 className="sec-title">👷 Prestataires de confiance</h2>
-              <span className="sec-link" onClick={()=>goPage("prestataires")}>Voir tous →</span>
+         {/* — PRESTATAIRES — */}
+<section className="sec">
+  <div className="sec-head">
+    <h2 className="sec-title">🧑‍💼 Prestataires de confiance</h2>
+    <span className="sec-link" onClick={() => goPage("prestataires")}>Voir tous →</span>
+  </div>
+  <div className="prest-grid">
+    {allServices.length === 0 ? (
+      <div style={{gridColumn:"1/-1", textAlign:"center", padding:30, color:"var(--gray)"}}>
+        Aucun prestataire pour le moment.
+      </div>
+    ) : (
+      allServices.slice(0, 3).map(s => (
+        <div key={s.id} className="prest-card">
+          <div className="prest-top">
+            <div className="prest-av">🧑‍💼</div>
+            <div>
+              <div className="prest-name">{s.provider_nom || "Prestataire"}</div>
+              <div className="prest-meta">{s.nom}</div>
             </div>
-            <div className="prest-grid">
-              {PREST_DATA.slice(0,3).map(p=>(
-                <div key={p.name} className="prest-card">
-                  <div className="prest-top">
-                    <div className="prest-av">{p.emoji}</div>
-                    <div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div>
-                  </div>
-                  <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
-                  <div className="prest-footer">
-                    <div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div>
-                    <button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire : ${p.name}`)}`, "_blank")}>📱 Contacter</button>
-                  </div>
-                </div>
-              ))}
+          </div>
+          <div className="prest-tags">
+            {s.categorie && <span className="ptag">{s.categorie}</span>}
+            {s.ville && <span className="ptag">📍 {s.ville}</span>}
+          </div>
+          <div className="prest-footer">
+            <div>
+              <div className="prest-price">{Number(s.prix).toLocaleString()} F</div>
+              <div style={{fontSize:".69rem",color:"var(--gray)"}}>
+                ⭐ {s.note || 0} · {s.nombre_avis || 0} avis
+              </div>
             </div>
-          </section>
+            <button 
+              className="btn-hire"
+              onClick={() => window.open(
+                `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire pour : ${s.nom} (${s.provider_nom})`)}`,
+                '_blank'
+              )}
+            >
+              Contacter
+            </button>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</section>
 
           {/* ── NEWSLETTER ── */}
           <div className="newsletter">
