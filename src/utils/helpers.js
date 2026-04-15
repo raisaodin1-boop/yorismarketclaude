@@ -13,7 +13,7 @@ export async function uploadSingleImage(file) {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", UPLOAD_PRESET);
-  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:"POST", body:fd });
+  const res  = await fetch(`https://api.cloudinary.com/v1_1/dulwb03nf/image/upload`, { method:"POST", body:fd });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data.secure_url;
