@@ -2259,7 +2259,18 @@ console.log("[Admin] merged users:", usersData.length);
                           </select>
                         </td>
                         <td style={{fontSize:".73rem"}}>{u.ville||"—"}</td>
-                        <td style={{fontSize:".73rem",color:"var(--gray)"}}>{u.telephone||"—"}</td>
+                        <td style={{fontSize:".73rem",color:"var(--gray)"}}>
+  {u.telephone ? (
+    <a 
+      href={`https://wa.me/${u.telephone.replace(/\D/g, '').replace(/^0/, '237')}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{color:'#25D366',fontWeight:600,textDecoration:'none'}}
+    >
+      💬 {u.telephone}
+    </a>
+  ) : "—"}
+</td>
                         <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString("fr-FR"):"-"}</td>
                         <td>
                           <div style={{display:"flex",gap:3}}>
