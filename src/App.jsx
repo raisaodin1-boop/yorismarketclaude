@@ -1145,7 +1145,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
     borderRadius: 8
   }}
   onClick={() => {
-    const url = `https://wa.me/696565654?text=${encodeURIComponent(
+    const url = `;https://wa.me/696565654?text=${encodeURIComponent(
       `Bonjour ${l.client} ! Je suis votre livreur`
     )}`;
     window.open(url, "_blank");
