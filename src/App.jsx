@@ -2668,19 +2668,19 @@ export default function Yorix() {
       const uid = data.user?.id;
       if (!uid) throw new Error("Erreur création compte.");
 
-      const { error: profileError } = await supabase.from("users").insert({
-        uid,
-        nom:          authForm.nom,
-        email:        authForm.email,
-        telephone:    authForm.tel,
-        role:         selectedRole,   // ← rôle EXACTEMENT choisi par l'utilisateur
-        langue:       "fr",
-        actif:        true,
-        verifie:      false,
-        note:         0,
-        nombre_avis:  0,
-        total_commandes: 0,
-      });
+      const { error: profileError } = await supabase.from("profiles").upsert({
+  id:         uid,
+  nom:        authForm.nom,
+  email:      authForm.email,
+  telephone:  authForm.tel,
+  role:       selectedRole,
+  langue:     "fr",
+  actif:      true,
+  verifie:    false,
+  note:       0,
+  nombre_avis: 0,
+  total_commandes: 0,
+});
       if (profileError) console.error("Profile insert error:", profileError);
 
       await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).then(r => r.error && console.error(r.error));
