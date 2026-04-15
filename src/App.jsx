@@ -1653,7 +1653,7 @@ const supprimerProduit = async (id, nom) => {
   setProduits(p => p.filter(x => x.id !== id));
   setProduitsFull(p => p.filter(x => x.id !== id));
 
-  showToast(`:Produit; ";{nom}" supprimé`);
+  showToast(`:Produit; ";{nom}" ;supprimé`);
 };
 
   const toggleActifProduit = async (id, actif) => {
