@@ -1147,7 +1147,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
   onClick={() => {
     const url = `;https://wa.me/696565654?text=${encodeURIComponent(
       `Bonjour ${l.client} ! Je suis votre livreur`
-    )}`;
+    }`;
     window.open(url, "_blank");
   }}
 >
