@@ -1216,6 +1216,40 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
   ]);
   const [serviceForm, setServiceForm] = useState({ nom:"", categorie:"", description:"", prix:"", ville:"", disponible:true });
   const [serviceSaved, setServiceSaved] = useState(false);
+  const [mesServices, setMesServices] = useState([]);
+const [editingService, setEditingService] = useState(null);
+
+// Charger MES services depuis Supabase
+useEffect(() => {
+  if (!user?.id) return;
+  const loadMesServices = async () => {
+    const { data, error } = await supabase
+      .from("services")
+      .select("*")
+      .eq("provider_id", user.id)
+      .order("created_at", { ascending: false });
+    if (!error) setMesServices(data || []);
+  };
+  loadMesServices();
+}, [user?.id, servicesSaved]);
+
+// Supprimer un service
+const supprimerService = async (id) => {
+  if (!confirm("Supprimer ce service ?")) return;
+  const { error } = await supabase.from("services").delete().eq("id", id);
+  if (error) { alert("Erreur : " + error.message); return; }
+  setMesServices(prev => prev.filter(s => s.id !== id));
+};
+
+// Toggle disponibilité
+const toggleDispo = async (id, current) => {
+  const { error } = await supabase
+    .from("services")
+    .update({ disponible: !current })
+    .eq("id", id);
+  if (error) { alert("Erreur : " + error.message); return; }
+  setMesServices(prev => prev.map(s => s.id === id ? {...s, disponible: !current} : s));
+};
 
   const repondre = (id, accepte) => setDemandes(prev => prev.map(d => d.id === id ? {...d, status: accepte ? "accepted" : "refused"} : d));
 
@@ -1303,6 +1337,66 @@ function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
     </>
   );
 }
+{dashTab === "mesServices" && (
+  <>
+    <div className="dash-page-title">📋 Mes services ({mesServices.length})</div>
+    
+    {mesServices.length === 0 ? (
+      <div style={{textAlign:"center", padding:40, color:"var(--gray)"}}>
+        Aucun service publié.<br/>
+        Clique sur "Ajouter service" pour commencer.
+      </div>
+    ) : (
+      <div style={{display:"grid", gap:12}}>
+        {mesServices.map(s => (
+          <div key={s.id} className="order-card" style={{
+            display:"flex", flexDirection:"column", gap:10,
+            opacity: s.disponible ? 1 : 0.5
+          }}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"start", gap:10, flexWrap:"wrap"}}>
+              <div style={{flex:1, minWidth:200}}>
+                <div style={{fontWeight:700, fontSize:"1.05rem"}}>{s.nom}</div>
+                <div style={{fontSize:".82rem", color:"var(--gray)", marginTop:4}}>
+                  📂 {s.categorie || "—"} · 📍 {s.ville || "—"}
+                </div>
+                {s.description && (
+                  <div style={{fontSize:".85rem", marginTop:6, color:"var(--ink)"}}>
+                    {s.description}
+                  </div>
+                )}
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontWeight:800, fontSize:"1.1rem", color:"var(--green)"}}>
+                  {Number(s.prix).toLocaleString()} F
+                </div>
+                <div style={{fontSize:".7rem", color:s.disponible?"var(--green)":"var(--red)", marginTop:4}}>
+                  {s.disponible ? "✅ Disponible" : "⛔ Indisponible"}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+              <button
+                className="btn-ghost"
+                style={{flex:1, fontSize:".82rem", padding:"8px"}}
+                onClick={() => toggleDispo(s.id, s.disponible)}
+              >
+                {s.disponible ? "⏸️ Désactiver" : "▶️ Activer"}
+              </button>
+              <button
+                className="btn-ghost"
+                style={{flex:1, fontSize:".82rem", padding:"8px", color:"var(--red)"}}
+                onClick={() => supprimerService(s.id)}
+              >
+                🗑️ Supprimer
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </>
+)}
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
