@@ -725,7 +725,6 @@ function FormulaireProduit({ user, userData, onSaved }) {
   );
 }
 
-/```txt
 function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
   const [mesProduits, setMesProduits] = useState([]);
