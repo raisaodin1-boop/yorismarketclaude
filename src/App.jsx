@@ -725,24 +725,29 @@ function FormulaireProduit({ user, userData, onSaved }) {
   );
 }
 
+ // ================= SELLER DASHBOARD =================
 function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
   const [mesProduits, setMesProduits] = useState([]);
   const [mesCommandes, setMesCommandes] = useState([]);
-  const [wallet, setWallet] = useState({ solde:0, total_gagne:0 });
-
+  const [wallet, setWallet] = useState({ solde: 0, total_gagne: 0 });
   const [loadingData, setLoadingData] = useState(true);
   const [loadingAction, setLoadingAction] = useState(false);
+
+  // État local pour édition des produits (évite appel API à chaque frappe)
+  const [editingProducts, setEditingProducts] = useState({});
+
+  // Confirmations inline (évite window.confirm bloquant sur mobile)
+  const [pendingConfirm, setPendingConfirm] = useState(null); // { type, id, field, value, label }
 
   // ================= LOAD DATA =================
   const loadAll = async () => {
     if (!user?.id) return;
-
     setLoadingData(true);
 
     const [prodsRes, cmdsRes, walRes] = await Promise.all([
-      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
-      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending:false }),
+      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }),
       supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle()
     ]);
 
@@ -750,25 +755,44 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     if (cmdsRes.error) console.error(cmdsRes.error);
     if (walRes.error) console.error(walRes.error);
 
-    setMesProduits(prodsRes.data || []);
+    const prods = prodsRes.data || [];
+    setMesProduits(prods);
     setMesCommandes(cmdsRes.data || []);
     if (walRes.data) setWallet(walRes.data);
+
+    // Initialise l'état local d'édition avec les valeurs actuelles
+    const initEdits = {};
+    prods.forEach(p => {
+      initEdits[p.id] = { prix: p.prix, stock: p.stock || 0, description: p.description || "" };
+    });
+    setEditingProducts(initEdits);
 
     setLoadingData(false);
   };
 
-  useEffect(() => {
-    loadAll();
-  }, [user?.id]);
+  useEffect(() => { loadAll(); }, [user?.id]);
 
   // ================= PRODUITS =================
 
-  const updateProduct = async (id, updates) => {
+  const handleEditChange = (id, field, value) => {
+    setEditingProducts(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value }
+    }));
+  };
+
+  const saveProduct = async (id) => {
+    const updates = editingProducts[id];
+    if (!updates) return;
     setLoadingAction(true);
 
     const { error } = await supabase
       .from("products")
-      .update(updates)
+      .update({
+        prix: Number(updates.prix),
+        stock: Number(updates.stock),
+        description: updates.description
+      })
       .eq("id", id);
 
     if (error) {
@@ -781,19 +805,32 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     setMesProduits(prev =>
       prev.map(p => p.id === id ? { ...p, ...updates } : p)
     );
+    setLoadingAction(false);
+  };
 
+  const toggleProductActif = async (id, currentActif) => {
+    setLoadingAction(true);
+    const { error } = await supabase
+      .from("products")
+      .update({ actif: !currentActif })
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      alert("Erreur mise à jour");
+      setLoadingAction(false);
+      return;
+    }
+
+    setMesProduits(prev =>
+      prev.map(p => p.id === id ? { ...p, actif: !currentActif } : p)
+    );
     setLoadingAction(false);
   };
 
   const deleteProduct = async (id) => {
-    if (!window.confirm("Supprimer ce produit ?")) return;
-
     setLoadingAction(true);
-
-    const { error } = await supabase
-      .from("products")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
 
     if (error) {
       console.error(error);
@@ -803,15 +840,18 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     }
 
     setMesProduits(prev => prev.filter(p => p.id !== id));
-
+    setEditingProducts(prev => {
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
+    setPendingConfirm(null);
     setLoadingAction(false);
   };
 
   // ================= COMMANDES =================
 
   const updateOrderStatus = async (orderId, field, value) => {
-    if (!window.confirm("Confirmer ?")) return;
-
     const { error } = await supabase
       .from("orders")
       .update({ [field]: value })
@@ -820,46 +860,98 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     if (error) {
       console.error(error);
       alert("Erreur mise à jour");
+      setPendingConfirm(null);
       return;
     }
 
     setMesCommandes(prev =>
       prev.map(c => c.id === orderId ? { ...c, [field]: value } : c)
     );
+    setPendingConfirm(null);
+  };
+
+  const handleConfirm = () => {
+    if (!pendingConfirm) return;
+    const { type, id, field, value } = pendingConfirm;
+    if (type === "order") updateOrderStatus(id, field, value);
+    if (type === "delete") deleteProduct(id);
   };
 
   // ================= UTILS =================
 
-  const revenusTotal = mesCommandes.reduce((total, c) => {
-    return c.status === "delivered"
-      ? total + (Number(c.montant_vendeur) || 0)
-      : total;
-  }, 0);
+  const revenusTotal = mesCommandes.reduce((total, c) =>
+    c.status === "delivered" ? total + (Number(c.montant_vendeur) || 0) : total
+  , 0);
 
   const commandesActives = mesCommandes.filter(c =>
-    ["pending","paid","shipped"].includes(c.status)
+    ["pending", "paid", "shipped"].includes(c.status)
   ).length;
 
   const formatPhone = (phone) => {
-    const clean = phone?.replace(/[^0-9]/g, "");
-    return clean?.startsWith("237") ? clean : `237${clean}`;
+    const clean = phone?.replace(/[^0-9]/g, "") || "";
+    return clean.startsWith("237") ? clean : `237${clean}`;
+  };
+
+  const STATUS_LABELS = {
+    pending: "En attente",
+    paid: "Payée",
+    shipped: "Expédiée",
+    delivered: "Livrée",
+    cancelled: "Annulée"
+  };
+
+  const STATUS_COLORS = {
+    pending: "#888",
+    paid: "#2563eb",
+    shipped: "#d97706",
+    delivered: "#16a34a",
+    cancelled: "#dc2626"
   };
 
   if (loadingData) return <div className="loading">Chargement...</div>;
 
   return (
     <>
+      {/* ===== CONFIRMATION INLINE ===== */}
+      {pendingConfirm && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.4)", zIndex: 1000,
+          display: "flex", alignItems: "center", justifyContent: "center"
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 12, padding: 24,
+            maxWidth: 320, width: "90%", textAlign: "center"
+          }}>
+            <p style={{ marginBottom: 16 }}>{pendingConfirm.label}</p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              <button
+                onClick={() => setPendingConfirm(null)}
+                style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid #ccc", cursor: "pointer" }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={loadingAction}
+                style={{ padding: "8px 20px", borderRadius: 8, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================= OVERVIEW ================= */}
       {dashTab === "overview" && (
         <>
           <div className="dash-page-title">Bonjour {userData?.nom}</div>
-
           <div className="dash-stats">
             <div>Produits: {mesProduits.length}</div>
-            <div>Commandes: {commandesActives}</div>
-            <div>Livrées: {mesCommandes.filter(c=>c.status==="delivered").length}</div>
-            <div>Revenus: {revenusTotal.toLocaleString()} FCFA</div>
+            <div>Commandes actives: {commandesActives}</div>
+            <div>Livrées: {mesCommandes.filter(c => c.status === "delivered").length}</div>
+            <div>Revenus: {revenusTotal.toLocaleString("fr-FR")} FCFA</div>
           </div>
         </>
       )}
@@ -869,70 +961,145 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
         <>
           <h2>Mes produits ({mesProduits.length})</h2>
 
-          {mesProduits.map(p => (
-            <div key={p.id} className="prod-card">
+          {mesProduits.map(p => {
+            const edit = editingProducts[p.id] || {};
+            const changed =
+              String(edit.prix) !== String(p.prix) ||
+              String(edit.stock) !== String(p.stock || 0) ||
+              edit.description !== (p.description || "");
 
-              <div>{p.name_fr}</div>
+            return (
+              <div
+                key={p.id}
+                className="prod-card"
+                style={{ opacity: p.actif ? 1 : 0.5, transition: "opacity 0.2s" }}
+              >
+                <div style={{ fontWeight: 500, marginBottom: 8 }}>{p.name_fr}</div>
 
-              <input
-                value={p.prix}
-                onChange={(e) => updateProduct(p.id, { prix: Number(e.target.value) })}
-              />
+                <label style={{ fontSize: 12, color: "#666" }}>Prix (FCFA)</label>
+                <input
+                  type="number"
+                  value={edit.prix ?? p.prix}
+                  onChange={(e) => handleEditChange(p.id, "prix", e.target.value)}
+                />
 
-              <input
-                value={p.stock || 0}
-                onChange={(e) => updateProduct(p.id, { stock: Number(e.target.value) })}
-              />
+                <label style={{ fontSize: 12, color: "#666" }}>Stock</label>
+                <input
+                  type="number"
+                  value={edit.stock ?? p.stock ?? 0}
+                  onChange={(e) => handleEditChange(p.id, "stock", e.target.value)}
+                />
 
-              <textarea
-                value={p.description || ""}
-                onChange={(e) => updateProduct(p.id, { description: e.target.value })}
-              />
+                <label style={{ fontSize: 12, color: "#666" }}>Description</label>
+                <textarea
+                  value={edit.description ?? p.description ?? ""}
+                  onChange={(e) => handleEditChange(p.id, "description", e.target.value)}
+                />
 
-              <button onClick={() => updateProduct(p.id, { actif: !p.actif })}>
-                {p.actif ? "Désactiver" : "Activer"}
-              </button>
+                <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  {changed && (
+                    <button
+                      onClick={() => saveProduct(p.id)}
+                      disabled={loadingAction}
+                      style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}
+                    >
+                      Sauvegarder
+                    </button>
+                  )}
 
-              <button onClick={() => deleteProduct(p.id)}>
-                Supprimer
-              </button>
+                  <button
+                    onClick={() => toggleProductActif(p.id, p.actif)}
+                    disabled={loadingAction}
+                  >
+                    {p.actif ? "Désactiver" : "Activer"}
+                  </button>
 
-            </div>
-          ))}
+                  <button
+                    onClick={() => setPendingConfirm({
+                      type: "delete",
+                      id: p.id,
+                      label: `Supprimer "${p.name_fr}" ?`
+                    })}
+                    disabled={loadingAction}
+                    style={{ color: "#dc2626" }}
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </>
       )}
 
       {/* ================= COMMANDES ================= */}
       {dashTab === "commandes" && (
         <>
+          <h2>Commandes ({mesCommandes.length})</h2>
+
           {mesCommandes.map(c => (
-            <div key={c.id}>
+            <div key={c.id} style={{ marginBottom: 16, padding: 12, border: "1px solid #e5e7eb", borderRadius: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <span style={{ fontWeight: 500 }}>{c.client_nom}</span>
+                <span style={{
+                  fontSize: 12,
+                  padding: "2px 10px",
+                  borderRadius: 20,
+                  background: STATUS_COLORS[c.status] + "22",
+                  color: STATUS_COLORS[c.status]
+                }}>
+                  {STATUS_LABELS[c.status] || c.status}
+                </span>
+              </div>
 
-              <div>{c.client_nom}</div>
+              {c.montant_vendeur && (
+                <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+                  {Number(c.montant_vendeur).toLocaleString("fr-FR")} FCFA
+                </div>
+              )}
 
-              <button onClick={() => updateOrderStatus(c.id,"status","paid")}>
-                Payée
-              </button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {/* Boutons de transition de statut (seulement si cohérent) */}
+                {c.status === "pending" && (
+                  <button
+                    onClick={() => setPendingConfirm({
+                      type: "order", id: c.id, field: "status", value: "paid",
+                      label: "Marquer cette commande comme payée ?"
+                    })}
+                  >
+                    Marquer payée
+                  </button>
+                )}
+                {c.status === "paid" && (
+                  <button
+                    onClick={() => setPendingConfirm({
+                      type: "order", id: c.id, field: "status", value: "shipped",
+                      label: "Marquer cette commande comme expédiée ?"
+                    })}
+                  >
+                    Marquer expédiée
+                  </button>
+                )}
+                {c.status === "shipped" && (
+                  <button
+                    onClick={() => setPendingConfirm({
+                      type: "order", id: c.id, field: "status", value: "delivered",
+                      label: "Marquer cette commande comme livrée ?"
+                    })}
+                  >
+                    Marquer livrée
+                  </button>
+                )}
 
-              <button onClick={() => updateOrderStatus(c.id,"status","shipped")}>
-                Expédiée
-              </button>
-
-              <button onClick={() => updateOrderStatus(c.id,"status","delivered")}>
-                Livrée
-              </button>
-
-              <button
-                onClick={() =>
-                  window.open(
-                    `https://wa.me/${formatPhone(c.telephone)}`,
-                    "_blank"
-                  )
-                }
-              >
-                WhatsApp
-              </button>
-
+                {c.telephone && (
+                  <button
+                    onClick={() => window.open(`https://wa.me/${formatPhone(c.telephone)}`, "_blank")}
+                    style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}
+                  >
+                    WhatsApp
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </>
@@ -941,15 +1108,26 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       {/* ================= WALLET ================= */}
       {dashTab === "wallet" && (
         <>
-          <div>Solde: {wallet.solde} FCFA</div>
-          <div>Total gagné: {wallet.total_gagne} FCFA</div>
+          <h2>Mon portefeuille</h2>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ padding: 20, background: "#f0fdf4", borderRadius: 12, flex: 1 }}>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Solde disponible</div>
+              <div style={{ fontSize: 24, fontWeight: 600, color: "#16a34a" }}>
+                {Number(wallet.solde).toLocaleString("fr-FR")} FCFA
+              </div>
+            </div>
+            <div style={{ padding: 20, background: "#eff6ff", borderRadius: 12, flex: 1 }}>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Total gagné</div>
+              <div style={{ fontSize: 24, fontWeight: 600, color: "#2563eb" }}>
+                {Number(wallet.total_gagne).toLocaleString("fr-FR")} FCFA
+              </div>
+            </div>
+          </div>
         </>
       )}
-
     </>
   );
 }
-```
 
 // ─────────────────────────────────────────────────────────────
 // DASHBOARD BUYER
