@@ -3655,23 +3655,43 @@ useEffect(() => {
   };
 
   // ── PANIER ──
-  const addToCart = useCallback((p) => {
+ const addToCart = useCallback((p) => {
+    if (!p?.id) {
+      console.warn("⚠️ Produit sans ID, ignoré:", p);
+      return;
+    }
+
+    // Parser image_urls proprement (peut être string JSON ou array)
+    let imgArr = [];
+    if (Array.isArray(p.image_urls)) {
+      imgArr = p.image_urls;
+    } else if (typeof p.image_urls === "string") {
+      try { imgArr = JSON.parse(p.image_urls); } catch { imgArr = []; }
+    }
+
+    // Image finale : image principale d'abord, puis première du tableau
+    const img = (p.image && p.image.startsWith("http"))
+      ? p.image
+      : (imgArr[0] && imgArr[0].startsWith("http") ? imgArr[0] : null);
+
     setCartItems(prev => {
       const ex = prev.find(i => i.id === p.id);
-      if (ex) return prev.map(i => i.id === p.id ? {...i, qty:i.qty+1} : i);
-      const img = p.image_urls?.[0] || p.image || null;
-      return [...prev, { 
-  id: p.id, 
-  name: p.name_fr, 
-  image: img, 
-  prix: p.prix, 
-  qty: 1, 
-  vendeur_id: p.vendeur_id,
-  vendeur_nom: p.vendeur_nom || "",   // ← ajouter
-  categorie: p.categorie || "",        // ← ajouter
-  ville: p.ville || "",                // ← ajouter
-  stock: p.stock || null               // ← ajouter
-}];
+      if (ex) return prev.map(i => i.id === p.id ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, {
+        id:          p.id,
+        name:        p.name_fr || p.name || "Produit",
+        image:       img,
+        prix:        p.prix || 0,
+        qty:         1,
+        vendeur_id:  p.vendeur_id || null,
+        vendeur_nom: p.vendeur_nom || "",
+        categorie:   p.categorie || "",
+        ville:       p.ville || "",
+        stock:       p.stock || null,
+      }];
+    });
+    setCartOpen(true);
+  }, []);
     });
     setCartOpen(true);
   }, []);
