@@ -1203,47 +1203,6 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
       )} 
 
 
-{showActions && l.status === "in_progress" && (
-  <div style={{ display: "flex", gap: 8 }}>
-    <button
-      style={{
-        flex: 1, background: "#1565c0", color: "#fff",
-        border: "none", padding: 9, borderRadius: 8, cursor: "pointer"
-      }}
-      onClick={() => {
-        const url = `https://wa.me/${formatPhone(l.telephone || YORIX_WA_NUMBER)}?text=${encodeURIComponent(
-          `Bonjour ${l.client} ! Je suis votre livreur Yorix 🏍️`
-        )}`;
-        window.open(url, "_blank");
-      }}
-    >
-      📱 Contacter
-    </button>
-    <button
-      style={{
-        flex: 1, background: "var(--green)", color: "#fff",
-        border: "none", padding: 9, borderRadius: 8, cursor: "pointer"
-      }}
-      onClick={() => actionLivraison(l.id, "delivered")}
-    >
-      ✅ Confirmer livraison
-    </button>
-  </div>
-)}
-jsx// ══════════════════════════════════════════════
-// CORRECTION 5 — ProviderDashboard
-// setServicesSaved n'existe pas → setServiceSaved
-// ══════════════════════════════════════════════
-
-// AVANT :
-setServicesSaved(true);          // ← typo, plantage silencieux
-setTimeout(() => setServicesSaved(false), 3000);
-
-// APRÈS :
-setServiceSaved(true);
-setTimeout(() => setServiceSaved(false), 3000);
-
-
 const saveService = async () => {
   if (!serviceForm.nom || !serviceForm.prix) {
     alert("Nom et prix obligatoires !");
@@ -1277,9 +1236,7 @@ const saveService = async () => {
   setTimeout(() => setServiceSaved(false), 3000);
 };
 
-Résumé des 5 corrections :
-#Fichier/ComposantBugFix1Navbar searchproduit → produits, setProduit inexistantUtiliser l'état produits existant2useEffect produits.eq("actif", true) bloque les null.neq("actif", false)3BuyerDashboardTemplate literals cassés (; au lieu de $)Corriger les backticks4DeliveryDashboardDouble <button> ouvert + backtick casséJSX valide5ProviderDashboardsetServicesSaved (typo)setServiceSaved + refresh après insert
-L'erreur 500 visible dans ta console vient probablement d'une table ou colonne manquante dans Supabase — vérifie que les tables products, orders, wallets, services existent avec les bonnes colonnes.
+
                   </div>
                 </div>
               ))
