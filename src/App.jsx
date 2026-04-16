@@ -1149,7 +1149,12 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
               { icon:"📦", val:mesCommandes.length,  lbl:"Commandes" },
               { icon:"❤️", val:wishlist.size,         lbl:"Favoris" },
               { icon:"🛒", val:totalQty,              lbl:"Panier" },
-              { icon:"🌟", val:`;{loyaltyPts} pts`,   lbl:"Points fidélité" },
+              { icon:"🌟", val:`${loyaltyPts} pts`, lbl:"Points fidélité" }
+<span className={`status-badge s-${c.status}`}>{c.status}</span>
+<span className={`status-badge s-${c.livraison_status}`}>
+  {DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}
+</span>
+
             ].map(s => (
               <div key={s.lbl} className="dstat">
                 <div className="dstat-icon">{s.icon}</div>
@@ -1191,8 +1196,109 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
                     <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
                   </div>
                   <div className="oc-actions">
-                    <span className={`; s-$;c.status`}>{c.;}</span>
-                    <span className={`; s-$;c.escrow_status`}>{ESCROW_STATUSES[c.escrow_status] || c.escrow_status}</span>
+                   <span className={`status-badge s-${c.status}`}>{c.status}</span>
+<span className={`status-badge s-${c.escrow_status}`}>
+  {ESCROW_STATUSES[c.escrow_status] || c.escrow_status}
+</span>
+                    </div>
+                </div>
+              ))
+          }
+        </>
+      )} 
+
+jsx// ══════════════════════════════════════════════
+// CORRECTION 4 — DeliveryDashboard
+// JSX cassé dans le bouton "Contacter"
+// ══════════════════════════════════════════════
+
+// AVANT (bugué — double balise ouvrante <button) :
+{showActions && l.status === "in_progress" && (
+  <div style={{ display: "flex", gap: 8 }}>
+    <button style={{...}}
+      <button   // ← DOUBLE OUVERTURE = crash JSX
+        onClick={() => {
+          const url = `;https://wa.me/...`  // ← backtick cassé
+        }}
+      >
+jsx// APRÈS (corrigé) :
+{showActions && l.status === "in_progress" && (
+  <div style={{ display: "flex", gap: 8 }}>
+    <button
+      style={{
+        flex: 1, background: "#1565c0", color: "#fff",
+        border: "none", padding: 9, borderRadius: 8, cursor: "pointer"
+      }}
+      onClick={() => {
+        const url = `https://wa.me/${formatPhone(l.telephone || YORIX_WA_NUMBER)}?text=${encodeURIComponent(
+          `Bonjour ${l.client} ! Je suis votre livreur Yorix 🏍️`
+        )}`;
+        window.open(url, "_blank");
+      }}
+    >
+      📱 Contacter
+    </button>
+    <button
+      style={{
+        flex: 1, background: "var(--green)", color: "#fff",
+        border: "none", padding: 9, borderRadius: 8, cursor: "pointer"
+      }}
+      onClick={() => actionLivraison(l.id, "delivered")}
+    >
+      ✅ Confirmer livraison
+    </button>
+  </div>
+)}
+jsx// ══════════════════════════════════════════════
+// CORRECTION 5 — ProviderDashboard
+// setServicesSaved n'existe pas → setServiceSaved
+// ══════════════════════════════════════════════
+
+// AVANT :
+setServicesSaved(true);          // ← typo, plantage silencieux
+setTimeout(() => setServicesSaved(false), 3000);
+
+// APRÈS :
+setServiceSaved(true);
+setTimeout(() => setServiceSaved(false), 3000);
+
+// ET ajouter le rechargement après insertion :
+const saveService = async () => {
+  if (!serviceForm.nom || !serviceForm.prix) {
+    alert("Nom et prix obligatoires !");
+    return;
+  }
+
+  const { error } = await supabase.from("services").insert({
+    ...serviceForm,
+    prix: Number(serviceForm.prix),
+    provider_id: user.id,
+    provider_nom: userData?.nom,
+    actif: true,
+  });
+
+  if (error) {
+    console.error("Erreur publication service:", error);
+    alert("Erreur : " + error.message);
+    return;
+  }
+
+  // Recharger mes services après insertion
+  const { data: refreshed } = await supabase
+    .from("services")
+    .select("*")
+    .eq("provider_id", user.id)
+    .order("created_at", { ascending: false });
+  if (refreshed) setMesServices(refreshed);
+
+  setServiceForm({ nom: "", categorie: "", description: "", prix: "", ville: "", disponible: true });
+  setServiceSaved(true);
+  setTimeout(() => setServiceSaved(false), 3000);
+};
+
+Résumé des 5 corrections :
+#Fichier/ComposantBugFix1Navbar searchproduit → produits, setProduit inexistantUtiliser l'état produits existant2useEffect produits.eq("actif", true) bloque les null.neq("actif", false)3BuyerDashboardTemplate literals cassés (; au lieu de $)Corriger les backticks4DeliveryDashboardDouble <button> ouvert + backtick casséJSX valide5ProviderDashboardsetServicesSaved (typo)setServiceSaved + refresh après insert
+L'erreur 500 visible dans ta console vient probablement d'une table ou colonne manquante dans Supabase — vérifie que les tables products, orders, wallets, services existent avec les bonnes colonnes.
                   </div>
                 </div>
               ))
@@ -3342,59 +3448,60 @@ useEffect(() => {
             onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
             autoComplete="off"
           />
-          {search.trim().length >= 2 && (
-            <div style={{
-              position:"absolute",
-              top:"100%",
-              left:0,
-              right:0,
-              background:"var(--bg)",
-              border:"1px solid var(--border)",
-              borderRadius:"10px",
-              boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
-              zIndex:9999,
-              maxHeight:"320px",
-              overflowY:"auto",
-              marginTop:"4px"
-            }}>
-              {produit.filter(p=>
-                p.name?.toLowerCase().includes(search.toLowerCase())
-              ).slice(0,8).map(p=>(
-                <div
-                  key={p.id}
-                  onClick={()=>{
-                    setProduit(p)
-                    goPage("produit")
-                    setSearch("")
-                  }}
-                  style={{
-                    display:"flex",
-                    alignItems:"center",
-                    gap:"10px",
-                    padding:"10px 14px",
-                    cursor:"pointer",
-                    borderBottom:"1px solid var(--border)",
-                    fontSize:"13px"
-                  }}
-                  onMouseEnter={e=>e.currentTarget.style.background="var(--bg2)"}
-                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                >
-                  {p.image&&<img src={p.image} style={{width:36,height:36,objectFit:"cover",borderRadius:6}} alt=""/>}
-                  <div>
-                    <div style={{fontWeight:500}}>{p.name}</div>
-                    <div style={{color:"var(--gray)",fontSize:"12px"}}>{p.prix?.toLocaleString()} FCFA</div>
-                  </div>
-                </div>
-              ))}
-              {produit.filter(p=>
-                p.name?.toLowerCase().includes(search.toLowerCase())
-              ).length===0&&(
-                <div style={{padding:"14px",color:"var(--gray)",fontSize:"13px",textAlign:"center"}}>
-                  Aucun résultat pour "{search}"
-                </div>
-              )}
-            </div>
+         {search.trim().length >= 2 && (
+  <div style={{
+    position: "absolute", top: "100%", left: 0, right: 0,
+    background: "var(--bg)", border: "1px solid var(--border)",
+    borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+    zIndex: 9999, maxHeight: 320, overflowY: "auto", marginTop: 4
+  }}>
+    {produits
+      .filter(p =>
+        (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
+        (p.description_fr || "").toLowerCase().includes(search.toLowerCase())
+      )
+      .slice(0, 8)
+      .map(p => (
+        <div
+          key={p.id}
+          onClick={() => {
+            setSearch("");
+            goPage("produits");
+          }}
+          style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 14px", cursor: "pointer",
+            borderBottom: "1px solid var(--border)", fontSize: 13
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
+          {p.image && (
+            <img
+              src={p.image}
+              style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 6 }}
+              alt=""
+              onError={e => e.currentTarget.style.display = "none"}
+            />
           )}
+          <div>
+            <div style={{ fontWeight: 500 }}>{p.name_fr}</div>
+            <div style={{ color: "var(--gray)", fontSize: 12 }}>
+              {p.prix?.toLocaleString()} FCFA
+            </div>
+          </div>
+        </div>
+      ))
+    }
+    {produits.filter(p =>
+      (p.name_fr || "").toLowerCase().includes(search.toLowerCase())
+    ).length === 0 && (
+      <div style={{ padding: 14, color: "var(--gray)", fontSize: 13, textAlign: "center" }}>
+        Aucun résultat pour "{search}"
+      </div>
+    )}
+  </div>
+)}
           <button onClick={()=>goPage("produits")}>🔍</button>
         </div>
 
