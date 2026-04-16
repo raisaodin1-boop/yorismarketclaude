@@ -357,7 +357,6 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
