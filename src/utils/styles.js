@@ -1028,5 +1028,37 @@ input, select, textarea {
     display: inline-flex !important;
     align-items: center !important;
   }
+  
+  /* ═══ FIX PANIER YORIX — Override final ═══ */
+.cart-drawer{display:flex !important;flex-direction:column !important;height:100vh !important;max-height:100vh !important;overflow:hidden !important;}
+.cart-header,.cart-trust-bar,.cart-footer{flex-shrink:0 !important;}
+.cart-items{flex:1 1 auto !important;overflow-y:auto !important;overflow-x:hidden !important;min-height:0 !important;padding:12px 16px !important;}
+.cart-items::-webkit-scrollbar{width:6px;}
+.cart-items::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.cart-items::-webkit-scrollbar-track{background:transparent;}
+.cart-footer{border-top:1px solid var(--border);background:var(--surface);padding:14px 16px !important;max-height:55vh;overflow-y:auto;}
+
+.cart-item{display:flex !important;gap:12px !important;padding:12px !important;background:var(--surface) !important;border:1px solid var(--border) !important;border-radius:12px !important;margin-bottom:10px !important;position:relative;}
+.cart-item:hover{border-color:var(--green-light) !important;}
+.ci-img{width:70px !important;height:70px !important;flex-shrink:0 !important;border-radius:10px !important;overflow:hidden !important;background:var(--surface2) !important;display:flex !important;align-items:center !important;justify-content:center !important;}
+.ci-img img{width:100% !important;height:100% !important;object-fit:cover !important;}
+.ci-info{flex:1 !important;min-width:0 !important;display:flex !important;flex-direction:column !important;gap:3px !important;}
+.ci-name{font-family:'Syne',sans-serif !important;font-weight:700 !important;font-size:.88rem !important;color:var(--ink) !important;line-height:1.3 !important;overflow:hidden !important;text-overflow:ellipsis !important;display:-webkit-box !important;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical !important;padding-right:24px !important;}
+.ci-vendeur{font-size:.68rem !important;color:var(--gray) !important;}
+.ci-meta{display:flex !important;gap:4px !important;flex-wrap:wrap !important;margin-top:2px !important;}
+.ci-tag{font-size:.6rem !important;padding:2px 7px !important;border-radius:20px !important;background:var(--surface2) !important;color:var(--gray) !important;font-weight:600 !important;}
+.ci-tag-stock-ok{background:var(--green-pale) !important;color:var(--green) !important;}
+.ci-tag-stock-low{background:#fff3e0 !important;color:#d97706 !important;}
+.ci-tag-stock-out{background:#ffebee !important;color:#ce1126 !important;}
+.ci-bottom{display:flex !important;justify-content:space-between !important;align-items:center !important;margin-top:6px !important;gap:8px !important;}
+.ci-price-block{display:flex !important;flex-direction:column !important;min-width:0 !important;}
+.ci-unit-price{font-size:.64rem !important;color:var(--gray) !important;}
+.ci-total-price{font-family:'Syne',sans-serif !important;font-weight:800 !important;font-size:.95rem !important;color:var(--green) !important;}
+.ci-qty{display:flex !important;align-items:center !important;gap:4px !important;background:var(--surface2) !important;border-radius:8px !important;padding:2px !important;flex-shrink:0 !important;}
+.qty-btn{width:26px !important;height:26px !important;border:none !important;background:var(--surface) !important;border-radius:6px !important;cursor:pointer !important;font-weight:700 !important;font-size:.9rem !important;color:var(--ink) !important;display:flex !important;align-items:center !important;justify-content:center !important;}
+.qty-btn:hover{background:var(--green) !important;color:#fff !important;}
+.qty-val{min-width:22px !important;text-align:center !important;font-weight:700 !important;font-size:.82rem !important;color:var(--ink) !important;}
+.ci-del{position:absolute !important;top:8px !important;right:8px !important;width:26px !important;height:26px !important;border:none !important;background:transparent !important;color:var(--gray) !important;cursor:pointer !important;border-radius:6px !important;font-size:.85rem !important;display:flex !important;align-items:center !important;justify-content:center !important;}
+.ci-del:hover{background:#ffebee !important;color:#ce1126 !important;}
 }
 `;
