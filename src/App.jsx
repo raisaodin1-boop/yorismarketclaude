@@ -3008,7 +3008,7 @@ useEffect(() => {
   useEffect(() => {
     setProduitsLoading(true);
     const load = async () => {
-      let q = supabase.from("products").select("*").neq("actif", false).order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
+      let q = supabase.from("products").select("*").or("actif.eq.true,actif.is.null").order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
       if (filterCat) q = q.eq("categorie", filterCat);
       const { data } = await q;
       setProduits(data || []);
