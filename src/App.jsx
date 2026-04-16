@@ -3550,8 +3550,7 @@ useEffect(() => {
   // ── PANIER ──
   const addToCart = useCallback((p) => {
     setCartItems(prev => {
-      if (!p?.id) { console.warn("Produit sans ID:", p); return prev; }
-        const ex = prev.find(i => i.id === p.id);
+      const ex = prev.find(i => i.id === p.id);
       if (ex) return prev.map(i => i.id === p.id ? {...i, qty:i.qty+1} : i);
       const img = p.image_urls?.[0] || p.image || null;
       return [...prev, { 
