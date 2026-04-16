@@ -3390,7 +3390,19 @@ useEffect(() => {
 
   // Panier
   const [cartOpen, setCartOpen]   = useState(false);
-  const [cartItems, setCartItems] = useState([]);
+ const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem("yorix_cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  // Sauvegarde automatique du panier à chaque modification
+  useEffect(() => {
+    try {
+      localStorage.setItem("yorix_cart", JSON.stringify(cartItems));
+    } catch (e) { console.warn("Cart save failed:", e); }
+  }, [cartItems]);
 
   // Notifs
   const [notifOpen, setNotifOpen] = useState(false);
