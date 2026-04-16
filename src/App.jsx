@@ -1202,9 +1202,8 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
         </>
       )} 
 
-
 const saveService = async () => {
-  if (!serviceForm.nom || !serviceForm.prix) {
+   (!serviceForm.nom || !serviceForm.prix) {
     alert("Nom et prix obligatoires !");
     return;
   }
