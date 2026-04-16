@@ -1,4 +1,4 @@
-import { supabase, COMMISSION_RATE, CLOUD_NAME, UPLOAD_PRESET, YORIX_WA_NUMBER } from "../lib/supabase";
+import { supabase, COMMISSION_RATE, CLOUD_NAME, UPLOAD_PRESET, YORIX_WA_NUMBER, SUPABASE_ANON_KEY } from "../lib/supabase";
 const getOptimizedImageUrl = (url, width = 400) => {
   if (!url || !url.includes('cloudinary.com')) return url
   // Si l'URL a déjà des transformations, on ne les duplique pas
