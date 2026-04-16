@@ -13,3 +13,4 @@ export const PAYMENT_WA_NUMBER = "237696565654";
 export const LIVRAISON_FEE = 1500;
 export const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dulwb03nf";
 export const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "yorix_unsigned";
+export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
