@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+  "https://msrymchhhxitdevthvdi.supabase.co",
+  "sb_publishable_yJj7JNdn-r19Pjc070IOBg_y2VzGJXA"
 );
 
 export const COMMISSION_RATE = 0.05;
