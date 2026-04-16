@@ -3692,9 +3692,6 @@ useEffect(() => {
     });
     setCartOpen(true);
   }, []);
-    });
-    setCartOpen(true);
-  }, []);
   const changeQty = (id, d) => setCartItems(prev => prev.map(i => i.id===id ? {...i, qty:Math.max(1,i.qty+d)} : i));
   const removeItem = (id) => setCartItems(prev => prev.filter(i => i.id!==id));
   const totalQty   = cartItems.reduce((a,i) => a+i.qty, 0);
