@@ -46,6 +46,8 @@ import {
   getUserProfile,
   getUserRole,
   filtrerMsg,
+  sendEmail,
+  emailBienvenue,
 } from "./utils/helpers";
 
 import { makeCSS } from "./utils/styles";
@@ -3589,6 +3591,12 @@ useEffect(() => {
       setUser(data.user);
       await chargerProfil(data.user.id);
       setAuthOpen(false);
+      // Email de bienvenue automatique (non bloquant)
+      sendEmail({
+        to:      authForm.email,
+        subject: `Bienvenue sur Yorix, ${authForm.nom} ! 🎉`,
+        html:    emailBienvenue(authForm.nom, selectedRole),
+      }).catch(e => console.warn("Email bienvenue:", e));
     } catch (err) { setAuthError("Email ou mot de passe incorrect."); }
     setAuthLoading(false);
   };
