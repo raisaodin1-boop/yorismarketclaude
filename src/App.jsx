@@ -1149,12 +1149,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
               { icon:"📦", val:mesCommandes.length,  lbl:"Commandes" },
               { icon:"❤️", val:wishlist.size,         lbl:"Favoris" },
               { icon:"🛒", val:totalQty,              lbl:"Panier" },
-              { icon:"🌟", val:`${loyaltyPts} pts`, lbl:"Points fidélité" }
-<span className={`status-badge s-${c.status}`}>{c.status}</span>
-<span className={`status-badge s-${c.livraison_status}`}>
-  {DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}
-</span>
-
+              { icon:"🌟", val:`${loyaltyPts} pts`, lbl:"Points fidélité" },
             ].map(s => (
               <div key={s.lbl} className="dstat">
                 <div className="dstat-icon">{s.icon}</div>
@@ -1174,8 +1169,8 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
                     <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
                   </div>
                   <div className="oc-actions">
-                    <span className={`;-$;c.identifier`}>{c.;}</span>
-                    <span className={`; s-$;c.livraison_status`}>{DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}</span>
+                    <span className={`status-badge s-${c.status}`}>{c.status}</span>
+                    <span className={`status-badge s-${c.livraison_status}`}>{DELIVERY_STATUSES[c.livraison_status] || c.livraison_status}</span>
                   </div>
                 </div>
               ))
@@ -1207,21 +1202,7 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
         </>
       )} 
 
-jsx// ══════════════════════════════════════════════
-// CORRECTION 4 — DeliveryDashboard
-// JSX cassé dans le bouton "Contacter"
-// ══════════════════════════════════════════════
 
-// AVANT (bugué — double balise ouvrante <button) :
-{showActions && l.status === "in_progress" && (
-  <div style={{ display: "flex", gap: 8 }}>
-    <button style={{...}}
-      <button   // ← DOUBLE OUVERTURE = crash JSX
-        onClick={() => {
-          const url = `;https://wa.me/...`  // ← backtick cassé
-        }}
-      >
-jsx// APRÈS (corrigé) :
 {showActions && l.status === "in_progress" && (
   <div style={{ display: "flex", gap: 8 }}>
     <button
@@ -1314,7 +1295,7 @@ L'erreur 500 visible dans ta console vient probablement d'une table ou colonne m
             <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"2rem", fontWeight:800, color:"var(--yellow)" }}>{loyaltyPts} pts</div>
             <div style={{ fontSize:".71rem", opacity:.62, marginBottom:12 }}>Niveau Or · {1000 - loyaltyPts} pts pour Platine</div>
             <div style={{ background:"rgba(255,255,255,.2)", borderRadius:50, height:7 }}>
-              <div style={{ background:"var(--yellow)", borderRadius:50, height:7, width:`;{Math.min((loyaltyPts % 1000) / 10, 100)}`, transition:"width .6s" }} />
+              <div style={{ background:"var(--yellow)", borderRadius:50, height:7, width:`${Math.min((loyaltyPts % 1000) / 10, 100)}%`, transition:"width .6s" }} />
             </div>
           </div>
           <div className="rewards-grid">
@@ -1408,55 +1389,26 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
         </div>
       )}
       {showActions && l.status === "in_progress" && (
-  <div style={{ display: "flex", gap: 8 }}>
-    
-    <button
-      style={{
-        flex: 1,
-        background: "#1565c0",
-        color: "#fff",
-        border: "none",
-        padding: "9px",
-        borderRadius: 8
-      }}
-      <button
-  style={{
-    flex: 1,
-    background: "#1565c0",
-    color: "#fff",
-    border: "none",
-    padding: "9px",
-    borderRadius: 8
-  }}
-  onClick={() => {
-    const url = `;https://wa.me/696565654?text=${encodeURIComponent(
-      `Bonjour ${l.client} ! Je suis votre livreur`
-    `;
-    window.open(url, "_blank");
-  }}
->
-  Contacter
-</button>
-    >
-      Contacter
-    </button>
-
-    <button
-      style={{
-        flex: 1,
-        background: "var(--green)",
-        color: "#fff",
-        border: "none",
-        padding: "9px",
-        borderRadius: 8
-      }}
-      onClick={() => actionLivraison(l.id, "delivered")}
-    >
-      ✅ Confirmer livraison
-    </button>
-
-  </div>
-)}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            style={{ flex: 1, background: "#1565c0", color: "#fff", border: "none", padding: "9px", borderRadius: 8, cursor: "pointer" }}
+            onClick={() => {
+              const url = `https://wa.me/${(l.telephone || "237696565654").replace(/\D/g,"")}?text=${encodeURIComponent(
+                `Bonjour ${l.client} ! Je suis votre livreur Yorix 🏍️`
+              )}`;
+              window.open(url, "_blank");
+            }}
+          >
+            📱 Contacter
+          </button>
+          <button
+            style={{ flex: 1, background: "var(--green)", color: "#fff", border: "none", padding: "9px", borderRadius: 8, cursor: "pointer" }}
+            onClick={() => actionLivraison(l.id, "delivered")}
+          >
+            ✅ Confirmer livraison
+          </button>
+        </div>
+      )}
   return (
     <>
       <div className="dash-page-title">Bonjour {userData?.nom} 🏍️ <span style={{fontSize:".75rem",color:"var(--gray)",fontFamily:"'DM Sans',sans-serif",fontWeight:400}}>— Yorix Ride</span></div>
@@ -1467,7 +1419,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
           { icon:"🟡", val:dispo.length,           lbl:"Disponibles",      trend:"Nouvelles missions" },
           { icon:"🚚", val:enCours.length,          lbl:"En cours",         trend:"" },
           { icon:"✅", val:livrees.length,           lbl:"Livrées",          trend:"+" },
-          { icon:"💰", val:`;{gainsTotal.toLocaleString()} F`, lbl:"Gains disponibles", trend:`;{gainsMois.toLocaleString()} F ; mois` },
+          { icon:"💰", val:`${gainsTotal.toLocaleString()} F`, lbl:"Gains disponibles", trend:`${gainsMois.toLocaleString()} F / mois` },
         ].map(s => (
           <div key={s.lbl} className="dstat">
             <div className="dstat-icon">{s.icon}</div>
@@ -1536,7 +1488,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
             <div className="wc-sub">Ce mois : {gainsMois.toLocaleString()} FCFA · {livrees.length} livraisons effectuées</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-            {[{label:"Aujourd'hui",val:"12 500 FCFA",ic:"📅"},{label:"Cette semaine",val:"47 500 FCFA",ic:"📆"},{label:"Ce mois",val:`;{gainsMois.toLocaleString()} FCFA`,ic:"🗓️"},{label:"Total livraisons",val:livrees.length,ic:"✅"}].map(s=>(
+            {[{label:"Aujourd'hui",val:"12 500 FCFA",ic:"📅"},{label:"Cette semaine",val:"47 500 FCFA",ic:"📆"},{label:"Ce mois",val:`${gainsMois.toLocaleString()} FCFA`,ic:"🗓️"},{label:"Total livraisons",val:livrees.length,ic:"✅"}].map(s=>(
               <div key={s.label} style={{background:"var(--surface2)",borderRadius:10,padding:"12px 14px",border:"1px solid var(--border)"}}>
                 <div style={{fontSize:"1.1rem",marginBottom:4}}>{s.ic}</div>
                 <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".88rem",color:"var(--ink)"}}>{s.val}</div>
@@ -1624,8 +1576,8 @@ const toggleDispo = async (id, current) => {
   }
   
   setServiceForm({ nom:"", categorie:"", description:"", prix:"", ville:"", disponible:true });
-  setServicesSaved(true);
-  setTimeout(() => setServicesSaved(false), 3000);
+  setServiceSaved(true);
+  setTimeout(() => setServiceSaved(false), 3000);
 };
 
   return (
@@ -1918,7 +1870,7 @@ console.log("[Admin] merged users:", usersData.length);
  // --- Actions ---
 const supprimerProduit = async (id, nom) => {
   const confirmation = window.confirm(
-    `; ";{nom}" ?`
+    `Supprimer le produit "${nom}" ?`
   );
 
   if (!confirmation) return;
@@ -1937,7 +1889,7 @@ const supprimerProduit = async (id, nom) => {
   setProduits(p => p.filter(x => x.id !== id));
   setProduitsFull(p => p.filter(x => x.id !== id));
 
-  showToast(`:Produit; ";{nom}" ;supprimé`);
+  showToast(`Produit "${nom}" supprimé`);
 };
 
   const toggleActifProduit = async (id, actif) => {
@@ -1956,12 +1908,12 @@ const supprimerProduit = async (id, nom) => {
   ]);
   if (r1.error && r2.error) { console.error("changerRole:", r1.error, r2.error); showToast("Erreur changement rôle", "error"); return; }
   setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
-  showToast(`;Rôlechangé;{newRole}`);
+  showToast(`Rôle changé → ${newRole}`);
 };
 
 
 const supprimerUser = async (uid, email) => {
-  if (!window.confirm(`;Supprimerl'utilisateur ";{email}" ?`)) return;
+  if (!window.confirm(`Supprimer l'utilisateur "${email}" ?`)) return;
 
   const { error } = await supabase.from("users").delete().eq("uid", uid);
 
@@ -3135,7 +3087,7 @@ useEffect(() => {
   useEffect(() => {
     setProduitsLoading(true);
     const load = async () => {
-      let q = supabase.from("products").select("*").eq("actif", true).order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(40);
+      let q = supabase.from("products").select("*").neq("actif", false).order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
       if (filterCat) q = q.eq("categorie", filterCat);
       const { data } = await q;
       setProduits(data || []);
