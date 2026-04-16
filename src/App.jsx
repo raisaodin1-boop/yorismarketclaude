@@ -1352,7 +1352,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
             <div style={{fontSize:".68rem",color:"var(--gray)"}}>👤 {l.client} · 📞 {l.telephone}</div>
           </div>
         </div>
-        <span className={`; s-$;l.status==="available"?"pending":l.status==="in_progress"?"en_cours":l.status`}>
+        <span className={`status-badge s-${l.status === "available" ? "pending" : l.status === "in_progress" ? "en_cours" : l.status}`}>
           {l.status==="available"?"🟡 Disponible":l.status==="in_progress"?"🚚 En cours":"✅ Livré"}
         </span>
       </div>
@@ -1409,6 +1409,8 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
           </button>
         </div>
       )}
+  );
+
   return (
     <>
       <div className="dash-page-title">Bonjour {userData?.nom} 🏍️ <span style={{fontSize:".75rem",color:"var(--gray)",fontFamily:"'DM Sans',sans-serif",fontWeight:400}}>— Yorix Ride</span></div>
@@ -1557,9 +1559,9 @@ const toggleDispo = async (id, current) => {
   const repondre = (id, accepte) => setDemandes(prev => prev.map(d => d.id === id ? {...d, status: accepte ? "accepted" : "refused"} : d));
 
   const saveService = async () => {
-  if (!serviceForm.nom || !serviceForm.prix) { 
-    alert("Nom et prix obligatoires !"); 
-    return; 
+  if (!serviceForm.nom || !serviceForm.prix) {
+    alert("Nom et prix obligatoires !");
+    return;
   }
   
   const { error } = await supabase.from("services").insert({ 
