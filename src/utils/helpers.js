@@ -109,15 +109,9 @@ const EMAIL_FUNCTION_URL = "https://msrymchhhxitdevthvdi.supabase.co/functions/v
  */
 export async function sendEmail({ to, subject, html, from }) {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || SUPABASE_ANON_KEY;
-
     const res = await fetch(EMAIL_FUNCTION_URL, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ to, subject, html, from }),
     });
     const data = await res.json();
