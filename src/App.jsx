@@ -1243,7 +1243,7 @@ setTimeout(() => setServicesSaved(false), 3000);
 setServiceSaved(true);
 setTimeout(() => setServiceSaved(false), 3000);
 
-// ET ajouter le rechargement après insertion :
+
 const saveService = async () => {
   if (!serviceForm.nom || !serviceForm.prix) {
     alert("Nom et prix obligatoires !");
