@@ -354,10 +354,11 @@ function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
         {showCmdModal && (
           <ModalCommander product={product} user={user} userData={userData} onClose={() => setShowCmdModal(false)} />
         )}
-      </div>
+          </div>
         </div>
       </div>
-    );
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1202,48 +1203,10 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
         </>
       )} 
 
-const saveService = async () => {
-   (!serviceForm.nom || !serviceForm.prix) {
-    alert("Nom et prix obligatoires !");
-    return;
-  }
-
-  const { error } = await supabase.from("services").insert({
-    ...serviceForm,
-    prix: Number(serviceForm.prix),
-    provider_id: user.id,
-    provider_nom: userData?.nom,
-    actif: true,
-  });
-
-  if (error) {
-    console.error("Erreur publication service:", error);
-    alert("Erreur : " + error.message);
-    return;
-  }
-
-  // Recharger mes services après insertion
-  const { data: refreshed } = await supabase
-    .from("services")
-    .select("*")
-    .eq("provider_id", user.id)
-    .order("created_at", { ascending: false });
-  if (refreshed) setMesServices(refreshed);
-
-  setServiceForm({ nom: "", categorie: "", description: "", prix: "", ville: "", disponible: true });
-  setServiceSaved(true);
-  setTimeout(() => setServiceSaved(false), 3000);
-};
 
 
-                  </div>
-                </div>
-              ))
-          }
-        </>
-      )}
 
-      {dashTab === "loyalty" && (
+                  {dashTab === "loyalty" && (
         <>
           <div className="dash-page-title">🌟 Programme fidélité</div>
           <div style={{ background:"linear-gradient(135deg,#1a3a24,var(--green))", borderRadius:14, padding:22, color:"#fff", marginBottom:18 }}>
@@ -1365,6 +1328,7 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
           </button>
         </div>
       )}
+    </div>
   );
 
   return (
