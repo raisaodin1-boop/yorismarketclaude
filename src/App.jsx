@@ -5299,18 +5299,62 @@ useEffect(() => {
         </section>
       )}
 
-      {/* ════════ PAGE : ACADEMY ════════ */}
+            {/* ═══════════════ PAGE : ACADEMY (dynamique Supabase) ═══════════════ */}
       {page==="academy"&&(
         <section className="sec anim">
           <div style={{background:"linear-gradient(135deg,#1a3a24,#0a1410)",borderRadius:14,padding:28,marginBottom:20,textAlign:"center"}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.24)",padding:"4px 11px",borderRadius:50,fontSize:".7rem",fontWeight:700,marginBottom:12}}>🎓 Yorix Academy</div>
             <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.45rem",fontWeight:800,color:"#fff",marginBottom:6,letterSpacing:"-.5px"}}>Formez-vous pour vendre mieux</h2>
             <p style={{color:"rgba(255,255,255,.5)",fontSize:".85rem",marginBottom:18}}>Des cours créés par des experts camerounais.</p>
-            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}><button className="cta-y">Commencer gratuitement</button><button className="cta-w">Voir le catalogue</button></div>
+            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+              <button className="cta-y" onClick={()=>{const first=academyCourses.find(c=>c.prix===0);if(first)goAcademyDetail(first);}}>Commencer gratuitement</button>
+              <button className="cta-w" onClick={()=>window.scrollTo({top:400,behavior:"smooth"})}>Voir le catalogue</button>
+            </div>
           </div>
-          <div className="courses-grid">{COURSES_DATA.map(c=><div key={c.title} className="course-card"><div className="course-img" style={{background:c.bg}}>{c.emoji}</div><div className="course-body"><div className={`course-level ${c.lc}`}>{c.level}</div><div className="course-title">{c.title}</div><div className="course-meta">⏱ {c.duree} · 👥 {c.apprenants}</div><div className="course-footer"><div className="course-price">{c.prix}</div><button className="course-btn">Démarrer →</button></div></div></div>)}</div>
+
+          {academyLoading
+            ? <div className="loading"><div className="spinner"/>Chargement des formations...</div>
+            : academyCourses.length===0
+              ? <div className="empty-state"><div className="empty-icon">🎓</div><p>Aucune formation pour l'instant</p></div>
+              : <div className="courses-grid">
+                  {academyCourses.map(c=>(
+                    <div key={c.id} className="course-card" onClick={()=>goAcademyDetail(c)} style={{cursor:"pointer"}}>
+                      <div className="course-img" style={{background:c.color_bg||"#E8F5E9"}}>{c.emoji||"🎓"}</div>
+                      <div className="course-body">
+                        <div className={`course-level ${c.category==="DÉBUTANT"?"lc-debutant":c.category==="INTERMÉDIAIRE"?"lc-intermediaire":"lc-avance"}`}>{c.category}</div>
+                        <div className="course-title">{c.title}</div>
+                        <div className="course-meta">⏱ {c.duration} · 👥 {c.students_count||0}</div>
+                        <div className="course-footer">
+                          <div className="course-price">{c.prix===0?"Gratuit":`${c.prix.toLocaleString("fr-FR")} FCFA`}</div>
+                          <button className="course-btn" onClick={e=>{e.stopPropagation();goAcademyDetail(c);}}>Démarrer →</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+          }
         </section>
       )}
+
+      {/* ═══════════════ PAGE : ACADEMY DETAIL (article teaser) ═══════════════ */}
+      {page==="academyDetail"&&(
+        <AcademyDetail
+          course={selectedCourse}
+          goPage={goPage}
+          goContact={goAcademyContact}
+        />
+      )}
+
+      {/* ═══════════════ PAGE : ACADEMY CONTACT (formulaire) ═══════════════ */}
+      {page==="academyContact"&&(
+        <AcademyContactForm
+          course={selectedCourse}
+          user={user}
+          userData={userData}
+          goPage={goPage}
+        />
+      )}
+
 
       {/* ════════ PAGE : BLOG ════════ */}
       {page==="blog"&&(
