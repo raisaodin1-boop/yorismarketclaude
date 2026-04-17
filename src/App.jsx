@@ -6358,19 +6358,17 @@ useEffect(() => {
         </section>
       )}
 
-      {/* ════════ PAGE : FIDÉLITÉ ════════ */}
+            {/* ═══════════════ PAGE : FIDÉLITÉ (système complet) ═══════════════ */}
       {page==="loyalty"&&(
-        <section className="sec anim">
-          <div style={{background:"linear-gradient(135deg,#1a3a24,var(--green))",borderRadius:14,padding:22,color:"#fff",marginBottom:18}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",marginBottom:4}}>🌟 Mes points Yorix</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:"2rem",fontWeight:800,color:"var(--yellow)"}}>{loyaltyPts} pts</div>
-            <div style={{fontSize:".71rem",opacity:.62,marginBottom:12}}>Niveau Or · {1000-loyaltyPts} pts pour Platine</div>
-            <div style={{background:"rgba(255,255,255,.2)",borderRadius:50,height:7}}><div style={{background:"var(--yellow)",borderRadius:50,height:7,width:`${Math.min((loyaltyPts%1000)/10,100)}%`,transition:"width .6s"}}/></div>
-          </div>
-          <div className="sec-head"><h2 className="sec-title">🎁 Récompenses</h2></div>
-          <div className="rewards-grid">{REWARDS_DATA.map(r=><div key={r.name} className="reward-card"><div className="reward-icon">{r.icon}</div><div className="reward-name">{r.name}</div><div className="reward-pts">{r.pts} pts</div><button className="reward-btn" onClick={()=>setLoyaltyPts(p=>Math.max(0,p-r.pts))}>Échanger</button></div>)}</div>
-        </section>
+        <LoyaltyPage
+          user={user}
+          userData={userData}
+          goPage={goPage}
+          setAuthOpen={setAuthOpen}
+          setAuthTab={setAuthTab}
+        />
       )}
+
 
       {/* ════════ PAGE : DASHBOARD ════════ */}
       {page==="dashboard"&&(
