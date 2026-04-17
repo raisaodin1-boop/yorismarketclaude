@@ -3833,6 +3833,1000 @@ function AcademyContactForm({ course, user, userData, goPage }) {
     </section>
   );
 }
+// ═══════════════════════════════════════════════════════════════
+// 🌟 YORIX LOYALTY — Système de fidélité complet
+// À coller AVANT `function PagesLegales` dans App.jsx
+// ═══════════════════════════════════════════════════════════════
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Composant : Niveau badge                                    │
+// └─────────────────────────────────────────────────────────────┘
+function LevelBadge({ level, size = "normal" }) {
+  const levels = {
+    bronze:  { label: "Bronze",  emoji: "🥉", color: "#CD7F32", bg: "rgba(205,127,50,.15)" },
+    argent:  { label: "Argent",  emoji: "🥈", color: "#9CA3AF", bg: "rgba(156,163,175,.15)" },
+    or:      { label: "Or",      emoji: "🥇", color: "#F59E0B", bg: "rgba(245,158,11,.15)" },
+    platine: { label: "Platine", emoji: "💎", color: "#7C3AED", bg: "rgba(124,58,237,.15)" },
+  };
+  const l = levels[level] || levels.bronze;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      background: l.bg, color: l.color, border: `1px solid ${l.color}33`,
+      padding: size === "lg" ? "5px 12px" : "3px 9px",
+      borderRadius: 50,
+      fontSize: size === "lg" ? ".82rem" : ".68rem",
+      fontWeight: 800, fontFamily: "'Syne',sans-serif",
+    }}>
+      {l.emoji} {l.label}
+    </span>
+  );
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Composant : Animation points qui s'ajoutent                 │
+// └─────────────────────────────────────────────────────────────┘
+function PointsAnimation({ show, points, onDone }) {
+  useEffect(() => {
+    if (show) {
+      const t = setTimeout(() => onDone?.(), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [show]);
+
+  if (!show) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: "30%", left: "50%",
+      transform: "translateX(-50%)", zIndex: 10000,
+      background: "linear-gradient(135deg,#fcd116,#f59e0b)",
+      color: "#0d1f14", padding: "24px 40px", borderRadius: 16,
+      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "2rem",
+      boxShadow: "0 20px 60px rgba(245,158,11,.5)",
+      animation: "pointsBurst 2.5s ease-out forwards",
+      pointerEvents: "none",
+    }}>
+      +{points} pts 🎉
+      <style>{`
+        @keyframes pointsBurst {
+          0% { transform: translateX(-50%) scale(0) rotate(-10deg); opacity: 0; }
+          15% { transform: translateX(-50%) scale(1.2) rotate(5deg); opacity: 1; }
+          25% { transform: translateX(-50%) scale(1) rotate(0deg); }
+          80% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+          100% { transform: translateX(-50%) scale(.8) translateY(-80px); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Composant : Modal achat pack points                         │
+// └─────────────────────────────────────────────────────────────┘
+function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
+  const [nom, setNom]         = useState(userData?.nom || "");
+  const [tel, setTel]         = useState(userData?.telephone || "");
+  const [moyen, setMoyen]     = useState("momo");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors]   = useState({});
+
+  if (!pack) return null;
+
+  const bonusPoints = pack.bonus_pct ? Math.round(pack.points * (pack.bonus_pct / 100)) : 0;
+  const totalPoints = pack.points + bonusPoints;
+  const ratio       = pack.prix_fcfa / totalPoints;
+
+  const validate = () => {
+    const e = {};
+    if (!nom.trim()) e.nom = "Nom obligatoire";
+    if (!tel.trim()) e.tel = "Téléphone obligatoire";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const acheter = async () => {
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      // 1. Créer la demande d'achat
+      const { data, error } = await supabase.from("loyalty_pack_purchases").insert({
+        user_id:        user.id,
+        pack_id:        pack.id,
+        pack_nom:       pack.nom,
+        points:         totalPoints,
+        prix_fcfa:      pack.prix_fcfa,
+        telephone:      tel,
+        nom:            nom,
+        moyen_paiement: moyen,
+        status:         "pending",
+      }).select().single();
+
+      if (error) throw error;
+
+      // 2. Générer le message WhatsApp
+      const numero = moyen === "momo" ? MOMO_NUMBER : ORANGE_NUMBER;
+      const operateur = moyen === "momo" ? "MTN Mobile Money" : "Orange Money";
+      const msg = [
+        "🌟 *ACHAT DE POINTS YORIX*",
+        "",
+        `📦 *Pack :* ${pack.nom} ${pack.emoji}`,
+        `⭐ *Points :* ${pack.points}${bonusPoints > 0 ? ` + ${bonusPoints} bonus = *${totalPoints} pts*` : ""}`,
+        `💰 *Prix :* ${pack.prix_fcfa.toLocaleString("fr-FR")} FCFA`,
+        "",
+        `💳 *Mode de paiement :* ${operateur}`,
+        `📱 *Numéro :* ${numero}`,
+        "",
+        "👤 *Acheteur :*",
+        `Nom : ${nom}`,
+        `Téléphone : ${tel}`,
+        `ID : ${data.id.slice(0, 8)}`,
+        "",
+        "✅ *Instructions :*",
+        `1. J'effectue le paiement au ${numero}`,
+        "2. J'envoie la capture ici",
+        "3. Mes points sont crédités sous 1h",
+        "",
+        "Merci Yorix ! 🇨🇲",
+      ].join("\n");
+
+      window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      alert("Erreur : " + err.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 460 }}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{
+            fontSize: "3rem", marginBottom: 4,
+            background: pack.color_bg, width: 72, height: 72,
+            borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {pack.emoji}
+          </div>
+          <div style={{
+            fontFamily: "'Syne',sans-serif", fontSize: "1.25rem", fontWeight: 800,
+            color: "var(--ink)", marginTop: 8,
+          }}>
+            Pack {pack.nom}
+          </div>
+        </div>
+
+        {/* Récap */}
+        <div style={{
+          background: "var(--green-pale)", border: "1px solid var(--green-light)",
+          borderRadius: 11, padding: 14, marginBottom: 16,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".82rem", marginBottom: 4 }}>
+            <span style={{ color: "var(--gray)" }}>Points de base</span>
+            <strong>{pack.points.toLocaleString("fr-FR")} pts</strong>
+          </div>
+          {bonusPoints > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".82rem", marginBottom: 4 }}>
+              <span style={{ color: "var(--green)" }}>🎁 Bonus (+{pack.bonus_pct}%)</span>
+              <strong style={{ color: "var(--green)" }}>+{bonusPoints.toLocaleString("fr-FR")} pts</strong>
+            </div>
+          )}
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            fontSize: ".95rem", fontFamily: "'Syne',sans-serif", fontWeight: 800,
+            borderTop: "1px dashed var(--green-light)", paddingTop: 6, marginTop: 4, color: "var(--green)",
+          }}>
+            <span>TOTAL POINTS</span>
+            <span>{totalPoints.toLocaleString("fr-FR")} pts</span>
+          </div>
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            fontSize: ".95rem", fontFamily: "'Syne',sans-serif", fontWeight: 800,
+            marginTop: 6, color: "var(--ink)",
+          }}>
+            <span>À PAYER</span>
+            <span>{pack.prix_fcfa.toLocaleString("fr-FR")} FCFA</span>
+          </div>
+          <div style={{ fontSize: ".68rem", color: "var(--gray)", marginTop: 4, textAlign: "center" }}>
+            Soit {ratio.toFixed(1)} FCFA / point
+          </div>
+        </div>
+
+        {/* Formulaire */}
+        <div className="form-group">
+          <label className="form-label">Nom complet <span>*</span></label>
+          <input
+            className={`form-input${errors.nom ? " error" : ""}`}
+            value={nom}
+            onChange={e => setNom(e.target.value)}
+            placeholder="Raisa Kouekam"
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Téléphone <span>*</span></label>
+          <input
+            className={`form-input${errors.tel ? " error" : ""}`}
+            value={tel}
+            onChange={e => setTel(e.target.value)}
+            placeholder="+237 6XX XXX XXX"
+          />
+        </div>
+
+        {/* Moyens de paiement */}
+        <div className="form-group">
+          <label className="form-label">Moyen de paiement <span>*</span></label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div
+              onClick={() => setMoyen("momo")}
+              style={{
+                border: `2px solid ${moyen === "momo" ? "var(--green)" : "var(--border)"}`,
+                background: moyen === "momo" ? "var(--green-pale)" : "var(--surface)",
+                borderRadius: 10, padding: 12, cursor: "pointer", textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>📱</div>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem" }}>MTN MoMo</div>
+              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{MOMO_NUMBER}</div>
+            </div>
+            <div
+              onClick={() => setMoyen("orange")}
+              style={{
+                border: `2px solid ${moyen === "orange" ? "var(--green)" : "var(--border)"}`,
+                background: moyen === "orange" ? "var(--green-pale)" : "var(--surface)",
+                borderRadius: 10, padding: 12, cursor: "pointer", textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>🔶</div>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem" }}>Orange Money</div>
+              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{ORANGE_NUMBER}</div>
+            </div>
+          </div>
+        </div>
+
+        <button className="form-submit" onClick={acheter} disabled={loading}>
+          {loading
+            ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />Traitement...</>
+            : `💳 Payer ${pack.prix_fcfa.toLocaleString("fr-FR")} FCFA via WhatsApp`}
+        </button>
+
+        <p style={{ fontSize: ".68rem", color: "var(--gray)", textAlign: "center", marginTop: 8 }}>
+          🔒 Paiement sécurisé · Points crédités sous 1h après confirmation
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Composant : Modal échange récompense                        │
+// └─────────────────────────────────────────────────────────────┘
+function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSuccess }) {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone]       = useState(false);
+  const [code, setCode]       = useState("");
+
+  if (!reward) return null;
+
+  const canAfford = userPoints >= reward.cout_points;
+
+  const echanger = async () => {
+    if (!canAfford) return;
+    setLoading(true);
+    try {
+      // Générer code unique
+      const newCode = `YX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+      // 1. Créer l'échange
+      const { error: errRedeem } = await supabase.from("loyalty_redemptions").insert({
+        user_id:     user.id,
+        reward_id:   reward.id,
+        reward_nom:  reward.nom,
+        cout_points: reward.cout_points,
+        code:        newCode,
+        status:      "validated",
+        expire_at:   new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 jours
+      });
+      if (errRedeem) throw errRedeem;
+
+      // 2. Débiter les points (fonction RPC)
+      const { error: errDebit } = await supabase.rpc("add_loyalty_points", {
+        p_user_id:      user.id,
+        p_points:       -reward.cout_points,
+        p_type:         "echange",
+        p_description:  `Échange : ${reward.nom}`,
+        p_reference_id: null,
+        p_reference_type: "reward",
+      });
+      if (errDebit) throw errDebit;
+
+      setCode(newCode);
+      setDone(true);
+      onSuccess?.();
+    } catch (err) {
+      alert("Erreur : " + err.message);
+    }
+    setLoading(false);
+  };
+
+  if (done) {
+    return (
+      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal" style={{ maxWidth: 440, textAlign: "center" }}>
+          <button className="modal-close" onClick={onClose}>✕</button>
+          <div style={{ fontSize: "4rem", marginBottom: 12 }}>🎉</div>
+          <div style={{
+            fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.25rem",
+            color: "var(--green)", marginBottom: 8,
+          }}>
+            Échange réussi !
+          </div>
+          <p style={{ color: "var(--gray)", fontSize: ".85rem", marginBottom: 18, lineHeight: 1.6 }}>
+            Votre récompense <strong style={{ color: "var(--ink)" }}>"{reward.nom}"</strong> est activée.
+          </p>
+          <div style={{
+            background: "var(--green-pale)", border: "2px dashed var(--green)",
+            borderRadius: 12, padding: 16, marginBottom: 16,
+          }}>
+            <div style={{ fontSize: ".7rem", color: "var(--gray)", fontWeight: 700, marginBottom: 4 }}>
+              VOTRE CODE UNIQUE
+            </div>
+            <div style={{
+              fontFamily: "'Syne',sans-serif", fontSize: "1.35rem", fontWeight: 800,
+              color: "var(--green)", letterSpacing: "0.05em",
+            }}>
+              {code}
+            </div>
+            <button
+              onClick={() => navigator.clipboard?.writeText(code)}
+              style={{
+                marginTop: 8, background: "var(--surface)", color: "var(--ink)",
+                border: "1px solid var(--border)", borderRadius: 7,
+                padding: "5px 14px", fontSize: ".72rem", fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              📋 Copier
+            </button>
+          </div>
+          <p style={{ fontSize: ".72rem", color: "var(--gray)" }}>
+            Donnez ce code lors de votre prochain achat. Valable 90 jours.
+          </p>
+          <button
+            className="form-submit"
+            style={{ marginTop: 14 }}
+            onClick={() => window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour Yorix ! J'ai échangé ma récompense "${reward.nom}" avec le code ${code}`)}`, "_blank")}
+          >
+            📱 Activer sur WhatsApp
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 420 }}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div style={{ textAlign: "center", marginBottom: 14 }}>
+          <div style={{
+            fontSize: "3rem", marginBottom: 4,
+            background: reward.color_bg, width: 72, height: 72, borderRadius: "50%",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {reward.emoji}
+          </div>
+          <div style={{
+            fontFamily: "'Syne',sans-serif", fontSize: "1.15rem", fontWeight: 800,
+            color: "var(--ink)", marginTop: 8,
+          }}>
+            {reward.nom}
+          </div>
+          {reward.description && (
+            <p style={{ fontSize: ".8rem", color: "var(--gray)", marginTop: 6 }}>{reward.description}</p>
+          )}
+        </div>
+
+        <div style={{
+          background: "var(--surface2)", borderRadius: 10, padding: 14, marginBottom: 14,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: ".82rem" }}>
+            <span style={{ color: "var(--gray)" }}>Coût</span>
+            <strong style={{ color: "var(--ink)" }}>{reward.cout_points.toLocaleString("fr-FR")} pts</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: ".82rem" }}>
+            <span style={{ color: "var(--gray)" }}>Mon solde actuel</span>
+            <strong style={{ color: "var(--ink)" }}>{userPoints.toLocaleString("fr-FR")} pts</strong>
+          </div>
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            borderTop: "1px dashed var(--border)", paddingTop: 6, fontSize: ".88rem",
+            fontFamily: "'Syne',sans-serif", fontWeight: 800,
+            color: canAfford ? "var(--green)" : "var(--red)",
+          }}>
+            <span>Après échange</span>
+            <span>{(userPoints - reward.cout_points).toLocaleString("fr-FR")} pts</span>
+          </div>
+        </div>
+
+        {canAfford ? (
+          <button className="form-submit" onClick={echanger} disabled={loading}>
+            {loading
+              ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />Traitement...</>
+              : `✅ Confirmer l'échange (${reward.cout_points} pts)`}
+          </button>
+        ) : (
+          <>
+            <div style={{
+              background: "#fff0f0", border: "1px solid #fecaca", color: "#ce1126",
+              borderRadius: 8, padding: "10px 14px", fontSize: ".78rem", textAlign: "center", marginBottom: 10,
+            }}>
+              ⚠️ Il vous manque <strong>{(reward.cout_points - userPoints).toLocaleString("fr-FR")}</strong> points
+            </div>
+            <button
+              className="form-submit"
+              style={{ background: "var(--yellow)", color: "#0d1f14" }}
+              onClick={onClose}
+            >
+              💰 Acheter des points
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ PAGE PRINCIPALE : LOYALTY                                   │
+// └─────────────────────────────────────────────────────────────┘
+function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab }) {
+  const [packs, setPacks]               = useState([]);
+  const [rewards, setRewards]           = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [redemptions, setRedemptions]   = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [selectedPack, setSelectedPack] = useState(null);
+  const [selectedReward, setSelectedReward] = useState(null);
+  const [currentPoints, setCurrentPoints] = useState(0);
+  const [totalGagnes, setTotalGagnes]   = useState(0);
+  const [currentLevel, setCurrentLevel] = useState("bronze");
+  const [tab, setTab]                   = useState("rewards"); // rewards, packs, history
+
+  // Charger les données
+  const loadAll = async () => {
+    setLoading(true);
+
+    const queries = [
+      supabase.from("loyalty_packs").select("*").eq("actif", true).order("ordre"),
+      supabase.from("loyalty_rewards").select("*").eq("actif", true).order("ordre"),
+    ];
+
+    if (user?.id) {
+      queries.push(
+        supabase.from("loyalty_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),
+        supabase.from("loyalty_redemptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+        supabase.from("profiles").select("points,points_total_gagnes,points_level").eq("id", user.id).single()
+      );
+    }
+
+    const results = await Promise.all(queries);
+    setPacks(results[0]?.data || []);
+    setRewards(results[1]?.data || []);
+
+    if (user?.id) {
+      setTransactions(results[2]?.data || []);
+      setRedemptions(results[3]?.data || []);
+      const profile = results[4]?.data;
+      if (profile) {
+        setCurrentPoints(profile.points || 0);
+        setTotalGagnes(profile.points_total_gagnes || 0);
+        setCurrentLevel(profile.points_level || "bronze");
+      }
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => { loadAll(); }, [user?.id]);
+
+  // Niveau suivant
+  const levelThresholds = { bronze: 500, argent: 1000, or: 5000, platine: 5000 };
+  const nextThreshold   = levelThresholds[currentLevel] || 500;
+  const prevThreshold   = { bronze: 0, argent: 500, or: 1000, platine: 5000 }[currentLevel];
+  const progressPct     = currentLevel === "platine"
+    ? 100
+    : Math.min(100, Math.round(((totalGagnes - prevThreshold) / (nextThreshold - prevThreshold)) * 100));
+  const pointsToNext    = Math.max(0, nextThreshold - totalGagnes);
+
+  // Labels transactions
+  const typeLabels = {
+    achat:               { label: "Achat",               emoji: "🛍️", color: "var(--green)" },
+    vente:               { label: "Vente",               emoji: "💰", color: "var(--green)" },
+    avis:                { label: "Avis publié",         emoji: "⭐", color: "#f59e0b" },
+    achat_points:        { label: "Pack acheté",         emoji: "💎", color: "#7c3aed" },
+    echange:             { label: "Récompense échangée", emoji: "🎁", color: "#ce1126" },
+    bonus_inscription:   { label: "Bonus bienvenue",     emoji: "🎉", color: "var(--green)" },
+    parrainage:          { label: "Parrainage",          emoji: "👥", color: "#2563eb" },
+  };
+
+  // Non connecté
+  if (!user) {
+    return (
+      <section className="sec anim">
+        <div style={{
+          background: "linear-gradient(135deg,#1a3a24,var(--green))",
+          borderRadius: 16, padding: "40px 28px", textAlign: "center", color: "#fff",
+        }}>
+          <div style={{ fontSize: "4rem", marginBottom: 14 }}>🌟</div>
+          <h2 style={{
+            fontFamily: "'Syne',sans-serif", fontSize: "1.6rem", fontWeight: 800,
+            marginBottom: 8, letterSpacing: "-.5px",
+          }}>
+            Yorix Points — Programme de fidélité
+          </h2>
+          <p style={{ color: "rgba(255,255,255,.7)", fontSize: ".9rem", marginBottom: 20, maxWidth: 460, margin: "0 auto 20px" }}>
+            Gagnez des points à chaque achat, vente ou avis posté. Échangez-les contre des bons d'achat, des livraisons gratuites et bien plus !
+          </p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              className="cta-y"
+              onClick={() => { setAuthTab?.("register"); setAuthOpen?.(true); }}
+            >
+              🎁 Créer mon compte (+50 pts offerts)
+            </button>
+            <button
+              className="cta-w"
+              onClick={() => { setAuthTab?.("login"); setAuthOpen?.(true); }}
+            >
+              🔑 Me connecter
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      {selectedPack && (
+        <LoyaltyPackModal
+          pack={selectedPack}
+          user={user}
+          userData={userData}
+          onClose={() => setSelectedPack(null)}
+          onSuccess={loadAll}
+        />
+      )}
+      {selectedReward && (
+        <LoyaltyRedeemModal
+          reward={selectedReward}
+          userPoints={currentPoints}
+          user={user}
+          onClose={() => setSelectedReward(null)}
+          onSuccess={loadAll}
+        />
+      )}
+
+      <section className="sec anim">
+        {/* ── HERO CARTE POINTS ── */}
+        <div style={{
+          background: "linear-gradient(135deg, #1a3a24 0%, var(--green) 60%, #2d9655 100%)",
+          borderRadius: 16, padding: "26px 24px", color: "#fff",
+          marginBottom: 18, position: "relative", overflow: "hidden",
+        }}>
+          {/* Décor */}
+          <div style={{
+            position: "absolute", top: -30, right: -30, width: 180, height: 180,
+            background: "rgba(252,209,22,.08)", borderRadius: "50%",
+          }} />
+          <div style={{
+            position: "absolute", bottom: -50, left: -40, width: 160, height: 160,
+            background: "rgba(255,255,255,.05)", borderRadius: "50%",
+          }} />
+
+          <div style={{ position: "relative", zIndex: 2 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <div style={{ fontSize: ".72rem", opacity: .7, fontWeight: 600, marginBottom: 3 }}>
+                  YORIX POINTS
+                </div>
+                <div style={{
+                  fontFamily: "'Syne',sans-serif", fontSize: ".92rem", fontWeight: 600, opacity: .88,
+                }}>
+                  Mes points
+                </div>
+              </div>
+              <LevelBadge level={currentLevel} size="lg" />
+            </div>
+
+            <div style={{
+              fontFamily: "'Syne',sans-serif", fontSize: "2.8rem", fontWeight: 800,
+              color: "var(--yellow)", lineHeight: 1, marginBottom: 4,
+            }}>
+              {currentPoints.toLocaleString("fr-FR")} <span style={{ fontSize: "1rem", color: "rgba(255,255,255,.6)" }}>pts</span>
+            </div>
+
+            <div style={{ fontSize: ".72rem", opacity: .65, marginBottom: 14 }}>
+              Total gagné : {totalGagnes.toLocaleString("fr-FR")} pts · Niveau {currentLevel}
+              {currentLevel !== "platine" && ` · ${pointsToNext.toLocaleString("fr-FR")} pts pour ${
+                currentLevel === "bronze" ? "Argent"
+                : currentLevel === "argent" ? "Or"
+                : "Platine"
+              }`}
+            </div>
+
+            {/* Progression niveau */}
+            {currentLevel !== "platine" && (
+              <div style={{
+                background: "rgba(255,255,255,.15)", borderRadius: 50, height: 8,
+                overflow: "hidden",
+              }}>
+                <div style={{
+                  background: "linear-gradient(90deg, var(--yellow), #ffd84a)",
+                  borderRadius: 50, height: "100%", width: `${progressPct}%`,
+                  transition: "width .8s ease",
+                }} />
+              </div>
+            )}
+
+            {/* Actions rapides */}
+            <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+              <button
+                onClick={() => setTab("packs")}
+                style={{
+                  background: "var(--yellow)", color: "#0d1f14", border: "none",
+                  padding: "9px 18px", borderRadius: 9,
+                  fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".8rem",
+                  cursor: "pointer", flex: "1 1 auto",
+                }}
+              >
+                💎 Acheter des points
+              </button>
+              <button
+                onClick={() => setTab("rewards")}
+                style={{
+                  background: "rgba(255,255,255,.15)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,.25)",
+                  padding: "9px 18px", borderRadius: 9,
+                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".8rem",
+                  cursor: "pointer", flex: "1 1 auto",
+                }}
+              >
+                🎁 Échanger
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── STATS RAPIDES ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
+          {[
+            { icon: "🛍️", val: transactions.filter(t => t.type === "achat").length, lbl: "Achats" },
+            { icon: "💰", val: transactions.filter(t => t.type === "vente").length, lbl: "Ventes" },
+            { icon: "⭐", val: transactions.filter(t => t.type === "avis").length, lbl: "Avis" },
+            { icon: "🎁", val: redemptions.length, lbl: "Échanges" },
+          ].map(s => (
+            <div key={s.lbl} style={{
+              background: "var(--surface)", border: "1px solid var(--border)",
+              borderRadius: 10, padding: "12px 10px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: "1.3rem", marginBottom: 2 }}>{s.icon}</div>
+              <div style={{
+                fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)",
+              }}>{s.val}</div>
+              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{s.lbl}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── COMMENT GAGNER DES POINTS ── */}
+        <div style={{
+          background: "var(--green-pale)", border: "1px solid var(--green-light)",
+          borderRadius: 12, padding: 16, marginBottom: 18,
+        }}>
+          <div style={{
+            fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem",
+            color: "var(--green)", marginBottom: 10,
+          }}>
+            💡 Comment gagner des points ?
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+            {[
+              { emoji: "🛍️", t: "Chaque achat", d: "1 point / 500 FCFA dépensés", c: "var(--green)" },
+              { emoji: "💰", t: "Chaque vente", d: "1 point / 500 FCFA vendus", c: "var(--green)" },
+              { emoji: "⭐", t: "Avis clients", d: "2 à 10 pts selon la note", c: "#f59e0b" },
+            ].map(w => (
+              <div key={w.t} style={{
+                background: "var(--surface)", borderRadius: 9, padding: 12, textAlign: "center",
+              }}>
+                <div style={{ fontSize: "1.8rem", marginBottom: 5 }}>{w.emoji}</div>
+                <div style={{
+                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+                  color: "var(--ink)", marginBottom: 3,
+                }}>{w.t}</div>
+                <div style={{ fontSize: ".7rem", color: "var(--gray)" }}>{w.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── TABS ── */}
+        <div style={{
+          display: "flex", gap: 6, marginBottom: 16, borderBottom: "1px solid var(--border)",
+          overflowX: "auto",
+        }}>
+          {[
+            { id: "rewards",  label: "🎁 Récompenses",    count: rewards.length },
+            { id: "packs",    label: "💎 Acheter pts",   count: packs.length },
+            { id: "history",  label: "📜 Historique",     count: transactions.length },
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                padding: "10px 14px",
+                fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                color: tab === t.id ? "var(--green)" : "var(--gray)",
+                borderBottom: tab === t.id ? "3px solid var(--green)" : "3px solid transparent",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t.label} {t.count > 0 && <span style={{ opacity: .6, fontSize: ".72rem" }}>({t.count})</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* ── TAB : RÉCOMPENSES ── */}
+        {tab === "rewards" && (
+          loading ? <div className="loading"><div className="spinner" />Chargement...</div>
+          : rewards.length === 0 ? <div className="empty-state"><div className="empty-icon">🎁</div><p>Aucune récompense disponible</p></div>
+          : <div className="rewards-grid">
+              {rewards.map(r => {
+                const canAfford = currentPoints >= r.cout_points;
+                return (
+                  <div
+                    key={r.id}
+                    className="reward-card"
+                    style={{
+                      opacity: canAfford ? 1 : 0.72,
+                      position: "relative", overflow: "hidden",
+                    }}
+                  >
+                    {r.valeur_fcfa && (
+                      <span style={{
+                        position: "absolute", top: 8, right: 8,
+                        background: "var(--green)", color: "#fff",
+                        fontSize: ".58rem", fontWeight: 700,
+                        padding: "2px 7px", borderRadius: 4,
+                      }}>
+                        {r.valeur_fcfa.toLocaleString("fr-FR")} F
+                      </span>
+                    )}
+                    <div className="reward-icon" style={{ background: r.color_bg }}>{r.emoji}</div>
+                    <div className="reward-name">{r.nom}</div>
+                    {r.description && (
+                      <div style={{ fontSize: ".68rem", color: "var(--gray)", marginBottom: 6, textAlign: "center", lineHeight: 1.4 }}>
+                        {r.description}
+                      </div>
+                    )}
+                    <div className="reward-pts" style={{ color: canAfford ? "var(--green)" : "var(--gray)" }}>
+                      {r.cout_points.toLocaleString("fr-FR")} pts
+                    </div>
+                    <button
+                      className="reward-btn"
+                      onClick={() => setSelectedReward(r)}
+                      style={{
+                        background: canAfford ? "var(--green)" : "var(--surface2)",
+                        color: canAfford ? "#fff" : "var(--gray)",
+                        border: canAfford ? "none" : "1px solid var(--border)",
+                      }}
+                    >
+                      {canAfford ? "Échanger" : `Il manque ${(r.cout_points - currentPoints).toLocaleString("fr-FR")} pts`}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+        )}
+
+        {/* ── TAB : PACKS ── */}
+        {tab === "packs" && (
+          loading ? <div className="loading"><div className="spinner" />Chargement...</div>
+          : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
+              {packs.map(p => {
+                const bonus = p.bonus_pct ? Math.round(p.points * p.bonus_pct / 100) : 0;
+                const total = p.points + bonus;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedPack(p)}
+                    style={{
+                      background: "var(--surface)",
+                      border: `2px solid ${p.badge === "meilleur_deal" ? "var(--yellow)" : p.badge === "populaire" ? "var(--green)" : "var(--border)"}`,
+                      borderRadius: 12, padding: 14, cursor: "pointer",
+                      position: "relative", transition: "transform .15s,box-shadow .15s",
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,.08)"; }}
+                    onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+                  >
+                    {p.badge && (
+                      <span style={{
+                        position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)",
+                        background: p.badge === "meilleur_deal" ? "var(--yellow)" : p.badge === "populaire" ? "var(--green)" : "#7c3aed",
+                        color: p.badge === "meilleur_deal" ? "#0d1f14" : "#fff",
+                        fontSize: ".6rem", fontWeight: 800, padding: "3px 10px", borderRadius: 50,
+                        textTransform: "uppercase", letterSpacing: ".05em",
+                        fontFamily: "'Syne',sans-serif",
+                      }}>
+                        {p.badge === "meilleur_deal" ? "🔥 Meilleur deal" : p.badge === "populaire" ? "⭐ Populaire" : "🆕 Nouveau"}
+                      </span>
+                    )}
+
+                    <div style={{
+                      fontSize: "2.5rem", textAlign: "center", marginBottom: 6,
+                      background: p.color_bg, borderRadius: "50%",
+                      width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center",
+                      margin: "4px auto 8px",
+                    }}>
+                      {p.emoji}
+                    </div>
+
+                    <div style={{
+                      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem",
+                      color: "var(--ink)", textAlign: "center", marginBottom: 4,
+                    }}>
+                      Pack {p.nom}
+                    </div>
+
+                    <div style={{
+                      fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800,
+                      color: "var(--green)", textAlign: "center",
+                    }}>
+                      {total.toLocaleString("fr-FR")} pts
+                    </div>
+
+                    {bonus > 0 && (
+                      <div style={{
+                        textAlign: "center", fontSize: ".68rem", color: "#f59e0b",
+                        fontWeight: 700, marginBottom: 4,
+                      }}>
+                        +{bonus} pts bonus (+{p.bonus_pct}%)
+                      </div>
+                    )}
+
+                    <div style={{
+                      textAlign: "center", fontSize: ".88rem", fontWeight: 700,
+                      color: "var(--ink)", marginTop: 4,
+                    }}>
+                      {p.prix_fcfa.toLocaleString("fr-FR")} FCFA
+                    </div>
+
+                    <div style={{
+                      textAlign: "center", fontSize: ".6rem", color: "var(--gray)", marginTop: 2,
+                    }}>
+                      {(p.prix_fcfa / total).toFixed(1)} FCFA / pt
+                    </div>
+
+                    <button style={{
+                      width: "100%", marginTop: 10,
+                      background: "var(--green)", color: "#fff", border: "none",
+                      padding: "8px", borderRadius: 8, cursor: "pointer",
+                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                    }}>
+                      💳 Acheter
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+        )}
+
+        {/* ── TAB : HISTORIQUE ── */}
+        {tab === "history" && (
+          loading ? <div className="loading"><div className="spinner" />Chargement...</div>
+          : transactions.length === 0
+            ? <div className="empty-state">
+                <div className="empty-icon">📜</div>
+                <p>Aucune transaction pour l'instant.</p>
+                <p style={{ fontSize: ".78rem", marginTop: 8 }}>
+                  Passez une commande ou postez un avis pour gagner vos premiers points !
+                </p>
+              </div>
+            : <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+                {transactions.map((t, i) => {
+                  const info = typeLabels[t.type] || { label: t.type, emoji: "💫", color: "var(--gray)" };
+                  const isGain = t.points > 0;
+                  return (
+                    <div
+                      key={t.id}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 12,
+                        padding: "12px 14px",
+                        borderBottom: i < transactions.length - 1 ? "1px solid var(--border)" : "none",
+                      }}
+                    >
+                      <div style={{
+                        width: 38, height: 38, borderRadius: "50%",
+                        background: "var(--surface2)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "1.1rem", flexShrink: 0,
+                      }}>
+                        {info.emoji}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                          color: "var(--ink)",
+                        }}>
+                          {info.label}
+                        </div>
+                        <div style={{ fontSize: ".68rem", color: "var(--gray)", marginTop: 2 }}>
+                          {t.description || "—"}
+                          {t.montant_fcfa && ` · ${t.montant_fcfa.toLocaleString("fr-FR")} FCFA`}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{
+                          fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem",
+                          color: isGain ? "var(--green)" : "#ce1126",
+                        }}>
+                          {isGain ? "+" : ""}{t.points.toLocaleString("fr-FR")}
+                        </div>
+                        <div style={{ fontSize: ".6rem", color: "var(--gray)" }}>
+                          {new Date(t.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+        )}
+
+        {/* ── MES ÉCHANGES EN COURS ── */}
+        {tab === "rewards" && redemptions.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{
+              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem",
+              color: "var(--ink)", marginBottom: 12,
+            }}>
+              🎫 Mes codes récompenses
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 10 }}>
+              {redemptions.map(r => (
+                <div key={r.id} style={{
+                  background: "var(--surface)", border: "2px dashed var(--green-light)",
+                  borderRadius: 10, padding: 12,
+                }}>
+                  <div style={{ fontSize: ".72rem", color: "var(--gray)", marginBottom: 3 }}>
+                    {r.reward_nom}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem",
+                    color: "var(--green)", letterSpacing: "0.03em",
+                  }}>
+                    {r.code}
+                  </div>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", marginTop: 6,
+                    fontSize: ".64rem", color: "var(--gray)",
+                  }}>
+                    <span>Status : {r.status}</span>
+                    <span>
+                      {r.expire_at ? `Expire ${new Date(r.expire_at).toLocaleDateString("fr-FR")}` : ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════
 // ✅ PAGES LÉGALES — CGV, Mentions légales, Confidentialité
