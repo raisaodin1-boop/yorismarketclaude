@@ -247,3 +247,110 @@ export function emailLivraisonConfirmee(nom, numero) {
     `
   );
 }
+// ═══════════════════════════════════════════════════════════════
+// 🚚 CRÉATION AUTOMATIQUE DE LIVRAISON (Option A)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Génère un code de suivi unique au format YX-XXXXX
+ */
+export const genererCodeSuivi = () => {
+  const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+  const timestamp = Date.now().toString(36).slice(-3).toUpperCase();
+  return `YX-${random}${timestamp}`;
+};
+
+/**
+ * Crée automatiquement une livraison dans la table `deliveries`
+ * lorsqu'une commande est passée ou qu'un livreur est assigné.
+ *
+ * @param {Object} params
+ * @param {string} params.orderId - ID de la commande
+ * @param {string} params.clientNom - Nom du client
+ * @param {string} params.clientTel - Téléphone du client
+ * @param {string} params.adresseLivraison - Adresse de livraison
+ * @param {string} params.adresseCollecte - Adresse de collecte (boutique)
+ * @param {string} [params.livreurId] - ID du livreur (optionnel si pas encore assigné)
+ * @param {string} [params.livreurNom] - Nom du livreur
+ * @param {string} [params.livreurTel] - Téléphone livreur
+ * @returns {Promise<{code: string, delivery: Object}>}
+ */
+export const creerLivraisonAutomatique = async ({
+  supabase,
+  orderId,
+  clientNom = "",
+  clientTel = "",
+  adresseLivraison = "",
+  adresseCollecte = "",
+  livreurId = null,
+  livreurNom = null,
+  livreurTel = null,
+  livreurVehicule = "Moto",
+  distanceKm = 3.5,
+  tempsEstimeMin = 25,
+}) => {
+  const code = genererCodeSuivi();
+
+  const insertData = {
+    code_suivi:         code,
+    order_id:           orderId,
+    client_nom:         clientNom,
+    client_tel:         clientTel,
+    adresse_livraison:  adresseLivraison,
+    adresse_collecte:   adresseCollecte || "Boutique Yorix",
+    statut:             "commande_recue",
+    distance_km:        distanceKm,
+    temps_estime_min:   tempsEstimeMin,
+    commande_at:        new Date().toISOString(),
+  };
+
+  // Ajouter le livreur si déjà assigné
+  if (livreurId) {
+    insertData.livreur_id       = livreurId;
+    insertData.livreur_nom      = livreurNom;
+    insertData.livreur_tel      = livreurTel;
+    insertData.livreur_vehicule = livreurVehicule;
+  }
+
+  const { data, error } = await supabase
+    .from("deliveries")
+    .insert(insertData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("creerLivraisonAutomatique error:", error);
+    throw error;
+  }
+
+  return { code, delivery: data };
+};
+
+/**
+ * Met à jour le statut d'une livraison avec le timestamp approprié.
+ * Utilisé par le dashboard livreur.
+ */
+export const updateLivraisonStatut = async ({ supabase, deliveryId, newStatut }) => {
+  const updates = { statut: newStatut };
+
+  // Ajouter le timestamp correspondant à l'étape
+  const now = new Date().toISOString();
+  if (newStatut === "preparation") updates.preparation_at = now;
+  if (newStatut === "collecte")    updates.collecte_at    = now;
+  if (newStatut === "en_route")    updates.en_route_at    = now;
+  if (newStatut === "livre")       updates.livre_at       = now;
+
+  const { data, error } = await supabase
+    .from("deliveries")
+    .update(updates)
+    .eq("id", deliveryId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("updateLivraisonStatut error:", error);
+    throw error;
+  }
+
+  return data;
+};
