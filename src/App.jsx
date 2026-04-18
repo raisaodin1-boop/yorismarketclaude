@@ -55,6 +55,195 @@ import { makeCSS } from "./utils/styles";
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : ÉTOILES (rating)
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// COMPOSANT : CARTE PRESTATAIRE PREMIUM
+// ─────────────────────────────────────────────────────────────
+function PrestCard({ p, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: "var(--surface)", border: "1px solid var(--border)",
+        borderRadius: 14, overflow: "hidden",
+        cursor: "pointer", transition: "transform .2s, box-shadow .2s, border-color .2s",
+        display: "flex", flexDirection: "column",
+      }}
+      onMouseOver={e => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 14px 28px rgba(0,0,0,.1)";
+        e.currentTarget.style.borderColor = "var(--green-light)";
+      }}
+      onMouseOut={e => {
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.borderColor = "var(--border)";
+      }}
+    >
+      {/* Header avec photo */}
+      <div style={{
+        background: p.color_bg || "var(--green-pale)",
+        padding: "20px 16px", position: "relative",
+        display: "flex", alignItems: "center", gap: 12,
+      }}>
+        {p.photo ? (
+          <img
+            src={p.photo}
+            alt={p.name}
+            style={{
+              width: 60, height: 60, borderRadius: "50%",
+              objectFit: "cover", border: "3px solid #fff",
+              boxShadow: "0 4px 12px rgba(0,0,0,.1)",
+              flexShrink: 0,
+            }}
+            onError={e => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextSibling.style.display = "flex";
+            }}
+          />
+        ) : null}
+        <div style={{
+          display: p.photo ? "none" : "flex",
+          width: 60, height: 60, borderRadius: "50%",
+          background: "#fff", alignItems: "center", justifyContent: "center",
+          fontSize: "1.8rem", border: "3px solid #fff",
+          boxShadow: "0 4px 12px rgba(0,0,0,.1)", flexShrink: 0,
+        }}>
+          {p.emoji}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap",
+            marginBottom: 2,
+          }}>
+            <div style={{
+              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem",
+              color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}>
+              {p.name}
+            </div>
+            {p.verifie && (
+              <span title="Vérifié" style={{
+                background: "var(--green)", color: "#fff",
+                width: 16, height: 16, borderRadius: "50%",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                fontSize: ".55rem", fontWeight: 800, flexShrink: 0,
+              }}>
+                ✓
+              </span>
+            )}
+          </div>
+          <div style={{
+            fontSize: ".72rem", color: "var(--gray)", fontWeight: 500,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {p.metier}
+          </div>
+          <div style={{
+            fontSize: ".68rem", color: "var(--gray)", marginTop: 2,
+          }}>
+            📍 {p.ville}{p.quartier && ` · ${p.quartier}`}
+          </div>
+        </div>
+        {/* Badges */}
+        <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 4 }}>
+          {p.top && (
+            <span style={{
+              background: "var(--yellow)", color: "#0d1f14",
+              padding: "3px 8px", borderRadius: 50,
+              fontSize: ".6rem", fontWeight: 800,
+              fontFamily: "'Syne',sans-serif",
+              boxShadow: "0 2px 8px rgba(0,0,0,.1)",
+            }}>
+              ⭐ TOP
+            </span>
+          )}
+          {p.dispo && (
+            <span title="Disponible" style={{
+              width: 10, height: 10, background: "#22c55e",
+              borderRadius: "50%", border: "2px solid #fff",
+              boxShadow: "0 0 0 2px rgba(34,197,94,.3)",
+            }}/>
+          )}
+        </div>
+      </div>
+
+      {/* Corps */}
+      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Tags */}
+        {p.tags && p.tags.length > 0 && (
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+            {p.tags.slice(0, 3).map(t => (
+              <span key={t} style={{
+                background: "var(--surface2)", color: "var(--ink)",
+                padding: "3px 9px", borderRadius: 50,
+                fontSize: ".65rem", fontWeight: 600,
+              }}>
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Stats rapides */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
+          fontSize: ".7rem", color: "var(--gray)",
+        }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <span style={{ color: "#f59e0b" }}>⭐</span>
+            <strong style={{ color: "var(--ink)" }}>{p.note}</strong>
+            <span>({p.avis})</span>
+          </span>
+          {p.realisations > 0 && (
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              📦 <strong style={{ color: "var(--ink)" }}>{p.realisations}</strong>
+            </span>
+          )}
+          {p.experience && (
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              💼 <strong style={{ color: "var(--ink)" }}>{p.experience}</strong>
+            </span>
+          )}
+        </div>
+
+        {/* Prix + bouton */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          paddingTop: 10, borderTop: "1px solid var(--border)", marginTop: "auto",
+        }}>
+          <div>
+            <div style={{ fontSize: ".6rem", color: "var(--gray)", fontWeight: 600 }}>
+              TARIF
+            </div>
+            <div style={{
+              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem",
+              color: "var(--green)",
+            }}>
+              {p.prix}
+            </div>
+          </div>
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              const phone = (p.telephone || "237696565654").replace(/\D/g, "");
+              window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`Bonjour ${p.name} ! Je vous contacte via Yorix pour une prestation de ${p.categorie}.`)}`, "_blank");
+            }}
+            style={{
+              background: "#25D366", color: "#fff", border: "none",
+              padding: "7px 14px", borderRadius: 8,
+              fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+              cursor: "pointer", whiteSpace: "nowrap",
+              display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            💬 Contacter
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) {
   const [hover, setHover] = useState(0);
   const current = hover || value;
@@ -5528,6 +5717,10 @@ useEffect(() => {
   const [wishlist, setWishlist]             = useState(new Set());
   const [loyaltyPts, setLoyaltyPts]         = useState(320); 
   const [blogFilter, setBlogFilter]         = useState("TOUT"); // ✅ Filtre blog par catégorie
+  const [prestSearch, setPrestSearch]       = useState("");     // ✅ Recherche prestataires
+  const [prestCatFilter, setPrestCatFilter] = useState("");     // ✅ Filtre catégorie prestataires
+  const [prestVilleFilter, setPrestVilleFilter] = useState(""); // ✅ Filtre ville prestataires
+  const [selectedPrest, setSelectedPrest]   = useState(null);   // ✅ Modal détail prestataire
    // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
   const [academyLoading, setAcademyLoading] = useState(true);
@@ -6762,19 +6955,626 @@ useEffect(() => {
         </section>
       )}
 
-      {/* ════════ PAGE : PRESTATAIRES ════════ */}
+     {/* ════════ PAGE : PRESTATAIRES — VERSION PREMIUM ════════ */}
       {page==="prestataires"&&(
         <section className="sec anim">
-          <div className="sec-head"><h2 className="sec-title">👷 Prestataires Yorix vérifiés</h2><button className="btn-green" onClick={()=>goPage("inscription")}>+ Devenir prestataire</button></div>
-          <div className="prest-grid">
-            {PREST_DATA.map(p=>(
-              <div key={p.name} className="prest-card">
-                <div className="prest-top"><div className="prest-av">{p.emoji}</div><div><div className="prest-name">{p.name}</div><div className="prest-meta">{p.meta}</div></div></div>
-                <div className="prest-tags">{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
-                <div className="prest-footer"><div><div className="prest-price">{p.prix}</div><div style={{fontSize:".69rem",color:"var(--gray)"}}>⭐ {p.note} · {p.avis} avis</div></div><button className="btn-hire" onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je souhaite contacter ${p.name} pour ${p.tags[0]}`)}`,'_blank')}>WhatsApp</button></div>
+
+          {/* ── HERO PRESTATAIRES ── */}
+          <div style={{
+            background: "linear-gradient(135deg, #0a1410 0%, #1a3a24 50%, #0d3320 100%)",
+            borderRadius: 16,
+            padding: "32px 28px",
+            color: "#fff",
+            marginBottom: 24,
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", top: -40, right: -40, width: 200, height: 200,
+              background: "rgba(252,209,22,.08)", borderRadius: "50%",
+            }}/>
+            <div style={{
+              position: "absolute", bottom: -60, left: -50, width: 180, height: 180,
+              background: "rgba(79,209,125,.06)", borderRadius: "50%",
+            }}/>
+
+            <div style={{ position: "relative", zIndex: 2, display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24, alignItems: "center" }}>
+              <div>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: "rgba(252,209,22,.14)", color: "var(--yellow)",
+                  border: "1px solid rgba(252,209,22,.28)",
+                  padding: "5px 14px", borderRadius: 50,
+                  fontSize: ".72rem", fontWeight: 700, marginBottom: 14,
+                }}>
+                  👷 Prestataires Yorix
+                </div>
+                <h1 style={{
+                  fontFamily: "'Syne',sans-serif", fontSize: "1.9rem", fontWeight: 800,
+                  marginBottom: 10, letterSpacing: "-.5px", lineHeight: 1.15,
+                }}>
+                  Trouve le <span style={{ color: "var(--yellow)" }}>professionnel idéal</span> près de chez toi
+                </h1>
+                <p style={{
+                  color: "rgba(255,255,255,.65)", fontSize: ".88rem",
+                  maxWidth: 460, lineHeight: 1.7, marginBottom: 18,
+                }}>
+                  Plombiers, électriciens, photographes, coiffeuses, traiteurs... Tous vérifiés, notés et disponibles partout au Cameroun.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => goPage("inscription")}
+                    style={{
+                      background: "var(--yellow)", color: "#0d1f14", border: "none",
+                      padding: "11px 20px", borderRadius: 10,
+                      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem",
+                      cursor: "pointer", boxShadow: "0 4px 12px rgba(252,209,22,.25)",
+                    }}
+                  >
+                    🚀 Devenir prestataire
+                  </button>
+                  <button
+                    onClick={() => window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je cherche un prestataire.")}`, "_blank")}
+                    style={{
+                      background: "rgba(255,255,255,.1)", color: "#fff",
+                      border: "1px solid rgba(255,255,255,.2)",
+                      padding: "11px 20px", borderRadius: 10,
+                      fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".85rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    💬 Besoin d'aide ?
+                  </button>
+                </div>
               </div>
+
+              <div style={{
+                background: "rgba(255,255,255,.06)",
+                border: "1px solid rgba(255,255,255,.1)",
+                borderRadius: 12, padding: 18, backdropFilter: "blur(10px)",
+              }}>
+                <div style={{ fontSize: ".7rem", color: "rgba(255,255,255,.5)", fontWeight: 600, marginBottom: 12 }}>
+                  📊 LA MARKETPLACE DE SERVICES
+                </div>
+                {[
+                  { icon: "👷", val: "850+", lbl: "Prestataires actifs" },
+                  { icon: "✅", val: "100%", lbl: "Profils vérifiés" },
+                  { icon: "⭐", val: "4.8/5", lbl: "Note moyenne" },
+                  { icon: "📍", val: "10+", lbl: "Villes couvertes" },
+                ].map(s => (
+                  <div key={s.lbl} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "6px 0",
+                  }}>
+                    <span style={{ fontSize: "1.1rem" }}>{s.icon}</span>
+                    <span style={{
+                      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem",
+                      color: "var(--yellow)", minWidth: 50,
+                    }}>{s.val}</span>
+                    <span style={{ fontSize: ".72rem", color: "rgba(255,255,255,.6)" }}>{s.lbl}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── BARRE DE RECHERCHE + FILTRES ── */}
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 12, padding: 16, marginBottom: 20,
+            display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center",
+          }}>
+            <input
+              placeholder="🔍 Rechercher un prestataire, métier..."
+              value={prestSearch}
+              onChange={e => setPrestSearch(e.target.value)}
+              style={{
+                flex: "2 1 220px", minWidth: 200,
+                padding: "10px 14px", borderRadius: 9,
+                border: "1.5px solid var(--border)",
+                background: "var(--surface2)", color: "var(--ink)",
+                fontFamily: "'DM Sans',sans-serif", fontSize: ".85rem",
+                outline: "none",
+              }}
+            />
+            <select
+              value={prestCatFilter}
+              onChange={e => setPrestCatFilter(e.target.value)}
+              style={{
+                flex: "1 1 160px", padding: "10px 14px", borderRadius: 9,
+                border: "1.5px solid var(--border)",
+                background: "var(--surface2)", color: "var(--ink)",
+                fontFamily: "'DM Sans',sans-serif", fontSize: ".85rem",
+                outline: "none", cursor: "pointer",
+              }}
+            >
+              <option value="">Toutes catégories</option>
+              {Array.from(new Set(PREST_DATA.map(p => p.categorie))).map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select
+              value={prestVilleFilter}
+              onChange={e => setPrestVilleFilter(e.target.value)}
+              style={{
+                flex: "1 1 140px", padding: "10px 14px", borderRadius: 9,
+                border: "1.5px solid var(--border)",
+                background: "var(--surface2)", color: "var(--ink)",
+                fontFamily: "'DM Sans',sans-serif", fontSize: ".85rem",
+                outline: "none", cursor: "pointer",
+              }}
+            >
+              <option value="">Toutes villes</option>
+              {CITIES.filter(c => c !== "Toutes les villes").map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            {(prestSearch || prestCatFilter || prestVilleFilter) && (
+              <button
+                onClick={() => { setPrestSearch(""); setPrestCatFilter(""); setPrestVilleFilter(""); }}
+                style={{
+                  background: "var(--surface2)", color: "var(--ink)",
+                  border: "1.5px solid var(--border)", borderRadius: 9,
+                  padding: "10px 14px", cursor: "pointer",
+                  fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".78rem",
+                }}
+              >
+                ✕ Effacer
+              </button>
+            )}
+          </div>
+
+          {/* ── CATÉGORIES RAPIDES ── */}
+          <div style={{
+            display: "flex", gap: 10, flexWrap: "wrap",
+            marginBottom: 24, overflowX: "auto", paddingBottom: 4,
+          }}>
+            {[
+              { cat: "", label: "🌟 Tous", color: "var(--green)" },
+              { cat: "Plomberie", label: "🔧 Plomberie", color: "#3b82f6" },
+              { cat: "Électricité", label: "⚡ Électricité", color: "#f59e0b" },
+              { cat: "Photographie", label: "📸 Photo", color: "#8b5cf6" },
+              { cat: "Graphisme", label: "🎨 Design", color: "#ec4899" },
+              { cat: "Nettoyage", label: "🧹 Nettoyage", color: "#10b981" },
+              { cat: "Informatique", label: "💻 Tech", color: "#06b6d4" },
+              { cat: "Menuiserie", label: "🪚 Menuiserie", color: "#f97316" },
+              { cat: "Cuisine", label: "👩‍🍳 Traiteur", color: "#ef4444" },
+              { cat: "Beauté", label: "💇‍♀️ Beauté", color: "#d946ef" },
+            ].map(c => (
+              <button
+                key={c.label}
+                onClick={() => setPrestCatFilter(c.cat)}
+                style={{
+                  background: prestCatFilter === c.cat ? c.color : "var(--surface)",
+                  color: prestCatFilter === c.cat ? "#fff" : "var(--ink)",
+                  border: `1.5px solid ${prestCatFilter === c.cat ? c.color : "var(--border)"}`,
+                  borderRadius: 50, padding: "7px 16px",
+                  fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".76rem",
+                  cursor: "pointer", whiteSpace: "nowrap",
+                  transition: "all .2s",
+                }}
+              >
+                {c.label}
+              </button>
             ))}
           </div>
+
+          {/* ── SECTION PRESTATAIRES VEDETTES ── */}
+          {(() => {
+            // Combiner prestataires factices + réels Supabase
+            const realPrests = (allServices || []).map(s => ({
+              id: `real-${s.id}`,
+              name: s.provider_nom || "Prestataire Yorix",
+              metier: s.nom || "Service",
+              categorie: s.categorie || "Autre",
+              ville: s.ville || "Cameroun",
+              quartier: "",
+              emoji: "🛠️",
+              photo: null,
+              color_bg: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
+              tags: [s.categorie || "Service"].filter(Boolean),
+              note: s.note || 5.0,
+              avis: s.nombre_avis || 0,
+              prix: `${Number(s.prix || 0).toLocaleString("fr-FR")} FCFA`,
+              experience: "Nouveau",
+              verifie: false,
+              top: false,
+              dispo: s.disponible !== false,
+              bio: s.description || "Service de qualité sur Yorix.",
+              telephone: "",
+              realisations: 0,
+              isReal: true,
+            }));
+
+            const allPrests = [...PREST_DATA, ...realPrests];
+
+            // Filtrage
+            const filtered = allPrests.filter(p => {
+              if (prestSearch) {
+                const s = prestSearch.toLowerCase();
+                if (!p.name.toLowerCase().includes(s)
+                  && !p.metier.toLowerCase().includes(s)
+                  && !p.categorie.toLowerCase().includes(s)
+                  && !(p.tags || []).some(t => t.toLowerCase().includes(s)))
+                  return false;
+              }
+              if (prestCatFilter && p.categorie !== prestCatFilter) return false;
+              if (prestVilleFilter && p.ville !== prestVilleFilter) return false;
+              return true;
+            });
+
+            const topPrests = filtered.filter(p => p.top);
+            const otherPrests = filtered.filter(p => !p.top);
+
+            return (
+              <>
+                {/* Résultat count */}
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginBottom: 16,
+                }}>
+                  <div style={{
+                    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem",
+                    color: "var(--ink)",
+                  }}>
+                    {filtered.length} prestataire{filtered.length > 1 ? "s" : ""} trouvé{filtered.length > 1 ? "s" : ""}
+                  </div>
+                </div>
+
+                {/* ── TOP PRESTATAIRES ── */}
+                {topPrests.length > 0 && (
+                  <>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      marginBottom: 14,
+                    }}>
+                      <span style={{ fontSize: "1.2rem" }}>⭐</span>
+                      <h3 style={{
+                        fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.05rem",
+                        color: "var(--ink)", margin: 0,
+                      }}>
+                        Top prestataires
+                      </h3>
+                      <span style={{
+                        background: "var(--yellow)", color: "#0d1f14",
+                        fontSize: ".62rem", fontWeight: 800,
+                        padding: "2px 8px", borderRadius: 50,
+                      }}>
+                        RECOMMANDÉS
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
+                      gap: 16, marginBottom: 28,
+                    }}>
+                      {topPrests.map(p => (
+                        <PrestCard key={p.id} p={p} onClick={() => setSelectedPrest(p)} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* ── AUTRES PRESTATAIRES ── */}
+                {otherPrests.length > 0 && (
+                  <>
+                    {topPrests.length > 0 && (
+                      <h3 style={{
+                        fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.05rem",
+                        color: "var(--ink)", marginBottom: 14,
+                      }}>
+                        👷 Tous les prestataires
+                      </h3>
+                    )}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
+                      gap: 16,
+                    }}>
+                      {otherPrests.map(p => (
+                        <PrestCard key={p.id} p={p} onClick={() => setSelectedPrest(p)} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* ── AUCUN RÉSULTAT ── */}
+                {filtered.length === 0 && (
+                  <div className="empty-state" style={{ padding: "60px 20px" }}>
+                    <div className="empty-icon">🔍</div>
+                    <p>Aucun prestataire ne correspond à ta recherche.</p>
+                    <button
+                      onClick={() => { setPrestSearch(""); setPrestCatFilter(""); setPrestVilleFilter(""); }}
+                      style={{
+                        background: "var(--green)", color: "#fff", border: "none",
+                        padding: "10px 22px", borderRadius: 9, marginTop: 14,
+                        fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      🔄 Voir tous les prestataires
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          {/* ── COMMENT ÇA MARCHE ── */}
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 14, padding: 24, marginTop: 32,
+          }}>
+            <h3 style={{
+              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem",
+              color: "var(--ink)", marginBottom: 18, textAlign: "center",
+              letterSpacing: "-.3px",
+            }}>
+              🗺️ Comment ça fonctionne ?
+            </h3>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 14,
+            }}>
+              {[
+                { n: 1, icon: "🔍", t: "Cherche", d: "Filtre par métier, ville ou note" },
+                { n: 2, icon: "💬", t: "Contacte", d: "WhatsApp direct avec le prestataire" },
+                { n: 3, icon: "🤝", t: "Négocie", d: "Discute du tarif et des détails" },
+                { n: 4, icon: "⭐", t: "Évalue", d: "Laisse un avis après la prestation" },
+              ].map(s => (
+                <div key={s.n} style={{
+                  textAlign: "center", padding: "14px 10px",
+                  background: "var(--surface2)", borderRadius: 10,
+                  border: "1px solid var(--border)",
+                }}>
+                  <div style={{
+                    width: 32, height: 32, background: "var(--green)", color: "#fff",
+                    borderRadius: "50%", display: "flex", alignItems: "center",
+                    justifyContent: "center", fontFamily: "'Syne',sans-serif",
+                    fontWeight: 800, fontSize: ".82rem", margin: "0 auto 10px",
+                  }}>{s.n}</div>
+                  <div style={{ fontSize: "1.6rem", marginBottom: 6 }}>{s.icon}</div>
+                  <div style={{
+                    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".85rem",
+                    color: "var(--ink)", marginBottom: 4,
+                  }}>{s.t}</div>
+                  <div style={{ fontSize: ".72rem", color: "var(--gray)", lineHeight: 1.5 }}>{s.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── CTA DEVENIR PRESTATAIRE ── */}
+          <div style={{
+            background: "linear-gradient(135deg, var(--green-pale), #fef9e0)",
+            border: "2px solid var(--green-light)", borderRadius: 14,
+            padding: "28px 24px", marginTop: 24,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexWrap: "wrap", gap: 16,
+          }}>
+            <div style={{ flex: "1 1 300px" }}>
+              <h3 style={{
+                fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.15rem",
+                color: "var(--ink)", marginBottom: 8, letterSpacing: "-.3px",
+              }}>
+                🚀 Tu es un professionnel ?
+              </h3>
+              <p style={{
+                fontSize: ".86rem", color: "var(--gray)", lineHeight: 1.6, marginBottom: 12,
+              }}>
+                Rejoins les 850+ prestataires Yorix. Obtiens de nouveaux clients chaque semaine, gère tes prestations et bâtis ta réputation.
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["✅ Inscription gratuite", "📱 Clients via WhatsApp", "⭐ Système de notation"].map(t => (
+                  <span key={t} style={{
+                    background: "var(--surface)", color: "var(--ink)",
+                    padding: "4px 11px", borderRadius: 50, fontSize: ".7rem",
+                    fontWeight: 600, border: "1px solid var(--border)",
+                  }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => goPage("inscription")}
+              style={{
+                background: "var(--green)", color: "#fff", border: "none",
+                padding: "13px 26px", borderRadius: 10,
+                fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".9rem",
+                cursor: "pointer", whiteSpace: "nowrap",
+                boxShadow: "0 4px 12px rgba(26,107,58,.25)",
+              }}
+            >
+              🎯 Devenir prestataire
+            </button>
+          </div>
+
+          {/* ── MODAL DÉTAIL PRESTATAIRE ── */}
+          {selectedPrest && (
+            <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setSelectedPrest(null)}>
+              <div className="modal" style={{ maxWidth: 540 }}>
+                <button className="modal-close" onClick={() => setSelectedPrest(null)}>✕</button>
+
+                {/* Photo/Avatar */}
+                <div style={{
+                  background: selectedPrest.color_bg || "var(--green-pale)",
+                  borderRadius: 12, padding: 24, marginBottom: 16,
+                  textAlign: "center", position: "relative", overflow: "hidden",
+                }}>
+                  {selectedPrest.photo ? (
+                    <img
+                      src={selectedPrest.photo}
+                      alt={selectedPrest.name}
+                      style={{
+                        width: 100, height: 100, borderRadius: "50%",
+                        objectFit: "cover", border: "4px solid #fff",
+                        boxShadow: "0 6px 20px rgba(0,0,0,.15)",
+                      }}
+                      onError={e => { e.currentTarget.style.display = "none"; }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 100, height: 100, borderRadius: "50%",
+                      background: "var(--green)", color: "#fff", fontSize: "3rem",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      border: "4px solid #fff", boxShadow: "0 6px 20px rgba(0,0,0,.15)",
+                    }}>
+                      {selectedPrest.emoji}
+                    </div>
+                  )}
+
+                  <div style={{
+                    fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.25rem",
+                    color: "var(--ink)", marginTop: 12,
+                  }}>
+                    {selectedPrest.name}
+                    {selectedPrest.verifie && (
+                      <span style={{ marginLeft: 6, fontSize: ".82rem", color: "var(--green)" }}>✅</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: ".82rem", color: "var(--gray)", marginTop: 3 }}>
+                    {selectedPrest.metier} · 📍 {selectedPrest.ville}
+                    {selectedPrest.quartier && `, ${selectedPrest.quartier}`}
+                  </div>
+                  {selectedPrest.top && (
+                    <span style={{
+                      display: "inline-block", marginTop: 8,
+                      background: "var(--yellow)", color: "#0d1f14",
+                      padding: "3px 10px", borderRadius: 50,
+                      fontSize: ".65rem", fontWeight: 800,
+                      fontFamily: "'Syne',sans-serif",
+                    }}>
+                      ⭐ TOP PRESTATAIRE
+                    </span>
+                  )}
+                </div>
+
+                {/* Stats */}
+                <div style={{
+                  display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8,
+                  marginBottom: 16,
+                }}>
+                  {[
+                    { icon: "⭐", val: selectedPrest.note, lbl: `${selectedPrest.avis} avis` },
+                    { icon: "📦", val: selectedPrest.realisations, lbl: "réalisations" },
+                    { icon: "💼", val: selectedPrest.experience, lbl: "expérience" },
+                  ].map(s => (
+                    <div key={s.lbl} style={{
+                      background: "var(--surface2)", borderRadius: 9, padding: 10,
+                      textAlign: "center", border: "1px solid var(--border)",
+                    }}>
+                      <div style={{ fontSize: "1rem", marginBottom: 2 }}>{s.icon}</div>
+                      <div style={{
+                        fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem",
+                        color: "var(--ink)",
+                      }}>
+                        {s.val}
+                      </div>
+                      <div style={{ fontSize: ".62rem", color: "var(--gray)" }}>{s.lbl}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bio */}
+                {selectedPrest.bio && (
+                  <div style={{
+                    background: "var(--surface2)", borderRadius: 10, padding: 14,
+                    marginBottom: 14,
+                  }}>
+                    <div style={{
+                      fontSize: ".7rem", fontWeight: 700, color: "var(--gray)",
+                      marginBottom: 6,
+                    }}>
+                      📝 À PROPOS
+                    </div>
+                    <p style={{ fontSize: ".84rem", color: "var(--ink)", lineHeight: 1.6 }}>
+                      {selectedPrest.bio}
+                    </p>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {selectedPrest.tags && selectedPrest.tags.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{
+                      fontSize: ".7rem", fontWeight: 700, color: "var(--gray)",
+                      marginBottom: 8,
+                    }}>
+                      🏷️ SPÉCIALITÉS
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {selectedPrest.tags.map(t => (
+                        <span key={t} style={{
+                          background: "var(--green-pale)", color: "var(--green)",
+                          border: "1px solid var(--green-light)",
+                          padding: "4px 12px", borderRadius: 50,
+                          fontSize: ".72rem", fontWeight: 600,
+                        }}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Prix */}
+                <div style={{
+                  background: "var(--green-pale)", border: "1px solid var(--green-light)",
+                  borderRadius: 10, padding: 14, marginBottom: 16,
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                }}>
+                  <div>
+                    <div style={{ fontSize: ".7rem", color: "var(--gray)", fontWeight: 700 }}>TARIF</div>
+                    <div style={{
+                      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.2rem",
+                      color: "var(--green)",
+                    }}>
+                      {selectedPrest.prix}
+                    </div>
+                  </div>
+                  {selectedPrest.dispo && (
+                    <span style={{
+                      background: "#e6fff0", color: "#1a6b3a",
+                      padding: "5px 12px", borderRadius: 50,
+                      fontSize: ".72rem", fontWeight: 700,
+                      border: "1px solid #86efac",
+                    }}>
+                      🟢 Disponible
+                    </span>
+                  )}
+                </div>
+
+                {/* Boutons action */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <button
+                    onClick={() => window.open(`https://wa.me/${(selectedPrest.telephone || YORIX_WA_NUMBER).replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour ${selectedPrest.name} ! Je vous contacte via Yorix pour une prestation de ${selectedPrest.categorie}. Pouvez-vous m'aider ?`)}`, "_blank")}
+                    style={{
+                      background: "#25D366", color: "#fff", border: "none",
+                      padding: "12px", borderRadius: 9,
+                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    📱 WhatsApp direct
+                  </button>
+                  <button
+                    onClick={() => window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour Yorix ! Je souhaite réserver une prestation avec ${selectedPrest.name} (${selectedPrest.metier}).`)}`, "_blank")}
+                    style={{
+                      background: "var(--green)", color: "#fff", border: "none",
+                      padding: "12px", borderRadius: 9,
+                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    📅 Réserver via Yorix
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </section>
       )}
 
