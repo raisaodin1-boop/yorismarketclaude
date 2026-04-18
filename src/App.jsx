@@ -6822,8 +6822,129 @@ useEffect(() => {
     goPage("academyContact");
   };
 
-  const [inscriptionSent, setInscriptionSent] = useState(false);
+  constconst [inscriptionSent, setInscriptionSent] = useState(false);
+  const [inscriptionLoading, setInscriptionLoading] = useState(false);
+  const [inscriptionError, setInscriptionError] = useState("");
   const [inscriptionForm, setInscriptionForm] = useState({ nom:"",prenom:"",tel:"",email:"",metier:"",ville:"",experience:"",tarif:"",bio:"" });
+
+  // ─────────────────────────────────────────────────────────────
+  // SOUMETTRE CANDIDATURE PRESTATAIRE (avec Supabase + email + WA)
+  // ─────────────────────────────────────────────────────────────
+  const soumettreCandidaturePrestataire = async () => {
+    // Reset erreur
+    setInscriptionError("");
+
+    // Validation
+    if (!inscriptionForm.nom.trim()) {
+      setInscriptionError("Le nom est obligatoire");
+      return;
+    }
+    if (!inscriptionForm.tel.trim()) {
+      setInscriptionError("Le téléphone est obligatoire");
+      return;
+    }
+    if (!inscriptionForm.metier) {
+      setInscriptionError("Veuillez choisir un métier");
+      return;
+    }
+    // Validation email si renseigné
+    if (inscriptionForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inscriptionForm.email)) {
+      setInscriptionError("Email invalide");
+      return;
+    }
+
+    setInscriptionLoading(true);
+
+    try {
+      // 1️⃣ Enregistrement dans Supabase (table prestataires)
+      const { data, error } = await supabase
+        .from("prestataires")
+        .insert({
+          nom:        inscriptionForm.nom,
+          prenom:     inscriptionForm.prenom || null,
+          telephone:  inscriptionForm.tel,
+          email:      inscriptionForm.email || null,
+          metier:     inscriptionForm.metier,
+          ville:      inscriptionForm.ville || null,
+          experience: inscriptionForm.experience || null,
+          tarif:      inscriptionForm.tarif || null,
+          bio:        inscriptionForm.bio || null,
+          status:     "pending",
+          user_id:    user?.id || null,
+        })
+        .select()
+        .single();
+
+      // Si la table n'existe pas ou erreur Supabase, on continue quand même
+      // (on enverra au moins l'email + WhatsApp à l'admin)
+      if (error) {
+        console.warn("Table prestataires Supabase:", error.message);
+      }
+
+      // 2️⃣ Préparer le message WhatsApp pour l'admin Yorix
+      const wamsg = [
+        "👷 *NOUVELLE CANDIDATURE PRESTATAIRE YORIX*",
+        "",
+        "👤 *Informations*",
+        `Nom : ${inscriptionForm.nom}${inscriptionForm.prenom ? " " + inscriptionForm.prenom : ""}`,
+        `Téléphone : ${inscriptionForm.tel}`,
+        inscriptionForm.email ? `Email : ${inscriptionForm.email}` : "",
+        "",
+        "💼 *Profil professionnel*",
+        `Métier : ${inscriptionForm.metier}`,
+        inscriptionForm.ville ? `Ville : ${inscriptionForm.ville}` : "",
+        inscriptionForm.experience ? `Expérience : ${inscriptionForm.experience}` : "",
+        inscriptionForm.tarif ? `Tarif : ${inscriptionForm.tarif}` : "",
+        "",
+        inscriptionForm.bio ? `📝 *Présentation*\n${inscriptionForm.bio}` : "",
+        "",
+        "✅ *Actions à faire*",
+        "1. Contacter le candidat sous 24h",
+        "2. Vérifier les qualifications",
+        "3. Valider ou refuser le profil",
+        "",
+        "Yorix CM 🇨🇲",
+      ].filter(Boolean).join("\n");
+
+      // 3️⃣ Ouvrir WhatsApp avec le message pré-rempli
+      const waUrl = `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(wamsg)}`;
+      window.open(waUrl, "_blank");
+
+      // 4️⃣ Envoyer email à l'admin (non bloquant)
+      const sujet = `Nouvelle candidature prestataire — ${inscriptionForm.nom} (${inscriptionForm.metier})`;
+      const corps = [
+        "Bonjour,",
+        "",
+        "Nouvelle candidature prestataire sur Yorix CM :",
+        "",
+        `👤 Nom : ${inscriptionForm.nom}${inscriptionForm.prenom ? " " + inscriptionForm.prenom : ""}`,
+        `📞 Téléphone : ${inscriptionForm.tel}`,
+        inscriptionForm.email ? `📧 Email : ${inscriptionForm.email}` : "",
+        `💼 Métier : ${inscriptionForm.metier}`,
+        inscriptionForm.ville ? `📍 Ville : ${inscriptionForm.ville}` : "",
+        inscriptionForm.experience ? `⏱ Expérience : ${inscriptionForm.experience}` : "",
+        inscriptionForm.tarif ? `💰 Tarif : ${inscriptionForm.tarif}` : "",
+        "",
+        inscriptionForm.bio ? `📝 Présentation :\n${inscriptionForm.bio}` : "",
+        "",
+        "---",
+        "Envoyé depuis yorix.cm",
+      ].filter(Boolean).join("\n");
+
+      const mailtoUrl = `mailto:raisaodin1@gmail.com?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+      // Ouvrir dans un nouvel onglet pour ne pas casser le flux
+      setTimeout(() => window.open(mailtoUrl, "_blank"), 500);
+
+      // 5️⃣ Succès
+      setInscriptionSent(true);
+
+    } catch (err) {
+      console.error("soumettreCandidaturePrestataire:", err);
+      setInscriptionError("Erreur : " + (err.message || "Impossible d'envoyer la candidature. Réessayez."));
+    }
+
+    setInscriptionLoading(false);
+  };
 
   const [chatMessages, setChatMessages] = useState([{ text:"Bonjour ! Comment puis-je vous aider ?", me:false, time:"10:02" }]);
   const [chatMsg, setChatMsg]       = useState("");
@@ -8706,27 +8827,66 @@ useEffect(() => {
       )}
 
       {/* ════════ PAGE : INSCRIPTION PRESTATAIRE ════════ */}
-      {page==="inscription"&&(
+      {{page==="inscription"&&(
         <section className="sec anim">
           <div style={{maxWidth:600,margin:"0 auto"}}>
             <div style={{textAlign:"center",marginBottom:24}}>
               <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.6rem",fontWeight:800,color:"var(--ink)",marginBottom:7,letterSpacing:"-.5px"}}>👷 Devenir prestataire Yorix</h2>
               <p style={{color:"var(--gray)",fontSize:".86rem",lineHeight:1.7}}>Développez votre activité et accédez à des milliers de clients au Cameroun.</p>
             </div>
-            {inscriptionSent?<div className="success-msg">🎉 Candidature envoyée ! L'équipe Yorix vous contacte sous 24h.</div>:(
+            {inscriptionSent?(
+              <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:40,textAlign:"center"}}>
+                <div style={{fontSize:"3.5rem",marginBottom:14}}>🎉</div>
+                <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.2rem",color:"var(--green)",marginBottom:10}}>Candidature envoyée avec succès !</h3>
+                <p style={{fontSize:".88rem",color:"var(--gray)",lineHeight:1.7,maxWidth:420,margin:"0 auto 20px"}}>
+                  Merci pour votre intérêt ! L'équipe Yorix vous contactera sous <strong>24h</strong> pour valider votre profil de prestataire.
+                </p>
+                <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+                  <button
+                    onClick={()=>{setInscriptionSent(false);setInscriptionForm({nom:"",prenom:"",tel:"",email:"",metier:"",ville:"",experience:"",tarif:"",bio:""});}}
+                    style={{background:"var(--surface2)",color:"var(--ink)",border:"1.5px solid var(--border)",borderRadius:8,padding:"9px 20px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".82rem"}}
+                  >
+                    Soumettre une autre candidature
+                  </button>
+                  <button
+                    onClick={()=>goPage("home")}
+                    style={{background:"var(--green)",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem"}}
+                  >
+                    ← Retour à l'accueil
+                  </button>
+                </div>
+              </div>
+            ):(
               <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:24}}>
+                {inscriptionError && (
+                  <div style={{background:"#fff0f0",border:"1px solid #fecaca",color:"#ce1126",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:".82rem"}}>
+                    ⚠️ {inscriptionError}
+                  </div>
+                )}
                 <div className="form-row">
                   <div className="form-group"><label className="form-label">Nom <span>*</span></label><input className="form-input" value={inscriptionForm.nom} onChange={e=>setInscriptionForm(f=>({...f,nom:e.target.value}))} placeholder="Votre nom"/></div>
                   <div className="form-group"><label className="form-label">Prénom</label><input className="form-input" value={inscriptionForm.prenom} onChange={e=>setInscriptionForm(f=>({...f,prenom:e.target.value}))} placeholder="Votre prénom"/></div>
                   <div className="form-group"><label className="form-label">Téléphone <span>*</span></label><input className="form-input" value={inscriptionForm.tel} onChange={e=>setInscriptionForm(f=>({...f,tel:e.target.value}))} placeholder="+237 696 56 56 54"/></div>
-                  <div className="form-group"><label className="form-label">Email</label><input className="form-input" value={inscriptionForm.email} onChange={e=>setInscriptionForm(f=>({...f,email:e.target.value}))} placeholder="email@mail.com"/></div>
+                  <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" value={inscriptionForm.email} onChange={e=>setInscriptionForm(f=>({...f,email:e.target.value}))} placeholder="email@mail.com"/></div>
                   <div className="form-group"><label className="form-label">Métier <span>*</span></label><select className="form-select" value={inscriptionForm.metier} onChange={e=>setInscriptionForm(f=>({...f,metier:e.target.value}))}><option value="">Choisir...</option>{["Plomberie","Électricité","Maçonnerie","Peinture","Menuiserie","Informatique","Graphisme","Photographie","Nettoyage","Transport","Cuisine","Autre"].map(m=><option key={m}>{m}</option>)}</select></div>
                   <div className="form-group"><label className="form-label">Ville</label><select className="form-select" value={inscriptionForm.ville} onChange={e=>setInscriptionForm(f=>({...f,ville:e.target.value}))}><option value="">Choisir...</option>{CITIES.filter(c=>c!=="Toutes les villes").map(c=><option key={c}>{c}</option>)}</select></div>
                   <div className="form-group"><label className="form-label">Expérience</label><input className="form-input" value={inscriptionForm.experience} onChange={e=>setInscriptionForm(f=>({...f,experience:e.target.value}))} placeholder="Ex: 5 ans"/></div>
                   <div className="form-group"><label className="form-label">Tarif (FCFA)</label><input className="form-input" value={inscriptionForm.tarif} onChange={e=>setInscriptionForm(f=>({...f,tarif:e.target.value}))} placeholder="Ex: 15 000/h"/></div>
                   <div className="form-group full"><label className="form-label">Présentation</label><textarea className="form-textarea" value={inscriptionForm.bio} onChange={e=>setInscriptionForm(f=>({...f,bio:e.target.value}))} placeholder="Décrivez vos compétences..."/></div>
                 </div>
-                <button className="form-submit" onClick={async()=>{if(!inscriptionForm.nom||!inscriptionForm.tel||!inscriptionForm.metier){alert("Nom, téléphone et métier obligatoires !");return;}await supabase.from("prestataires").insert(inscriptionForm).catch(e => console.warn(e?.message));setInscriptionSent(true);}}>🚀 Soumettre ma candidature</button>
+                <button 
+                  className="form-submit" 
+                  disabled={inscriptionLoading}
+                  onClick={soumettreCandidaturePrestataire}
+                >
+                  {inscriptionLoading 
+                    ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Envoi en cours...</>
+                    : "🚀 Soumettre ma candidature"
+                  }
+                </button>
+                <p style={{fontSize:".7rem",color:"var(--gray)",textAlign:"center",marginTop:10,lineHeight:1.5}}>
+                  🔒 Vos informations sont sécurisées · Réponse sous 24h
+                </p>
               </div>
             )}
           </div>
