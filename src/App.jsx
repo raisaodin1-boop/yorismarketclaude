@@ -6822,7 +6822,7 @@ useEffect(() => {
     goPage("academyContact");
   };
 
-  constconst [inscriptionSent, setInscriptionSent] = useState(false);
+  const [inscriptionSent, setInscriptionSent] = useState(false);
   const [inscriptionLoading, setInscriptionLoading] = useState(false);
   const [inscriptionError, setInscriptionError] = useState("");
   const [inscriptionForm, setInscriptionForm] = useState({ nom:"",prenom:"",tel:"",email:"",metier:"",ville:"",experience:"",tarif:"",bio:"" });
