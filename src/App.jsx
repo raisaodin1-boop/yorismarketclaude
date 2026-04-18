@@ -3192,10 +3192,6 @@ function LoyaltyAdminTab({ user, userData, showToast }) {
   const [prestatairesCount, setPrestatairesCount] = useState(0);
   const [selectedPrest, setSelectedPrest] = useState(null);
   const [prestFilter, setPrestFilter] = useState("pending");
-  const [prestatairesList, setPrestatairesList] = useState([]);
-  const [prestatairesCount, setPrestatairesCount] = useState(0);
-  const [selectedPrest, setSelectedPrest] = useState(null);
-  const [prestFilter, setPrestFilter] = useState("pending");
 
   // Charger les achats
   const loadPurchases = async () => {
