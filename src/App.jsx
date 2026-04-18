@@ -449,63 +449,60 @@ function DeliveryTracker() {
           </div>
 
           {/* ── CARTE LIVREUR ── */}
-          {delivery.livreur_nom && (() => {
-            const phoneClean = (delivery.livreur_tel || "").replace(/\D/g, "");
-            const waMsg = "Bonjour " + delivery.livreur_nom + " ! C'est pour la commande " + delivery.code_suivi + ".";
-            const waLink = "https://wa.me/" + phoneClean + "?text=" + encodeURIComponent(waMsg);
-            return (
+          {delivery.livreur_nom && (
+            <div style={{
+              background: "var(--surface2)", margin: "0 22px 20px",
+              borderRadius: 12, padding: 14,
+              display: "flex", alignItems: "center", gap: 12,
+              border: "1px solid var(--border)",
+            }}>
               <div style={{
-                background: "var(--surface2)", margin: "0 22px 20px",
-                borderRadius: 12, padding: 14,
-                display: "flex", alignItems: "center", gap: 12,
-                border: "1px solid var(--border)",
+                width: 54, height: 54, borderRadius: "50%",
+                background: "var(--green)", color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1.6rem", flexShrink: 0,
+                boxShadow: "0 4px 12px rgba(26,107,58,.25)",
               }}>
-                <div style={{
-                  width: 54, height: 54, borderRadius: "50%",
-                  background: "var(--green)", color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1.6rem", flexShrink: 0,
-                  boxShadow: "0 4px 12px rgba(26,107,58,.25)",
-                }}>
-                  🏍️
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem",
-                    color: "var(--ink)",
-                  }}>
-                    {delivery.livreur_nom}
-                  </div>
-                  <div style={{
-                    display: "flex", gap: 10, fontSize: ".7rem",
-                    color: "var(--gray)", marginTop: 3, flexWrap: "wrap",
-                  }}>
-                    <span>⭐ {delivery.livreur_note || 4.8}</span>
-                    <span>🏍️ {delivery.livreur_vehicule || "Moto"}</span>
-                    <span>📏 {delivery.distance_km || 3.5} km</span>
-                  </div>
-                </div>
-                {delivery.livreur_tel && (
-                  
-                    href={waLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      background: "#25D366", color: "#fff",
-                      padding: "10px 16px", borderRadius: 9,
-                      textDecoration: "none", fontSize: ".76rem",
-                      fontFamily: "'Syne',sans-serif", fontWeight: 700,
-                      display: "flex", alignItems: "center", gap: 5,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    💬 Appeler
-                  </a>
-                )}
+                🏍️
               </div>
-            );
-          })()}
-
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem",
+                  color: "var(--ink)",
+                }}>
+                  {delivery.livreur_nom}
+                </div>
+                <div style={{
+                  display: "flex", gap: 10, fontSize: ".7rem",
+                  color: "var(--gray)", marginTop: 3, flexWrap: "wrap",
+                }}>
+                  <span>⭐ {delivery.livreur_note || 4.8}</span>
+                  <span>🏍️ {delivery.livreur_vehicule || "Moto"}</span>
+                  <span>📏 {delivery.distance_km || 3.5} km</span>
+                </div>
+              </div>
+              {delivery.livreur_tel && (
+                <button
+                  onClick={() => {
+                    const phoneClean = (delivery.livreur_tel || "").replace(/\D/g, "");
+                    const waMsg = "Bonjour " + delivery.livreur_nom + " ! C'est pour la commande " + delivery.code_suivi + ".";
+                    const waLink = "https://wa.me/" + phoneClean + "?text=" + encodeURIComponent(waMsg);
+                    window.open(waLink, "_blank");
+                  }}
+                  style={{
+                    background: "#25D366", color: "#fff", border: "none",
+                    padding: "10px 16px", borderRadius: 9,
+                    cursor: "pointer", fontSize: ".76rem",
+                    fontFamily: "'Syne',sans-serif", fontWeight: 700,
+                    display: "flex", alignItems: "center", gap: 5,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  💬 Appeler
+                </button>
+              )}
+            </div>
+          )}
           {/* ── BOUTON SUPPORT ── */}
           <div style={{
             padding: "14px 22px 20px", borderTop: "1px solid var(--border)",
