@@ -3188,6 +3188,10 @@ function LoyaltyAdminTab({ user, userData, showToast }) {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [stats, setStats]         = useState({ pending: 0, credited: 0, cancelled: 0, revenue: 0 });
+  const [prestatairesList, setPrestatairesList] = useState([]);
+  const [prestatairesCount, setPrestatairesCount] = useState(0);
+  const [selectedPrest, setSelectedPrest] = useState(null);
+  const [prestFilter, setPrestFilter] = useState("pending");
 
   // Charger les achats
   const loadPurchases = async () => {
@@ -3761,18 +3765,24 @@ function AdminDashboard({ user, userData, goPage }) {
   // ─── Chargement des données ───
   useEffect(() => { loadAll(); }, [refreshKey]);
 
-  const loadAll = async () => {
+ const loadAll = async () => {
     setLoading(true);
     try {
       const today = new Date(); today.setHours(0,0,0,0);
       const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
 
-      const [usersRes, profilesRes, prodRes, ordersRes] = await Promise.all([
+      const [usersRes, profilesRes, prodRes, ordersRes, prestRes] = await Promise.all([
   supabase.from("users").select("*").order("created_at",{ascending:false}).limit(500),
   supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(500),
   supabase.from("products").select("*").order("created_at",{ascending:false}).limit(500),
   supabase.from("orders").select("*").order("created_at",{ascending:false}).limit(500),
-]);
+  supabase.from("prestataires").select("*").order("created_at",{ascending:false}).limit(200),
+      ]);
+
+      // Prestataires
+      const prestData = prestRes?.data || [];
+      setPrestatairesList(prestData);
+      setPrestatairesCount(prestData.filter(p => p.status === "pending").length);
 
 // Fusionner users + profiles (dédupliquer par id/uid)
 const rawUsers    = usersRes.data    || [];
@@ -4007,15 +4017,16 @@ const supprimerUser = async (uid, email) => {
 
  const CATS_LIST = ["Téléphones & HighTech","Mode & Accesoires","Alimentation","Maison & Decoration","Agricole","Beauté & Soins","BTP","Automobile","Éducation","Services"];
   // ─── Navigation ───
-  const NAV = [
-    {id:"overview",    icon:"📊", label:"Vue d'ensemble"},
-    {id:"produits",    icon:"📦", label:"Produits",    badge:produits.filter(p=>(p.stock||0)===0).length||null},
-    {id:"commandes",   icon:"🛍️", label:"Commandes",   badge:commandes.filter(o=>o.status==="pending").length||null},
-    {id:"utilisateurs",icon:"👥", label:"Utilisateurs"},
-    {id:"vendeurs",    icon:"🏪", label:"Vendeurs"},
-    {id:"revenus",     icon:"💰", label:"Revenus"},
-    {id:"loyalty",     icon:"🌟", label:"Yorix Points"},
-    {id:"alertes",     icon:"🔔", label:"Alertes",     badge:alertes.length||null},
+ const NAV = [
+    {id:"overview",     icon:"📊", label:"Vue d'ensemble"},
+    {id:"produits",     icon:"📦", label:"Produits",    badge:produits.filter(p=>(p.stock||0)===0).length||null},
+    {id:"commandes",    icon:"🛍️", label:"Commandes",   badge:commandes.filter(o=>o.status==="pending").length||null},
+    {id:"utilisateurs", icon:"👥", label:"Utilisateurs"},
+    {id:"vendeurs",     icon:"🏪", label:"Vendeurs"},
+    {id:"prestataires", icon:"👷", label:"Prestataires", badge:prestatairesCount||null},
+    {id:"revenus",      icon:"💰", label:"Revenus"},
+    {id:"loyalty",      icon:"🌟", label:"Yorix Points"},
+    {id:"alertes",      icon:"🔔", label:"Alertes",     badge:alertes.length||null},
   ];
 
   // ─── Helpers UI ───
@@ -4862,6 +4873,234 @@ const supprimerUser = async (uid, email) => {
                 ))
               }
             </div>
+          </>
+        )}
+        
+        {/* ════ PRESTATAIRES ════ */}
+        {adminTab === "prestataires" && (
+          <>
+            <div className="admin-page-title">
+              👷 Candidatures prestataires
+              <span style={{fontSize:".75rem",background:prestatairesCount>0?"#ce1126":"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>
+                {prestatairesCount} en attente
+              </span>
+            </div>
+
+            {/* Stats prestataires */}
+            <div className="stat-cards-grid" style={{marginBottom:18}}>
+              <StatCard icon="⏳" val={prestatairesList.filter(p=>p.status==="pending").length} lbl="En attente" col="#fff9e6" ic="#b8860b"/>
+              <StatCard icon="✅" val={prestatairesList.filter(p=>p.status==="approved").length} lbl="Approuvés" col="#e6fff0" ic="#1a6b3a"/>
+              <StatCard icon="❌" val={prestatairesList.filter(p=>p.status==="rejected").length} lbl="Refusés" col="#fff0f0" ic="#ce1126"/>
+              <StatCard icon="📋" val={prestatairesList.length} lbl="Total" col="#e6f0ff" ic="#1a4a9a"/>
+            </div>
+
+            {/* Filtres */}
+            <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+              {[
+                {id:"pending",   label:"⏳ En attente"},
+                {id:"approved",  label:"✅ Approuvés"},
+                {id:"rejected",  label:"❌ Refusés"},
+                {id:"all",       label:"📋 Tous"},
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setPrestFilter(f.id)}
+                  style={{
+                    background: prestFilter===f.id ? "var(--green)" : "var(--surface)",
+                    color: prestFilter===f.id ? "#fff" : "var(--ink)",
+                    border: `1.5px solid ${prestFilter===f.id ? "var(--green)" : "var(--border)"}`,
+                    borderRadius:8, padding:"7px 14px", cursor:"pointer",
+                    fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".78rem",
+                  }}
+                >
+                  {f.label} ({f.id==="all" ? prestatairesList.length : prestatairesList.filter(p=>p.status===f.id).length})
+                </button>
+              ))}
+            </div>
+
+            {/* Table candidatures */}
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Candidat</th>
+                    <th>Métier</th>
+                    <th>Ville</th>
+                    <th>Téléphone</th>
+                    <th>Tarif</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prestatairesList
+                    .filter(p => prestFilter==="all" || p.status===prestFilter)
+                    .map(p => (
+                      <tr key={p.id}>
+                        <td>
+                          <strong style={{fontSize:".82rem"}}>
+                            {p.nom}{p.prenom ? " " + p.prenom : ""}
+                          </strong>
+                          {p.email && <div style={{fontSize:".67rem",color:"var(--gray)"}}>{p.email}</div>}
+                        </td>
+                        <td><span className="admin-badge admin-badge-blue">{p.metier}</span></td>
+                        <td style={{fontSize:".75rem"}}>{p.ville || "—"}</td>
+                        <td style={{fontSize:".75rem",color:"var(--gray)"}}>{p.telephone}</td>
+                        <td style={{fontSize:".75rem",fontWeight:600,color:"var(--green)"}}>{p.tarif || "—"}</td>
+                        <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>
+                          {p.created_at ? new Date(p.created_at).toLocaleDateString("fr-FR") : "—"}
+                        </td>
+                        <td>
+                          <span className={`admin-badge admin-badge-${
+                            p.status==="approved" ? "green" :
+                            p.status==="rejected" ? "red" : "yellow"
+                          }`}>
+                            {p.status==="approved" ? "✅ Approuvé" :
+                             p.status==="rejected" ? "❌ Refusé" : "⏳ En attente"}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                            {p.status==="pending" && (
+                              <>
+                                <button
+                                  className="admin-action-btn"
+                                  style={{background:"#e6fff0",color:"#1a6b3a"}}
+                                  title="Approuver"
+                                  onClick={async() => {
+                                    if(!window.confirm(`Approuver ${p.nom} comme prestataire ?`)) return;
+                                    await supabase.from("prestataires").update({status:"approved",verifie:true}).eq("id",p.id);
+                                    setPrestatairesList(prev => prev.map(x => x.id===p.id ? {...x,status:"approved",verifie:true} : x));
+                                    setPrestatairesCount(prev => Math.max(0,prev-1));
+                                    showToast(`✅ ${p.nom} approuvé comme prestataire`);
+                                  }}
+                                >
+                                  ✅
+                                </button>
+                                <button
+                                  className="admin-action-btn"
+                                  style={{background:"#fff0f0",color:"#ce1126"}}
+                                  title="Refuser"
+                                  onClick={async() => {
+                                    const reason = window.prompt("Raison du refus (optionnel) :");
+                                    if(reason === null) return;
+                                    await supabase.from("prestataires").update({status:"rejected",admin_notes:reason}).eq("id",p.id);
+                                    setPrestatairesList(prev => prev.map(x => x.id===p.id ? {...x,status:"rejected",admin_notes:reason} : x));
+                                    setPrestatairesCount(prev => Math.max(0,prev-1));
+                                    showToast(`❌ Candidature de ${p.nom} refusée`);
+                                  }}
+                                >
+                                  ❌
+                                </button>
+                              </>
+                            )}
+                            <button
+                              className="admin-action-btn"
+                              style={{background:"#dcfce7",color:"#166534"}}
+                              title="WhatsApp"
+                              onClick={() => window.open(`https://wa.me/${p.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${p.nom}, concernant votre candidature prestataire Yorix pour ${p.metier}...`)}`)}
+                            >
+                              📱
+                            </button>
+                            <button
+                              className="admin-action-btn"
+                              style={{background:"#e6f0ff",color:"#1a4a9a"}}
+                              title="Voir détails"
+                              onClick={() => setSelectedPrest(p)}
+                            >
+                              👁
+                            </button>
+                            <button
+                              className="admin-action-btn"
+                              style={{background:"#fff0f0",color:"#ce1126"}}
+                              title="Supprimer"
+                              onClick={async() => {
+                                if(!window.confirm(`Supprimer définitivement la candidature de ${p.nom} ?`)) return;
+                                await supabase.from("prestataires").delete().eq("id",p.id);
+                                setPrestatairesList(prev => prev.filter(x => x.id!==p.id));
+                                showToast("Candidature supprimée");
+                              }}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  }
+                  {prestatairesList.filter(p => prestFilter==="all" || p.status===prestFilter).length === 0 && (
+                    <tr>
+                      <td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>
+                        Aucune candidature {prestFilter!=="all" ? prestFilter : ""}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal détail prestataire */}
+            {selectedPrest && (
+              <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setSelectedPrest(null)}>
+                <div className="modal" style={{maxWidth:520}}>
+                  <button className="modal-close" onClick={()=>setSelectedPrest(null)}>✕</button>
+                  <div className="modal-title">
+                    👷 {selectedPrest.nom}{selectedPrest.prenom ? " " + selectedPrest.prenom : ""}
+                  </div>
+                  <div className="modal-sub">
+                    Candidature du {selectedPrest.created_at ? new Date(selectedPrest.created_at).toLocaleDateString("fr-FR") : ""}
+                  </div>
+
+                  <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
+                    {[
+                      ["💼 Métier", selectedPrest.metier],
+                      ["📍 Ville", selectedPrest.ville || "—"],
+                      ["📞 Téléphone", selectedPrest.telephone],
+                      ["📧 Email", selectedPrest.email || "—"],
+                      ["⏱ Expérience", selectedPrest.experience || "—"],
+                      ["💰 Tarif", selectedPrest.tarif || "—"],
+                    ].map(([k,v]) => (
+                      <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:".82rem",padding:"6px 0",borderBottom:"1px solid var(--border)"}}>
+                        <span style={{color:"var(--gray)"}}>{k}</span>
+                        <strong>{v}</strong>
+                      </div>
+                    ))}
+                  </div>
+
+                  {selectedPrest.bio && (
+                    <div style={{marginTop:12,background:"var(--surface2)",borderRadius:9,padding:12}}>
+                      <div style={{fontSize:".7rem",fontWeight:700,color:"var(--gray)",marginBottom:5}}>📝 PRÉSENTATION</div>
+                      <p style={{fontSize:".82rem",color:"var(--ink)",lineHeight:1.6}}>{selectedPrest.bio}</p>
+                    </div>
+                  )}
+
+                  {selectedPrest.admin_notes && (
+                    <div style={{marginTop:10,background:"#fff0f0",border:"1px solid #fecaca",borderRadius:9,padding:12}}>
+                      <div style={{fontSize:".7rem",fontWeight:700,color:"#ce1126",marginBottom:5}}>📌 NOTE ADMIN</div>
+                      <p style={{fontSize:".82rem",color:"#78350f"}}>{selectedPrest.admin_notes}</p>
+                    </div>
+                  )}
+
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:16}}>
+                    <button
+                      onClick={() => window.open(`https://wa.me/${selectedPrest.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${selectedPrest.nom}, l'équipe Yorix vous contacte concernant votre candidature prestataire (${selectedPrest.metier}).`)}`)}
+                      style={{background:"#25D366",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".8rem"}}
+                    >
+                      📱 WhatsApp
+                    </button>
+                    {selectedPrest.email && (
+                      <button
+                        onClick={() => window.open(`mailto:${selectedPrest.email}?subject=${encodeURIComponent("Candidature prestataire Yorix")}&body=${encodeURIComponent(`Bonjour ${selectedPrest.nom},\n\nConcernant votre candidature prestataire Yorix pour ${selectedPrest.metier}...`)}`)}
+                        style={{background:"var(--green)",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".8rem"}}
+                      >
+                        ✉️ Email
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
