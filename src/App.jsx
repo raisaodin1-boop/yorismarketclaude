@@ -3188,7 +3188,7 @@ function LoyaltyAdminTab({ user, userData, showToast }) {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [stats, setStats]         = useState({ pending: 0, credited: 0, cancelled: 0, revenue: 0 });
-  const [prestatairesList, setPrestatairesList] = useState([]);
+ const [prestatairesList, setPrestatairesList] = useState([]);
   const [prestatairesCount, setPrestatairesCount] = useState(0);
   const [selectedPrest, setSelectedPrest] = useState(null);
   const [prestFilter, setPrestFilter] = useState("pending");
