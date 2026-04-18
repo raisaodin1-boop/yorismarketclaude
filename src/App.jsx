@@ -5527,6 +5527,7 @@ useEffect(() => {
   const [nlSent, setNlSent]                 = useState(false);
   const [wishlist, setWishlist]             = useState(new Set());
   const [loyaltyPts, setLoyaltyPts]         = useState(320); 
+  const [blogFilter, setBlogFilter]         = useState("TOUT"); // ✅ Filtre blog par catégorie
    // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
   const [academyLoading, setAcademyLoading] = useState(true);
