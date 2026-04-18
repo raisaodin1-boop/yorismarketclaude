@@ -3188,7 +3188,7 @@ function LoyaltyAdminTab({ user, userData, showToast }) {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [stats, setStats]         = useState({ pending: 0, credited: 0, cancelled: 0, revenue: 0 });
- const [prestatairesList, setPrestatairesList] = useState([]);
+  const [prestatairesList, setPrestatairesList] = useState([]);
   const [prestatairesCount, setPrestatairesCount] = useState(0);
   const [selectedPrest, setSelectedPrest] = useState(null);
   const [prestFilter, setPrestFilter] = useState("pending");
@@ -3701,6 +3701,122 @@ function AdminDashboard({ user, userData, goPage }) {
 
   // ── États principaux ──
   const [adminTab, setAdminTab]       = useState("overview");
+  // ─── LIVRAISONS (NEW) ───
+  const [adminDeliveries, setAdminDeliveries]     = useState([]);
+  const [adminDelivFilter, setAdminDelivFilter]   = useState("all"); // all|pending|in_progress|delivered
+  const [assignModalOpen, setAssignModalOpen]     = useState(null); // delivery en cours d'assignation
+  const [adminLivreurs, setAdminLivreurs]         = useState([]);
+
+  // Fetch des livraisons depuis Supabase
+  useEffect(() => {
+    if (adminTab !== "deliveries") return;
+
+    const fetchDeliveries = async () => {
+      const { data, error } = await supabase
+        .from("deliveries")
+        .select("*")
+        .order("commande_at", { ascending: false });
+      if (!error && data) setAdminDeliveries(data);
+    };
+
+    const fetchLivreurs = async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, nom, telephone, role, actif, verifie, note, total_commandes")
+        .eq("role", "delivery");
+      if (!error && data) setAdminLivreurs(data);
+    };
+
+    fetchDeliveries();
+    fetchLivreurs();
+
+    // Abonnement temps réel pour voir les nouvelles demandes instantanément
+    const channel = supabase
+      .channel("admin-deliveries")
+      .on("postgres_changes", { event: "*", schema: "public", table: "deliveries" }, () => {
+        fetchDeliveries();
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [adminTab]);
+
+  // Fonction d'assignation d'un livreur
+  const assignerLivreur = async (delivery, livreur) => {
+    try {
+      const { error } = await supabase
+        .from("deliveries")
+        .update({
+          livreur_id:       livreur.id,
+          livreur_nom:      livreur.nom,
+          livreur_tel:      livreur.telephone,
+          livreur_vehicule: livreur.vehicule || "Moto",
+          statut:           "preparation",
+          preparation_at:   new Date().toISOString(),
+        })
+        .eq("id", delivery.id);
+
+      if (error) throw error;
+
+      // Envoyer WhatsApp au livreur avec toutes les infos
+      const msgLivreur = [
+        "🚚 *NOUVELLE MISSION YORIX*",
+        "",
+        "📦 *Code : " + delivery.code_suivi + "*",
+        "",
+        "👤 *CLIENT*",
+        "Nom : " + (delivery.client_nom || "N/A"),
+        "Tél : " + (delivery.client_tel || "N/A"),
+        "",
+        "📍 *TRAJET*",
+        "🔴 Collecte : " + (delivery.adresse_collecte || "N/A"),
+        "🟢 Livraison : " + (delivery.adresse_livraison || "N/A"),
+        "",
+        "⏱️ *Temps estimé* : " + (delivery.temps_estime_min || 25) + " min",
+        "📏 *Distance* : " + (delivery.distance_km || 3.5) + " km",
+        "",
+        "✅ Connecte-toi sur yorix.cm pour accepter la mission",
+        "",
+        "Bon courage ! 💪",
+      ].join("\n");
+
+      const waUrl = "https://wa.me/" + livreur.telephone.replace(/[^0-9]/g, "") + "?text=" + encodeURIComponent(msgLivreur);
+      window.open(waUrl, "_blank");
+
+      alert("✅ Livreur " + livreur.nom + " assigné ! Le WhatsApp a été ouvert.");
+      setAssignModalOpen(null);
+
+      // Refresh
+      const { data } = await supabase
+        .from("deliveries")
+        .select("*")
+        .order("commande_at", { ascending: false });
+      if (data) setAdminDeliveries(data);
+
+    } catch (err) {
+      alert("Erreur : " + err.message);
+    }
+  };
+
+  // Fonction pour changer le statut rapidement
+  const changerStatutLivraison = async (delivery, newStatut) => {
+    const updates = { statut: newStatut };
+    const now = new Date().toISOString();
+    if (newStatut === "preparation") updates.preparation_at = now;
+    if (newStatut === "collecte")    updates.collecte_at    = now;
+    if (newStatut === "en_route")    updates.en_route_at    = now;
+    if (newStatut === "livre")       updates.livre_at       = now;
+
+    const { error } = await supabase.from("deliveries").update(updates).eq("id", delivery.id);
+    if (error) { alert("Erreur: " + error.message); return; }
+
+    // Refresh
+    const { data } = await supabase
+      .from("deliveries")
+      .select("*")
+      .order("commande_at", { ascending: false });
+    if (data) setAdminDeliveries(data);
+  };
   const [loading, setLoading]         = useState(true);
   const [refreshKey, setRefreshKey]   = useState(0);
 
@@ -4021,6 +4137,7 @@ const supprimerUser = async (uid, email) => {
     {id:"overview",     icon:"📊", label:"Vue d'ensemble"},
     {id:"produits",     icon:"📦", label:"Produits",    badge:produits.filter(p=>(p.stock||0)===0).length||null},
     {id:"commandes",    icon:"🛍️", label:"Commandes",   badge:commandes.filter(o=>o.status==="pending").length||null},
+    {id:"deliveries",   icon:"🚚", label:"Livraisons",  badge:adminDeliveries.filter(d=>d.statut==="commande_recue").length||null},
     {id:"utilisateurs", icon:"👥", label:"Utilisateurs"},
     {id:"vendeurs",     icon:"🏪", label:"Vendeurs"},
     {id:"prestataires", icon:"👷", label:"Prestataires", badge:prestatairesCount||null},
@@ -4627,6 +4744,262 @@ const supprimerUser = async (uid, email) => {
             </div>
           </>
         )}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* ONGLET LIVRAISONS */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {adminTab === "deliveries" && (
+          <div>
+            <div style={{
+              display: "flex", justifyContent: "space-between",
+              alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 10,
+            }}>
+              <h2 style={{
+                fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800,
+                color: "var(--ink)", margin: 0,
+              }}>
+                🚚 Gestion des livraisons <span style={{
+                  background: "var(--green)", color: "#fff",
+                  padding: "2px 10px", borderRadius: 20,
+                  fontSize: ".85rem", marginLeft: 8,
+                }}>{adminDeliveries.length}</span>
+              </h2>
+            </div>
+
+            {/* Filtres */}
+            <div style={{
+              display: "flex", gap: 8, flexWrap: "wrap",
+              marginBottom: 18, background: "var(--surface)",
+              padding: 10, borderRadius: 10,
+            }}>
+              {[
+                { id: "all",          label: "Toutes",      color: "#64748b" },
+                { id: "commande_recue", label: "⏳ En attente", color: "#f59e0b" },
+                { id: "preparation",  label: "📦 Préparation", color: "#3b82f6" },
+                { id: "en_route",     label: "🏍️ En route",   color: "#10b981" },
+                { id: "livre",        label: "✅ Livrées",    color: "#22c55e" },
+              ].map(f => {
+                const count = f.id === "all"
+                  ? adminDeliveries.length
+                  : adminDeliveries.filter(d => d.statut === f.id).length;
+                const active = adminDelivFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setAdminDelivFilter(f.id)}
+                    style={{
+                      padding: "7px 13px", borderRadius: 20,
+                      border: "2px solid " + (active ? f.color : "var(--border)"),
+                      background: active ? f.color : "var(--surface2)",
+                      color: active ? "#fff" : "var(--ink)",
+                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+                      cursor: "pointer", transition: "all .2s",
+                    }}
+                  >
+                    {f.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Liste des livraisons */}
+            {adminDeliveries
+              .filter(d => adminDelivFilter === "all" || d.statut === adminDelivFilter)
+              .length === 0 ? (
+              <div style={{
+                textAlign: "center", padding: 40,
+                background: "var(--surface)", borderRadius: 12,
+                color: "var(--gray)",
+              }}>
+                <div style={{ fontSize: "3rem", marginBottom: 8 }}>📭</div>
+                <p>Aucune livraison dans cette catégorie</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {adminDeliveries
+                  .filter(d => adminDelivFilter === "all" || d.statut === adminDelivFilter)
+                  .map(d => {
+                    const statutConfig = {
+                      commande_recue: { label: "⏳ En attente", color: "#f59e0b", bg: "#fef3c7" },
+                      preparation:    { label: "📦 Préparation", color: "#3b82f6", bg: "#dbeafe" },
+                      collecte:       { label: "🏪 Collecté",    color: "#8b5cf6", bg: "#ede9fe" },
+                      en_route:       { label: "🏍️ En route",    color: "#10b981", bg: "#d1fae5" },
+                      livre:          { label: "✅ Livré",       color: "#22c55e", bg: "#dcfce7" },
+                      annule:         { label: "❌ Annulé",      color: "#ef4444", bg: "#fee2e2" },
+                    };
+                    const cfg = statutConfig[d.statut] || statutConfig.commande_recue;
+
+                    return (
+                      <div
+                        key={d.id}
+                        style={{
+                          background: "var(--surface)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 12, padding: 14,
+                        }}
+                      >
+                        {/* Ligne 1 : code + statut + date */}
+                        <div style={{
+                          display: "flex", justifyContent: "space-between",
+                          alignItems: "center", flexWrap: "wrap", gap: 8,
+                          marginBottom: 10,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <div style={{
+                              fontFamily: "'Syne',sans-serif", fontWeight: 800,
+                              fontSize: "1rem", color: "var(--green)",
+                              letterSpacing: ".05em",
+                            }}>
+                              {d.code_suivi}
+                            </div>
+                            <span style={{
+                              padding: "3px 10px", borderRadius: 20,
+                              background: cfg.bg, color: cfg.color,
+                              fontSize: ".72rem", fontWeight: 700,
+                              border: "1px solid " + cfg.color,
+                            }}>
+                              {cfg.label}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: ".72rem", color: "var(--gray)" }}>
+                            {d.commande_at ? new Date(d.commande_at).toLocaleString("fr-FR") : "-"}
+                          </div>
+                        </div>
+
+                        {/* Ligne 2 : infos client + adresses */}
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                          gap: 10, marginBottom: 12,
+                          fontSize: ".78rem",
+                        }}>
+                          <div>
+                            <div style={{ fontSize: ".65rem", color: "var(--gray)", fontWeight: 700, marginBottom: 3 }}>
+                              👤 CLIENT
+                            </div>
+                            <div style={{ fontWeight: 600, color: "var(--ink)" }}>{d.client_nom || "—"}</div>
+                            <div style={{ color: "var(--gray)" }}>{d.client_tel || "—"}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: ".65rem", color: "var(--gray)", fontWeight: 700, marginBottom: 3 }}>
+                              🔴 COLLECTE
+                            </div>
+                            <div style={{ color: "var(--ink)" }}>{d.adresse_collecte || "—"}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: ".65rem", color: "var(--gray)", fontWeight: 700, marginBottom: 3 }}>
+                              🟢 LIVRAISON
+                            </div>
+                            <div style={{ color: "var(--ink)" }}>{d.adresse_livraison || "—"}</div>
+                          </div>
+                        </div>
+
+                        {/* Ligne 3 : livreur assigné */}
+                        {d.livreur_nom && (
+                          <div style={{
+                            background: "var(--green-pale)", borderRadius: 8,
+                            padding: "8px 12px", marginBottom: 10,
+                            fontSize: ".78rem",
+                          }}>
+                            🏍️ <strong>Livreur :</strong> {d.livreur_nom} · {d.livreur_tel}
+                          </div>
+                        )}
+
+                        {/* Ligne 4 : actions */}
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {/* Assigner un livreur (si pas encore) */}
+                          {!d.livreur_id && (
+                            <button
+                              onClick={() => setAssignModalOpen(d)}
+                              style={{
+                                flex: 1, minWidth: 140,
+                                background: "var(--green)", color: "#fff", border: "none",
+                                padding: "8px 14px", borderRadius: 8,
+                                fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+                                cursor: "pointer",
+                              }}
+                            >
+                              🏍️ Assigner un livreur
+                            </button>
+                          )}
+
+                          {/* Boutons de changement de statut */}
+                          {d.livreur_id && d.statut !== "livre" && d.statut !== "annule" && (
+                            <>
+                              {d.statut === "preparation" && (
+                                <button
+                                  onClick={() => changerStatutLivraison(d, "collecte")}
+                                  style={{
+                                    background: "#8b5cf6", color: "#fff", border: "none",
+                                    padding: "7px 12px", borderRadius: 8,
+                                    fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
+                                  }}
+                                >
+                                  🏪 Marquer Collecté
+                                </button>
+                              )}
+                              {d.statut === "collecte" && (
+                                <button
+                                  onClick={() => changerStatutLivraison(d, "en_route")}
+                                  style={{
+                                    background: "#10b981", color: "#fff", border: "none",
+                                    padding: "7px 12px", borderRadius: 8,
+                                    fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
+                                  }}
+                                >
+                                  🏍️ Marquer En route
+                                </button>
+                              )}
+                              {d.statut === "en_route" && (
+                                <button
+                                  onClick={() => changerStatutLivraison(d, "livre")}
+                                  style={{
+                                    background: "#22c55e", color: "#fff", border: "none",
+                                    padding: "7px 12px", borderRadius: 8,
+                                    fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
+                                  }}
+                                >
+                                  ✅ Marquer Livré
+                                </button>
+                              )}
+                            </>
+                          )}
+
+                          {/* Voir le suivi client */}
+                          <button
+                            onClick={() => window.open("/?page=livraison&code=" + d.code_suivi, "_blank")}
+                            style={{
+                              background: "var(--surface2)", color: "var(--ink)",
+                              border: "1px solid var(--border)",
+                              padding: "7px 12px", borderRadius: 8,
+                              fontSize: ".75rem", fontWeight: 600, cursor: "pointer",
+                            }}
+                          >
+                            👁️ Voir tracker
+                          </button>
+
+                          {/* Copier le code */}
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(d.code_suivi);
+                              alert("✅ Code " + d.code_suivi + " copié !");
+                            }}
+                            style={{
+                              background: "var(--surface2)", color: "var(--ink)",
+                              border: "1px solid var(--border)",
+                              padding: "7px 12px", borderRadius: 8,
+                              fontSize: ".75rem", fontWeight: 600, cursor: "pointer",
+                            }}
+                          >
+                            📋
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ════ UTILISATEURS ════ */}
         {adminTab==="utilisateurs" && (
@@ -5205,18 +5578,115 @@ const supprimerUser = async (uid, email) => {
               }
             </div>
           </>
-        )}
-        {/* ════════ YORIX POINTS ════════ */}
-      {adminTab==="loyalty" && (
-        <LoyaltyAdminTab 
-          user={user} 
-          userData={userData} 
-          showToast={showToast}
-        />
-      )}
+       )}
+          {/* ═══════ YORIX POINTS ═══════ */}
+          {adminTab==="loyalty" && (
+            <LoyaltyAdminTab 
+              user={user}
+              userData={userData}
+              showToast={showToast}
+            />
+          )}
 
+        </div>
       </div>
-    </div>
+
+      {/* ── MODAL ASSIGNATION LIVREUR ── */}
+      {assignModalOpen && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setAssignModalOpen(null)}>
+          <div className="modal" style={{ maxWidth: 600 }}>
+            <button className="modal-close" onClick={() => setAssignModalOpen(null)}>✕</button>
+
+            <h2 style={{
+              fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800,
+              color: "var(--ink)", marginBottom: 6,
+            }}>
+              🏍️ Assigner un livreur
+            </h2>
+
+            <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 16 }}>
+              Livraison <strong>{assignModalOpen.code_suivi}</strong> · {assignModalOpen.client_nom}
+            </p>
+
+            <div style={{
+              background: "var(--surface2)", borderRadius: 10,
+              padding: 12, marginBottom: 14, fontSize: ".78rem",
+            }}>
+              <div>🔴 <strong>Collecte :</strong> {assignModalOpen.adresse_collecte}</div>
+              <div style={{ marginTop: 3 }}>🟢 <strong>Livraison :</strong> {assignModalOpen.adresse_livraison}</div>
+              <div style={{ marginTop: 3 }}>📞 <strong>Client :</strong> {assignModalOpen.client_tel}</div>
+            </div>
+
+            <div style={{
+              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".9rem",
+              color: "var(--green)", marginBottom: 10,
+            }}>
+              Livreurs disponibles ({adminLivreurs.length})
+            </div>
+
+            {adminLivreurs.length === 0 ? (
+              <div style={{
+                textAlign: "center", padding: 30,
+                background: "var(--surface2)", borderRadius: 10,
+                color: "var(--gray)",
+              }}>
+                <div style={{ fontSize: "2.5rem", marginBottom: 6 }}>😕</div>
+                <p style={{ fontSize: ".85rem", marginBottom: 10 }}>
+                  Aucun livreur dans la base.
+                </p>
+                <p style={{ fontSize: ".75rem" }}>
+                  💡 Contacte un livreur par WhatsApp ou crée un compte livreur d'abord.
+                </p>
+              </div>
+            ) : (
+              <div style={{
+                display: "grid", gap: 8,
+                maxHeight: 320, overflowY: "auto", paddingRight: 4,
+              }}>
+                {adminLivreurs.map(liv => (
+                  <div
+                    key={liv.id}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      background: "var(--surface)",
+                      border: "1.5px solid var(--border)",
+                      borderRadius: 10, padding: 10,
+                    }}
+                  >
+                    <div style={{
+                      width: 44, height: 44, borderRadius: "50%",
+                      background: "var(--green-pale)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "1.3rem",
+                    }}>🏍️</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".88rem" }}>
+                        {liv.nom || "Livreur"}
+                        {liv.verifie && <span style={{ marginLeft: 6, color: "var(--green)" }}>✓</span>}
+                      </div>
+                      <div style={{ fontSize: ".7rem", color: "var(--gray)" }}>
+                        {liv.telephone || "N/A"}
+                        {liv.note ? " · ⭐ " + liv.note : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => assignerLivreur(assignModalOpen, liv)}
+                      style={{
+                        background: "var(--green)", color: "#fff", border: "none",
+                        padding: "7px 13px", borderRadius: 8,
+                        fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Assigner
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
   );
 }
 // ═══════════════════════════════════════════════════════════════
