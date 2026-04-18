@@ -48,8 +48,10 @@ import {
   filtrerMsg,
   sendEmail,
   emailBienvenue,
+  creerLivraisonAutomatique,
+  updateLivraisonStatut,
+  genererCodeSuivi,
 } from "./utils/helpers";
-
 import { makeCSS } from "./utils/styles";
 
 // ─────────────────────────────────────────────────────────────
@@ -63,6 +65,16 @@ import { makeCSS } from "./utils/styles";
 // ─────────────────────────────────────────────────────────────
 function DeliveryTracker() {
   const [codeSuivi, setCodeSuivi]       = useState("");
+
+  // Auto-remplir si un code est dans l'URL (?code=YX-XXXXX)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const codeFromUrl = params.get("code");
+    if (codeFromUrl) {
+      setCodeSuivi(codeFromUrl.toUpperCase());
+      setTimeout(() => chercherLivraison(codeFromUrl), 300);
+    }
+  }, []);
   const [delivery, setDelivery]         = useState(null);
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState("");
@@ -2086,6 +2098,126 @@ function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 // ─────────────────────────────────────────────────────────────
 // DASHBOARD BUYER
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// COMPOSANT : CARTE COMMANDE AVEC CODE DE SUIVI
+// ─────────────────────────────────────────────────────────────
+function OrderCardWithTracking({ commande, goPage }) {
+  const [codeSuivi, setCodeSuivi] = useState(null);
+
+  useEffect(() => {
+    // Chercher la livraison associée à cette commande
+    supabase
+      .from("deliveries")
+      .select("code_suivi, statut")
+      .eq("order_id", commande.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setCodeSuivi(data);
+      });
+  }, [commande.id]);
+
+  const statusLabels = {
+    commande_recue: "📝 Commande reçue",
+    preparation:    "📦 Préparation",
+    collecte:       "🏪 Collecté",
+    en_route:       "🏍️ En route",
+    livre:          "✅ Livré",
+  };
+
+  return (
+    <div style={{
+      background: "var(--surface)",
+      border: "1px solid var(--border)",
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    }}>
+      {/* Ligne principale */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: codeSuivi ? 12 : 0 }}>
+        <div style={{
+          width: 42, height: 42, borderRadius: 10,
+          background: "var(--green-pale)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.4rem", flexShrink: 0,
+        }}>
+          📦
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".88rem",
+            color: "var(--ink)",
+          }}>
+            Commande #{String(commande.id).slice(-8)}
+          </div>
+          <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: 2 }}>
+            {commande.montant?.toLocaleString()} FCFA · {commande.created_at ? new Date(commande.created_at).toLocaleDateString("fr-FR") : ""}
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
+          <span className={`status-badge s-${commande.status}`}>{commande.status}</span>
+          <span className={`status-badge s-${commande.escrow_status}`}>
+            {ESCROW_STATUSES[commande.escrow_status] || commande.escrow_status}
+          </span>
+        </div>
+      </div>
+
+      {/* Zone tracking */}
+      {codeSuivi && (
+        <div style={{
+          background: "linear-gradient(135deg, var(--green-pale), #f0fdf4)",
+          border: "1px solid var(--green-light)",
+          borderRadius: 10,
+          padding: 12,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 8,
+        }}>
+          <div>
+            <div style={{
+              fontSize: ".65rem", fontWeight: 700, color: "var(--gray)",
+              marginBottom: 3, letterSpacing: ".05em",
+            }}>
+              📍 SUIVI DE LIVRAISON
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{
+                fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem",
+                color: "var(--green)", letterSpacing: ".05em",
+              }}>
+                {codeSuivi.code_suivi}
+              </div>
+              <span style={{
+                fontSize: ".7rem", fontWeight: 600, color: "var(--ink)",
+                background: "var(--surface)", padding: "2px 9px",
+                borderRadius: 50, border: "1px solid var(--border)",
+              }}>
+                {statusLabels[codeSuivi.statut] || codeSuivi.statut}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              // Copier le code dans le presse-papier
+              navigator.clipboard?.writeText(codeSuivi.code_suivi);
+              // Naviguer vers la page livraison
+              goPage("livraison");
+              // Faire défiler vers le haut pour voir le tracker
+              setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+            }}
+            style={{
+              background: "var(--green)", color: "#fff", border: "none",
+              padding: "8px 14px", borderRadius: 9,
+              fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+              cursor: "pointer", whiteSpace: "nowrap",
+              display: "flex", alignItems: "center", gap: 5,
+            }}
+          >
+            📍 Suivre
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoyaltyPts, dashTab, goPage }) {
   const [mesCommandes, setMesCommandes] = useState([]);
 
@@ -2132,30 +2264,17 @@ function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoy
         </>
       )}
 
-      {dashTab === "commandes" && (
+     {dashTab === "commandes" && (
         <>
           <div className="dash-page-title">📦 Mes commandes</div>
           {mesCommandes.length === 0
             ? <div className="empty-state"><div className="empty-icon">📦</div><p>Aucune commande</p></div>
             : mesCommandes.map(c => (
-                <div key={c.id} className="order-card">
-                  <div className="oc-icon">📦</div>
-                  <div className="oc-info">
-                    <div className="oc-name">#{String(c.id).slice(-8)}</div>
-                    <div className="oc-meta">{c.montant?.toLocaleString()} FCFA · {c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
-                  </div>
-                  <div className="oc-actions">
-                   <span className={`status-badge s-${c.status}`}>{c.status}</span>
-<span className={`status-badge s-${c.escrow_status}`}>
-  {ESCROW_STATUSES[c.escrow_status] || c.escrow_status}
-</span>
-                    </div>
-                </div>
+                <OrderCardWithTracking key={c.id} commande={c} goPage={goPage} />
               ))
           }
         </>
-      )} 
-
+      )}
 
 
 
@@ -2200,12 +2319,57 @@ function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
   const [gainsMois]   = useState(127000);
 
   const actionLivraison = async (id, newStatus) => {
+    // Mapper les anciens statuts vers les nouveaux
+    const statusMap = {
+      "available":    "commande_recue",
+      "in_progress":  "en_route",
+      "delivered":    "livre",
+      "refused":      "commande_recue",
+    };
+    const newStatutReal = statusMap[newStatus] || newStatus;
+
     try {
-      await supabase.from("deliveries").update({ status: newStatus, livreur_id: user.id }).eq("commande_id", id).then(r => r.error && console.error(r.error));
-      setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+      // Préparer les updates avec timestamp approprié
+      const updates = {
+        statut:     newStatutReal,
+        livreur_id: user.id,
+        livreur_nom: userData?.nom || "Livreur Yorix",
+        livreur_tel: userData?.telephone || "",
+      };
+
+      // Ajouter le timestamp correspondant
+      const now = new Date().toISOString();
+      if (newStatutReal === "preparation") updates.preparation_at = now;
+      if (newStatutReal === "collecte")    updates.collecte_at    = now;
+      if (newStatutReal === "en_route")    updates.en_route_at    = now;
+      if (newStatutReal === "livre")       updates.livre_at       = now;
+
+      // 1️⃣ Mettre à jour la vraie table deliveries (via order_id OU code_suivi)
+      const { error } = await supabase
+        .from("deliveries")
+        .update(updates)
+        .or(`order_id.eq.${id},code_suivi.eq.${id}`);
+
+      if (error) console.warn("update deliveries:", error);
+
+      // 2️⃣ Mettre à jour aussi l'UI locale (pour l'affichage immédiat)
+      setLivraisons(prev => prev.map(l =>
+        l.id === id ? { ...l, status: newStatus } : l
+      ));
+
+      // 3️⃣ Feedback utilisateur
+      const feedbackMsgs = {
+        "in_progress": "✅ Mission acceptée ! Le client est notifié.",
+        "delivered":   "🎉 Livraison confirmée ! Bravo !",
+        "refused":     "Mission refusée.",
+      };
+      if (feedbackMsgs[newStatus]) {
+        // Petit toast discret au lieu d'un alert
+        console.log(feedbackMsgs[newStatus]);
+      }
     } catch (err) {
       console.error("actionLivraison:", err);
-      setLivraisons(prev => prev.map(l => l.id === id ? {...l, status: newStatus} : l));
+      setLivraisons(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
     }
   };
 
@@ -6414,23 +6578,63 @@ useEffect(() => {
   const passerCommande = async () => {
     if (!user) { setAuthOpen(true); setCartOpen(false); return; }
     try {
-      const batch = cartItems.map(item =>
+      // 1️⃣ Créer les commandes
+      const orderPromises = cartItems.map(item =>
         supabase.from("orders").insert({
-          product_id: item.id, vendeur_id: item.vendeur_id,
-          client_id: user.id, client_nom: userData?.nom || user.email,
+          product_id: item.id,
+          vendeur_id: item.vendeur_id,
+          client_id: user.id,
+          client_nom: userData?.nom || user.email,
           telephone: userData?.telephone || "",
           montant: item.prix * item.qty,
           commission: Math.round(item.prix * item.qty * COMMISSION_RATE),
-          montant_vendeur: Math.round(item.prix * item.qty * (1-COMMISSION_RATE)),
-          status:"pending", livraison_status:"pending", escrow_status:"pending",
-        })
+          montant_vendeur: Math.round(item.prix * item.qty * (1 - COMMISSION_RATE)),
+          status: "pending",
+          livraison_status: "pending",
+          escrow_status: "pending",
+        }).select().single()
       );
-      await Promise.all(batch);
+      const orderResults = await Promise.all(orderPromises);
+      const createdOrders = orderResults.map(r => r.data).filter(Boolean);
+
+      // 2️⃣ Créer automatiquement les livraisons pour chaque commande
+      const codesSuivis = [];
+      for (const order of createdOrders) {
+        const item = cartItems.find(i => i.id === order.product_id);
+        try {
+          const { code } = await creerLivraisonAutomatique({
+            supabase,
+            orderId:           order.id,
+            clientNom:         userData?.nom || user.email,
+            clientTel:         userData?.telephone || "",
+            adresseLivraison:  userData?.ville || "Cameroun",
+            adresseCollecte:   item?.ville ? `Boutique ${item.vendeur_nom || "vendeur"}, ${item.ville}` : "Boutique Yorix",
+            distanceKm:        3.5,
+            tempsEstimeMin:    25,
+          });
+          codesSuivis.push(code);
+        } catch (errLiv) {
+          console.warn("Livraison non créée pour commande", order.id, errLiv);
+        }
+      }
+
+      // 3️⃣ Vider le panier
       setCartItems([]);
       setCartOpen(false);
-      alert("✅ Commande créée ! Vous serez contacté(e) pour le paiement.");
+
+      // 4️⃣ Afficher un message avec les codes de suivi
+      if (codesSuivis.length > 0) {
+        const codesStr = codesSuivis.join(", ");
+        const msg = `✅ Commande créée avec succès !\n\n📦 Code${codesSuivis.length > 1 ? "s" : ""} de suivi : ${codesStr}\n\nVous serez contacté(e) pour le paiement. Vous pouvez suivre votre livraison sur la page Livraison.`;
+        alert(msg);
+      } else {
+        alert("✅ Commande créée ! Vous serez contacté(e) pour le paiement.");
+      }
+
       goPage("dashboard");
-    } catch (err) { alert("Erreur : " + err.message); }
+    } catch (err) {
+      alert("Erreur : " + err.message);
+    }
   };
 
   // ── CHAT ──
