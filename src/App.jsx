@@ -79,7 +79,7 @@ import { LoyaltyPage } from "./components/LoyaltyPage";
 import { LoyaltyAdminTab } from "./components/LoyaltyAdminTab";
 import { SellerDashboard } from "./components/SellerDashboard";
 import { AdminDashboard } from "./components/AdminDashboard";
-
+import { OptimizedImage } from "./components/OptimizedImage";
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
@@ -933,11 +933,14 @@ useEffect(() => {
           return (
             <div key={item.id} className="cart-item">
               <div className="ci-img">
-                {item.image && item.image.startsWith("http")
-                  ? <img src={item.image} alt={item.name} onError={e => { e.currentTarget.style.display = "none"; }} />
-                  : <div className="ci-img-placeholder">📦</div>
-                }
-              </div>
+  <OptimizedImage
+    src={item.image}
+    alt={item.name}
+    width={120}
+    fallbackEmoji="📦"
+    style={{ width: "100%", height: "100%" }}
+  />
+</div>
               <div className="ci-info">
                 <div className="ci-name">{item.name}</div>
                 {item.vendeur_nom && (
