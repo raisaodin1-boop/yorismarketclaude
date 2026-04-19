@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
 import { FicheProduit } from "./FicheProduit";
 import { ModalCommander } from "./ModalCommander";
 
 // ─────────────────────────────────────────────────────────────
-// COMPOSANT : GRILLE PRODUITS
+// COMPOSANT : GRILLE PRODUITS (avec images optimisées Cloudinary)
 // ─────────────────────────────────────────────────────────────
 export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpenProd }) {
   const [ficheOpen, setFicheOpen] = useState(null);
@@ -39,20 +40,15 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
 
           return (
             <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}`}>
-              {/* ── IMAGE ── */}
+              {/* ── IMAGE OPTIMISÉE (lazy + WebP + compression auto) ── */}
               <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
-                {safeImg ? (
-                  <img
-                    src={safeImg}
-                    alt={p.name_fr}
-                    onError={e => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = "https://via.placeholder.com/300?text=📦";
-                    }}
-                  />
-                ) : (
-                  <div className="prod-img-placeholder">📦</div>
-                )}
+                <OptimizedImage
+                  src={safeImg}
+                  alt={p.name_fr || "Produit Yorix"}
+                  width={400}
+                  fallbackEmoji="📦"
+                  style={{ width: "100%", height: "100%" }}
+                />
                 {p.flash                             && <span className="pbadge-flash">⚡ Flash</span>}
                 {!p.flash && p.promo                 && <span className="pbadge-promo">-{p.promo_pct || 20}%</span>}
                 {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
