@@ -81,6 +81,7 @@ import { SellerDashboard } from "./components/SellerDashboard";
 import { ChatUsers } from "./components/ChatUsers";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { OptimizedImage } from "./components/OptimizedImage";
+import { PushManager } from "./components/PushManager";
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
@@ -904,6 +905,7 @@ useEffect(() => {
                     <div className="notif-icon">{n.icon||"🔔"}</div>
                     <div className="notif-body">
                       <h4>{n.titre||"Notification"}</h4>
+                      <PushManager user={user} />
                       <p>{n.message||""}</p>
                       <div className="notif-time">{n.created_at ? new Date(n.created_at).toLocaleString("fr-FR") : ""}</div>
                     </div>
