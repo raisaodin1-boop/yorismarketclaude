@@ -9,7 +9,7 @@ import { optimizeCloudinaryUrl } from "../utils/helpers";
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL (avec images optimisées)
 // ─────────────────────────────────────────────────────────────
-export function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
+export function FicheProduit({ product, user, userData, onClose, , onContactSeller }) {
   const [activeImg, setActiveImg]       = useState(0);
   const [avis, setAvis]                 = useState([]);
   const [showCmdModal, setShowCmdModal] = useState(false);
@@ -189,9 +189,9 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart }) 
               >
                 ✅ Commander
               </button>
-              {onAddToCart && (
+            { && (
                 <button
-                  onClick={() => { onAddToCart(product); onClose(); }}
+                  onClick={() => { (product); onClose(); }}
                   style={{
                     background: "var(--green)", color: "#fff", border: "none",
                     borderRadius: 9, padding: "11px 16px",
@@ -203,6 +203,34 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart }) 
               )}
             </div>
 
+            {/* ═══ BOUTON CONTACTER LE VENDEUR ═══ */}
+            {onContactSeller && product.vendeur_id && user?.id !== product.vendeur_id && (
+              <button
+                onClick={() => onContactSeller(product)}
+                style={{
+                  width: "100%",
+                  background: "var(--surface2)",
+                  color: "var(--ink)",
+                  border: "1.5px solid var(--green)",
+                  borderRadius: 9,
+                  padding: "11px",
+                  cursor: "pointer",
+                  fontSize: ".85rem",
+                  fontWeight: 700,
+                  fontFamily: "'Syne',sans-serif",
+                  marginBottom: 16,
+                  transition: "all .2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "#fff"; }}
+                onMouseOut={e => { e.currentTarget.style.background = "var(--surface2)"; e.currentTarget.style.color = "var(--ink)"; }}
+              >
+                💬 Contacter le vendeur {product.vendeur_nom ? `(${product.vendeur_nom})` : ""}
+              </button>
+            )}
             <div className="divider-h" />
 
             <div className="avis-section">
