@@ -1,29 +1,35 @@
 // src/components/ChatUsers.jsx
 // ════════════════════════════════════════════════════════════════
 // YORIX CM — CHAT ENTRE UTILISATEURS (acheteur ↔ vendeur)
-// Temps réel via Supabase Realtime
+// ✅ Temps réel via Supabase Realtime
+// ✅ Protection anti-contact (numéros, emails, WhatsApp bloqués)
+// ✅ Logs des tentatives dans fraud_logs
+// ✅ Mode modal ou intégré
 // ════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { filtrerMsg } from "../utils/helpers";
 
-export function ChatUsers({ user, userData, otherUserId = null, productId = null, onClose }) {
+export function ChatUsers({ user, userData, initialProduct = null, onClose, isModal = false }) {
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const messagesEndRef = useRef(null);
 
-  // ── Démarrer automatiquement une conversation si otherUserId est fourni
+  // Démarrer auto une conversation si un produit est fourni
   useEffect(() => {
-    if (otherUserId && user?.id && otherUserId !== user.id) {
-      startConversation(otherUserId, productId);
+    if (initialProduct?.vendeur_id && user?.id && initialProduct.vendeur_id !== user.id) {
+      startConversation(initialProduct.vendeur_id, initialProduct.id);
     }
-  }, [otherUserId, productId, user?.id]);
+  }, [initialProduct?.id, user?.id]);
 
-  // ── Charger les conversations de l'utilisateur
+  // Charger les conversations
   useEffect(() => {
     if (!user?.id) return;
     loadConversations();
@@ -37,7 +43,6 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
         .select("*")
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order("last_message_at", { ascending: false });
-
       if (error) throw error;
       setConversations(data || []);
     } catch (err) {
@@ -46,23 +51,20 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
     setLoading(false);
   };
 
-  // ── Démarrer ou rejoindre une conversation
-  const startConversation = async (targetUserId, prodId = null) => {
+  const startConversation = async (targetUserId, productId = null) => {
     if (!user?.id || !targetUserId || user.id === targetUserId) return;
 
-    // Normaliser l'ordre des users pour éviter les doublons
     const [u1, u2] =
       user.id < targetUserId ? [user.id, targetUserId] : [targetUserId, user.id];
 
     try {
-      // Chercher conversation existante
       let query = supabase
         .from("conversations")
         .select("*")
         .eq("user1_id", u1)
         .eq("user2_id", u2);
 
-      if (prodId) query = query.eq("product_id", prodId);
+      if (productId) query = query.eq("product_id", productId);
       else query = query.is("product_id", null);
 
       const { data: existing } = await query.maybeSingle();
@@ -73,10 +75,9 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
         return;
       }
 
-      // Créer nouvelle conversation
       const { data: created, error } = await supabase
         .from("conversations")
-        .insert({ user1_id: u1, user2_id: u2, product_id: prodId })
+        .insert({ user1_id: u1, user2_id: u2, product_id: productId })
         .select()
         .single();
 
@@ -89,7 +90,6 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
     }
   };
 
-  // ── Charger les messages de la conversation active
   useEffect(() => {
     if (!activeConvId) {
       setMessages([]);
@@ -105,7 +105,6 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
         .select("*")
         .eq("conversation_id", activeConvId)
         .order("created_at", { ascending: true });
-
       if (error) throw error;
       setMessages(data || []);
     } catch (err) {
@@ -113,10 +112,8 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
     }
   };
 
-  // ── Temps réel : écouter les nouveaux messages
   useEffect(() => {
     if (!activeConvId) return;
-
     const channel = supabase
       .channel(`chat-${activeConvId}`)
       .on(
@@ -135,20 +132,38 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
         }
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
   }, [activeConvId]);
 
-  // ── Auto-scroll vers le bas quand nouveau message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ── Envoyer un message
   const sendMessage = async () => {
     if (!messageInput.trim() || !activeConvId || sending) return;
+
+    // 🛡️ FILTRE ANTI-CONTACT
+    const filtre = filtrerMsg(messageInput);
+    if (filtre?.bloque) {
+      setBlocked(true);
+      setBlockReason(filtre.raison || "Partage de contact interdit");
+      setTimeout(() => setBlocked(false), 5000);
+      if (user) {
+        supabase
+          .from("fraud_logs")
+          .insert({
+            type: "tentative_contournement_chat",
+            user_id: user.id,
+            message: messageInput,
+          })
+          .then(({ error }) => {
+            if (error) console.warn("fraud_logs:", error.message);
+          });
+      }
+      return;
+    }
 
     setSending(true);
     try {
@@ -161,10 +176,7 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
         })
         .select()
         .single();
-
       if (error) throw error;
-
-      // Ajout optimiste (plus fluide)
       setMessages((prev) => {
         if (prev.some((m) => m.id === data.id)) return prev;
         return [...prev, data];
@@ -176,11 +188,9 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
     setSending(false);
   };
 
-  // ── Helper : obtenir l'ID de l'autre utilisateur dans une conv
   const getOtherUserId = (conv) =>
     conv.user1_id === user.id ? conv.user2_id : conv.user1_id;
 
-  // ══ RENDU ══════════════════════════════════════════
   if (!user) {
     return (
       <div style={{ padding: 30, textAlign: "center", color: "var(--gray)" }}>
@@ -189,51 +199,39 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
     );
   }
 
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 13,
-        overflow: "hidden",
-        height: 500,
-        display: "flex",
-      }}
-    >
-      {/* ═══ SIDEBAR : Liste des conversations ═══ */}
-      <div
-        style={{
-          width: 260,
-          borderRight: "1px solid var(--border)",
-          background: "var(--surface2)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div
-          style={{
-            padding: "12px 14px",
-            borderBottom: "1px solid var(--border)",
-            fontFamily: "'Syne',sans-serif",
-            fontWeight: 700,
-            fontSize: ".88rem",
-            color: "var(--ink)",
-          }}
-        >
-          💬 Mes conversations
-        </div>
+  const containerStyle = isModal
+    ? {
+        background: "var(--surface)", borderRadius: 13, overflow: "hidden",
+        height: "80vh", maxHeight: 600, display: "flex", width: "100%",
+      }
+    : {
+        background: "var(--surface)", border: "1px solid var(--border)",
+        borderRadius: 13, overflow: "hidden", height: 500, display: "flex",
+      };
 
+  return (
+    <div style={containerStyle}>
+      {/* SIDEBAR */}
+      <div style={{
+        width: 240, borderRight: "1px solid var(--border)",
+        background: "var(--surface2)", display: "flex", flexDirection: "column",
+      }}>
+        <div style={{
+          padding: "12px 14px", borderBottom: "1px solid var(--border)",
+          fontFamily: "'Syne',sans-serif", fontWeight: 700,
+          fontSize: ".85rem", color: "var(--ink)",
+        }}>
+          💬 Conversations
+        </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
             <div style={{ padding: 20, textAlign: "center", color: "var(--gray)", fontSize: ".78rem" }}>
               Chargement...
             </div>
           ) : conversations.length === 0 ? (
-            <div style={{ padding: 20, textAlign: "center", color: "var(--gray)", fontSize: ".78rem" }}>
-              Aucune conversation pour le moment.
-              <br />
-              <br />
-              Clique sur "Contacter le vendeur" depuis un produit pour démarrer.
+            <div style={{ padding: 20, textAlign: "center", color: "var(--gray)", fontSize: ".75rem", lineHeight: 1.6 }}>
+              Aucune conversation.<br /><br />
+              Clique sur "Contacter le vendeur" depuis un produit.
             </div>
           ) : (
             conversations.map((c) => (
@@ -241,35 +239,24 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
                 key={c.id}
                 onClick={() => setActiveConvId(c.id)}
                 style={{
-                  padding: "10px 12px",
-                  cursor: "pointer",
+                  padding: "10px 12px", cursor: "pointer",
                   borderBottom: "1px solid var(--border)",
                   background: activeConvId === c.id ? "var(--green-pale)" : "transparent",
-                  transition: "background .15s",
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: ".82rem", color: "var(--ink)" }}>
+                <div style={{ fontWeight: 600, fontSize: ".8rem", color: "var(--ink)" }}>
                   👤 {getOtherUserId(c).slice(0, 8)}...
                 </div>
-                <div style={{ fontSize: ".68rem", color: "var(--gray)", marginTop: 2 }}>
+                <div style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 2 }}>
                   {c.last_message_at
                     ? new Date(c.last_message_at).toLocaleString("fr-FR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
+                        day: "2-digit", month: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                       })
-                    : "Nouvelle conversation"}
+                    : "Nouveau"}
                 </div>
                 {c.product_id && (
-                  <div
-                    style={{
-                      fontSize: ".62rem",
-                      color: "var(--green)",
-                      marginTop: 3,
-                      fontWeight: 600,
-                    }}
-                  >
+                  <div style={{ fontSize: ".6rem", color: "var(--green)", marginTop: 3, fontWeight: 600 }}>
                     🛍️ Sur un produit
                   </div>
                 )}
@@ -279,99 +266,63 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
         </div>
       </div>
 
-      {/* ═══ FENÊTRE DE CHAT ═══ */}
+      {/* FENETRE CHAT */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header */}
-        <div
-          style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid var(--border)",
-            background: "var(--green)",
-            color: "#fff",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div style={{
+          padding: "12px 16px", borderBottom: "1px solid var(--border)",
+          background: "var(--green)", color: "#fff",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: ".9rem" }}>
+            <div style={{ fontWeight: 700, fontSize: ".88rem" }}>
               {activeConvId ? "💬 Conversation" : "Sélectionne une conversation"}
             </div>
-            <div style={{ fontSize: ".7rem", opacity: 0.85 }}>
-              🔒 Messagerie sécurisée Yorix
+            <div style={{ fontSize: ".68rem", opacity: 0.85 }}>
+              🔒 Messagerie sécurisée · Partage de contact interdit
             </div>
           </div>
           {onClose && (
-            <button
-              onClick={onClose}
-              style={{
-                background: "rgba(255,255,255,.15)",
-                color: "#fff",
-                border: "none",
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                cursor: "pointer",
-                fontSize: "1rem",
-              }}
-            >
-              ✕
-            </button>
+            <button onClick={onClose} style={{
+              background: "rgba(255,255,255,.15)", color: "#fff", border: "none",
+              width: 32, height: 32, borderRadius: "50%",
+              cursor: "pointer", fontSize: "1rem",
+            }}>✕</button>
           )}
         </div>
 
-        {/* Messages */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: 14,
-            background: "var(--surface)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}
-        >
+        <div style={{
+          flex: 1, overflowY: "auto", padding: 14,
+          background: "var(--surface)",
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
           {!activeConvId ? (
             <div style={{ textAlign: "center", color: "var(--gray)", marginTop: 60, fontSize: ".85rem" }}>
-              👈 Sélectionne une conversation à gauche pour commencer
+              👈 Sélectionne une conversation à gauche
             </div>
           ) : messages.length === 0 ? (
             <div style={{ textAlign: "center", color: "var(--gray)", marginTop: 60, fontSize: ".85rem" }}>
-              Aucun message.
-              <br />
-              Envoie le premier ! 👇
+              Aucun message.<br />Envoie le premier ! 👇
             </div>
           ) : (
             messages.map((m) => {
               const isMine = m.sender_id === user.id;
               return (
-                <div
-                  key={m.id}
-                  style={{
-                    alignSelf: isMine ? "flex-end" : "flex-start",
-                    maxWidth: "75%",
-                    background: isMine ? "var(--green)" : "var(--surface2)",
-                    color: isMine ? "#fff" : "var(--ink)",
-                    padding: "8px 12px",
-                    borderRadius: isMine ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
-                    fontSize: ".85rem",
-                    lineHeight: 1.4,
-                    wordBreak: "break-word",
-                  }}
-                >
+                <div key={m.id} style={{
+                  alignSelf: isMine ? "flex-end" : "flex-start",
+                  maxWidth: "75%",
+                  background: isMine ? "var(--green)" : "var(--surface2)",
+                  color: isMine ? "#fff" : "var(--ink)",
+                  padding: "8px 12px",
+                  borderRadius: isMine ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
+                  fontSize: ".85rem", lineHeight: 1.4, wordBreak: "break-word",
+                }}>
                   <div>{m.content}</div>
-                  <div
-                    style={{
-                      fontSize: ".62rem",
-                      opacity: 0.7,
-                      marginTop: 3,
-                      textAlign: isMine ? "right" : "left",
-                    }}
-                  >
+                  <div style={{
+                    fontSize: ".6rem", opacity: 0.7, marginTop: 3,
+                    textAlign: isMine ? "right" : "left",
+                  }}>
                     {new Date(m.created_at).toLocaleTimeString("fr-FR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
+                      hour: "2-digit", minute: "2-digit",
                     })}
                     {isMine && (m.is_read ? " ✓✓" : " ✓")}
                   </div>
@@ -379,51 +330,48 @@ export function ChatUsers({ user, userData, otherUserId = null, productId = null
               );
             })
           )}
+          {blocked && (
+            <div style={{
+              background: "#fee2e2", border: "1px solid #fca5a5",
+              borderRadius: 9, padding: "10px 14px",
+              color: "#991b1b", fontSize: ".78rem",
+              textAlign: "center", margin: "8px 0", lineHeight: 1.5,
+            }}>
+              🚫 <strong>Message bloqué</strong><br />
+              {blockReason || "Partage de contacts externes interdit sur Yorix"}<br />
+              <span style={{ fontSize: ".7rem", opacity: 0.8 }}>
+                Utilise la messagerie Yorix pour tes échanges.
+              </span>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Zone de saisie */}
         {activeConvId && (
-          <div
-            style={{
-              padding: 10,
-              borderTop: "1px solid var(--border)",
-              display: "flex",
-              gap: 7,
-              background: "var(--surface)",
-            }}
-          >
+          <div style={{
+            padding: 10, borderTop: "1px solid var(--border)",
+            display: "flex", gap: 7, background: "var(--surface)",
+          }}>
             <input
               type="text"
               placeholder="Écris ton message..."
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !sending) sendMessage();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !sending) sendMessage(); }}
               disabled={sending}
               style={{
-                flex: 1,
-                border: "1.5px solid var(--border)",
-                borderRadius: 8,
-                padding: "9px 12px",
-                fontFamily: "'DM Sans',sans-serif",
-                fontSize: ".83rem",
-                outline: "none",
-                background: "var(--surface2)",
-                color: "var(--ink)",
+                flex: 1, border: "1.5px solid var(--border)", borderRadius: 8,
+                padding: "9px 12px", fontFamily: "'DM Sans',sans-serif",
+                fontSize: ".83rem", outline: "none",
+                background: "var(--surface2)", color: "var(--ink)",
               }}
             />
             <button
               onClick={sendMessage}
               disabled={sending || !messageInput.trim()}
               style={{
-                background: "var(--green)",
-                color: "#fff",
-                border: "none",
-                width: 38,
-                height: 38,
-                borderRadius: 8,
+                background: "var(--green)", color: "#fff", border: "none",
+                width: 40, height: 40, borderRadius: 8,
                 cursor: sending || !messageInput.trim() ? "not-allowed" : "pointer",
                 fontSize: "1rem",
                 opacity: sending || !messageInput.trim() ? 0.5 : 1,
