@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
 import { FormulaireAvis } from "./FormulaireAvis";
 import { ModalCommander } from "./ModalCommander";
+import { optimizeCloudinaryUrl } from "../utils/helpers";
 
 // ─────────────────────────────────────────────────────────────
-// COMPOSANT : FICHE PRODUIT DÉTAIL
+// COMPOSANT : FICHE PRODUIT DÉTAIL (avec images optimisées)
 // ─────────────────────────────────────────────────────────────
 export function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
   const [activeImg, setActiveImg]       = useState(0);
@@ -24,6 +26,9 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart }) 
     ? [product.image, ...imgArr.filter(u => u && u.startsWith("http") && u !== product.image)]
     : imgArr.filter(u => u && u.startsWith("http"));
   const images = rawImgs.length > 0 ? rawImgs : [];
+
+  // ✅ Image actuellement affichée (selon clic sur miniature)
+  const currentImage = images[activeImg] || images[0] || product.image;
 
   useEffect(() => {
     supabase
@@ -52,41 +57,92 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart }) 
         >
           ← Retour
         </button>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
+
+          {/* ═══════════════ COLONNE GAUCHE : IMAGES ═══════════════ */}
           {images.length > 0 ? (
             <div style={{ marginBottom: 16 }}>
-              <img
-                src={product.image || (images && images[0]) || ""}
-                alt={product.name}
-                loading="lazy"
-              />
+              {/* Image principale optimisée (priority pour chargement rapide) */}
+              <div style={{
+                background: "var(--surface2)",
+                borderRadius: 12,
+                overflow: "hidden",
+                marginBottom: 12,
+                minHeight: 300,
+              }}>
+                <OptimizedImage
+                  src={currentImage}
+                  alt={product.name_fr || "Produit Yorix"}
+                  width={800}
+                  priority={true}
+                  fallbackEmoji="📦"
+                  objectFit="contain"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    minHeight: 300,
+                    maxHeight: 500,
+                  }}
+                />
+              </div>
+
+              {/* Galerie de miniatures optimisées */}
               {images.length > 1 && (
-                <div className="img-gallery">
+                <div className="img-gallery" style={{
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                }}>
                   {images.map((url, i) => (
-                    <img
+                    <div
                       key={i}
-                      src={url}
-                      alt=""
-                      className={`img-gallery-thumb${i === activeImg ? " active" : ""}`}
                       onClick={() => setActiveImg(i)}
-                      onError={e => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "https://via.placeholder.com/80?text=📦";
+                      className={`img-gallery-thumb${i === activeImg ? " active" : ""}`}
+                      style={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        border: i === activeImg ? "2.5px solid var(--green)" : "2px solid var(--border)",
+                        flexShrink: 0,
+                        transition: "border-color .15s",
                       }}
-                    />
+                    >
+                      <OptimizedImage
+                        src={url}
+                        alt={`Photo ${i + 1}`}
+                        width={140}
+                        fallbackEmoji="📦"
+                        style={{ width: "100%", height: "100%" }}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
             </div>
           ) : (
-            <div style={{ height: 140, background: "var(--surface2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "4rem", marginBottom: 16 }}>
+            <div style={{
+              height: 300,
+              background: "var(--surface2)",
+              borderRadius: 12,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "4rem",
+              marginBottom: 16,
+            }}>
               📦
             </div>
           )}
 
+          {/* ═══════════════ COLONNE DROITE : INFOS ═══════════════ */}
           <div>
             <div className="modal-title">{product.name_fr}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
               <Stars value={Math.round(avgNote)} />
               <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>
                 {avgNote} / 5 ({avis.length} avis)
