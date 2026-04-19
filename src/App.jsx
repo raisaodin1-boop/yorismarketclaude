@@ -60,6 +60,8 @@ import { FormulaireAvis } from "./components/FormulaireAvis";
 import { ModalCommander } from "./components/ModalCommander";
 import { BusinessForm } from "./components/BusinessForm";
 import { PagesLegales } from "./components/PagesLegales";
+import { LevelBadge } from "./components/LevelBadge";
+import { PointsAnimation } from "./components/PointsAnimation";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : ÉTOILES (rating)
@@ -5407,73 +5409,6 @@ function AcademyContactForm({ course, user, userData, goPage }) {
         </div>
       </div>
     </section>
-  );
-}
-// ═══════════════════════════════════════════════════════════════
-// 🌟 YORIX LOYALTY — Système de fidélité complet
-// À coller AVANT `function PagesLegales` dans App.jsx
-// ═══════════════════════════════════════════════════════════════
-
-// ┌─────────────────────────────────────────────────────────────┐
-// │ Composant : Niveau badge                                    │
-// └─────────────────────────────────────────────────────────────┘
-function LevelBadge({ level, size = "normal" }) {
-  const levels = {
-    bronze:  { label: "Bronze",  emoji: "🥉", color: "#CD7F32", bg: "rgba(205,127,50,.15)" },
-    argent:  { label: "Argent",  emoji: "🥈", color: "#9CA3AF", bg: "rgba(156,163,175,.15)" },
-    or:      { label: "Or",      emoji: "🥇", color: "#F59E0B", bg: "rgba(245,158,11,.15)" },
-    platine: { label: "Platine", emoji: "💎", color: "#7C3AED", bg: "rgba(124,58,237,.15)" },
-  };
-  const l = levels[level] || levels.bronze;
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      background: l.bg, color: l.color, border: `1px solid ${l.color}33`,
-      padding: size === "lg" ? "5px 12px" : "3px 9px",
-      borderRadius: 50,
-      fontSize: size === "lg" ? ".82rem" : ".68rem",
-      fontWeight: 800, fontFamily: "'Syne',sans-serif",
-    }}>
-      {l.emoji} {l.label}
-    </span>
-  );
-}
-
-// ┌─────────────────────────────────────────────────────────────┐
-// │ Composant : Animation points qui s'ajoutent                 │
-// └─────────────────────────────────────────────────────────────┘
-function PointsAnimation({ show, points, onDone }) {
-  useEffect(() => {
-    if (show) {
-      const t = setTimeout(() => onDone?.(), 2500);
-      return () => clearTimeout(t);
-    }
-  }, [show]);
-
-  if (!show) return null;
-
-  return (
-    <div style={{
-      position: "fixed", top: "30%", left: "50%",
-      transform: "translateX(-50%)", zIndex: 10000,
-      background: "linear-gradient(135deg,#fcd116,#f59e0b)",
-      color: "#0d1f14", padding: "24px 40px", borderRadius: 16,
-      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "2rem",
-      boxShadow: "0 20px 60px rgba(245,158,11,.5)",
-      animation: "pointsBurst 2.5s ease-out forwards",
-      pointerEvents: "none",
-    }}>
-      +{points} pts 🎉
-      <style>{`
-        @keyframes pointsBurst {
-          0% { transform: translateX(-50%) scale(0) rotate(-10deg); opacity: 0; }
-          15% { transform: translateX(-50%) scale(1.2) rotate(5deg); opacity: 1; }
-          25% { transform: translateX(-50%) scale(1) rotate(0deg); }
-          80% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
-          100% { transform: translateX(-50%) scale(.8) translateY(-80px); opacity: 0; }
-        }
-      `}</style>
-    </div>
   );
 }
 
