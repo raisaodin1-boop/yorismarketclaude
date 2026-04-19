@@ -3697,161 +3697,57 @@ function LoyaltyAdminTab({ user, userData, showToast }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 🎯 ADMIN DASHBOARD YORIX CM — VERSION PRO COMPLÈTE
+// À REMPLACER INTÉGRALEMENT : de `function AdminDashboard({ user, userData, goPage }) {`
+// jusqu'à la ligne `}` qui ferme ce composant (juste avant `// FORMULAIRE BUSINESS`)
+// ═══════════════════════════════════════════════════════════════
+
 function AdminDashboard({ user, userData, goPage }) {
 
-  // ── États principaux ──
+  // ═══════════ ÉTATS PRINCIPAUX ═══════════
   const [adminTab, setAdminTab]       = useState("overview");
-  // ─── LIVRAISONS (NEW) ───
-  const [adminDeliveries, setAdminDeliveries]     = useState([]);
-  const [adminDelivFilter, setAdminDelivFilter]   = useState("all"); // all|pending|in_progress|delivered
-  const [assignModalOpen, setAssignModalOpen]     = useState(null); // delivery en cours d'assignation
-  const [adminLivreurs, setAdminLivreurs]         = useState([]);
-
-  // Fetch des livraisons depuis Supabase
-  useEffect(() => {
-    if (adminTab !== "deliveries") return;
-
-    const fetchDeliveries = async () => {
-      const { data, error } = await supabase
-        .from("deliveries")
-        .select("*")
-        .order("commande_at", { ascending: false });
-      if (!error && data) setAdminDeliveries(data);
-    };
-
-    const fetchLivreurs = async () => {
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, nom, telephone, role, actif, verifie, note, total_commandes")
-        .eq("role", "delivery");
-      if (!error && data) setAdminLivreurs(data);
-    };
-
-    fetchDeliveries();
-    fetchLivreurs();
-
-    // Abonnement temps réel pour voir les nouvelles demandes instantanément
-    const channel = supabase
-      .channel("admin-deliveries")
-      .on("postgres_changes", { event: "*", schema: "public", table: "deliveries" }, () => {
-        fetchDeliveries();
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [adminTab]);
-
-  // Fonction d'assignation d'un livreur
-  const assignerLivreur = async (delivery, livreur) => {
-    try {
-      const { error } = await supabase
-        .from("deliveries")
-        .update({
-          livreur_id:       livreur.id,
-          livreur_nom:      livreur.nom,
-          livreur_tel:      livreur.telephone,
-          livreur_vehicule: livreur.vehicule || "Moto",
-          statut:           "preparation",
-          preparation_at:   new Date().toISOString(),
-        })
-        .eq("id", delivery.id);
-
-      if (error) throw error;
-
-      // Envoyer WhatsApp au livreur avec toutes les infos
-      const msgLivreur = [
-        "🚚 *NOUVELLE MISSION YORIX*",
-        "",
-        "📦 *Code : " + delivery.code_suivi + "*",
-        "",
-        "👤 *CLIENT*",
-        "Nom : " + (delivery.client_nom || "N/A"),
-        "Tél : " + (delivery.client_tel || "N/A"),
-        "",
-        "📍 *TRAJET*",
-        "🔴 Collecte : " + (delivery.adresse_collecte || "N/A"),
-        "🟢 Livraison : " + (delivery.adresse_livraison || "N/A"),
-        "",
-        "⏱️ *Temps estimé* : " + (delivery.temps_estime_min || 25) + " min",
-        "📏 *Distance* : " + (delivery.distance_km || 3.5) + " km",
-        "",
-        "✅ Connecte-toi sur yorix.cm pour accepter la mission",
-        "",
-        "Bon courage ! 💪",
-      ].join("\n");
-
-      const waUrl = "https://wa.me/" + livreur.telephone.replace(/[^0-9]/g, "") + "?text=" + encodeURIComponent(msgLivreur);
-      window.open(waUrl, "_blank");
-
-      alert("✅ Livreur " + livreur.nom + " assigné ! Le WhatsApp a été ouvert.");
-      setAssignModalOpen(null);
-
-      // Refresh
-      const { data } = await supabase
-        .from("deliveries")
-        .select("*")
-        .order("commande_at", { ascending: false });
-      if (data) setAdminDeliveries(data);
-
-    } catch (err) {
-      alert("Erreur : " + err.message);
-    }
-  };
-
-  // Fonction pour changer le statut rapidement
-  const changerStatutLivraison = async (delivery, newStatut) => {
-    const updates = { statut: newStatut };
-    const now = new Date().toISOString();
-    if (newStatut === "preparation") updates.preparation_at = now;
-    if (newStatut === "collecte")    updates.collecte_at    = now;
-    if (newStatut === "en_route")    updates.en_route_at    = now;
-    if (newStatut === "livre")       updates.livre_at       = now;
-
-    const { error } = await supabase.from("deliveries").update(updates).eq("id", delivery.id);
-    if (error) { alert("Erreur: " + error.message); return; }
-
-    // Refresh
-    const { data } = await supabase
-      .from("deliveries")
-      .select("*")
-      .order("commande_at", { ascending: false });
-    if (data) setAdminDeliveries(data);
-  };
   const [loading, setLoading]         = useState(true);
   const [refreshKey, setRefreshKey]   = useState(0);
-
-  // ── Données ──
-  const [stats, setStats]             = useState({ users:0, products:0, orders:0, revenue:0, revenueToday:0, revenueWeek:0, commissionTotal:0, vendeurs:0, livreurs:0 });
-  const [produits, setProduits]       = useState([]);
-  const [produitsFull, setProduitsFull] = useState([]);
-  const [utilisateurs, setUtilisateurs] = useState([]);
-  const [commandes, setCommandes]     = useState([]);
-  const [chartVentes, setChartVentes] = useState([]);
-  const [chartInscrits, setChartInscrits] = useState([]);
-  const [topProduits, setTopProduits] = useState([]);
-
-  // ── Filtres produits ──
-  const [searchProd, setSearchProd]   = useState("");
-  const [filterProdCat, setFilterProdCat] = useState("");
-  const [filterProdStatut, setFilterProdStatut] = useState("");
-
-  // ── Filtres utilisateurs ──
-  const [searchUser, setSearchUser]   = useState("");
-  const [filterRole, setFilterRole]   = useState("");
-
-  // ── Filtres commandes ──
-  const [filterOrder, setFilterOrder] = useState("");
-  const [sortOrder, setSortOrder]     = useState("desc");
-
-  // ── Modals détails ──
-  const [selectedProd, setSelectedProd] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-
-  // ── Toast notifications ──
   const [toast, setToast]             = useState(null);
+  const [loadError, setLoadError]     = useState(null);
 
-  // ─── Sécurité admin ───
+  // ═══════════ DONNÉES ═══════════
+  const [stats, setStats] = useState({
+    users: 0, products: 0, orders: 0, deliveries: 0,
+    revenue: 0, revenueToday: 0, revenueWeek: 0, commissionTotal: 0,
+    vendeurs: 0, livreurs: 0, buyers: 0, providers: 0,
+    ruptures: 0, enAttente: 0, livrees: 0,
+  });
+  const [produits, setProduits]             = useState([]);
+  const [utilisateurs, setUtilisateurs]     = useState([]);
+  const [commandes, setCommandes]           = useState([]);
+  const [adminDeliveries, setAdminDeliveries] = useState([]);
+  const [adminLivreurs, setAdminLivreurs]   = useState([]);
+  const [prestatairesList, setPrestatairesList] = useState([]);
+  const [chartVentes, setChartVentes]       = useState([]);
+  const [chartInscrits, setChartInscrits]   = useState([]);
+  const [topProduits, setTopProduits]       = useState([]);
+
+  // ═══════════ FILTRES ═══════════
+  const [searchProd, setSearchProd]             = useState("");
+  const [filterProdCat, setFilterProdCat]       = useState("");
+  const [filterProdStatut, setFilterProdStatut] = useState("");
+  const [searchUser, setSearchUser]             = useState("");
+  const [filterRole, setFilterRole]             = useState("");
+  const [filterOrder, setFilterOrder]           = useState("");
+  const [sortOrder, setSortOrder]               = useState("desc");
+  const [adminDelivFilter, setAdminDelivFilter] = useState("all");
+  const [prestFilter, setPrestFilter]           = useState("pending");
+
+  // ═══════════ MODALS ═══════════
+  const [selectedProd, setSelectedProd]         = useState(null);
+  const [selectedOrder, setSelectedOrder]       = useState(null);
+  const [selectedUser, setSelectedUser]         = useState(null);
+  const [selectedPrest, setSelectedPrest]       = useState(null);
+  const [assignModalOpen, setAssignModalOpen]   = useState(null);
+
+  // ═══════════ SÉCURITÉ ADMIN ═══════════
   if (!user || (userData?.role !== "admin" && userData?.role !== "superadmin")) {
     return (
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:16,padding:40}}>
@@ -3861,69 +3757,80 @@ function AdminDashboard({ user, userData, goPage }) {
           Cette page est réservée aux administrateurs Yorix.<br/>
           Connectez-vous avec un compte admin pour y accéder.
         </p>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
-          <button className="form-submit" style={{width:"auto",padding:"10px 24px"}} onClick={()=>goPage("home")}>← Retour à l'accueil</button>
-          <button className="btn-ghost" style={{padding:"10px 18px"}} onClick={()=>goPage("dashboard")}>Mon espace</button>
-        </div>
-        <div style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 16px",marginTop:8,fontSize:".78rem",color:"var(--gray)",maxWidth:420,textAlign:"center"}}>
-          💡 Pour activer le mode admin : Supabase → Table <strong>users</strong> → trouve ton compte → change la colonne <strong>role</strong> en <code>admin</code>
-        </div>
+        <button className="form-submit" style={{width:"auto",padding:"10px 24px"}} onClick={()=>goPage("home")}>← Retour à l'accueil</button>
       </div>
     );
   }
 
-  // ─── Affichage toast ───
+  // ═══════════ TOAST ═══════════
   const showToast = (msg, type="success") => {
     setToast({msg, type});
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   };
 
-  // ─── Chargement des données ───
+  // ═══════════ CHARGEMENT DES DONNÉES (ROBUSTE) ═══════════
   useEffect(() => { loadAll(); }, [refreshKey]);
 
- const loadAll = async () => {
+  const loadAll = async () => {
     setLoading(true);
+    setLoadError(null);
+    console.log("[Admin] 🔄 Début chargement données...");
+
     try {
       const today = new Date(); today.setHours(0,0,0,0);
       const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
 
-      const [usersRes, profilesRes, prodRes, ordersRes, prestRes] = await Promise.all([
-  supabase.from("users").select("*").order("created_at",{ascending:false}).limit(500),
-  supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(500),
-  supabase.from("products").select("*").order("created_at",{ascending:false}).limit(500),
-  supabase.from("orders").select("*").order("created_at",{ascending:false}).limit(500),
-  supabase.from("prestataires").select("*").order("created_at",{ascending:false}).limit(200),
+      // Chargement PARALLÈLE de toutes les sources
+      const results = await Promise.allSettled([
+        supabase.from("users").select("*").order("created_at",{ascending:false}).limit(1000),
+        supabase.from("profiles").select("*").order("created_at",{ascending:false}).limit(1000),
+        supabase.from("products").select("*").order("created_at",{ascending:false}).limit(1000),
+        supabase.from("orders").select("*").order("created_at",{ascending:false}).limit(1000),
+        supabase.from("deliveries").select("*").order("commande_at",{ascending:false}).limit(500),
+        supabase.from("prestataires").select("*").order("created_at",{ascending:false}).limit(500),
       ]);
 
-      // Prestataires
-      const prestData = prestRes?.data || [];
-      setPrestatairesList(prestData);
-      setPrestatairesCount(prestData.filter(p => p.status === "pending").length);
+      // Extraction des données avec gestion d'erreur par source
+      const [usersR, profilesR, prodsR, ordersR, delivsR, prestsR] = results;
 
-// Fusionner users + profiles (dédupliquer par id/uid)
-const rawUsers    = usersRes.data    || [];
-const rawProfiles = profilesRes.data || [];
-const mergedMap = new Map();
-[...rawUsers, ...rawProfiles].forEach(u => {
-  const key = u.uid || u.id;
-  if (!key) return;
-  const existing = mergedMap.get(key) || {};
-  mergedMap.set(key, { ...existing, ...u, uid: key });
-});
-const usersData = Array.from(mergedMap.values());
-console.log("[Admin] usersRes:", usersRes.error, "count:", rawUsers.length);
-console.log("[Admin] profilesRes:", profilesRes.error, "count:", rawProfiles.length);
-console.log("[Admin] merged users:", usersData.length);
-      const prodsData   = prodRes.data    || [];
-      const ordersData  = ordersRes.data  || [];
+      const rawUsers    = usersR.status === "fulfilled" ? (usersR.value.data || []) : [];
+      const rawProfiles = profilesR.status === "fulfilled" ? (profilesR.value.data || []) : [];
+      const prodsData   = prodsR.status === "fulfilled" ? (prodsR.value.data || []) : [];
+      const ordersData  = ordersR.status === "fulfilled" ? (ordersR.value.data || []) : [];
+      const delivsData  = delivsR.status === "fulfilled" ? (delivsR.value.data || []) : [];
+      const prestsData  = prestsR.status === "fulfilled" ? (prestsR.value.data || []) : [];
 
-      // Stats globales
+      // Logs détaillés
+      console.log("[Admin] 📊 Résultats chargement:");
+      console.log("  users:", rawUsers.length, usersR.status === "fulfilled" ? "✅" : "❌ " + usersR.reason?.message);
+      console.log("  profiles:", rawProfiles.length, profilesR.status === "fulfilled" ? "✅" : "❌ " + profilesR.reason?.message);
+      console.log("  products:", prodsData.length, prodsR.status === "fulfilled" ? "✅" : "❌ " + prodsR.reason?.message);
+      console.log("  orders:", ordersData.length, ordersR.status === "fulfilled" ? "✅" : "❌ " + ordersR.reason?.message);
+      console.log("  deliveries:", delivsData.length, delivsR.status === "fulfilled" ? "✅" : "❌ " + delivsR.reason?.message);
+      console.log("  prestataires:", prestsData.length, prestsR.status === "fulfilled" ? "✅" : "❌ " + prestsR.reason?.message);
+
+      // Fusionner users + profiles (dédupliqué par id/uid)
+      const mergedMap = new Map();
+      [...rawUsers, ...rawProfiles].forEach(u => {
+        const key = u.uid || u.id;
+        if (!key) return;
+        const existing = mergedMap.get(key) || {};
+        mergedMap.set(key, { ...existing, ...u, uid: key });
+      });
+      const usersData = Array.from(mergedMap.values());
+
+      console.log("[Admin] 👥 Users fusionnés:", usersData.length);
+
+      // Livreurs (filtrer par role=delivery)
+      const livreursData = usersData.filter(u => u.role === "delivery");
+
+      // Calculs stats globales
       const commissionTotal = ordersData.reduce((s,o) => s+(o.commission||0), 0);
       const revenueTotal    = ordersData.reduce((s,o) => s+(o.montant||0), 0);
       const revenueToday    = ordersData.filter(o => new Date(o.created_at) >= today).reduce((s,o) => s+(o.commission||0), 0);
       const revenueWeek     = ordersData.filter(o => new Date(o.created_at) >= weekAgo).reduce((s,o) => s+(o.commission||0), 0);
 
-      // Graphique ventes 7 jours
+      // Graphique commandes 7 jours
       const chartV = Array.from({length:7}, (_,i) => {
         const d = new Date(); d.setDate(d.getDate()-6+i); d.setHours(0,0,0,0);
         const next = new Date(d); next.setDate(next.getDate()+1);
@@ -3943,139 +3850,203 @@ console.log("[Admin] merged users:", usersData.length);
         return { label: d.toLocaleDateString("fr-FR",{weekday:"short"}), val: cnt };
       });
 
-      // Top produits par ventes simulées
+      // Top produits
       const topP = prodsData
-        .filter(p => p.vente_total > 0)
+        .filter(p => (p.vente_total || 0) > 0)
         .sort((a,b) => (b.vente_total||0) - (a.vente_total||0))
         .slice(0,5);
 
+      // Mettre à jour TOUS les états
       setStats({
         users: usersData.length,
         products: prodsData.length,
         orders: ordersData.length,
+        deliveries: delivsData.length,
         revenue: revenueTotal,
         commissionTotal,
         revenueToday,
         revenueWeek,
         vendeurs: usersData.filter(u=>u.role==="seller").length,
-        livreurs: usersData.filter(u=>u.role==="delivery").length,
+        livreurs: livreursData.length,
+        buyers: usersData.filter(u=>u.role==="buyer" || !u.role).length,
+        providers: usersData.filter(u=>u.role==="provider").length,
         ruptures: prodsData.filter(p=>(p.stock||0)===0).length,
         enAttente: ordersData.filter(o=>o.status==="pending").length,
+        livrees: ordersData.filter(o=>o.status==="livre").length,
       });
       setUtilisateurs(usersData);
       setProduits(prodsData);
-      setProduitsFull(prodsData);
       setCommandes(ordersData);
+      setAdminDeliveries(delivsData);
+      setAdminLivreurs(livreursData);
+      setPrestatairesList(prestsData);
       setChartVentes(chartV);
       setChartInscrits(chartI);
       setTopProduits(topP);
 
-    } catch(e) { console.error("Admin load:", e); showToast("Erreur de chargement", "error"); }
+      console.log("[Admin] ✅ Chargement terminé");
+
+      // Avertir si aucune donnée chargée
+      if (usersData.length === 0 && prodsData.length === 0 && ordersData.length === 0) {
+        setLoadError("⚠️ Aucune donnée chargée. Vérifiez les politiques RLS Supabase (tables users, products, orders).");
+      }
+
+    } catch(e) {
+      console.error("[Admin] ❌ Erreur critique:", e);
+      setLoadError("Erreur : " + e.message);
+      showToast("Erreur de chargement", "error");
+    }
     setLoading(false);
   };
 
- // --- Actions ---
-const supprimerProduit = async (id, nom) => {
-  const confirmation = window.confirm(
-    `Supprimer le produit "${nom}" ?`
-  );
+  // ═══════════ REALTIME DELIVERIES ═══════════
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-deliveries-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "deliveries" }, () => {
+        supabase.from("deliveries").select("*").order("commande_at",{ascending:false}).limit(500)
+          .then(({data}) => { if (data) setAdminDeliveries(data); });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, []);
 
-  if (!confirmation) return;
+  // ═══════════ ACTIONS LIVRAISONS ═══════════
+  const assignerLivreur = async (delivery, livreur) => {
+    try {
+      const { error } = await supabase.from("deliveries").update({
+        livreur_id:       livreur.id || livreur.uid,
+        livreur_nom:      livreur.nom,
+        livreur_tel:      livreur.telephone,
+        livreur_vehicule: livreur.vehicule || "Moto",
+        statut:           "preparation",
+        preparation_at:   new Date().toISOString(),
+      }).eq("id", delivery.id);
+      if (error) throw error;
 
-  const { error } = await supabase
-    .from("products")
-    .delete()
-    .eq("id", id);
+      // WhatsApp au livreur
+      const msgLivreur = [
+        "🚚 *NOUVELLE MISSION YORIX*",
+        "",
+        "📦 *Code :* " + delivery.code_suivi,
+        "",
+        "👤 *CLIENT*",
+        "Nom : " + (delivery.client_nom || "N/A"),
+        "Tél : " + (delivery.client_tel || "N/A"),
+        "",
+        "📍 *TRAJET*",
+        "🔴 Collecte : " + (delivery.adresse_collecte || "N/A"),
+        "🟢 Livraison : " + (delivery.adresse_livraison || "N/A"),
+        "",
+        "⏱️ Temps estimé : " + (delivery.temps_estime_min || 25) + " min",
+        "📏 Distance : " + (delivery.distance_km || 3.5) + " km",
+        "",
+        "✅ Connecte-toi sur yorix.cm pour accepter",
+        "",
+        "Bon courage ! 💪",
+      ].join("\n");
 
-  if (error) {
-    console.error("supprimerProduit:", error);
-    showToast("Erreur : " + error.message, "error");
-    return;
-  }
+      const phoneClean = (livreur.telephone || "").replace(/[^0-9]/g, "");
+      if (phoneClean) {
+        window.open("https://wa.me/" + phoneClean + "?text=" + encodeURIComponent(msgLivreur), "_blank");
+      }
 
-  setProduits(p => p.filter(x => x.id !== id));
-  setProduitsFull(p => p.filter(x => x.id !== id));
-
-  showToast(`Produit "${nom}" supprimé`);
-};
-
-  const toggleActifProduit = async (id, actif) => {
-  const { error } = await supabase.from("products").update({actif:!actif}).eq("id",id);
-  if (error) { console.error("toggleActifProduit:", error); showToast("Erreur : "+error.message, "error"); return; }
-  const update = p => p.map(x=>x.id===id?{...x,actif:!actif}:x);
-  setProduits(update); setProduitsFull(update);
-  showToast(actif ? "Produit désactivé" : "Produit activé");
-};
-
-
- const changerRole = async (uid, newRole) => {
-  const [r1, r2] = await Promise.all([
-    supabase.from("users").update({role:newRole}).eq("uid",uid),
-    supabase.from("profiles").update({role:newRole}).eq("id",uid),
-  ]);
-  if (r1.error && r2.error) { console.error("changerRole:", r1.error, r2.error); showToast("Erreur changement rôle", "error"); return; }
-  setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
-  showToast(`Rôle changé → ${newRole}`);
-};
-
-
-const supprimerUser = async (uid, email) => {
-  if (!window.confirm(`Supprimer l'utilisateur "${email}" ?`)) return;
-
-  const { error } = await supabase.from("users").delete().eq("uid", uid);
-
-  if (error) {
-    console.error("supprimerUser:", error);
-    showToast("Erreur : " + error.message, "error");
-    return;
-  }
-
-  setUtilisateurs(u => u.filter(x => (x.uid || x.id) !== uid));
-  showToast(`Utilisateur "${email}" supprimé`);
-};
-
- const toggleVendeur = async (uid, actif) => {
-  const { error } = await supabase.from("users").update({actif:!actif}).eq("uid",uid);
-  if (error) { console.error("toggleVendeur:", error); showToast("Erreur : "+error.message, "error"); return; }
-  setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,actif:!actif}:x));
-  showToast(actif ? "Vendeur suspendu" : "Vendeur réactivé");
-};
-
- const validerCommande = async (id) => {
-  const { error } = await supabase.from("orders").update({status:"validee"}).eq("id",id);
-  if (error) { console.error("validerCommande:", error); showToast("Erreur : "+error.message, "error"); return; }
-  setCommandes(c => c.map(x=>x.id===id?{...x,status:"validee"}:x));
-  showToast("Commande validée ✅");
-};
-
-  const marquerLivre = async (id) => {
-  const { error } = await supabase.from("orders").update({status:"livre",livraison_status:"livre",escrow_status:"libere"}).eq("id",id);
-  if (error) { console.error("marquerLivre:", error); showToast("Erreur : "+error.message, "error"); return; }
-  setCommandes(c => c.map(x=>x.id===id?{...x,status:"livre",livraison_status:"livre",escrow_status:"libere"}:x));
-  showToast("Commande marquée livrée 📦");
-};
-
-  const annulerCommande = async (id) => {
-  if (!window.confirm("Annuler cette commande ?")) return;
-  const { error } = await supabase.from("orders").update({status:"annulee"}).eq("id",id);
-  if (error) { console.error("annulerCommande:", error); showToast("Erreur : "+error.message, "error"); return; }
-  setCommandes(c => c.map(x=>x.id===id?{...x,status:"annulee"}:x));
-  showToast("Commande annulée");
-};
-  const rembourserCommande = async (id) => {
-    if (!window.confirm("Rembourser cette commande ? Le client sera contacté.")) return;
-    await supabase.from("orders").update({
-      status:"rembourse",
-      escrow_status:"rembourse",
-    }).eq("id",id).catch(()=>{});
-    setCommandes(c => c.map(x=>x.id===id?{...x,status:"rembourse",escrow_status:"rembourse"}:x));
-    showToast("Commande remboursée 💸");
+      showToast("✅ Livreur " + livreur.nom + " assigné !");
+      setAssignModalOpen(null);
+      setRefreshKey(k => k+1);
+    } catch (err) {
+      showToast("Erreur : " + err.message, "error");
+    }
   };
 
-  const changerLivraison = async (id, newStatus) => {
-    await supabase.from("orders").update({livraison_status:newStatus}).eq("id",id).catch(()=>{});
-    setCommandes(c => c.map(x=>x.id===id?{...x,livraison_status:newStatus}:x));
-    showToast(`Livraison → ${newStatus}`);
+  const assignerLivreurManuel = async (delivery) => {
+    const nom = window.prompt("Nom du livreur :");
+    if (!nom || !nom.trim()) return;
+    const tel = window.prompt("Téléphone du livreur (+237...) :");
+    if (!tel || !tel.trim()) return;
+
+    try {
+      const { error } = await supabase.from("deliveries").update({
+        livreur_nom:      nom.trim(),
+        livreur_tel:      tel.trim(),
+        livreur_vehicule: "Moto",
+        statut:           "preparation",
+        preparation_at:   new Date().toISOString(),
+      }).eq("id", delivery.id);
+      if (error) throw error;
+
+      const phoneClean = tel.replace(/[^0-9]/g, "");
+      const msg = [
+        "🚚 NOUVELLE MISSION YORIX",
+        "",
+        "Code : " + delivery.code_suivi,
+        "Client : " + delivery.client_nom + " (" + delivery.client_tel + ")",
+        "Collecte : " + delivery.adresse_collecte,
+        "Livraison : " + delivery.adresse_livraison,
+      ].join("\n");
+      window.open("https://wa.me/" + phoneClean + "?text=" + encodeURIComponent(msg), "_blank");
+
+      showToast("✅ Livreur " + nom + " assigné manuellement !");
+      setRefreshKey(k => k+1);
+    } catch (err) {
+      showToast("Erreur : " + err.message, "error");
+    }
+  };
+
+  const changerStatutLivraison = async (delivery, newStatut) => {
+    const updates = { statut: newStatut };
+    const now = new Date().toISOString();
+    if (newStatut === "preparation") updates.preparation_at = now;
+    if (newStatut === "collecte")    updates.collecte_at    = now;
+    if (newStatut === "en_route")    updates.en_route_at    = now;
+    if (newStatut === "livre")       updates.livre_at       = now;
+
+    const { error } = await supabase.from("deliveries").update(updates).eq("id", delivery.id);
+    if (error) { showToast("Erreur : " + error.message, "error"); return; }
+    showToast("✅ Statut mis à jour → " + newStatut);
+    setRefreshKey(k => k+1);
+  };
+
+  // ═══════════ ACTIONS PRODUITS ═══════════
+  const supprimerProduit = async (id, nom) => {
+    if (!window.confirm(`Supprimer le produit "${nom}" ?`)) return;
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) { showToast("Erreur : " + error.message, "error"); return; }
+    setProduits(p => p.filter(x => x.id !== id));
+    showToast(`Produit "${nom}" supprimé`);
+  };
+
+  const toggleActifProduit = async (id, actif) => {
+    const { error } = await supabase.from("products").update({actif:!actif}).eq("id",id);
+    if (error) { showToast("Erreur : "+error.message, "error"); return; }
+    setProduits(p => p.map(x=>x.id===id?{...x,actif:!actif}:x));
+    showToast(actif ? "Produit désactivé" : "Produit activé");
+  };
+
+  // ═══════════ ACTIONS UTILISATEURS ═══════════
+  const changerRole = async (uid, newRole) => {
+    const [r1, r2] = await Promise.all([
+      supabase.from("users").update({role:newRole}).eq("uid",uid),
+      supabase.from("profiles").update({role:newRole}).eq("id",uid),
+    ]);
+    if (r1.error && r2.error) { showToast("Erreur changement rôle", "error"); return; }
+    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,role:newRole}:x));
+    showToast(`Rôle changé → ${newRole}`);
+  };
+
+  const supprimerUser = async (uid, email) => {
+    if (!window.confirm(`Supprimer "${email}" ?`)) return;
+    const { error } = await supabase.from("users").delete().eq("uid", uid);
+    if (error) { showToast("Erreur : " + error.message, "error"); return; }
+    setUtilisateurs(u => u.filter(x => (x.uid || x.id) !== uid));
+    showToast(`Utilisateur supprimé`);
+  };
+
+  const toggleVendeur = async (uid, actif) => {
+    const { error } = await supabase.from("users").update({actif:!actif}).eq("uid",uid);
+    if (error) { showToast("Erreur : "+error.message, "error"); return; }
+    setUtilisateurs(u => u.map(x=>(x.uid||x.id)===uid?{...x,actif:!actif}:x));
+    showToast(actif ? "Vendeur suspendu" : "Vendeur réactivé");
   };
 
   const verifierUser = async (uid, verifie) => {
@@ -4084,20 +4055,32 @@ const supprimerUser = async (uid, email) => {
     showToast(verifie ? "Vérification retirée" : "Utilisateur vérifié ✅");
   };
 
-  const envoyerNotifUser = async (uid, titre, message) => {
-    await supabase.from("notifications").insert({
-      user_id: uid,
-      titre,
-      message,
-      lu: false,
-      icon: "📢",
-    }).catch(()=>{});
-    showToast("Notification envoyée 📢");
+  // ═══════════ ACTIONS COMMANDES ═══════════
+  const validerCommande = async (id) => {
+    const { error } = await supabase.from("orders").update({status:"validee"}).eq("id",id);
+    if (error) { showToast("Erreur : "+error.message, "error"); return; }
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"validee"}:x));
+    showToast("Commande validée ✅");
   };
 
-  // ─── Export CSV ───
+  const marquerLivre = async (id) => {
+    const { error } = await supabase.from("orders").update({status:"livre",livraison_status:"livre",escrow_status:"libere"}).eq("id",id);
+    if (error) { showToast("Erreur : "+error.message, "error"); return; }
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"livre",livraison_status:"livre",escrow_status:"libere"}:x));
+    showToast("Commande marquée livrée 📦");
+  };
+
+  const annulerCommande = async (id) => {
+    if (!window.confirm("Annuler cette commande ?")) return;
+    const { error } = await supabase.from("orders").update({status:"annulee"}).eq("id",id);
+    if (error) { showToast("Erreur : "+error.message, "error"); return; }
+    setCommandes(c => c.map(x=>x.id===id?{...x,status:"annulee"}:x));
+    showToast("Commande annulée");
+  };
+
+  // ═══════════ EXPORT CSV ═══════════
   const exportCSV = (data, filename) => {
-    if (!data.length) return;
+    if (!data.length) { showToast("Aucune donnée à exporter", "error"); return; }
     const keys = Object.keys(data[0]);
     const csv = [keys.join(","), ...data.map(row => keys.map(k => `"${(row[k]||"").toString().replace(/"/g,'""')}"`).join(","))].join("\n");
     const blob = new Blob([csv], {type:"text/csv"});
@@ -4106,7 +4089,7 @@ const supprimerUser = async (uid, email) => {
     showToast(`Export ${filename} téléchargé`);
   };
 
-  // ─── Filtres calculés ───
+  // ═══════════ FILTRES CALCULÉS ═══════════
   const produitsFiltres = produits
     .filter(p => !searchProd || (p.name_fr||"").toLowerCase().includes(searchProd.toLowerCase()) || (p.vendeur_nom||"").toLowerCase().includes(searchProd.toLowerCase()))
     .filter(p => !filterProdCat || p.categorie===filterProdCat)
@@ -4121,31 +4104,40 @@ const supprimerUser = async (uid, email) => {
     .sort((a,b) => sortOrder==="desc" ? new Date(b.created_at)-new Date(a.created_at) : new Date(a.created_at)-new Date(b.created_at));
 
   const sellers   = utilisateurs.filter(u => u.role==="seller");
-  const alertes   = [
-    ...produits.filter(p=>(p.stock||0)===0).map(p=>({type:"red",  label:"Stock 0",  msg:`📦 ${p.name_fr||"Produit"} — vendeur : ${p.vendeur_nom||"?"}`})),
-    ...commandes.filter(o=>o.status==="pending").map(o=>({type:"yellow", label:"Commande", msg:`⏳ ${o.client_nom||"Client"} — ${(o.montant||0).toLocaleString()} FCFA`})),
-    ...utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).map(u=>({type:"green", label:"Nouveau", msg:`🆕 ${u.nom||u.email||"Utilisateur"} — ${u.role||"buyer"}`})),
+  const livreursDispo = utilisateurs.filter(u => u.role === "delivery");
+
+  const alertes = [
+    ...produits.filter(p=>(p.stock||0)===0).map(p=>({type:"red",label:"Stock 0",msg:`📦 ${p.name_fr||"Produit"} — ${p.vendeur_nom||"?"}`})),
+    ...commandes.filter(o=>o.status==="pending").map(o=>({type:"yellow",label:"Commande",msg:`⏳ ${o.client_nom||"Client"} — ${(o.montant||0).toLocaleString()} FCFA`})),
+    ...adminDeliveries.filter(d=>d.statut==="commande_recue" && !d.livreur_id).map(d=>({type:"yellow",label:"Livraison",msg:`🚚 ${d.code_suivi} attend un livreur`})),
+    ...utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).map(u=>({type:"green",label:"Nouveau",msg:`🆕 ${u.nom||u.email||"User"} — ${u.role||"buyer"}`})),
   ];
 
   const maxChartV   = Math.max(...chartVentes.map(d=>d.orders), 1);
   const maxChartRev = Math.max(...chartVentes.map(d=>d.revenue), 1);
   const maxChartI   = Math.max(...chartInscrits.map(d=>d.val), 1);
 
- const CATS_LIST = ["Téléphones & HighTech","Mode & Accesoires","Alimentation","Maison & Decoration","Agricole","Beauté & Soins","BTP","Automobile","Éducation","Services"];
-  // ─── Navigation ───
- const NAV = [
+  const CATS_LIST = ["Téléphones & HighTech","Mode & Accesoires","Alimentation","Maison & Decoration","Agricole","Beauté & Soins","BTP","Automobile","Éducation","Services"];
+
+  // ═══════════ NAVIGATION ═══════════
+  const deliveriesEnAttente = adminDeliveries.filter(d => d.statut === "commande_recue" && !d.livreur_id).length;
+  const prestPending = prestatairesList.filter(p=>p.status==="pending").length;
+
+  const NAV = [
     {id:"overview",     icon:"📊", label:"Vue d'ensemble"},
-    {id:"produits",     icon:"📦", label:"Produits",    badge:produits.filter(p=>(p.stock||0)===0).length||null},
-    {id:"commandes",    icon:"🛍️", label:"Commandes",   badge:commandes.filter(o=>o.status==="pending").length||null},
-    {id:"deliveries",   icon:"🚚", label:"Livraisons",  badge:adminDeliveries.filter(d=>d.statut==="commande_recue").length||null},
+    {id:"deliveries",   icon:"🚚", label:"Livraisons",   badge:deliveriesEnAttente||null},
+    {id:"produits",     icon:"📦", label:"Produits",     badge:produits.filter(p=>(p.stock||0)===0).length||null},
+    {id:"commandes",    icon:"🛍️", label:"Commandes",    badge:commandes.filter(o=>o.status==="pending").length||null},
     {id:"utilisateurs", icon:"👥", label:"Utilisateurs"},
     {id:"vendeurs",     icon:"🏪", label:"Vendeurs"},
-    {id:"prestataires", icon:"👷", label:"Prestataires"},
+    {id:"livreurs",     icon:"🏍️", label:"Livreurs"},
+    {id:"prestataires", icon:"👷", label:"Prestataires", badge:prestPending||null},
     {id:"revenus",      icon:"💰", label:"Revenus"},
     {id:"loyalty",      icon:"🌟", label:"Yorix Points"},
-    {id:"alertes",      icon:"🔔", label:"Alertes",     badge:alertes.length||null},
+    {id:"alertes",      icon:"🔔", label:"Alertes",      badge:alertes.length||null},
   ];
-  // ─── Helpers UI ───
+
+  // ═══════════ HELPERS UI ═══════════
   const StatCard = ({icon,val,lbl,trend,col,ic,onClick}) => (
     <div className="stat-card" style={{cursor:onClick?"pointer":"default",transition:"transform .15s,box-shadow .15s"}}
       onClick={onClick}
@@ -4167,13 +4159,39 @@ const supprimerUser = async (uid, email) => {
     return <span className={`admin-badge admin-badge-${map[statut]||"gray"}`}>{statut||"—"}</span>;
   };
 
+  const StatutLivraison = ({statut}) => {
+    const cfg = {
+      commande_recue: { label:"⏳ En attente",  color:"#f59e0b", bg:"#fef3c7" },
+      preparation:    { label:"📦 Préparation", color:"#3b82f6", bg:"#dbeafe" },
+      collecte:       { label:"🏪 Collecté",    color:"#8b5cf6", bg:"#ede9fe" },
+      en_route:       { label:"🏍️ En route",    color:"#10b981", bg:"#d1fae5" },
+      livre:          { label:"✅ Livré",       color:"#22c55e", bg:"#dcfce7" },
+      annule:         { label:"❌ Annulé",      color:"#ef4444", bg:"#fee2e2" },
+    }[statut] || { label:statut, color:"#64748b", bg:"#f1f5f9" };
+
+    return (
+      <span style={{
+        padding:"3px 10px", borderRadius:20,
+        background:cfg.bg, color:cfg.color,
+        fontSize:".72rem", fontWeight:700,
+        border:"1px solid " + cfg.color,
+        display:"inline-block",
+      }}>
+        {cfg.label}
+      </span>
+    );
+  };
+
+  // ═══════════ LOADING ═══════════
   if (loading) return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"50vh",gap:14,color:"var(--green)",flexDirection:"column"}}>
-      <div style={{width:40,height:40,border:"4px solid var(--border)",borderTopColor:"var(--green)",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>
-      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700}}>Chargement des données Yorix...</div>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:14,color:"var(--green)",flexDirection:"column"}}>
+      <div style={{width:46,height:46,border:"4px solid var(--border)",borderTopColor:"var(--green)",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>
+      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem"}}>Chargement du Yorix Admin...</div>
+      <div style={{fontSize:".8rem",color:"var(--gray)"}}>Récupération des données Supabase</div>
     </div>
   );
 
+  // ═══════════ RENDU PRINCIPAL ═══════════
   return (
     <div className="admin-layout" style={{minHeight:"calc(100vh - 130px)"}}>
 
@@ -4184,196 +4202,106 @@ const supprimerUser = async (uid, email) => {
           background:toast.type==="error"?"#ce1126":"var(--green)",
           color:"#fff",padding:"12px 20px",borderRadius:10,
           fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",
-          boxShadow:"0 4px 20px rgba(0,0,0,.2)",animation:"fadeUp .3s ease",
+          boxShadow:"0 4px 20px rgba(0,0,0,.2)",
           display:"flex",alignItems:"center",gap:8,
         }}>
           {toast.type==="error"?"❌":"✅"} {toast.msg}
         </div>
       )}
-      {/* ── MODAL DÉTAIL COMMANDE ── */}
-      {selectedOrder && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedOrder(null)}>
-          <div className="modal modal-lg">
-            <button className="modal-close" onClick={()=>setSelectedOrder(null)}>✕</button>
-            <div className="modal-title">🛍️ Commande #{String(selectedOrder.id).slice(-8)}</div>
-            <div className="modal-sub">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleString("fr-FR") : ""}</div>
 
-            {/* Statuts */}
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
-              <BadgeStatut statut={selectedOrder.status}/>
-              <BadgeStatut statut={selectedOrder.escrow_status}/>
-              <BadgeStatut statut={selectedOrder.livraison_status}/>
+      {/* ── MODAL ASSIGNATION LIVREUR ── */}
+      {assignModalOpen && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setAssignModalOpen(null)}>
+          <div className="modal" style={{maxWidth:600}}>
+            <button className="modal-close" onClick={()=>setAssignModalOpen(null)}>✕</button>
+
+            <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.3rem",fontWeight:800,color:"var(--ink)",marginBottom:4}}>
+              🏍️ Assigner un livreur
+            </h2>
+            <p style={{fontSize:".82rem",color:"var(--gray)",marginBottom:16}}>
+              Livraison <strong style={{color:"var(--green)"}}>{assignModalOpen.code_suivi}</strong> · {assignModalOpen.client_nom}
+            </p>
+
+            <div style={{background:"var(--surface2)",borderRadius:10,padding:12,marginBottom:14,fontSize:".78rem",lineHeight:1.7}}>
+              <div>🔴 <strong>Collecte :</strong> {assignModalOpen.adresse_collecte}</div>
+              <div>🟢 <strong>Livraison :</strong> {assignModalOpen.adresse_livraison}</div>
+              <div>📞 <strong>Client :</strong> {assignModalOpen.client_tel}</div>
             </div>
 
-            {/* Infos client + vendeur */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-              <div style={{background:"var(--surface2)",borderRadius:10,padding:12}}>
-                <div style={{fontSize:".7rem",color:"var(--gray)",fontWeight:700,marginBottom:6}}>👤 CLIENT</div>
-                <div style={{fontSize:".82rem",fontWeight:600}}>{selectedOrder.client_nom||"—"}</div>
-                <div style={{fontSize:".72rem",color:"var(--gray)",marginTop:3}}>📞 {selectedOrder.telephone||"—"}</div>
-                {selectedOrder.adresse && <div style={{fontSize:".72rem",color:"var(--gray)",marginTop:3}}>📍 {selectedOrder.adresse}</div>}
-              </div>
-              <div style={{background:"var(--surface2)",borderRadius:10,padding:12}}>
-                <div style={{fontSize:".7rem",color:"var(--gray)",fontWeight:700,marginBottom:6}}>🏪 VENDEUR</div>
-                <div style={{fontSize:".82rem",fontWeight:600}}>
-                  {utilisateurs.find(u=>(u.uid||u.id)===selectedOrder.vendeur_id)?.nom||"—"}
-                </div>
-                <div style={{fontSize:".72rem",color:"var(--gray)",marginTop:3}}>
-                  {utilisateurs.find(u=>(u.uid||u.id)===selectedOrder.vendeur_id)?.telephone||"—"}
-                </div>
-              </div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".92rem",color:"var(--green)",marginBottom:10}}>
+              Livreurs disponibles ({adminLivreurs.length})
             </div>
 
-            {/* Produit */}
-            {(() => {
-              const prod = produits.find(p=>p.id===selectedOrder.product_id);
-              return prod ? (
-                <div style={{background:"var(--surface2)",borderRadius:10,padding:12,marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
-                  {prod.image && <img src={prod.image} alt="" style={{width:60,height:60,borderRadius:8,objectFit:"cover"}}/>}
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:".85rem"}}>{prod.name_fr}</div>
-                    <div style={{fontSize:".7rem",color:"var(--gray)"}}>{prod.categorie} · {prod.ville}</div>
-                  </div>
-                </div>
-              ) : null;
-            })()}
-
-            {/* Montants */}
-            <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:10,padding:14,marginBottom:16}}>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:".8rem",marginBottom:5}}>
-                <span style={{color:"var(--gray)"}}>Montant total</span>
-                <strong>{(selectedOrder.montant||0).toLocaleString()} FCFA</strong>
+            {adminLivreurs.length === 0 ? (
+              <div style={{textAlign:"center",padding:30,background:"var(--surface2)",borderRadius:10,color:"var(--gray)"}}>
+                <div style={{fontSize:"2.5rem",marginBottom:6}}>😕</div>
+                <p style={{fontSize:".85rem",marginBottom:10}}>Aucun livreur inscrit.</p>
+                <button
+                  onClick={() => { setAssignModalOpen(null); assignerLivreurManuel(assignModalOpen); }}
+                  style={{
+                    background:"var(--green)",color:"#fff",border:"none",
+                    padding:"10px 18px",borderRadius:8,cursor:"pointer",
+                    fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",
+                  }}
+                >
+                  ➕ Assigner manuellement
+                </button>
               </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:".8rem",marginBottom:5}}>
-                <span style={{color:"var(--gray)"}}>Commission Yorix (5%)</span>
-                <strong style={{color:"var(--red)"}}>−{(selectedOrder.commission||0).toLocaleString()} FCFA</strong>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:".9rem",fontWeight:800,color:"var(--green)",paddingTop:6,borderTop:"1px dashed var(--green-light)"}}>
-                <span>Net vendeur</span>
-                <span>{(selectedOrder.montant_vendeur||0).toLocaleString()} FCFA</span>
-              </div>
-            </div>
-
-            {/* Actions rapides */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
-              {selectedOrder.status==="pending" && (
-                <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"8px"}} onClick={()=>{validerCommande(selectedOrder.id);setSelectedOrder(null);}}>✅ Valider commande</button>
-              )}
-              {selectedOrder.status==="validee" && (
-                <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a",padding:"8px"}} onClick={()=>{marquerLivre(selectedOrder.id);setSelectedOrder(null);}}>📦 Marquer livrée</button>
-              )}
-              {selectedOrder.livraison_status!=="en_cours" && selectedOrder.livraison_status!=="livre" && (
-                <button className="admin-action-btn" style={{background:"#fff9e6",color:"#b8860b",padding:"8px"}} onClick={()=>changerLivraison(selectedOrder.id,"en_cours")}>🏍️ Livraison en cours</button>
-              )}
-              {!["rembourse","annulee"].includes(selectedOrder.status) && (
-                <button className="admin-action-btn" style={{background:"#e0f2f1",color:"#00695c",padding:"8px"}} onClick={()=>{rembourserCommande(selectedOrder.id);setSelectedOrder(null);}}>💸 Rembourser</button>
-              )}
-              {!["livre","annulee"].includes(selectedOrder.status) && (
-                <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126",padding:"8px"}} onClick={()=>{annulerCommande(selectedOrder.id);setSelectedOrder(null);}}>❌ Annuler</button>
-              )}
-              {selectedOrder.telephone && (
-                <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",padding:"8px",gridColumn:"1/-1"}} onClick={()=>window.open(`https://wa.me/${selectedOrder.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${selectedOrder.client_nom||""}, concernant votre commande Yorix #${String(selectedOrder.id).slice(-8)}`)}`)}>📱 Contacter client WhatsApp</button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL DÉTAIL UTILISATEUR ── */}
-      {selectedUser && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setSelectedUser(null)}>
-          <div className="modal">
-            <button className="modal-close" onClick={()=>setSelectedUser(null)}>✕</button>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-              <div style={{width:56,height:56,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.6rem",fontWeight:800}}>
-                {(selectedUser.nom||selectedUser.email||"?")[0].toUpperCase()}
-              </div>
-              <div>
-                <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem"}}>{selectedUser.nom||"—"}</div>
-                <div style={{fontSize:".75rem",color:"var(--gray)"}}>{selectedUser.email||"—"}</div>
-                <span className={`role-chip chip-${selectedUser.role||"buyer"}`} style={{marginTop:4,display:"inline-block"}}>{ROLE_LABELS[selectedUser.role]||selectedUser.role}</span>
-              </div>
-            </div>
-
-            <div style={{display:"flex",flexDirection:"column",gap:6,background:"var(--surface2)",borderRadius:10,padding:12,marginBottom:14}}>
-              {[
-                ["📞 Téléphone", selectedUser.telephone||"—"],
-                ["📍 Ville", selectedUser.ville||"—"],
-                ["✅ Vérifié", selectedUser.verifie?"Oui":"Non"],
-                ["🟢 Actif", selectedUser.actif!==false?"Oui":"Non"],
-                ["📅 Inscription", selectedUser.created_at?new Date(selectedUser.created_at).toLocaleDateString("fr-FR"):"—"],
-                ["🛍️ Commandes", commandes.filter(o=>o.client_id===(selectedUser.uid||selectedUser.id)||o.vendeur_id===(selectedUser.uid||selectedUser.id)).length],
-              ].map(([k,v])=>(
-                <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",padding:"3px 0"}}>
-                  <span style={{color:"var(--gray)"}}>{k}</span>
-                  <strong>{v}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-              <button className="admin-action-btn" style={{background:selectedUser.verifie?"#fff9e6":"#e6fff0",color:selectedUser.verifie?"#b8860b":"#1a6b3a",padding:"8px"}} onClick={()=>{verifierUser(selectedUser.uid||selectedUser.id,selectedUser.verifie);setSelectedUser({...selectedUser,verifie:!selectedUser.verifie});}}>
-                {selectedUser.verifie?"❌ Retirer vérif":"✅ Vérifier"}
-              </button>
-              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"8px"}} onClick={()=>{
-                const titre = prompt("Titre de la notification :");
-                if (!titre) return;
-                const msg = prompt("Message :");
-                if (!msg) return;
-                envoyerNotifUser(selectedUser.uid||selectedUser.id, titre, msg);
-              }}>📢 Notifier</button>
-              {selectedUser.telephone && (
-                <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",padding:"8px",gridColumn:"1/-1"}} onClick={()=>window.open(`https://wa.me/${selectedUser.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${selectedUser.nom||""}, l'équipe Yorix vous contacte.`)}`)}>📱 WhatsApp</button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL DÉTAIL PRODUIT ── */}
-      {selectedProd && typeof document !== 'undefined' && ReactDOM.createPortal(
-  <div style={{position:"fixed",inset:0,zIndex:999,background:"var(--bg)",overflowY:"auto"}}>
-         <div style={{maxWidth:1100,margin:"0 auto",padding:"16px 16px 40px"}}>
-           <button onClick={()=>setSelectedProd(null)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"var(--gray)",fontSize:"14px",marginBottom:20,padding:"8px 0",fontWeight:500}}>
-        ← Retour aux produits
-      </button>
-            <div className="modal-title">{selectedProd.name_fr||"Produit"}</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12}}>
-              {selectedProd.image && (
-                <img src={selectedProd.image} alt="" style={{width:"100%",borderRadius:10,objectFit:"cover",maxHeight:200}} onError={e=>e.target.style.display="none"}/>
-              )}
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {[
-                  ["Vendeur", selectedProd.vendeur_nom||"—"],
-                  ["Prix", `${(selectedProd.prix||0).toLocaleString()} FCFA`],
-                  ["Stock", selectedProd.stock||0],
-                  ["Catégorie", selectedProd.categorie||"—"],
-                  ["Ville", selectedProd.ville||"—"],
-                  ["Statut", selectedProd.actif?"Actif":"Inactif"],
-                  ["Vues", selectedProd.vues||0],
-                  ["Ventes", selectedProd.vente_total||0],
-                ].map(([k,v])=>(
-                  <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:".8rem",padding:"5px 0",borderBottom:"1px solid var(--border)"}}>
-                    <span style={{color:"var(--gray)"}}>{k}</span>
-                    <strong style={{color:"var(--ink)"}}>{v}</strong>
+            ) : (
+              <div style={{display:"grid",gap:8,maxHeight:360,overflowY:"auto"}}>
+                {adminLivreurs.map(liv => (
+                  <div key={liv.uid||liv.id} style={{
+                    display:"flex",alignItems:"center",gap:12,
+                    background:"var(--surface)",border:"1.5px solid var(--border)",
+                    borderRadius:10,padding:10,
+                  }}>
+                    <div style={{
+                      width:44,height:44,borderRadius:"50%",
+                      background:"var(--green-pale)",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:"1.3rem",
+                    }}>🏍️</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".88rem"}}>
+                        {liv.nom || "Livreur"}
+                        {liv.verifie && <span style={{marginLeft:6,color:"var(--green)"}}>✓</span>}
+                      </div>
+                      <div style={{fontSize:".7rem",color:"var(--gray)"}}>
+                        {liv.telephone || "N/A"}
+                        {liv.note ? " · ⭐ " + liv.note : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => assignerLivreur(assignModalOpen, liv)}
+                      style={{
+                        background:"var(--green)",color:"#fff",border:"none",
+                        padding:"8px 14px",borderRadius:8,cursor:"pointer",
+                        fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",
+                      }}
+                    >
+                      Assigner
+                    </button>
                   </div>
                 ))}
               </div>
-            </div>
-            {selectedProd.description_fr && (
-              <div style={{marginTop:14,fontSize:".8rem",color:"var(--gray)",lineHeight:1.7}}>{selectedProd.description_fr}</div>
             )}
-            <div style={{display:"flex",gap:8,marginTop:16}}>
-              <button className="form-submit" style={{flex:1}} onClick={()=>{toggleActifProduit(selectedProd.id,selectedProd.actif);setSelectedProd(null);}}>
-                {selectedProd.actif?"⛔ Désactiver":"✅ Activer"}
-              </button>
-              <button className="btn-ghost" style={{flex:1}} onClick={()=>{supprimerProduit(selectedProd.id,selectedProd.name_fr);setSelectedProd(null);}}>
-                🗑️ Supprimer
+
+            <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--border)"}}>
+              <button
+                onClick={() => { setAssignModalOpen(null); assignerLivreurManuel(assignModalOpen); }}
+                style={{
+                  width:"100%",background:"var(--surface2)",color:"var(--ink)",
+                  border:"1.5px solid var(--border)",
+                  padding:"10px",borderRadius:8,cursor:"pointer",
+                  fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".82rem",
+                }}
+              >
+                ➕ Assigner un livreur externe (saisie manuelle)
               </button>
             </div>
           </div>
         </div>
-     , document.body)}
+      )}
 
       {/* ── SIDEBAR ── */}
       <div className="admin-sidebar">
@@ -4385,7 +4313,7 @@ const supprimerUser = async (uid, email) => {
               <div className="admin-sidebar-logo-sub">Panneau de contrôle</div>
             </div>
           </div>
-          <div style={{fontSize:".67rem",color:"rgba(255,255,255,.3)",marginTop:6,padding:"6px 8px",background:"rgba(255,255,255,.04)",borderRadius:6}}>
+          <div style={{fontSize:".67rem",color:"rgba(255,255,255,.4)",marginTop:6,padding:"6px 8px",background:"rgba(255,255,255,.04)",borderRadius:6}}>
             👤 {userData?.nom||user?.email?.split("@")[0]||"Admin"}
           </div>
         </div>
@@ -4399,24 +4327,29 @@ const supprimerUser = async (uid, email) => {
         ))}
 
         <div style={{padding:"14px 16px 0",borderTop:"1px solid rgba(255,255,255,.07)",marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
-          <button onClick={()=>setRefreshKey(k=>k+1)} style={{width:"100%",background:"rgba(79,209,125,.12)",color:"#4fd17d",border:"1px solid rgba(79,209,125,.2)",borderRadius:7,padding:"8px",fontSize:".75rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            🔄 Actualiser
+          <button onClick={()=>setRefreshKey(k=>k+1)} style={{width:"100%",background:"rgba(79,209,125,.12)",color:"#4fd17d",border:"1px solid rgba(79,209,125,.2)",borderRadius:7,padding:"8px",fontSize:".75rem",cursor:"pointer"}}>
+            🔄 Actualiser les données
           </button>
           <button onClick={()=>goPage("home")} style={{width:"100%",background:"rgba(255,255,255,.05)",color:"rgba(255,255,255,.5)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"8px",fontSize:".75rem",cursor:"pointer"}}>
             ← Retour au site
           </button>
         </div>
 
-        {/* Mini stats sidebar */}
+        {/* Mini stats */}
         <div style={{padding:"14px 16px",marginTop:12,borderTop:"1px solid rgba(255,255,255,.07)"}}>
+          <div style={{fontSize:".62rem",color:"rgba(255,255,255,.3)",fontWeight:700,letterSpacing:".1em",marginBottom:6}}>
+            STATS RAPIDES
+          </div>
           {[
-            {l:"Vendeurs",v:stats.vendeurs,c:"#4fd17d"},
-            {l:"Livreurs",v:stats.livreurs,c:"#60a5fa"},
-            {l:"Ruptures",v:stats.ruptures,c:stats.ruptures>0?"#f87171":"#4fd17d"},
-            {l:"En attente",v:stats.enAttente,c:stats.enAttente>0?"#fbbf24":"#4fd17d"},
+            {l:"👥 Utilisateurs",v:stats.users,c:"#4fd17d"},
+            {l:"🏪 Vendeurs",v:stats.vendeurs,c:"#60a5fa"},
+            {l:"🏍️ Livreurs",v:stats.livreurs,c:"#fbbf24"},
+            {l:"🚚 Livraisons",v:stats.deliveries,c:"#a78bfa"},
+            {l:"📦 Produits",v:stats.products,c:"#fb7185"},
+            {l:"🛍️ Commandes",v:stats.orders,c:"#34d399"},
           ].map(s=>(
-            <div key={s.l} style={{display:"flex",justifyContent:"space-between",fontSize:".7rem",padding:"4px 0"}}>
-              <span style={{color:"rgba(255,255,255,.4)"}}>{s.l}</span>
+            <div key={s.l} style={{display:"flex",justifyContent:"space-between",fontSize:".72rem",padding:"4px 0"}}>
+              <span style={{color:"rgba(255,255,255,.55)"}}>{s.l}</span>
               <span style={{color:s.c,fontWeight:700}}>{s.v}</span>
             </div>
           ))}
@@ -4426,7 +4359,22 @@ const supprimerUser = async (uid, email) => {
       {/* ── CONTENU PRINCIPAL ── */}
       <div className="admin-content">
 
-        {/* ════ VUE D'ENSEMBLE ════ */}
+        {/* Banner d'erreur si problème de chargement */}
+        {loadError && (
+          <div style={{
+            background:"#fff0f0",border:"1px solid #fecaca",color:"#ce1126",
+            borderRadius:10,padding:"12px 16px",marginBottom:16,
+            display:"flex",alignItems:"center",gap:10,fontSize:".85rem",
+          }}>
+            <span style={{fontSize:"1.3rem"}}>⚠️</span>
+            <div style={{flex:1}}>{loadError}</div>
+            <button onClick={()=>setRefreshKey(k=>k+1)} style={{background:"#ce1126",color:"#fff",border:"none",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:".78rem",fontWeight:700}}>
+              🔄 Réessayer
+            </button>
+          </div>
+        )}
+
+        {/* ════════ VUE D'ENSEMBLE ════════ */}
         {adminTab==="overview" && (
           <>
             <div className="admin-page-title">
@@ -4438,32 +4386,58 @@ const supprimerUser = async (uid, email) => {
 
             {/* Cartes stats principales */}
             <div className="stat-cards-grid">
-              <StatCard icon="👥" val={stats.users.toLocaleString()} lbl="Utilisateurs" trend={`+${utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000*7).length} cette semaine`} col="#e6f0ff" ic="#1a4a9a" onClick={()=>setAdminTab("utilisateurs")}/>
-              <StatCard icon="📦" val={stats.products.toLocaleString()} lbl="Produits" trend={`${produits.filter(p=>p.actif).length} actifs · ${produits.filter(p=>!p.actif).length} inactifs`} col="#e6fff0" ic="#1a6b3a" onClick={()=>setAdminTab("produits")}/>
-              <StatCard icon="🛍️" val={stats.orders.toLocaleString()} lbl="Commandes" trend={`${stats.enAttente} en attente`} col="#fff9e6" ic="#b8860b" onClick={()=>setAdminTab("commandes")}/>
+              <StatCard icon="👥" val={stats.users.toLocaleString()} lbl="Utilisateurs total" trend={`${stats.buyers} acheteurs · ${stats.vendeurs} vendeurs`} col="#e6f0ff" ic="#1a4a9a" onClick={()=>setAdminTab("utilisateurs")}/>
+              <StatCard icon="🏍️" val={stats.livreurs} lbl="Livreurs inscrits" trend={`${adminDeliveries.filter(d=>!d.livreur_id).length} en attente d'assignation`} col="#fff9e6" ic="#b8860b" onClick={()=>setAdminTab("livreurs")}/>
+              <StatCard icon="📦" val={stats.products.toLocaleString()} lbl="Produits" trend={`${produits.filter(p=>p.actif).length} actifs · ${stats.ruptures} en rupture`} col="#e6fff0" ic="#1a6b3a" onClick={()=>setAdminTab("produits")}/>
+              <StatCard icon="🚚" val={stats.deliveries.toLocaleString()} lbl="Livraisons" trend={`${adminDeliveries.filter(d=>d.statut==="livre").length} livrées`} col="#f3e8ff" ic="#7c3aed" onClick={()=>setAdminTab("deliveries")}/>
+              <StatCard icon="🛍️" val={stats.orders.toLocaleString()} lbl="Commandes" trend={`${stats.enAttente} en attente · ${stats.livrees} livrées`} col="#ecfdf5" ic="#059669" onClick={()=>setAdminTab("commandes")}/>
               <StatCard icon="💰" val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions Yorix" trend="5% par transaction" col="#fff0f6" ic="#a0105a" onClick={()=>setAdminTab("revenus")}/>
               <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Revenus aujourd'hui" trend="Commissions du jour" col="#f0fff4" ic="#276749"/>
               <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Revenus 7 jours" trend="Cette semaine" col="#fef9f0" ic="#7b5a10"/>
-              <StatCard icon="🏪" val={stats.vendeurs} lbl="Vendeurs actifs" trend={`${sellers.filter(s=>s.actif!==false).length} actifs`} col="#ede7f6" ic="#6a1b9a"/>
-              <StatCard icon="🚚" val={stats.livreurs} lbl="Livreurs" trend="Disponibles" col="#e0f7fa" ic="#006064"/>
             </div>
 
-            {/* Graphiques côte à côte */}
+            {/* Alerte livraisons à assigner */}
+            {deliveriesEnAttente > 0 && (
+              <div style={{
+                background:"linear-gradient(135deg, #fef3c7, #fde68a)",
+                border:"2px solid #f59e0b",borderRadius:12,
+                padding:16,marginBottom:18,
+                display:"flex",alignItems:"center",gap:14,
+              }}>
+                <div style={{fontSize:"2.2rem"}}>🚚</div>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"#92400e"}}>
+                    {deliveriesEnAttente} livraison{deliveriesEnAttente>1?"s":""} en attente d'assignation !
+                  </div>
+                  <div style={{fontSize:".8rem",color:"#78350f",marginTop:3}}>
+                    Assigne un livreur rapidement pour satisfaire tes clients.
+                  </div>
+                </div>
+                <button onClick={()=>setAdminTab("deliveries")} style={{
+                  background:"#f59e0b",color:"#fff",border:"none",
+                  padding:"10px 20px",borderRadius:9,cursor:"pointer",
+                  fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",
+                }}>
+                  🏍️ Assigner maintenant →
+                </button>
+              </div>
+            )}
+
+            {/* Graphiques */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-              {/* Graphique commandes */}
               <div className="admin-section">
                 <div className="admin-section-title">
                   📈 Commandes / jour
                   <span style={{fontSize:".69rem",color:"var(--gray)",fontWeight:400}}>7 derniers jours</span>
                 </div>
-                <div style={{display:"flex",alignItems:"flex-end",gap:5,height:90,marginBottom:6}}>
+                <div style={{display:"flex",alignItems:"flex-end",gap:5,height:100,marginBottom:6}}>
                   {chartVentes.map((d,i)=>(
                     <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                       <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.orders||""}</div>
                       <div style={{
                         width:"100%",borderRadius:"3px 3px 0 0",
-                        height:`${Math.max((d.orders/maxChartV)*70,d.orders>0?8:3)}px`,
-                        background:i===chartVentes.length-1?"var(--green)":i===chartVentes.findIndex(x=>x.orders===Math.max(...chartVentes.map(x=>x.orders)))?"var(--yellow)":"var(--green-mid)",
+                        height:`${Math.max((d.orders/maxChartV)*80,d.orders>0?8:3)}px`,
+                        background:i===chartVentes.length-1?"var(--green)":"var(--green-mid, #4fd17d)",
                         opacity:.85,transition:"height .5s",
                       }}/>
                     </div>
@@ -4474,19 +4448,18 @@ const supprimerUser = async (uid, email) => {
                 </div>
               </div>
 
-              {/* Graphique inscriptions */}
               <div className="admin-section">
                 <div className="admin-section-title">
                   👥 Inscriptions / jour
                   <span style={{fontSize:".69rem",color:"var(--gray)",fontWeight:400}}>7 derniers jours</span>
                 </div>
-                <div style={{display:"flex",alignItems:"flex-end",gap:5,height:90,marginBottom:6}}>
+                <div style={{display:"flex",alignItems:"flex-end",gap:5,height:100,marginBottom:6}}>
                   {chartInscrits.map((d,i)=>(
                     <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                       <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.val||""}</div>
                       <div style={{
                         width:"100%",borderRadius:"3px 3px 0 0",
-                        height:`${Math.max((d.val/maxChartI)*70,d.val>0?8:3)}px`,
+                        height:`${Math.max((d.val/maxChartI)*80,d.val>0?8:3)}px`,
                         background:"#818cf8",opacity:.85,transition:"height .5s",
                       }}/>
                     </div>
@@ -4498,29 +4471,43 @@ const supprimerUser = async (uid, email) => {
               </div>
             </div>
 
-            {/* Top produits + Alertes */}
+            {/* Dernières livraisons + Alertes */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-              {/* Top produits */}
               <div className="admin-section">
-                <div className="admin-section-title">🏆 Top produits</div>
-                {topProduits.length===0
-                  ? <div style={{fontSize:".78rem",color:"var(--gray)",padding:"12px 0"}}>Aucune vente enregistrée</div>
-                  : topProduits.map((p,i)=>(
-                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid var(--border)"}}>
-                      <div style={{width:22,height:22,borderRadius:6,background:i===0?"var(--yellow)":i===1?"var(--gray)":"var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:".7rem",fontWeight:800,flexShrink:0,color:i<2?"#0d1f14":"var(--ink)"}}>
-                        {i+1}
-                      </div>
+                <div className="admin-section-title">
+                  🚚 Dernières livraisons
+                  <button className="admin-action-btn" style={{background:"var(--green)",color:"#fff",fontSize:".65rem"}} onClick={()=>setAdminTab("deliveries")}>
+                    Voir tout →
+                  </button>
+                </div>
+                {adminDeliveries.length === 0 ? (
+                  <div style={{fontSize:".78rem",color:"var(--gray)",padding:"12px 0",textAlign:"center"}}>Aucune livraison</div>
+                ) : (
+                  adminDeliveries.slice(0,4).map(d => (
+                    <div key={d.id} style={{
+                      display:"flex",alignItems:"center",gap:10,
+                      padding:"8px 0",borderBottom:"1px solid var(--border)",
+                    }}>
+                      <div style={{
+                        width:36,height:36,borderRadius:8,
+                        background:"var(--green-pale)",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:"1rem",flexShrink:0,
+                      }}>🚚</div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:".78rem",fontWeight:600,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name_fr||"—"}</div>
-                        <div style={{fontSize:".65rem",color:"var(--gray)"}}>{p.vendeur_nom||"—"}</div>
+                        <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",color:"var(--green)"}}>
+                          {d.code_suivi}
+                        </div>
+                        <div style={{fontSize:".68rem",color:"var(--gray)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {d.client_nom} → {d.adresse_livraison}
+                        </div>
                       </div>
-                      <div style={{fontSize:".72rem",fontWeight:700,color:"var(--green)",flexShrink:0}}>{p.vente_total} ventes</div>
+                      <StatutLivraison statut={d.statut}/>
                     </div>
                   ))
-                }
+                )}
               </div>
 
-              {/* Alertes rapides */}
               <div className="admin-section">
                 <div className="admin-section-title">
                   🔔 Alertes actives
@@ -4539,42 +4526,280 @@ const supprimerUser = async (uid, email) => {
                 }
               </div>
             </div>
-
-            {/* Dernières commandes */}
-            <div className="admin-section">
-              <div className="admin-section-title">
-                🛍️ Dernières commandes
-                <button className="admin-action-btn" style={{background:"var(--green)",color:"#fff"}} onClick={()=>setAdminTab("commandes")}>Voir tout →</button>
-              </div>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead><tr><th>Client</th><th>Montant</th><th>Commission</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
-                  <tbody>
-                    {commandes.slice(0,6).map(o=>(
-                      <tr key={o.id}>
-                        <td>
-                          <strong style={{fontSize:".8rem"}}>{o.client_nom||"—"}</strong>
-                          {o.telephone && <div style={{fontSize:".65rem",color:"var(--gray)"}}>{o.telephone}</div>}
-                        </td>
-                        <td><strong style={{color:"var(--ink)"}}>{(o.montant||0).toLocaleString()} F</strong></td>
-                        <td style={{color:"var(--green)",fontWeight:700}}>{(o.commission||0).toLocaleString()} F</td>
-                        <td><BadgeStatut statut={o.status}/></td>
-                        <td style={{fontSize:".7rem",color:"var(--gray)"}}>{o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</td>
-                        <td style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                          {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
-                          {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
-                          {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""}, votre commande Yorix est en cours. 📦`)}`)}>📱</button>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </>
         )}
 
-        {/* ════ PRODUITS ════ */}
+        {/* ════════ LIVRAISONS (onglet principal amélioré) ════════ */}
+        {adminTab === "deliveries" && (
+          <>
+            <div className="admin-page-title">
+              🚚 Gestion des livraisons
+              <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>
+                {adminDeliveries.length}
+              </span>
+            </div>
+
+            {/* Stats livraisons */}
+            <div className="stat-cards-grid" style={{marginBottom:18}}>
+              <StatCard icon="⏳" val={adminDeliveries.filter(d=>d.statut==="commande_recue").length} lbl="En attente" col="#fef3c7" ic="#f59e0b"/>
+              <StatCard icon="📦" val={adminDeliveries.filter(d=>d.statut==="preparation").length} lbl="Préparation" col="#dbeafe" ic="#3b82f6"/>
+              <StatCard icon="🏍️" val={adminDeliveries.filter(d=>["collecte","en_route"].includes(d.statut)).length} lbl="En route" col="#d1fae5" ic="#10b981"/>
+              <StatCard icon="✅" val={adminDeliveries.filter(d=>d.statut==="livre").length} lbl="Livrées" col="#dcfce7" ic="#22c55e"/>
+            </div>
+
+            {/* Filtres */}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18,background:"var(--surface)",padding:10,borderRadius:10,border:"1px solid var(--border)"}}>
+              {[
+                { id:"all",            label:"📋 Toutes",      color:"#64748b" },
+                { id:"commande_recue", label:"⏳ En attente",  color:"#f59e0b" },
+                { id:"preparation",    label:"📦 Préparation", color:"#3b82f6" },
+                { id:"collecte",       label:"🏪 Collecté",    color:"#8b5cf6" },
+                { id:"en_route",       label:"🏍️ En route",   color:"#10b981" },
+                { id:"livre",          label:"✅ Livrées",     color:"#22c55e" },
+              ].map(f => {
+                const count = f.id === "all" ? adminDeliveries.length : adminDeliveries.filter(d => d.statut === f.id).length;
+                const active = adminDelivFilter === f.id;
+                return (
+                  <button key={f.id} onClick={() => setAdminDelivFilter(f.id)} style={{
+                    padding:"7px 13px",borderRadius:20,
+                    border:"2px solid " + (active ? f.color : "var(--border)"),
+                    background:active ? f.color : "var(--surface2)",
+                    color:active ? "#fff" : "var(--ink)",
+                    fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",
+                    cursor:"pointer",transition:"all .2s",
+                  }}>
+                    {f.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Liste */}
+            {adminDeliveries.filter(d => adminDelivFilter === "all" || d.statut === adminDelivFilter).length === 0 ? (
+              <div style={{textAlign:"center",padding:50,background:"var(--surface)",borderRadius:12,color:"var(--gray)",border:"1px solid var(--border)"}}>
+                <div style={{fontSize:"3.5rem",marginBottom:10}}>📭</div>
+                <p style={{fontSize:".9rem"}}>Aucune livraison dans cette catégorie</p>
+              </div>
+            ) : (
+              <div style={{display:"grid",gap:10}}>
+                {adminDeliveries
+                  .filter(d => adminDelivFilter === "all" || d.statut === adminDelivFilter)
+                  .map(d => (
+                    <div key={d.id} style={{
+                      background:"var(--surface)",border:"1px solid var(--border)",
+                      borderRadius:12,padding:14,
+                    }}>
+                      {/* Header */}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.05rem",color:"var(--green)",letterSpacing:".05em"}}>
+                            {d.code_suivi}
+                          </div>
+                          <StatutLivraison statut={d.statut}/>
+                        </div>
+                        <div style={{fontSize:".72rem",color:"var(--gray)"}}>
+                          {d.commande_at ? new Date(d.commande_at).toLocaleString("fr-FR") : "-"}
+                        </div>
+                      </div>
+
+                      {/* Infos */}
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:10,marginBottom:12,fontSize:".78rem"}}>
+                        <div>
+                          <div style={{fontSize:".65rem",color:"var(--gray)",fontWeight:700,marginBottom:3}}>👤 CLIENT</div>
+                          <div style={{fontWeight:600,color:"var(--ink)"}}>{d.client_nom || "—"}</div>
+                          <div style={{color:"var(--gray)"}}>{d.client_tel || "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:".65rem",color:"var(--gray)",fontWeight:700,marginBottom:3}}>🔴 COLLECTE</div>
+                          <div style={{color:"var(--ink)"}}>{d.adresse_collecte || "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:".65rem",color:"var(--gray)",fontWeight:700,marginBottom:3}}>🟢 LIVRAISON</div>
+                          <div style={{color:"var(--ink)"}}>{d.adresse_livraison || "—"}</div>
+                        </div>
+                      </div>
+
+                      {/* Livreur */}
+                      {d.livreur_nom ? (
+                        <div style={{background:"var(--green-pale)",borderRadius:8,padding:"9px 12px",marginBottom:10,fontSize:".82rem",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                          <span style={{fontSize:"1.2rem"}}>🏍️</span>
+                          <div style={{flex:1}}>
+                            <strong>Livreur :</strong> {d.livreur_nom}
+                            <span style={{color:"var(--gray)",marginLeft:8}}>· {d.livreur_tel}</span>
+                          </div>
+                          {d.livreur_tel && (
+                            <a href={`https://wa.me/${d.livreur_tel.replace(/\D/g,"")}`} target="_blank" rel="noreferrer"
+                              style={{background:"#25D366",color:"#fff",padding:"4px 10px",borderRadius:6,fontSize:".7rem",fontWeight:700,textDecoration:"none"}}>
+                              💬 WhatsApp
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{background:"#fef3c7",border:"1px dashed #f59e0b",borderRadius:8,padding:"9px 12px",marginBottom:10,fontSize:".82rem",color:"#92400e"}}>
+                          ⚠️ Aucun livreur assigné
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {!d.livreur_id && !d.livreur_nom && (
+                          <button onClick={() => setAssignModalOpen(d)} style={{
+                            flex:1,minWidth:150,background:"var(--green)",color:"#fff",border:"none",
+                            padding:"9px 14px",borderRadius:8,
+                            fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".8rem",cursor:"pointer",
+                          }}>
+                            🏍️ Assigner un livreur
+                          </button>
+                        )}
+
+                        {d.livreur_nom && d.statut === "preparation" && (
+                          <button onClick={() => changerStatutLivraison(d, "collecte")}
+                            style={{background:"#8b5cf6",color:"#fff",border:"none",padding:"7px 12px",borderRadius:8,fontSize:".75rem",fontWeight:700,cursor:"pointer"}}>
+                            🏪 Marquer Collecté
+                          </button>
+                        )}
+                        {d.livreur_nom && d.statut === "collecte" && (
+                          <button onClick={() => changerStatutLivraison(d, "en_route")}
+                            style={{background:"#10b981",color:"#fff",border:"none",padding:"7px 12px",borderRadius:8,fontSize:".75rem",fontWeight:700,cursor:"pointer"}}>
+                            🏍️ Marquer En route
+                          </button>
+                        )}
+                        {d.livreur_nom && d.statut === "en_route" && (
+                          <button onClick={() => changerStatutLivraison(d, "livre")}
+                            style={{background:"#22c55e",color:"#fff",border:"none",padding:"7px 12px",borderRadius:8,fontSize:".75rem",fontWeight:700,cursor:"pointer"}}>
+                            ✅ Marquer Livré
+                          </button>
+                        )}
+
+                        <button onClick={() => window.open("/?page=livraison&code=" + d.code_suivi, "_blank")}
+                          style={{background:"var(--surface2)",color:"var(--ink)",border:"1px solid var(--border)",padding:"7px 12px",borderRadius:8,fontSize:".75rem",fontWeight:600,cursor:"pointer"}}>
+                          👁️ Tracker client
+                        </button>
+
+                        <button onClick={() => { navigator.clipboard?.writeText(d.code_suivi); showToast("Code copié : " + d.code_suivi); }}
+                          style={{background:"var(--surface2)",color:"var(--ink)",border:"1px solid var(--border)",padding:"7px 12px",borderRadius:8,fontSize:".75rem",fontWeight:600,cursor:"pointer"}}>
+                          📋 Copier
+                        </button>
+
+                        {d.client_tel && (
+                          <a href={`https://wa.me/${d.client_tel.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${d.client_nom||""} ! Concernant votre livraison ${d.code_suivi}...`)}`}
+                            target="_blank" rel="noreferrer"
+                            style={{background:"#25D366",color:"#fff",padding:"7px 12px",borderRadius:8,fontSize:".75rem",fontWeight:700,textDecoration:"none"}}>
+                            📱 Contacter
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════════ LIVREURS (nouveau onglet dédié) ════════ */}
+        {adminTab === "livreurs" && (
+          <>
+            <div className="admin-page-title">
+              🏍️ Gestion des livreurs
+              <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>
+                {livreursDispo.length}
+              </span>
+            </div>
+
+            <div className="stat-cards-grid" style={{marginBottom:18}}>
+              <StatCard icon="🏍️" val={livreursDispo.length} lbl="Livreurs inscrits" col="#fff9e6" ic="#b8860b"/>
+              <StatCard icon="✅" val={livreursDispo.filter(l=>l.actif!==false).length} lbl="Actifs" col="#e6fff0" ic="#1a6b3a"/>
+              <StatCard icon="✔️" val={livreursDispo.filter(l=>l.verifie).length} lbl="Vérifiés" col="#e6f0ff" ic="#1a4a9a"/>
+              <StatCard icon="📦" val={adminDeliveries.filter(d=>d.livreur_id).length} lbl="Livraisons assignées" col="#f3e8ff" ic="#7c3aed"/>
+            </div>
+
+            {livreursDispo.length === 0 ? (
+              <div style={{textAlign:"center",padding:60,background:"var(--surface)",borderRadius:12,border:"1px solid var(--border)"}}>
+                <div style={{fontSize:"4rem",marginBottom:14}}>🏍️</div>
+                <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"var(--ink)",marginBottom:8}}>
+                  Aucun livreur inscrit
+                </h3>
+                <p style={{color:"var(--gray)",fontSize:".88rem",marginBottom:16,maxWidth:420,margin:"0 auto 16px"}}>
+                  Tu peux encore assigner des livreurs manuellement sur chaque livraison. Ou invite des livreurs à s'inscrire via le lien :
+                </p>
+                <div style={{background:"var(--green-pale)",padding:"8px 14px",borderRadius:8,display:"inline-block",fontSize:".82rem"}}>
+                  🔗 <a href="https://yorix.cm/?authTab=register&role=delivery" style={{color:"var(--green)",fontWeight:700}}>yorix.cm/inscription-livreur</a>
+                </div>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Livreur</th>
+                      <th>Contact</th>
+                      <th>Ville</th>
+                      <th>Livraisons</th>
+                      <th>Statut</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {livreursDispo.map(l => {
+                      const uid = l.uid || l.id;
+                      const mesLivraisons = adminDeliveries.filter(d => d.livreur_id === uid);
+                      const livresCount = mesLivraisons.filter(d => d.statut === "livre").length;
+                      return (
+                        <tr key={uid}>
+                          <td>
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                              <div style={{width:38,height:38,borderRadius:"50%",background:"var(--green-pale)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>
+                                🏍️
+                              </div>
+                              <div>
+                                <strong style={{fontSize:".85rem"}}>{l.nom || "—"}</strong>
+                                {l.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                                <div style={{fontSize:".66rem",color:"var(--gray)"}}>{l.email || "—"}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{fontSize:".78rem"}}>
+                            {l.telephone || "—"}
+                          </td>
+                          <td style={{fontSize:".78rem"}}>{l.ville || "—"}</td>
+                          <td>
+                            <span className="admin-badge admin-badge-blue">{mesLivraisons.length}</span>
+                            {livresCount > 0 && <span style={{fontSize:".63rem",color:"var(--green)",marginLeft:4}}>{livresCount} livrées</span>}
+                          </td>
+                          <td>
+                            <span className={`admin-badge admin-badge-${l.actif!==false?"green":"red"}`}>
+                              {l.actif!==false?"🟢 Actif":"⛔ Suspendu"}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{display:"flex",gap:3}}>
+                              {l.telephone && (
+                                <a href={`https://wa.me/${l.telephone.replace(/\D/g,"")}`} target="_blank" rel="noreferrer"
+                                  className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",textDecoration:"none"}}>
+                                  📱
+                                </a>
+                              )}
+                              <button onClick={()=>verifierUser(uid,l.verifie)} className="admin-action-btn"
+                                style={{background:l.verifie?"#fff9e6":"#e6fff0",color:l.verifie?"#b8860b":"#1a6b3a"}}>
+                                {l.verifie?"❌":"✅"}
+                              </button>
+                              <button onClick={()=>toggleVendeur(uid,l.actif!==false)} className="admin-action-btn"
+                                style={{background:l.actif!==false?"#fff0f0":"#e6fff0",color:l.actif!==false?"#ce1126":"#1a6b3a"}}>
+                                {l.actif!==false?"⛔":"✅"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════════ PRODUITS ════════ */}
         {adminTab==="produits" && (
           <>
             <div className="admin-page-title">
@@ -4582,7 +4807,6 @@ const supprimerUser = async (uid, email) => {
               <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{produitsFiltres.length} / {produits.length}</span>
             </div>
 
-            {/* Filtres */}
             <div className="admin-filter-row" style={{flexWrap:"wrap",gap:8}}>
               <input className="admin-search" style={{maxWidth:240}} placeholder="🔍 Nom ou vendeur..." value={searchProd} onChange={e=>setSearchProd(e.target.value)}/>
               <select className="admin-search" style={{maxWidth:160}} value={filterProdCat} onChange={e=>setFilterProdCat(e.target.value)}>
@@ -4600,27 +4824,10 @@ const supprimerUser = async (uid, email) => {
               </button>
             </div>
 
-            {/* Résumé rapide */}
-            <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
-              {[
-                {l:"Total",v:produits.length,c:"var(--ink)"},
-                {l:"Actifs",v:produits.filter(p=>p.actif).length,c:"var(--green)"},
-                {l:"Inactifs",v:produits.filter(p=>!p.actif).length,c:"var(--gray)"},
-                {l:"Ruptures",v:produits.filter(p=>(p.stock||0)===0).length,c:"var(--red)"},
-              ].map(s=>(
-                <div key={s.l} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",fontSize:".75rem"}}>
-                  <span style={{color:"var(--gray)"}}>{s.l} : </span>
-                  <strong style={{color:s.c}}>{s.v}</strong>
-                </div>
-              ))}
-            </div>
-
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
-                  <tr>
-                    <th>Produit</th><th>Prix</th><th>Vendeur</th><th>Cat.</th><th>Ville</th><th>Stock</th><th>Vues</th><th>Statut</th><th>Actions</th>
-                  </tr>
+                  <tr><th>Produit</th><th>Prix</th><th>Vendeur</th><th>Cat.</th><th>Ville</th><th>Stock</th><th>Statut</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                   {produitsFiltres.map(p=>(
@@ -4630,15 +4837,11 @@ const supprimerUser = async (uid, email) => {
                           {(p.image||p.image_urls?.[0]) && (
                             <img src={p.image||p.image_urls?.[0]} alt="" style={{width:38,height:38,borderRadius:7,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
                           )}
-                          <div>
-                            <strong style={{fontSize:".79rem"}}>{p.name_fr||"—"}</strong>
-                            {p.escrow && <span style={{marginLeft:4,fontSize:".58rem",background:"#e6f0ff",color:"#1a4a9a",padding:"1px 4px",borderRadius:3}}>🔐</span>}
-                            {p.flash && <span style={{marginLeft:3,fontSize:".58rem",background:"#fff0f0",color:"#ce1126",padding:"1px 4px",borderRadius:3}}>⚡</span>}
-                          </div>
+                          <strong style={{fontSize:".79rem"}}>{p.name_fr||"—"}</strong>
                         </div>
                       </td>
                       <td><strong style={{color:"var(--green)"}}>{(p.prix||0).toLocaleString()} F</strong></td>
-                      <td style={{fontSize:".75rem",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.vendeur_nom||"—"}</td>
+                      <td style={{fontSize:".75rem"}}>{p.vendeur_nom||"—"}</td>
                       <td><span className="admin-badge admin-badge-gray">{p.categorie||"—"}</span></td>
                       <td style={{fontSize:".72rem"}}>{p.ville||"—"}</td>
                       <td>
@@ -4646,11 +4849,9 @@ const supprimerUser = async (uid, email) => {
                           {p.stock||0}
                         </span>
                       </td>
-                      <td style={{fontSize:".72rem",color:"var(--gray)"}}>{p.vues||0}</td>
                       <td><span className={`admin-badge admin-badge-${p.actif?"green":"gray"}`}>{p.actif?"Actif":"Inactif"}</span></td>
                       <td>
                         <div style={{display:"flex",gap:3}}>
-                          <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>setSelectedProd(p)}>👁</button>
                           <button className="admin-action-btn" style={{background:p.actif?"#fff9e6":"#e6fff0",color:p.actif?"#b8860b":"#1a6b3a"}} onClick={()=>toggleActifProduit(p.id,p.actif)}>
                             {p.actif?"⛔":"✅"}
                           </button>
@@ -4660,7 +4861,7 @@ const supprimerUser = async (uid, email) => {
                     </tr>
                   ))}
                   {produitsFiltres.length===0 && (
-                    <tr><td colSpan={9} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun produit trouvé</td></tr>
+                    <tr><td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun produit trouvé</td></tr>
                   )}
                 </tbody>
               </table>
@@ -4668,7 +4869,7 @@ const supprimerUser = async (uid, email) => {
           </>
         )}
 
-        {/* ════ COMMANDES ════ */}
+        {/* ════════ COMMANDES ════════ */}
         {adminTab==="commandes" && (
           <>
             <div className="admin-page-title">
@@ -4676,331 +4877,61 @@ const supprimerUser = async (uid, email) => {
               <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{commandesFiltrees.length}</span>
             </div>
 
-            {/* Résumé statuts */}
             <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
               {[
-                {l:"⏳ En attente",v:commandes.filter(o=>o.status==="pending").length, c:"#b8860b",bg:"#fff9e6"},
-                {l:"✅ Validées",  v:commandes.filter(o=>o.status==="validee").length, c:"#1a4a9a",bg:"#e6f0ff"},
-                {l:"📦 Livrées",  v:commandes.filter(o=>o.status==="livre").length,   c:"#1a6b3a",bg:"#e6fff0"},
-                {l:"❌ Annulées", v:commandes.filter(o=>o.status==="annulee").length,  c:"#ce1126",bg:"#fff0f0"},
+                {l:"⏳ En attente",v:commandes.filter(o=>o.status==="pending").length,c:"#b8860b",bg:"#fff9e6",f:"pending"},
+                {l:"✅ Validées",v:commandes.filter(o=>o.status==="validee").length,c:"#1a4a9a",bg:"#e6f0ff",f:"validee"},
+                {l:"📦 Livrées",v:commandes.filter(o=>o.status==="livre").length,c:"#1a6b3a",bg:"#e6fff0",f:"livre"},
+                {l:"❌ Annulées",v:commandes.filter(o=>o.status==="annulee").length,c:"#ce1126",bg:"#fff0f0",f:"annulee"},
               ].map(s=>(
-                <div key={s.l} onClick={()=>setFilterOrder(s.l.includes("attente")?"pending":s.l.includes("Validée")?"validee":s.l.includes("Livré")?"livre":"annulee")} style={{background:s.bg,border:`1px solid ${s.c}30`,borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:".75rem"}}>
+                <div key={s.l} onClick={()=>setFilterOrder(s.f===filterOrder?"":s.f)} style={{
+                  background:s.bg,border:`1.5px solid ${filterOrder===s.f?s.c:s.c+"30"}`,
+                  borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:".75rem",
+                }}>
                   <span style={{color:"var(--gray)"}}>{s.l} : </span>
                   <strong style={{color:s.c}}>{s.v}</strong>
                 </div>
               ))}
             </div>
 
-            <div className="admin-filter-row">
-              <select className="admin-search" style={{maxWidth:180}} value={filterOrder} onChange={e=>setFilterOrder(e.target.value)}>
-                <option value="">Tous les statuts</option>
-                <option value="pending">⏳ En attente</option>
-                <option value="validee">✅ Validée</option>
-                <option value="livre">📦 Livrée</option>
-                <option value="annulee">❌ Annulée</option>
-              </select>
-              <button className="admin-action-btn" style={{background:"var(--surface2)",color:"var(--ink)",padding:"7px 12px",borderRadius:8,border:"1px solid var(--border)"}} onClick={()=>setSortOrder(s=>s==="desc"?"asc":"desc")}>
-                {sortOrder==="desc"?"⬇ Plus récent":"⬆ Plus ancien"}
-              </button>
-              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"7px 12px",borderRadius:8,marginLeft:"auto"}} onClick={()=>exportCSV(commandesFiltrees.map(o=>({id:o.id,client:o.client_nom,telephone:o.telephone,montant:o.montant,commission:o.commission,statut:o.status,date:o.created_at})),"commandes-yorix.csv")}>
-                📤 Export CSV
-              </button>
-            </div>
-
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Client</th><th>Montant</th><th>Commission</th><th>Escrow</th><th>Livraison</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {commandesFiltrees.map(o=>(
-                    <tr key={o.id} style={{cursor:"pointer"}} onClick={e=>{if(e.target.tagName!=="BUTTON")setSelectedOrder(o);}}>
-                      <td>
-                        <strong style={{fontSize:".8rem"}}>{o.client_nom||"—"}</strong>
-                        {o.telephone && <div style={{fontSize:".65rem",color:"var(--gray)"}}>{o.telephone}</div>}
-                      </td>
-                      <td><strong>{(o.montant||0).toLocaleString()} F</strong></td>
-                      <td style={{color:"var(--green)",fontWeight:700}}>{(o.commission||0).toLocaleString()} F</td>
-                      <td><BadgeStatut statut={o.escrow_status}/></td>
-                      <td><BadgeStatut statut={o.livraison_status}/></td>
-                      <td><BadgeStatut statut={o.status}/></td>
-                      <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>{o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</td>
-                      <td>
-                        <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                          {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
-                          {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
-                          {!["livre","annulee"].includes(o.status) && <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>annulerCommande(o.id)}>❌</button>}
-                          {o.telephone && (
-                            <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${o.client_nom||""} ! Votre commande Yorix est en cours. 📦`)}`)}>📱</button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {commandesFiltrees.length===0 && (
-                    <tr><td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucune commande trouvée</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-        {/* ═══════════════════════════════════════════════════════ */}
-        {/* ONGLET LIVRAISONS */}
-        {/* ═══════════════════════════════════════════════════════ */}
-        {adminTab === "deliveries" && (
-          <div>
-            <div style={{
-              display: "flex", justifyContent: "space-between",
-              alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 10,
-            }}>
-              <h2 style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800,
-                color: "var(--ink)", margin: 0,
-              }}>
-                🚚 Gestion des livraisons <span style={{
-                  background: "var(--green)", color: "#fff",
-                  padding: "2px 10px", borderRadius: 20,
-                  fontSize: ".85rem", marginLeft: 8,
-                }}>{adminDeliveries.length}</span>
-              </h2>
-            </div>
-
-            {/* Filtres */}
-            <div style={{
-              display: "flex", gap: 8, flexWrap: "wrap",
-              marginBottom: 18, background: "var(--surface)",
-              padding: 10, borderRadius: 10,
-            }}>
-              {[
-                { id: "all",          label: "Toutes",      color: "#64748b" },
-                { id: "commande_recue", label: "⏳ En attente", color: "#f59e0b" },
-                { id: "preparation",  label: "📦 Préparation", color: "#3b82f6" },
-                { id: "en_route",     label: "🏍️ En route",   color: "#10b981" },
-                { id: "livre",        label: "✅ Livrées",    color: "#22c55e" },
-              ].map(f => {
-                const count = f.id === "all"
-                  ? adminDeliveries.length
-                  : adminDeliveries.filter(d => d.statut === f.id).length;
-                const active = adminDelivFilter === f.id;
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => setAdminDelivFilter(f.id)}
-                    style={{
-                      padding: "7px 13px", borderRadius: 20,
-                      border: "2px solid " + (active ? f.color : "var(--border)"),
-                      background: active ? f.color : "var(--surface2)",
-                      color: active ? "#fff" : "var(--ink)",
-                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
-                      cursor: "pointer", transition: "all .2s",
-                    }}
-                  >
-                    {f.label} ({count})
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Liste des livraisons */}
-            {adminDeliveries
-              .filter(d => adminDelivFilter === "all" || d.statut === adminDelivFilter)
-              .length === 0 ? (
-              <div style={{
-                textAlign: "center", padding: 40,
-                background: "var(--surface)", borderRadius: 12,
-                color: "var(--gray)",
-              }}>
-                <div style={{ fontSize: "3rem", marginBottom: 8 }}>📭</div>
-                <p>Aucune livraison dans cette catégorie</p>
+            {commandesFiltrees.length === 0 ? (
+              <div style={{textAlign:"center",padding:50,background:"var(--surface)",borderRadius:12,color:"var(--gray)",border:"1px solid var(--border)"}}>
+                <div style={{fontSize:"3rem",marginBottom:10}}>📭</div>
+                <p>Aucune commande {filterOrder ? `"${filterOrder}"` : ""}</p>
               </div>
             ) : (
-              <div style={{ display: "grid", gap: 10 }}>
-                {adminDeliveries
-                  .filter(d => adminDelivFilter === "all" || d.statut === adminDelivFilter)
-                  .map(d => {
-                    const statutConfig = {
-                      commande_recue: { label: "⏳ En attente", color: "#f59e0b", bg: "#fef3c7" },
-                      preparation:    { label: "📦 Préparation", color: "#3b82f6", bg: "#dbeafe" },
-                      collecte:       { label: "🏪 Collecté",    color: "#8b5cf6", bg: "#ede9fe" },
-                      en_route:       { label: "🏍️ En route",    color: "#10b981", bg: "#d1fae5" },
-                      livre:          { label: "✅ Livré",       color: "#22c55e", bg: "#dcfce7" },
-                      annule:         { label: "❌ Annulé",      color: "#ef4444", bg: "#fee2e2" },
-                    };
-                    const cfg = statutConfig[d.statut] || statutConfig.commande_recue;
-
-                    return (
-                      <div
-                        key={d.id}
-                        style={{
-                          background: "var(--surface)",
-                          border: "1px solid var(--border)",
-                          borderRadius: 12, padding: 14,
-                        }}
-                      >
-                        {/* Ligne 1 : code + statut + date */}
-                        <div style={{
-                          display: "flex", justifyContent: "space-between",
-                          alignItems: "center", flexWrap: "wrap", gap: 8,
-                          marginBottom: 10,
-                        }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                            <div style={{
-                              fontFamily: "'Syne',sans-serif", fontWeight: 800,
-                              fontSize: "1rem", color: "var(--green)",
-                              letterSpacing: ".05em",
-                            }}>
-                              {d.code_suivi}
-                            </div>
-                            <span style={{
-                              padding: "3px 10px", borderRadius: 20,
-                              background: cfg.bg, color: cfg.color,
-                              fontSize: ".72rem", fontWeight: 700,
-                              border: "1px solid " + cfg.color,
-                            }}>
-                              {cfg.label}
-                            </span>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Client</th><th>Montant</th><th>Commission</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {commandesFiltrees.map(o=>(
+                      <tr key={o.id}>
+                        <td>
+                          <strong style={{fontSize:".8rem"}}>{o.client_nom||"—"}</strong>
+                          {o.telephone && <div style={{fontSize:".65rem",color:"var(--gray)"}}>{o.telephone}</div>}
+                        </td>
+                        <td><strong>{(o.montant||0).toLocaleString()} F</strong></td>
+                        <td style={{color:"var(--green)",fontWeight:700}}>{(o.commission||0).toLocaleString()} F</td>
+                        <td><BadgeStatut statut={o.status}/></td>
+                        <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>{o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</td>
+                        <td>
+                          <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                            {o.status==="pending" && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅</button>}
+                            {o.status==="validee" && <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>marquerLivre(o.id)}>📦</button>}
+                            {!["livre","annulee"].includes(o.status) && <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>annulerCommande(o.id)}>❌</button>}
+                            {o.telephone && <a href={`https://wa.me/${o.telephone.replace(/\D/g,"")}`} target="_blank" rel="noreferrer" className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",textDecoration:"none"}}>📱</a>}
                           </div>
-                          <div style={{ fontSize: ".72rem", color: "var(--gray)" }}>
-                            {d.commande_at ? new Date(d.commande_at).toLocaleString("fr-FR") : "-"}
-                          </div>
-                        </div>
-
-                        {/* Ligne 2 : infos client + adresses */}
-                        <div style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                          gap: 10, marginBottom: 12,
-                          fontSize: ".78rem",
-                        }}>
-                          <div>
-                            <div style={{ fontSize: ".65rem", color: "var(--gray)", fontWeight: 700, marginBottom: 3 }}>
-                              👤 CLIENT
-                            </div>
-                            <div style={{ fontWeight: 600, color: "var(--ink)" }}>{d.client_nom || "—"}</div>
-                            <div style={{ color: "var(--gray)" }}>{d.client_tel || "—"}</div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: ".65rem", color: "var(--gray)", fontWeight: 700, marginBottom: 3 }}>
-                              🔴 COLLECTE
-                            </div>
-                            <div style={{ color: "var(--ink)" }}>{d.adresse_collecte || "—"}</div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: ".65rem", color: "var(--gray)", fontWeight: 700, marginBottom: 3 }}>
-                              🟢 LIVRAISON
-                            </div>
-                            <div style={{ color: "var(--ink)" }}>{d.adresse_livraison || "—"}</div>
-                          </div>
-                        </div>
-
-                        {/* Ligne 3 : livreur assigné */}
-                        {d.livreur_nom && (
-                          <div style={{
-                            background: "var(--green-pale)", borderRadius: 8,
-                            padding: "8px 12px", marginBottom: 10,
-                            fontSize: ".78rem",
-                          }}>
-                            🏍️ <strong>Livreur :</strong> {d.livreur_nom} · {d.livreur_tel}
-                          </div>
-                        )}
-
-                        {/* Ligne 4 : actions */}
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {/* Assigner un livreur (si pas encore) */}
-                          {!d.livreur_id && (
-                            <button
-                              onClick={() => setAssignModalOpen(d)}
-                              style={{
-                                flex: 1, minWidth: 140,
-                                background: "var(--green)", color: "#fff", border: "none",
-                                padding: "8px 14px", borderRadius: 8,
-                                fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
-                                cursor: "pointer",
-                              }}
-                            >
-                              🏍️ Assigner un livreur
-                            </button>
-                          )}
-
-                          {/* Boutons de changement de statut */}
-                          {d.livreur_id && d.statut !== "livre" && d.statut !== "annule" && (
-                            <>
-                              {d.statut === "preparation" && (
-                                <button
-                                  onClick={() => changerStatutLivraison(d, "collecte")}
-                                  style={{
-                                    background: "#8b5cf6", color: "#fff", border: "none",
-                                    padding: "7px 12px", borderRadius: 8,
-                                    fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
-                                  }}
-                                >
-                                  🏪 Marquer Collecté
-                                </button>
-                              )}
-                              {d.statut === "collecte" && (
-                                <button
-                                  onClick={() => changerStatutLivraison(d, "en_route")}
-                                  style={{
-                                    background: "#10b981", color: "#fff", border: "none",
-                                    padding: "7px 12px", borderRadius: 8,
-                                    fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
-                                  }}
-                                >
-                                  🏍️ Marquer En route
-                                </button>
-                              )}
-                              {d.statut === "en_route" && (
-                                <button
-                                  onClick={() => changerStatutLivraison(d, "livre")}
-                                  style={{
-                                    background: "#22c55e", color: "#fff", border: "none",
-                                    padding: "7px 12px", borderRadius: 8,
-                                    fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
-                                  }}
-                                >
-                                  ✅ Marquer Livré
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                          {/* Voir le suivi client */}
-                          <button
-                            onClick={() => window.open("/?page=livraison&code=" + d.code_suivi, "_blank")}
-                            style={{
-                              background: "var(--surface2)", color: "var(--ink)",
-                              border: "1px solid var(--border)",
-                              padding: "7px 12px", borderRadius: 8,
-                              fontSize: ".75rem", fontWeight: 600, cursor: "pointer",
-                            }}
-                          >
-                            👁️ Voir tracker
-                          </button>
-
-                          {/* Copier le code */}
-                          <button
-                            onClick={() => {
-                              navigator.clipboard?.writeText(d.code_suivi);
-                              alert("✅ Code " + d.code_suivi + " copié !");
-                            }}
-                            style={{
-                              background: "var(--surface2)", color: "var(--ink)",
-                              border: "1px solid var(--border)",
-                              padding: "7px 12px", borderRadius: 8,
-                              fontSize: ".75rem", fontWeight: 600, cursor: "pointer",
-                            }}
-                          >
-                            📋
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-          </div>
+          </>
         )}
 
-        {/* ════ UTILISATEURS ════ */}
+        {/* ════════ UTILISATEURS ════════ */}
         {adminTab==="utilisateurs" && (
           <>
             <div className="admin-page-title">
@@ -5008,13 +4939,15 @@ const supprimerUser = async (uid, email) => {
               <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{usersFiltres.length} / {utilisateurs.length}</span>
             </div>
 
-            {/* Résumé rôles */}
             <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
               {["buyer","seller","delivery","provider","admin"].map(r=>{
                 const cnt = utilisateurs.filter(u=>u.role===r).length;
                 const colors = {buyer:"#1a4a9a",seller:"#1a6b3a",delivery:"#b8860b",provider:"#6a1b9a",admin:"#ce1126"};
                 return (
-                  <div key={r} onClick={()=>setFilterRole(r===filterRole?"":r)} style={{background:"var(--surface)",border:`1.5px solid ${filterRole===r?colors[r]:"var(--border)"}`,borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:".73rem",transition:"all .15s"}}>
+                  <div key={r} onClick={()=>setFilterRole(r===filterRole?"":r)} style={{
+                    background:"var(--surface)",border:`1.5px solid ${filterRole===r?colors[r]:"var(--border)"}`,
+                    borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:".73rem",
+                  }}>
                     <span style={{color:colors[r]||"var(--gray)",fontWeight:700}}>{ROLE_LABELS[r]||r}</span>
                     <span style={{color:"var(--gray)",marginLeft:6}}>{cnt}</span>
                   </div>
@@ -5025,73 +4958,66 @@ const supprimerUser = async (uid, email) => {
             <div className="admin-filter-row">
               <input className="admin-search" style={{maxWidth:260}} placeholder="🔍 Nom ou email..." value={searchUser} onChange={e=>setSearchUser(e.target.value)}/>
               <button className="admin-action-btn" style={{background:"var(--surface2)",color:"var(--ink)",padding:"7px 12px",borderRadius:8,border:"1px solid var(--border)"}} onClick={()=>{setSearchUser("");setFilterRole("");}}>✕ Reset</button>
-              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"7px 12px",borderRadius:8,marginLeft:"auto"}} onClick={()=>exportCSV(usersFiltres.map(u=>({uid:u.uid,nom:u.nom,email:u.email,role:u.role,ville:u.ville,telephone:u.telephone,inscription:u.created_at})),"utilisateurs-yorix.csv")}>
+              <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a",padding:"7px 12px",borderRadius:8,marginLeft:"auto"}} onClick={()=>exportCSV(usersFiltres.map(u=>({uid:u.uid,nom:u.nom,email:u.email,role:u.role,ville:u.ville,telephone:u.telephone})),"utilisateurs-yorix.csv")}>
                 📤 Export CSV
               </button>
             </div>
 
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Ville</th><th>Téléphone</th><th>Inscription</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {usersFiltres.map(u=>{
-                    const uid = u.uid||u.id;
-                    return (
-                      <tr key={uid} style={{cursor:"pointer"}} onClick={e=>{if(e.target.tagName!=="BUTTON"&&e.target.tagName!=="SELECT")setSelectedUser(u);}}>
-                        <td>
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:".8rem"}}>
-                  {(u.nom||u.email||"?")[0].toUpperCase()}
+            {usersFiltres.length === 0 ? (
+              <div style={{textAlign:"center",padding:50,background:"var(--surface)",borderRadius:12,color:"var(--gray)",border:"1px solid var(--border)"}}>
+                <div style={{fontSize:"3rem",marginBottom:10}}>👥</div>
+                <p>Aucun utilisateur trouvé</p>
+                {utilisateurs.length === 0 && (
+                  <p style={{fontSize:".78rem",marginTop:10,color:"#ce1126"}}>
+                    💡 Si la table users/profiles existe, vérifie les politiques RLS
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Ville</th><th>Téléphone</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {usersFiltres.map(u=>{
+                      const uid = u.uid||u.id;
+                      return (
+                        <tr key={uid}>
+                          <td>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:32,height:32,borderRadius:"50%",background:`hsl(${(uid||"").toString().charCodeAt(0)*7%360},50%,50%)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:".8rem"}}>
+                                {(u.nom||u.email||"?")[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
+                                {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                              </div>
                             </div>
-                            <div>
-                              <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
-                             {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
+                          </td>
+                          <td style={{fontSize:".75rem",color:"var(--gray)"}}>{u.email||"—"}</td>
+                          <td>
+                            <select value={u.role||"buyer"} style={{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:6,padding:"3px 8px",fontSize:".72rem",cursor:"pointer",color:"var(--ink)"}} onChange={e=>changerRole(uid,e.target.value)}>
+                              {["buyer","seller","delivery","provider","admin"].map(r=><option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </td>
+                          <td style={{fontSize:".73rem"}}>{u.ville||"—"}</td>
+                          <td style={{fontSize:".73rem"}}>{u.telephone || "—"}</td>
+                          <td>
+                            <div style={{display:"flex",gap:3}}>
+                              {u.telephone && <a href={`https://wa.me/${u.telephone.replace(/\D/g,"")}`} target="_blank" rel="noreferrer" className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",textDecoration:"none"}}>📱</a>}
+                              <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>supprimerUser(uid,u.email)}>🗑️</button>
                             </div>
-                          </div>
-                        </td>
-                        <td style={{fontSize:".75rem",color:"var(--gray)",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email||"—"}</td>
-                        <td>
-                          <select
-                            value={u.role||"buyer"}
-                            style={{border:"1px solid var(--border)",background:"var(--surface)",borderRadius:6,padding:"3px 8px",fontSize:".72rem",cursor:"pointer",color:"var(--ink)",outline:"none"}}
-                            onChange={e=>changerRole(uid,e.target.value)}
-                          >
-                            {["buyer","seller","delivery","provider","admin"].map(r=><option key={r} value={r}>{r}</option>)}
-                          </select>
-                        </td>
-                        <td style={{fontSize:".73rem"}}>{u.ville||"—"}</td>
-                        <td style={{fontSize:".73rem",color:"var(--gray)"}}>
-  {u.telephone ? (
-    <a 
-      href={`https://wa.me/${u.telephone.replace(/\D/g, '').replace(/^0/, '237')}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{color:'#25D366',fontWeight:600,textDecoration:'none'}}
-    >
-      💬 {u.telephone}
-    </a>
-  ) : "—"}
-</td>
-                        <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>{u.created_at?new Date(u.created_at).toLocaleDateString("fr-FR"):"-"}</td>
-                        <td>
-                          <div style={{display:"flex",gap:3}}>
-                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}`)}>📱</button>}
-                            <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={()=>supprimerUser(uid,u.email)}>🗑️</button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {usersFiltres.length===0 && (
-                    <tr><td colSpan={7} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun utilisateur trouvé</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
 
-        {/* ════ VENDEURS ════ */}
+        {/* ════════ VENDEURS ════════ */}
         {adminTab==="vendeurs" && (
           <>
             <div className="admin-page-title">
@@ -5099,7 +5025,6 @@ const supprimerUser = async (uid, email) => {
               <span style={{fontSize:".75rem",background:"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{sellers.length}</span>
             </div>
 
-            {/* Stats vendeurs */}
             <div className="stat-cards-grid" style={{marginBottom:16}}>
               <StatCard icon="🏪" val={sellers.length} lbl="Vendeurs total" col="#e6fff0" ic="#1a6b3a"/>
               <StatCard icon="✅" val={sellers.filter(s=>s.actif!==false).length} lbl="Actifs" col="#e6f0ff" ic="#1a4a9a"/>
@@ -5107,158 +5032,62 @@ const supprimerUser = async (uid, email) => {
               <StatCard icon="✔️" val={sellers.filter(s=>s.verifie).length} lbl="Vérifiés" col="#fff9e6" ic="#b8860b"/>
             </div>
 
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Vendeur</th><th>Email</th><th>Produits</th><th>Ventes</th><th>Revenus vendeur</th><th>Commission</th><th>Statut</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {sellers.map(u=>{
-                    const uid = u.uid||u.id;
-                    const mesProds = produits.filter(p=>p.vendeur_id===uid);
-                    const mesVentes = commandes.filter(o=>o.vendeur_id===uid);
-                    const revVendeur = mesVentes.reduce((s,o)=>s+(o.montant_vendeur||0),0);
-                    const commissionVendeur = mesVentes.reduce((s,o)=>s+(o.commission||0),0);
-                    return (
-                      <tr key={uid}>
-                        <td>
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{width:32,height:32,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".8rem",flexShrink:0}}>
-                              {(u.nom||"?")[0].toUpperCase()}
-                            </div>
-                            <div>
+            {sellers.length === 0 ? (
+              <div style={{textAlign:"center",padding:50,background:"var(--surface)",borderRadius:12,color:"var(--gray)"}}>
+                <div style={{fontSize:"3rem",marginBottom:10}}>🏪</div>
+                <p>Aucun vendeur inscrit</p>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Vendeur</th><th>Email</th><th>Produits</th><th>Ventes</th><th>Statut</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {sellers.map(u=>{
+                      const uid = u.uid||u.id;
+                      const mesProds = produits.filter(p=>p.vendeur_id===uid);
+                      const mesVentes = commandes.filter(o=>o.vendeur_id===uid);
+                      return (
+                        <tr key={uid}>
+                          <td>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:32,height:32,borderRadius:"50%",background:"var(--green)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".8rem"}}>
+                                {(u.nom||"?")[0].toUpperCase()}
+                              </div>
                               <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
-                              {u.verifie && <span style={{marginLeft:4,fontSize:".6rem",background:"#e6fff0",color:"#1a6b3a",padding:"1px 4px",borderRadius:3}}>✅</span>}
-                              {mesProds.length>=5 && <span style={{marginLeft:3,fontSize:".6rem",background:"#fff9e6",color:"#b8860b",padding:"1px 4px",borderRadius:3}}>⭐ Top</span>}
                             </div>
-                          </div>
-                        </td>
-                        <td style={{fontSize:".72rem",color:"var(--gray)"}}>{u.email||"—"}</td>
-                        <td>
-                          <span className="admin-badge admin-badge-blue">{mesProds.length}</span>
-                          {mesProds.filter(p=>p.actif).length > 0 && <span style={{fontSize:".63rem",color:"var(--green)",marginLeft:4}}>{mesProds.filter(p=>p.actif).length} actifs</span>}
-                        </td>
-                        <td><span className="admin-badge admin-badge-green">{mesVentes.length}</span></td>
-                        <td style={{color:"var(--green)",fontWeight:700}}>{revVendeur.toLocaleString()} F</td>
-                        <td style={{color:"var(--red)",fontWeight:700,fontSize:".75rem"}}>{commissionVendeur.toLocaleString()} F</td>
-                        <td><span className={`admin-badge admin-badge-${u.actif!==false?"green":"red"}`}>{u.actif!==false?"Actif":"Suspendu"}</span></td>
-                        <td>
-                          <div style={{display:"flex",gap:3}}>
-                            <button className="admin-action-btn" style={{background:u.actif!==false?"#fff0f0":"#e6fff0",color:u.actif!==false?"#ce1126":"#1a6b3a"}} onClick={()=>toggleVendeur(uid,u.actif!==false)}>
-                              {u.actif!==false?"⛔":"✅"}
-                            </button>
-                            {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${u.nom||""}, l'équipe Yorix vous contacte.`)}`)}>📱</button>}
-                            {u.email && <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>window.open(`mailto:${u.email}`)}>✉️</button>}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {sellers.length===0 && (
-                    <tr><td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>Aucun vendeur inscrit</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td style={{fontSize:".72rem",color:"var(--gray)"}}>{u.email||"—"}</td>
+                          <td><span className="admin-badge admin-badge-blue">{mesProds.length}</span></td>
+                          <td><span className="admin-badge admin-badge-green">{mesVentes.length}</span></td>
+                          <td><span className={`admin-badge admin-badge-${u.actif!==false?"green":"red"}`}>{u.actif!==false?"Actif":"Suspendu"}</span></td>
+                          <td>
+                            <div style={{display:"flex",gap:3}}>
+                              <button className="admin-action-btn" style={{background:u.actif!==false?"#fff0f0":"#e6fff0",color:u.actif!==false?"#ce1126":"#1a6b3a"}} onClick={()=>toggleVendeur(uid,u.actif!==false)}>
+                                {u.actif!==false?"⛔":"✅"}
+                              </button>
+                              {u.telephone && <a href={`https://wa.me/${u.telephone.replace(/\D/g,"")}`} target="_blank" rel="noreferrer" className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",textDecoration:"none"}}>📱</a>}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
 
-        {/* ════ REVENUS ════ */}
-        {adminTab==="revenus" && (
-          <>
-            <div className="admin-page-title">💰 Revenus & Finances</div>
-
-            <div className="stat-cards-grid" style={{marginBottom:20}}>
-              <StatCard icon="💵" val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions totales (5%)" col="#e6fff0" ic="#1a6b3a"/>
-              <StatCard icon="💰" val={`${stats.revenue.toLocaleString()} F`} lbl="Volume transactions total" col="#fff9e6" ic="#b8860b"/>
-              <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Commissions aujourd'hui" col="#f0fff4" ic="#276749"/>
-              <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Commissions 7 jours" col="#fef9f0" ic="#7b5a10"/>
-              <StatCard icon="🛍️" val={stats.orders} lbl="Commandes totales" col="#e6f0ff" ic="#1a4a9a"/>
-              <StatCard icon="✅" val={commandes.filter(o=>o.status==="livre").length} lbl="Commandes livrées" col="#e6fff0" ic="#1a6b3a"/>
-            </div>
-
-            {/* Graphique revenus 7 jours */}
-            <div className="admin-section" style={{marginBottom:16}}>
-              <div className="admin-section-title">📈 Commissions journalières — 7 derniers jours</div>
-              <div style={{display:"flex",alignItems:"flex-end",gap:8,height:100,marginBottom:8}}>
-                {chartVentes.map((d,i)=>(
-                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                    {d.revenue > 0 && <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.revenue.toLocaleString()}</div>}
-                    <div style={{
-                      width:"100%",borderRadius:"4px 4px 0 0",
-                      height:`${Math.max((d.revenue/maxChartRev)*80,d.revenue>0?8:3)}px`,
-                      background:i===chartVentes.length-1?"var(--yellow)":"var(--green)",
-                      opacity:.85,transition:"height .5s",cursor:"default",
-                    }} title={`${d.revenue.toLocaleString()} FCFA`}/>
-                  </div>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                {chartVentes.map((d,i)=><div key={i} style={{flex:1,textAlign:"center",fontSize:".63rem",color:"var(--gray)"}}>{d.label}</div>)}
-              </div>
-            </div>
-
-            {/* Revenus par catégorie */}
-            <div className="admin-section">
-              <div className="admin-section-title">📊 Commissions par catégorie</div>
-              {CATS_LIST.map(cat=>{
-                const catOrders = commandes.filter(o=>{
-                  const prod = produits.find(p=>p.id===o.product_id);
-                  return prod?.categorie===cat;
-                });
-                const catRev = catOrders.reduce((s,o)=>s+(o.commission||0),0);
-                const totalRev = Math.max(stats.commissionTotal,1);
-                const pct = Math.round((catRev/totalRev)*100);
-                return (
-                  <div key={cat} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                    <div style={{width:110,fontSize:".75rem",color:"var(--gray)",flexShrink:0}}>{cat}</div>
-                    <div style={{flex:1,background:"var(--surface2)",borderRadius:6,height:20,overflow:"hidden",position:"relative"}}>
-                      <div style={{height:"100%",background:"var(--green)",borderRadius:6,width:`${pct}%`,transition:"width .6s",opacity:.85}}/>
-                      {pct>5 && <div style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",fontSize:".6rem",color:"var(--surface)",fontWeight:700}}>{pct}%</div>}
-                    </div>
-                    <div style={{width:90,fontSize:".75rem",fontWeight:700,color:"var(--green)",textAlign:"right",flexShrink:0}}>{catRev.toLocaleString()} F</div>
-                    <div style={{width:40,fontSize:".7rem",color:"var(--gray)",textAlign:"right",flexShrink:0}}>{catOrders.length} cmd</div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Top vendeurs par revenus */}
-            <div className="admin-section">
-              <div className="admin-section-title">🏪 Top 5 vendeurs par commissions générées</div>
-              {sellers
-                .map(u=>{
-                  const uid = u.uid||u.id;
-                  const rev = commandes.filter(o=>o.vendeur_id===uid).reduce((s,o)=>s+(o.commission||0),0);
-                  return {...u, revCommission: rev};
-                })
-                .sort((a,b)=>b.revCommission-a.revCommission)
-                .slice(0,5)
-                .map((u,i)=>(
-                  <div key={u.uid||u.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 0",borderBottom:"1px solid var(--border)"}}>
-                    <div style={{width:24,height:24,borderRadius:6,background:i===0?"var(--yellow)":i===1?"#c0c0c0":"var(--surface2)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".72rem",color:i<2?"#0d1f14":"var(--gray)",flexShrink:0}}>{i+1}</div>
-                    <div style={{flex:1}}>
-                      <strong style={{fontSize:".8rem"}}>{u.nom||"—"}</strong>
-                      <div style={{fontSize:".65rem",color:"var(--gray)"}}>{u.email||""}</div>
-                    </div>
-                    <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,color:"var(--green)",fontSize:".85rem"}}>{u.revCommission.toLocaleString()} F</div>
-                    {u.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}`)}>📱</button>}
-                  </div>
-                ))
-              }
-            </div>
-          </>
-        )}
-        
-        {/* ════ PRESTATAIRES ════ */}
+        {/* ════════ PRESTATAIRES ════════ */}
         {adminTab === "prestataires" && (
           <>
             <div className="admin-page-title">
               👷 Candidatures prestataires
-              <span style={{fontSize:".75rem",background:prestatairesCount>0?"#ce1126":"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>
-                {prestatairesCount} en attente
+              <span style={{fontSize:".75rem",background:prestPending>0?"#ce1126":"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>
+                {prestPending} en attente
               </span>
             </div>
 
-            {/* Stats prestataires */}
             <div className="stat-cards-grid" style={{marginBottom:18}}>
               <StatCard icon="⏳" val={prestatairesList.filter(p=>p.status==="pending").length} lbl="En attente" col="#fff9e6" ic="#b8860b"/>
               <StatCard icon="✅" val={prestatairesList.filter(p=>p.status==="approved").length} lbl="Approuvés" col="#e6fff0" ic="#1a6b3a"/>
@@ -5266,330 +5095,207 @@ const supprimerUser = async (uid, email) => {
               <StatCard icon="📋" val={prestatairesList.length} lbl="Total" col="#e6f0ff" ic="#1a4a9a"/>
             </div>
 
-            {/* Filtres */}
             <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
               {[
-                {id:"pending",   label:"⏳ En attente"},
-                {id:"approved",  label:"✅ Approuvés"},
-                {id:"rejected",  label:"❌ Refusés"},
-                {id:"all",       label:"📋 Tous"},
+                {id:"pending",label:"⏳ En attente"},
+                {id:"approved",label:"✅ Approuvés"},
+                {id:"rejected",label:"❌ Refusés"},
+                {id:"all",label:"📋 Tous"},
               ].map(f => (
-                <button
-                  key={f.id}
-                  onClick={() => setPrestFilter(f.id)}
-                  style={{
-                    background: prestFilter===f.id ? "var(--green)" : "var(--surface)",
-                    color: prestFilter===f.id ? "#fff" : "var(--ink)",
-                    border: `1.5px solid ${prestFilter===f.id ? "var(--green)" : "var(--border)"}`,
-                    borderRadius:8, padding:"7px 14px", cursor:"pointer",
-                    fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".78rem",
-                  }}
-                >
-                  {f.label} ({f.id==="all" ? prestatairesList.length : prestatairesList.filter(p=>p.status===f.id).length})
+                <button key={f.id} onClick={()=>setPrestFilter(f.id)} style={{
+                  background:prestFilter===f.id?"var(--green)":"var(--surface)",
+                  color:prestFilter===f.id?"#fff":"var(--ink)",
+                  border:`1.5px solid ${prestFilter===f.id?"var(--green)":"var(--border)"}`,
+                  borderRadius:8,padding:"7px 14px",cursor:"pointer",
+                  fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".78rem",
+                }}>
+                  {f.label} ({f.id==="all"?prestatairesList.length:prestatairesList.filter(p=>p.status===f.id).length})
                 </button>
               ))}
             </div>
 
-            {/* Table candidatures */}
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Candidat</th>
-                    <th>Métier</th>
-                    <th>Ville</th>
-                    <th>Téléphone</th>
-                    <th>Tarif</th>
-                    <th>Date</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prestatairesList
-                    .filter(p => prestFilter==="all" || p.status===prestFilter)
-                    .map(p => (
-                      <tr key={p.id}>
-                        <td>
-                          <strong style={{fontSize:".82rem"}}>
-                            {p.nom}{p.prenom ? " " + p.prenom : ""}
-                          </strong>
-                          {p.email && <div style={{fontSize:".67rem",color:"var(--gray)"}}>{p.email}</div>}
-                        </td>
-                        <td><span className="admin-badge admin-badge-blue">{p.metier}</span></td>
-                        <td style={{fontSize:".75rem"}}>{p.ville || "—"}</td>
-                        <td style={{fontSize:".75rem",color:"var(--gray)"}}>{p.telephone}</td>
-                        <td style={{fontSize:".75rem",fontWeight:600,color:"var(--green)"}}>{p.tarif || "—"}</td>
-                        <td style={{fontSize:".7rem",color:"var(--gray)",whiteSpace:"nowrap"}}>
-                          {p.created_at ? new Date(p.created_at).toLocaleDateString("fr-FR") : "—"}
-                        </td>
-                        <td>
-                          <span className={`admin-badge admin-badge-${
-                            p.status==="approved" ? "green" :
-                            p.status==="rejected" ? "red" : "yellow"
-                          }`}>
-                            {p.status==="approved" ? "✅ Approuvé" :
-                             p.status==="rejected" ? "❌ Refusé" : "⏳ En attente"}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                            {p.status==="pending" && (
-                              <>
-                                <button
-                                  className="admin-action-btn"
-                                  style={{background:"#e6fff0",color:"#1a6b3a"}}
-                                  title="Approuver"
-                                  onClick={async() => {
-                                    if(!window.confirm(`Approuver ${p.nom} comme prestataire ?`)) return;
+            {prestatairesList.filter(p => prestFilter==="all" || p.status===prestFilter).length === 0 ? (
+              <div style={{textAlign:"center",padding:40,color:"var(--gray)",background:"var(--surface)",borderRadius:12}}>
+                <div style={{fontSize:"3rem",marginBottom:10}}>👷</div>
+                <p>Aucune candidature {prestFilter!=="all"?prestFilter:""}</p>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Candidat</th><th>Métier</th><th>Ville</th><th>Téléphone</th><th>Statut</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {prestatairesList
+                      .filter(p => prestFilter==="all" || p.status===prestFilter)
+                      .map(p => (
+                        <tr key={p.id}>
+                          <td><strong style={{fontSize:".82rem"}}>{p.nom}{p.prenom ? " " + p.prenom : ""}</strong></td>
+                          <td><span className="admin-badge admin-badge-blue">{p.metier}</span></td>
+                          <td style={{fontSize:".75rem"}}>{p.ville || "—"}</td>
+                          <td style={{fontSize:".75rem",color:"var(--gray)"}}>{p.telephone}</td>
+                          <td>
+                            <span className={`admin-badge admin-badge-${p.status==="approved"?"green":p.status==="rejected"?"red":"yellow"}`}>
+                              {p.status==="approved"?"✅ Approuvé":p.status==="rejected"?"❌ Refusé":"⏳ En attente"}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                              {p.status==="pending" && (
+                                <>
+                                  <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={async()=>{
+                                    if(!window.confirm(`Approuver ${p.nom} ?`)) return;
                                     await supabase.from("prestataires").update({status:"approved",verifie:true}).eq("id",p.id);
-                                    setPrestatairesList(prev => prev.map(x => x.id===p.id ? {...x,status:"approved",verifie:true} : x));
-                                    setPrestatairesCount(prev => Math.max(0,prev-1));
-                                    showToast(`✅ ${p.nom} approuvé comme prestataire`);
-                                  }}
-                                >
-                                  ✅
-                                </button>
-                                <button
-                                  className="admin-action-btn"
-                                  style={{background:"#fff0f0",color:"#ce1126"}}
-                                  title="Refuser"
-                                  onClick={async() => {
-                                    const reason = window.prompt("Raison du refus (optionnel) :");
-                                    if(reason === null) return;
-                                    await supabase.from("prestataires").update({status:"rejected",admin_notes:reason}).eq("id",p.id);
-                                    setPrestatairesList(prev => prev.map(x => x.id===p.id ? {...x,status:"rejected",admin_notes:reason} : x));
-                                    setPrestatairesCount(prev => Math.max(0,prev-1));
-                                    showToast(`❌ Candidature de ${p.nom} refusée`);
-                                  }}
-                                >
-                                  ❌
-                                </button>
-                              </>
-                            )}
-                            <button
-                              className="admin-action-btn"
-                              style={{background:"#dcfce7",color:"#166534"}}
-                              title="WhatsApp"
-                              onClick={() => window.open(`https://wa.me/${p.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${p.nom}, concernant votre candidature prestataire Yorix pour ${p.metier}...`)}`)}
-                            >
-                              📱
-                            </button>
-                            <button
-                              className="admin-action-btn"
-                              style={{background:"#e6f0ff",color:"#1a4a9a"}}
-                              title="Voir détails"
-                              onClick={() => setSelectedPrest(p)}
-                            >
-                              👁
-                            </button>
-                            <button
-                              className="admin-action-btn"
-                              style={{background:"#fff0f0",color:"#ce1126"}}
-                              title="Supprimer"
-                              onClick={async() => {
-                                if(!window.confirm(`Supprimer définitivement la candidature de ${p.nom} ?`)) return;
-                                await supabase.from("prestataires").delete().eq("id",p.id);
-                                setPrestatairesList(prev => prev.filter(x => x.id!==p.id));
-                                showToast("Candidature supprimée");
-                              }}
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  }
-                  {prestatairesList.filter(p => prestFilter==="all" || p.status===prestFilter).length === 0 && (
-                    <tr>
-                      <td colSpan={8} style={{textAlign:"center",padding:28,color:"var(--gray)"}}>
-                        Aucune candidature {prestFilter!=="all" ? prestFilter : ""}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Modal détail prestataire */}
-            {selectedPrest && (
-              <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setSelectedPrest(null)}>
-                <div className="modal" style={{maxWidth:520}}>
-                  <button className="modal-close" onClick={()=>setSelectedPrest(null)}>✕</button>
-                  <div className="modal-title">
-                    👷 {selectedPrest.nom}{selectedPrest.prenom ? " " + selectedPrest.prenom : ""}
-                  </div>
-                  <div className="modal-sub">
-                    Candidature du {selectedPrest.created_at ? new Date(selectedPrest.created_at).toLocaleDateString("fr-FR") : ""}
-                  </div>
-
-                  <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
-                    {[
-                      ["💼 Métier", selectedPrest.metier],
-                      ["📍 Ville", selectedPrest.ville || "—"],
-                      ["📞 Téléphone", selectedPrest.telephone],
-                      ["📧 Email", selectedPrest.email || "—"],
-                      ["⏱ Expérience", selectedPrest.experience || "—"],
-                      ["💰 Tarif", selectedPrest.tarif || "—"],
-                    ].map(([k,v]) => (
-                      <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:".82rem",padding:"6px 0",borderBottom:"1px solid var(--border)"}}>
-                        <span style={{color:"var(--gray)"}}>{k}</span>
-                        <strong>{v}</strong>
-                      </div>
-                    ))}
-                  </div>
-
-                  {selectedPrest.bio && (
-                    <div style={{marginTop:12,background:"var(--surface2)",borderRadius:9,padding:12}}>
-                      <div style={{fontSize:".7rem",fontWeight:700,color:"var(--gray)",marginBottom:5}}>📝 PRÉSENTATION</div>
-                      <p style={{fontSize:".82rem",color:"var(--ink)",lineHeight:1.6}}>{selectedPrest.bio}</p>
-                    </div>
-                  )}
-
-                  {selectedPrest.admin_notes && (
-                    <div style={{marginTop:10,background:"#fff0f0",border:"1px solid #fecaca",borderRadius:9,padding:12}}>
-                      <div style={{fontSize:".7rem",fontWeight:700,color:"#ce1126",marginBottom:5}}>📌 NOTE ADMIN</div>
-                      <p style={{fontSize:".82rem",color:"#78350f"}}>{selectedPrest.admin_notes}</p>
-                    </div>
-                  )}
-
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:16}}>
-                    <button
-                      onClick={() => window.open(`https://wa.me/${selectedPrest.telephone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${selectedPrest.nom}, l'équipe Yorix vous contacte concernant votre candidature prestataire (${selectedPrest.metier}).`)}`)}
-                      style={{background:"#25D366",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".8rem"}}
-                    >
-                      📱 WhatsApp
-                    </button>
-                    {selectedPrest.email && (
-                      <button
-                        onClick={() => window.open(`mailto:${selectedPrest.email}?subject=${encodeURIComponent("Candidature prestataire Yorix")}&body=${encodeURIComponent(`Bonjour ${selectedPrest.nom},\n\nConcernant votre candidature prestataire Yorix pour ${selectedPrest.metier}...`)}`)}
-                        style={{background:"var(--green)",color:"#fff",border:"none",padding:"10px",borderRadius:8,cursor:"pointer",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".8rem"}}
-                      >
-                        ✉️ Email
-                      </button>
-                    )}
-                  </div>
-                </div>
+                                    setPrestatairesList(prev => prev.map(x => x.id===p.id ? {...x,status:"approved"} : x));
+                                    showToast(`✅ ${p.nom} approuvé`);
+                                  }}>✅</button>
+                                  <button className="admin-action-btn" style={{background:"#fff0f0",color:"#ce1126"}} onClick={async()=>{
+                                    if(!window.confirm(`Refuser ${p.nom} ?`)) return;
+                                    await supabase.from("prestataires").update({status:"rejected"}).eq("id",p.id);
+                                    setPrestatairesList(prev => prev.map(x => x.id===p.id ? {...x,status:"rejected"} : x));
+                                    showToast(`❌ Refusé`);
+                                  }}>❌</button>
+                                </>
+                              )}
+                              {p.telephone && <a href={`https://wa.me/${p.telephone.replace(/\D/g,"")}`} target="_blank" rel="noreferrer" className="admin-action-btn" style={{background:"#dcfce7",color:"#166534",textDecoration:"none"}}>📱</a>}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    }
+                  </tbody>
+                </table>
               </div>
             )}
           </>
         )}
 
-        {/* ════ ALERTES ════ */}
+        {/* ════════ REVENUS ════════ */}
+        {adminTab==="revenus" && (
+          <>
+            <div className="admin-page-title">💰 Revenus & Finances</div>
+            <div className="stat-cards-grid" style={{marginBottom:20}}>
+              <StatCard icon="💵" val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions totales (5%)" col="#e6fff0" ic="#1a6b3a"/>
+              <StatCard icon="💰" val={`${stats.revenue.toLocaleString()} F`} lbl="Volume total" col="#fff9e6" ic="#b8860b"/>
+              <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Aujourd'hui" col="#f0fff4" ic="#276749"/>
+              <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="7 jours" col="#fef9f0" ic="#7b5a10"/>
+            </div>
+
+            <div className="admin-section">
+              <div className="admin-section-title">📈 Commissions journalières (7 derniers jours)</div>
+              <div style={{display:"flex",alignItems:"flex-end",gap:8,height:120,marginBottom:8}}>
+                {chartVentes.map((d,i)=>(
+                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                    {d.revenue > 0 && <div style={{fontSize:".6rem",color:"var(--gray)"}}>{d.revenue.toLocaleString()}</div>}
+                    <div style={{
+                      width:"100%",borderRadius:"4px 4px 0 0",
+                      height:`${Math.max((d.revenue/maxChartRev)*90,d.revenue>0?8:3)}px`,
+                      background:i===chartVentes.length-1?"var(--yellow, #fcd116)":"var(--green)",
+                      opacity:.85,
+                    }}/>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                {chartVentes.map((d,i)=><div key={i} style={{flex:1,textAlign:"center",fontSize:".63rem",color:"var(--gray)"}}>{d.label}</div>)}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ════════ YORIX POINTS (LoyaltyAdminTab) ════════ */}
+        {adminTab==="loyalty" && (
+          <LoyaltyAdminTab user={user} userData={userData} showToast={showToast}/>
+        )}
+
+        {/* ════════ ALERTES ════════ */}
         {adminTab==="alertes" && (
           <>
             <div className="admin-page-title">
               🔔 Alertes & Notifications
-              <span style={{fontSize:".75rem",background:alertes.length>0?"var(--red)":"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>{alertes.length} alerte{alertes.length!==1?"s":""}</span>
+              <span style={{fontSize:".75rem",background:alertes.length>0?"var(--red)":"var(--green)",color:"#fff",padding:"3px 10px",borderRadius:50,fontWeight:600,marginLeft:8}}>
+                {alertes.length}
+              </span>
             </div>
 
-            {alertes.length===0 && (
+            {alertes.length===0 ? (
               <div style={{textAlign:"center",padding:"48px 0",color:"var(--gray)"}}>
                 <div style={{fontSize:"3.5rem",marginBottom:12}}>✅</div>
                 <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:"1rem",marginBottom:6,color:"var(--ink)"}}>Tout va bien !</div>
-                <p>Aucune alerte en cours sur la plateforme Yorix.</p>
+                <p>Aucune alerte sur Yorix.</p>
               </div>
+            ) : (
+              <>
+                {/* Livraisons à assigner */}
+                <div className="admin-section">
+                  <div className="admin-section-title">
+                    🚚 Livraisons à assigner
+                    <span className="admin-badge admin-badge-yellow">{adminDeliveries.filter(d=>d.statut==="commande_recue"&&!d.livreur_id).length}</span>
+                  </div>
+                  {adminDeliveries.filter(d=>d.statut==="commande_recue"&&!d.livreur_id).length===0
+                    ? <div className="admin-alert admin-alert-green">✅ Toutes les livraisons ont un livreur</div>
+                    : adminDeliveries.filter(d=>d.statut==="commande_recue"&&!d.livreur_id).map(d=>(
+                      <div key={d.id} className="admin-alert admin-alert-yellow" style={{flexWrap:"wrap",gap:8}}>
+                        <div>
+                          <strong>{d.code_suivi}</strong>
+                          <div style={{fontSize:".7rem",marginTop:2}}>{d.client_nom} → {d.adresse_livraison}</div>
+                        </div>
+                        <button onClick={()=>{setAdminTab("deliveries");setAssignModalOpen(d);}} style={{marginLeft:"auto",background:"var(--green)",color:"#fff",border:"none",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:".72rem",fontWeight:700}}>
+                          🏍️ Assigner
+                        </button>
+                      </div>
+                    ))
+                  }
+                </div>
+
+                {/* Ruptures de stock */}
+                <div className="admin-section">
+                  <div className="admin-section-title">
+                    📦 Ruptures de stock
+                    <span className="admin-badge admin-badge-red">{produits.filter(p=>(p.stock||0)===0).length}</span>
+                  </div>
+                  {produits.filter(p=>(p.stock||0)===0).length===0
+                    ? <div className="admin-alert admin-alert-green">✅ Aucun produit en rupture</div>
+                    : produits.filter(p=>(p.stock||0)===0).slice(0,8).map(p=>(
+                      <div key={p.id} className="admin-alert admin-alert-red">
+                        <div>
+                          <strong>{p.name_fr||"Produit"}</strong>
+                          <div style={{fontSize:".7rem",marginTop:2}}>Vendeur : {p.vendeur_nom||"—"}</div>
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+
+                {/* Commandes en attente */}
+                <div className="admin-section">
+                  <div className="admin-section-title">
+                    ⏳ Commandes en attente
+                    <span className="admin-badge admin-badge-yellow">{commandes.filter(o=>o.status==="pending").length}</span>
+                  </div>
+                  {commandes.filter(o=>o.status==="pending").length===0
+                    ? <div className="admin-alert admin-alert-green">✅ Aucune commande en attente</div>
+                    : commandes.filter(o=>o.status==="pending").slice(0,6).map(o=>(
+                      <div key={o.id} className="admin-alert admin-alert-yellow" style={{flexWrap:"wrap",gap:8}}>
+                        <div>
+                          <strong>{o.client_nom||"Client"}</strong>
+                          <div style={{fontSize:".7rem",marginTop:2}}>{(o.montant||0).toLocaleString()} FCFA</div>
+                        </div>
+                        <button onClick={()=>validerCommande(o.id)} style={{marginLeft:"auto",background:"var(--green)",color:"#fff",border:"none",padding:"5px 10px",borderRadius:6,cursor:"pointer",fontSize:".7rem",fontWeight:700}}>
+                          ✅ Valider
+                        </button>
+                      </div>
+                    ))
+                  }
+                </div>
+              </>
             )}
-
-            {/* Ruptures de stock */}
-            <div className="admin-section">
-              <div className="admin-section-title">
-                📦 Ruptures de stock
-                <span className="admin-badge admin-badge-red">{produits.filter(p=>(p.stock||0)===0).length}</span>
-              </div>
-              {produits.filter(p=>(p.stock||0)===0).length===0
-                ? <div className="admin-alert admin-alert-green">✅ Aucun produit en rupture de stock</div>
-                : produits.filter(p=>(p.stock||0)===0).map(p=>(
-                    <div key={p.id} className="admin-alert admin-alert-red" style={{flexWrap:"wrap",gap:8}}>
-                      <div>
-                        <strong>{p.name_fr||"Produit"}</strong>
-                        <div style={{fontSize:".7rem",marginTop:2}}>Vendeur : {p.vendeur_nom||"—"} · Catégorie : {p.categorie||"—"} · Prix : {(p.prix||0).toLocaleString()} FCFA</div>
-                      </div>
-                      <div style={{marginLeft:"auto",display:"flex",gap:4}}>
-                        <button className="admin-action-btn" style={{background:"#e6fff0",color:"#1a6b3a"}} onClick={()=>{toggleActifProduit(p.id,true);}}>⛔ Désactiver</button>
-                        {p.vendeur_id && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, votre produit "${p.name_fr}" est en rupture de stock sur Yorix.`)}`)}>📱</button>}
-                      </div>
-                    </div>
-                  ))
-              }
-            </div>
-
-            {/* Commandes en attente */}
-            <div className="admin-section">
-              <div className="admin-section-title">
-                ⏳ Commandes en attente
-                <span className="admin-badge admin-badge-yellow">{commandes.filter(o=>o.status==="pending").length}</span>
-              </div>
-              {commandes.filter(o=>o.status==="pending").length===0
-                ? <div className="admin-alert admin-alert-green">✅ Aucune commande en attente</div>
-                : commandes.filter(o=>o.status==="pending").map(o=>(
-                    <div key={o.id} className="admin-alert admin-alert-yellow" style={{flexWrap:"wrap",gap:8}}>
-                      <div>
-                        <strong>{o.client_nom||"Client"}</strong>
-                        <div style={{fontSize:".7rem",marginTop:2}}>{(o.montant||0).toLocaleString()} FCFA · {o.created_at?new Date(o.created_at).toLocaleDateString("fr-FR"):"-"}</div>
-                      </div>
-                      <div style={{marginLeft:"auto",display:"flex",gap:4}}>
-                        <button className="admin-action-btn" style={{background:"#e6f0ff",color:"#1a4a9a"}} onClick={()=>validerCommande(o.id)}>✅ Valider</button>
-                        {o.telephone && <button className="admin-action-btn" style={{background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${o.telephone.replace(/\D/g,"")}`)}>📱</button>}
-                      </div>
-                    </div>
-                  ))
-              }
-            </div>
-
-            {/* Nouveaux utilisateurs 24h */}
-            <div className="admin-section">
-              <div className="admin-section-title">
-                🆕 Nouveaux utilisateurs (24h)
-                <span className="admin-badge admin-badge-green">{utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).length}</span>
-              </div>
-              {utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).length===0
-                ? <div className="admin-alert" style={{background:"var(--surface2)",border:"1px solid var(--border)"}}>Aucun nouvel utilisateur dans les 24h</div>
-                : utilisateurs.filter(u=>new Date()-new Date(u.created_at)<86400000).map(u=>(
-                    <div key={u.uid||u.id} className="admin-alert admin-alert-green" style={{flexWrap:"wrap"}}>
-                      <div>
-                        <strong>{u.nom||u.email||"—"}</strong>
-                        <div style={{fontSize:".7rem",marginTop:2}}>{u.role||"buyer"} · {u.ville||"—"} · {u.created_at?new Date(u.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):""}</div>
-                      </div>
-                      {u.telephone && <button className="admin-action-btn" style={{marginLeft:"auto",background:"#dcfce7",color:"#166534"}} onClick={()=>window.open(`https://wa.me/${u.telephone.replace(/\D/g,"")}`)}>📱</button>}
-                    </div>
-                  ))
-              }
-            </div>
-
-            {/* Stock faible */}
-            <div className="admin-section">
-              <div className="admin-section-title">
-                ⚠️ Stock faible (1–2 unités)
-                <span className="admin-badge admin-badge-yellow">{produits.filter(p=>p.stock>0&&p.stock<=5).length}</span>
-              </div>
-              {produits.filter(p=>p.stock>0&&p.stock<=5).length===0
-                ? <div className="admin-alert admin-alert-green">✅ Aucun stock faible</div>
-                : produits.filter(p=>p.stock>0&&p.stock<=5).map(p=>(
-                    <div key={p.id} className="admin-alert admin-alert-yellow">
-                      <div>
-                        <strong>{p.name_fr||"Produit"}</strong>
-                        <div style={{fontSize:".7rem",marginTop:2}}>Stock : {p.stock} · Vendeur : {p.vendeur_nom||"—"}</div>
-                      </div>
-                    </div>
-                  ))
-              }
-            </div>
           </>
-       )}
-          {/* ═══════ YORIX POINTS ═══════ */}
-          {adminTab==="loyalty" && (
-            <LoyaltyAdminTab 
-              user={user}
-              userData={userData}
-              showToast={showToast}
-            />
-          )}
-        </div>
+        )}
+
       </div>
+    </div>
   );
 }
+
 // ═══════════════════════════════════════════════════════════════
 // ✅ FORMULAIRE BUSINESS — Envoi email + enregistrement Supabase
 // ═══════════════════════════════════════════════════════════════
