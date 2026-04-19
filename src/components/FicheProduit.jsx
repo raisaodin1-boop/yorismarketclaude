@@ -4,15 +4,19 @@ import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
 import { FormulaireAvis } from "./FormulaireAvis";
 import { ModalCommander } from "./ModalCommander";
+import { ChatUsers } from "./ChatUsers";
 import { optimizeCloudinaryUrl } from "../utils/helpers";
 
 // ─────────────────────────────────────────────────────────────
-// COMPOSANT : FICHE PRODUIT DÉTAIL (avec images optimisées)
+// COMPOSANT : FICHE PRODUIT DÉTAIL
+// ✅ Bouton "Contacter le vendeur" intégré (ouvre un modal chat)
+// ✅ Pas besoin de modifier App.jsx
 // ─────────────────────────────────────────────────────────────
-export function FicheProduit({ product, user, userData, onClose, onAddToCart, onContactSeller }) {
-  const [activeImg, setActiveImg]       = useState(0);
-  const [avis, setAvis]                 = useState([]);
-  const [showCmdModal, setShowCmdModal] = useState(false);
+export function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
+  const [activeImg, setActiveImg]           = useState(0);
+  const [avis, setAvis]                     = useState([]);
+  const [showCmdModal, setShowCmdModal]     = useState(false);
+  const [showChatModal, setShowChatModal]   = useState(false);
 
   const parseImageUrls = (val) => {
     if (!val) return [];
@@ -27,7 +31,6 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
     : imgArr.filter(u => u && u.startsWith("http"));
   const images = rawImgs.length > 0 ? rawImgs : [];
 
-  // ✅ Image actuellement affichée (selon clic sur miniature)
   const currentImage = images[activeImg] || images[0] || product.image;
 
   useEffect(() => {
@@ -42,6 +45,31 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
   const avgNote = avis.length
     ? (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1)
     : product.note || 0;
+
+  // Le bouton "Contacter vendeur" s'affiche si :
+  // - Utilisateur connecté
+  // - Produit a un vendeur_id
+  // - Ce n'est pas son propre produit
+  const canContactSeller = 
+    user?.id && 
+    product.vendeur_id && 
+    user.id !== product.vendeur_id;
+
+  const handleContactClick = () => {
+    if (!user) {
+      alert("Connectez-vous pour contacter le vendeur.");
+      return;
+    }
+    if (!product.vendeur_id) {
+      alert("Ce vendeur n'est pas disponible pour le chat.");
+      return;
+    }
+    if (user.id === product.vendeur_id) {
+      alert("C'est votre propre produit !");
+      return;
+    }
+    setShowChatModal(true);
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 40 }}>
@@ -60,16 +88,13 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
 
-          {/* ═══════════════ COLONNE GAUCHE : IMAGES ═══════════════ */}
+          {/* COLONNE GAUCHE : IMAGES */}
           {images.length > 0 ? (
             <div style={{ marginBottom: 16 }}>
-              {/* Image principale optimisée (priority pour chargement rapide) */}
               <div style={{
                 background: "var(--surface2)",
-                borderRadius: 12,
-                overflow: "hidden",
-                marginBottom: 12,
-                minHeight: 300,
+                borderRadius: 12, overflow: "hidden",
+                marginBottom: 12, minHeight: 300,
               }}>
                 <OptimizedImage
                   src={currentImage}
@@ -79,22 +104,16 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
                   fallbackEmoji="📦"
                   objectFit="contain"
                   style={{
-                    width: "100%",
-                    height: "auto",
-                    minHeight: 300,
-                    maxHeight: 500,
+                    width: "100%", height: "auto",
+                    minHeight: 300, maxHeight: 500,
                   }}
                 />
               </div>
 
-              {/* Galerie de miniatures optimisées */}
               {images.length > 1 && (
                 <div className="img-gallery" style={{
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  overflowX: "auto",
-                  paddingBottom: 4,
+                  display: "flex", gap: 8, flexWrap: "wrap",
+                  overflowX: "auto", paddingBottom: 4,
                 }}>
                   {images.map((url, i) => (
                     <div
@@ -102,14 +121,10 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
                       onClick={() => setActiveImg(i)}
                       className={`img-gallery-thumb${i === activeImg ? " active" : ""}`}
                       style={{
-                        width: 70,
-                        height: 70,
-                        borderRadius: 8,
-                        overflow: "hidden",
-                        cursor: "pointer",
+                        width: 70, height: 70, borderRadius: 8,
+                        overflow: "hidden", cursor: "pointer",
                         border: i === activeImg ? "2.5px solid var(--green)" : "2px solid var(--border)",
-                        flexShrink: 0,
-                        transition: "border-color .15s",
+                        flexShrink: 0, transition: "border-color .15s",
                       }}
                     >
                       <OptimizedImage
@@ -126,20 +141,16 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
             </div>
           ) : (
             <div style={{
-              height: 300,
-              background: "var(--surface2)",
-              borderRadius: 12,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "4rem",
-              marginBottom: 16,
+              height: 300, background: "var(--surface2)",
+              borderRadius: 12, display: "flex",
+              alignItems: "center", justifyContent: "center",
+              fontSize: "4rem", marginBottom: 16,
             }}>
               📦
             </div>
           )}
 
-          {/* ═══════════════ COLONNE DROITE : INFOS ═══════════════ */}
+          {/* COLONNE DROITE : INFOS */}
           <div>
             <div className="modal-title">{product.name_fr}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
@@ -181,7 +192,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <button
                 className="btn-cmd-sm"
                 style={{ flex: 2, padding: "11px", borderRadius: 9 }}
@@ -204,9 +215,9 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
             </div>
 
             {/* ═══ BOUTON CONTACTER LE VENDEUR ═══ */}
-            {onContactSeller && product.vendeur_id && user?.id !== product.vendeur_id && (
+            {canContactSeller && (
               <button
-                onClick={() => onContactSeller(product)}
+                onClick={handleContactClick}
                 style={{
                   width: "100%",
                   background: "var(--surface2)",
@@ -225,11 +236,34 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
                   justifyContent: "center",
                   gap: 6,
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "#fff"; }}
-                onMouseOut={e => { e.currentTarget.style.background = "var(--surface2)"; e.currentTarget.style.color = "var(--ink)"; }}
+                onMouseOver={e => { 
+                  e.currentTarget.style.background = "var(--green)"; 
+                  e.currentTarget.style.color = "#fff"; 
+                }}
+                onMouseOut={e => { 
+                  e.currentTarget.style.background = "var(--surface2)"; 
+                  e.currentTarget.style.color = "var(--ink)"; 
+                }}
               >
-                💬 Contacter le vendeur {product.vendeur_nom ? `(${product.vendeur_nom})` : ""}
+                💬 Contacter le vendeur{product.vendeur_nom ? ` (${product.vendeur_nom})` : ""}
               </button>
+            )}
+
+            {/* Si c'est son propre produit, afficher un message informatif */}
+            {user?.id && product.vendeur_id === user.id && (
+              <div style={{
+                background: "var(--green-pale)",
+                border: "1px solid var(--green-light)",
+                borderRadius: 9,
+                padding: "10px 14px",
+                marginBottom: 16,
+                fontSize: ".78rem",
+                color: "var(--green)",
+                textAlign: "center",
+                fontWeight: 600,
+              }}>
+                🏪 C'est votre produit
+              </div>
             )}
 
             <div className="divider-h" />
@@ -278,6 +312,42 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, on
             )}
           </div>
         </div>
+
+        {/* ═══ MODAL CHAT VENDEUR ═══ */}
+        {showChatModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10000,
+              padding: 16,
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowChatModal(false);
+            }}
+          >
+            <div style={{
+              width: "100%",
+              maxWidth: 800,
+              background: "var(--surface)",
+              borderRadius: 14,
+              overflow: "hidden",
+              boxShadow: "0 20px 60px rgba(0,0,0,.3)",
+            }}>
+              <ChatUsers
+                user={user}
+                userData={userData}
+                initialProduct={product}
+                onClose={() => setShowChatModal(false)}
+                isModal={true}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
