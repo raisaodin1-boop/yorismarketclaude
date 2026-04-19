@@ -8,8 +8,9 @@ import { optimizeCloudinaryUrl } from "../utils/helpers";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL (avec images optimisées)
-// ─────────────────────────────────────────────────────────────
-export function FicheProduit({ product, user, userData, onClose, , onContactSeller }) {
+// 
+
+export function FicheProduit({ product, user, userData, onClose, onAddToCart, onContactSeller }) {
   const [activeImg, setActiveImg]       = useState(0);
   const [avis, setAvis]                 = useState([]);
   const [showCmdModal, setShowCmdModal] = useState(false);
