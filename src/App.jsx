@@ -81,20 +81,9 @@ import { SellerDashboard } from "./components/SellerDashboard";
 import { AdminDashboard } from "./components/AdminDashboard";
 
 
-// ─────────────────────────────────────────────────────────────
-// COMPOSANT : ÉTOILES (rating)
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
 // ═══════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════
-// COMPOSANT : ADMIN DASHBOARD — Yorix CM
-// ═══════════════════════════════════════════════════════════════
-
-
 
 export default function Yorix() {
   const [dark, setDark]           = useState(false);
@@ -2199,7 +2188,6 @@ useEffect(() => {
         </section>
       )}
 
-      {/* ════════ PAGE : INSCRIPTION PRESTATAIRE ════════ */}
       {/* ════════ PAGE : INSCRIPTION PRESTATAIRE ════════ */}
       {page==="inscription"&&(
         <section className="sec anim">
