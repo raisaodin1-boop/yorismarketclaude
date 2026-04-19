@@ -1,4 +1,70 @@
 import { supabase, COMMISSION_RATE, CLOUD_NAME, UPLOAD_PRESET, YORIX_WA_NUMBER, SUPABASE_ANON_KEY } from "../lib/supabase";
+// ═══════════════════════════════════════════════════════════════
+// 🚀 OPTIMISATION CLOUDINARY — Auto-compression + WebP + Lazy
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Optimise automatiquement une URL Cloudinary pour le Cameroun (3G/4G).
+ * Ajoute : qualité auto, format auto (WebP/AVIF), largeur responsive, compression.
+ *
+ * Exemple :
+ *   Input  : https://res.cloudinary.com/dulwb03nf/image/upload/v123/produit.jpg
+ *   Output : https://res.cloudinary.com/dulwb03nf/image/upload/w_400,q_auto:low,f_auto,dpr_auto/v123/produit.jpg
+ *
+ * @param {string} url - URL Cloudinary originale
+ * @param {object} options - { width, quality, format }
+ * @returns {string} URL optimisée
+ */
+export function optimizeCloudinaryUrl(url, options = {}) {
+  if (!url || typeof url !== "string") return url;
+  if (!url.includes("cloudinary.com")) return url; // Pas Cloudinary, on touche pas
+
+  const {
+    width = 400,          // Largeur par défaut pour mobile
+    quality = "auto:low", // Qualité adaptative (plus agressive pour Cameroun)
+    format = "auto",      // WebP/AVIF automatique selon le navigateur
+    dpr = "auto",         // Retina auto
+  } = options;
+
+  // Si déjà optimisée, on retourne tel quel
+  if (url.includes("/w_") || url.includes("/q_")) return url;
+
+  // Transformation Cloudinary
+  const transforms = [
+    `w_${width}`,
+    `q_${quality}`,
+    `f_${format}`,
+    `dpr_${dpr}`,
+    "c_limit", // Ne jamais agrandir, juste réduire
+  ].join(",");
+
+  // Insère les transformations après /upload/
+  return url.replace(/\/upload\//, `/upload/${transforms}/`);
+}
+
+/**
+ * Génère un srcset responsive pour images haute résolution
+ * @param {string} url - URL Cloudinary originale
+ * @returns {string} srcset pour <img>
+ */
+export function cloudinarySrcset(url) {
+  if (!url || !url.includes("cloudinary.com")) return "";
+  return [
+    `${optimizeCloudinaryUrl(url, { width: 400 })} 400w`,
+    `${optimizeCloudinaryUrl(url, { width: 800 })} 800w`,
+    `${optimizeCloudinaryUrl(url, { width: 1200 })} 1200w`,
+  ].join(", ");
+}
+
+/**
+ * Placeholder blur très léger (5Ko max) pour lazy loading
+ * @param {string} url - URL Cloudinary originale
+ * @returns {string} URL d'un placeholder blurré minuscule
+ */
+export function cloudinaryPlaceholder(url) {
+  if (!url || !url.includes("cloudinary.com")) return "";
+  return optimizeCloudinaryUrl(url, { width: 20, quality: "auto:low" });
+}
 const getOptimizedImageUrl = (url, width = 400) => {
   if (!url || !url.includes('cloudinary.com')) return url
   // Si l'URL a déjà des transformations, on ne les duplique pas
