@@ -78,6 +78,7 @@ import { LoyaltyRedeemModal } from "./components/LoyaltyRedeemModal";
 import { LoyaltyPage } from "./components/LoyaltyPage";
 import { LoyaltyAdminTab } from "./components/LoyaltyAdminTab";
 import { SellerDashboard } from "./components/SellerDashboard";
+import { ChatUsers } from "./components/ChatUsers";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { OptimizedImage } from "./components/OptimizedImage";
 
@@ -2756,24 +2757,15 @@ useEffect(() => {
             <div className="dash-content">
               {/* Messages commun à tous */}
               {dashTab==="messages"&&(
-                <>
-                  <div className="dash-page-title">💬 Messagerie sécurisée</div>
-                  <div className="info-msg">🔐 La messagerie Yorix est sécurisée. Tout partage de contact externe est automatiquement bloqué et enregistré.</div>
-                  <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:13,overflow:"hidden",height:420,display:"flex",flexDirection:"column"}}>
-                    <div style={{background:"var(--green)",padding:"12px 16px"}}>
-                      <div style={{fontSize:".85rem",fontWeight:600,color:"#fff"}}>Support Yorix</div>
-                      <div style={{fontSize:".68rem",color:"rgba(255,255,255,.6)"}}><span style={{width:6,height:6,background:"#4fd17d",borderRadius:"50%",display:"inline-block",marginRight:4}}/>En ligne</div>
-                    </div>
-                    <div style={{flex:1,overflowY:"auto",padding:14}}>
-                      {chatMessages.map((m,i)=><div key={i} style={{marginBottom:10,display:"flex",flexDirection:"column",alignItems:m.me?"flex-end":"flex-start"}}><div style={{background:m.me?"var(--green)":"var(--surface2)",color:m.me?"#fff":"var(--ink)",padding:"8px 11px",borderRadius:m.me?"11px 11px 3px 11px":"11px 11px 11px 3px",fontSize:".79rem",maxWidth:"75%",lineHeight:1.45}}>{m.text}</div><div style={{fontSize:".6rem",color:"var(--gray)",marginTop:2}}>{m.time}</div></div>)}
-                      {chatBlocked&&<div style={{background:"#f8d7da",border:"1px solid #f5c6cb",borderRadius:8,padding:"8px 12px",fontSize:".75rem",color:"#721c24",margin:"6px 0",textAlign:"center"}}>⚠️ Message bloqué : partage de contact externe interdit sur Yorix.</div>}
-                      <div ref={chatEndRef}/>
-                    </div>
-                    <div style={{padding:10,borderTop:"1px solid var(--border)",display:"flex",gap:7}}><input style={{flex:1,border:"1.5px solid var(--border)",borderRadius:8,padding:"8px 11px",fontFamily:"'DM Sans',sans-serif",fontSize:".81rem",outline:"none",background:"var(--surface)",color:"var(--ink)"}} placeholder="Écrire un message..." value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendChat()}/><button style={{background:"var(--green)",color:"#fff",border:"none",width:34,height:34,borderRadius:8,cursor:"pointer",fontSize:".95rem"}} onClick={sendChat}>➤</button></div>
-                  </div>
-                </>
-              )}
-
+  <>
+    <div className="dash-page-title">💬 Messagerie Yorix</div>
+    <div className="info-msg">🔐 Messagerie sécurisée entre acheteurs et vendeurs. Tes discussions sont privées et protégées.</div>
+    <ChatUsers 
+      user={user} 
+      userData={userData}
+    />
+  </>
+)}
               {/* Dashboards par rôle */}
               {dashTab!=="messages"&&userRole==="seller"&&<SellerDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
               {dashTab!=="messages"&&userRole==="delivery"&&<DeliveryDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
