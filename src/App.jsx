@@ -566,9 +566,29 @@ useEffect(() => {
 
   const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
-  const marquerNotifLue = async (id) => {
+ const marquerNotifLue = async (notif) => {
+    // Accepter soit un objet notif complet, soit juste un ID (pour compatibilité)
+    const id = typeof notif === "object" ? notif.id : notif;
+    const notification = typeof notif === "object" ? notif : notifs.find(n => n.id === id);
+    
+    // 1. Marquer comme lu dans la base
     await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(e => console.warn(e?.message));
     setNotifs(prev => prev.map(n => n.id===id ? {...n,lu:true} : n));
+    
+    // 2. Rediriger selon le type de notification
+    if (notification) {
+      setNotifOpen(false); // Fermer le drawer
+      
+      // Si la notif concerne un produit, aller à la page produits
+      if (notification.type === "new_product" || notification.link?.includes("/products/")) {
+        goPage("produits");
+      }
+      // Si c'est un nouveau message, aller au dashboard messages
+      else if (notification.type === "new_message") {
+        goPage("dashboard");
+        setDashTab("messages");
+      }
+    }
   };
   const marquerToutesLues = async () => {
     const ids = notifs.filter(n => !n.lu).map(n => n.id);
@@ -865,7 +885,7 @@ useEffect(() => {
                   <div
                     key={n.id}
                     className={`notif-item${!n.lu?" unread":""}`}
-                    onClick={()=>marquerNotifLue(n.id)}
+                    onClick={()=>marquerNotifLue(n)}
                   >
                     <div className="notif-icon">{n.icon||"🔔"}</div>
                     <div className="notif-body">
