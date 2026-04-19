@@ -1,35 +1,29 @@
-# Yorix CM — robots.txt
-# ─────────────────────────────────────────────
+# robots.txt pour Yorix CM — https://yorix.cm
+# Mise à jour : 19 avril 2026
 
-# Autoriser tous les moteurs de recherche
 User-agent: *
 Allow: /
-
-# Bloquer l'accès aux API et pages sensibles
+Disallow: /admin
+Disallow: /dashboard
 Disallow: /api/
-Disallow: /.env
-Disallow: /node_modules/
-Disallow: /src/
+Disallow: /auth/
+Disallow: /*?authTab=
+Disallow: /*?code=
+
+# Fichiers indésirables
+Disallow: /*.json$
+Disallow: /*.xml$
+Allow: /sitemap.xml
+
+# Crawl-delay pour les petits bots
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
 
 # Sitemap
 Sitemap: https://yorix.cm/sitemap.xml
 
-# ─────────────────────────────────────────────
-# Instructions spécifiques par moteur
-
-# Google
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 1
-
-# Bing
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 2
-
-# Bloquer les bots malveillants connus
-User-agent: AhrefsBot
-Disallow: /
-
-User-agent: SemrushBot
-Crawl-delay: 10
+# Host préféré
+Host: https://yorix.cm
