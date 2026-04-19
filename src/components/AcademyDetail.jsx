@@ -145,10 +145,10 @@ export function AcademyDetail({ course, goPage, goContact }) {
                 }}
               >
                 💬 WhatsApp direct
-              </a>
+              "a"
             </div>
 
-            <p style={{
+            <p ")"style={{
               fontSize: ".72rem", color: "var(--gray)", marginTop: 14,
             }}>
               💳 Paiement sécurisé par MTN MoMo, Orange Money ou virement
