@@ -571,20 +571,25 @@ useEffect(() => {
     const id = typeof notif === "object" ? notif.id : notif;
     const notification = typeof notif === "object" ? notif : notifs.find(n => n.id === id);
     
-    // 1. Marquer comme lu dans la base
-    await supabase.from("notifications").update({ lu:true }).eq("id", id).catch(e => console.warn(e?.message));
-    setNotifs(prev => prev.map(n => n.id===id ? {...n,lu:true} : n));
+    // 1. Marquer comme lu dans la base (avec try/catch propre)
+    try {
+      const { error } = await supabase.from("notifications").update({ lu: true }).eq("id", id);
+      if (error) console.warn("marquerNotifLue:", error.message);
+    } catch (e) {
+      console.warn("marquerNotifLue exception:", e?.message);
+    }
     
-    // 2. Rediriger selon le type de notification
+    // 2. Mise à jour locale immédiate (UI réactive)
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
+    
+    // 3. Fermer le drawer
+    setNotifOpen(false);
+    
+    // 4. Rediriger selon le type de notification
     if (notification) {
-      setNotifOpen(false); // Fermer le drawer
-      
-      // Si la notif concerne un produit, aller à la page produits
       if (notification.type === "new_product" || notification.link?.includes("/products/")) {
         goPage("produits");
-      }
-      // Si c'est un nouveau message, aller au dashboard messages
-      else if (notification.type === "new_message") {
+      } else if (notification.type === "new_message") {
         goPage("dashboard");
         setDashTab("messages");
       }
@@ -592,7 +597,16 @@ useEffect(() => {
   };
   const marquerToutesLues = async () => {
     const ids = notifs.filter(n => !n.lu).map(n => n.id);
-    if (ids.length) { await supabase.from("notifications").update({lu:true}).in("id",ids).catch(e => console.warn(e?.message)); setNotifs(prev => prev.map(n => ({...n,lu:true}))); }
+    if (ids.length === 0) return;
+    
+    try {
+      const { error } = await supabase.from("notifications").update({ lu: true }).in("id", ids);
+      if (error) console.warn("marquerToutesLues:", error.message);
+    } catch (e) {
+      console.warn("marquerToutesLues exception:", e?.message);
+    }
+    
+    setNotifs(prev => prev.map(n => ({ ...n, lu: true })));
   };
 
   const unread = notifs.filter(n => !n.lu).length;
