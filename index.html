@@ -1,11 +1,129 @@
 <!DOCTYPE html>
 <html lang="fr">
   <head>
-    <!-- ══════════════════════════════════════════════
-         1. GOOGLE ANALYTICS 4 — G-ZL6KY5F1PW
-         Tracking visiteurs, pages vues, conversions
-    ══════════════════════════════════════════════ -->
-    <!-- Google tag (gtag.js) -->
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SEO ESSENTIEL                                            -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <title>Yorix CM — Marketplace #1 au Cameroun | MTN MoMo & Orange Money</title>
+    <meta name="description" content="Yorix CM : la marketplace camerounaise #1. Achetez et vendez en ligne au Cameroun. Paiement MTN Mobile Money et Orange Money. Livraison rapide à Yaoundé, Douala, Bafoussam. Produits locaux & importés vérifiés." />
+    <meta name="keywords" content="marketplace cameroun, e-commerce cameroun, MTN MoMo, Orange Money, livraison Douala, livraison Yaoundé, vendre en ligne Cameroun, acheter Cameroun, yorix, yorix cm" />
+    <meta name="author" content="Yorix CM" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://yorix.cm/" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- LANGUE & GÉO                                             -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <meta name="language" content="French" />
+    <meta name="geo.region" content="CM" />
+    <meta name="geo.placename" content="Cameroun" />
+    <meta name="geo.position" content="3.848;11.502" />
+    <meta name="ICBM" content="3.848, 11.502" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- OPEN GRAPH (Facebook, WhatsApp, LinkedIn)                -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Yorix CM" />
+    <meta property="og:title" content="Yorix CM — Marketplace #1 au Cameroun" />
+    <meta property="og:description" content="Achetez et vendez en ligne au Cameroun. Paiement MTN MoMo & Orange Money. Livraison rapide à Yaoundé, Douala, Bafoussam. +2000 avis clients." />
+    <meta property="og:url" content="https://yorix.cm/" />
+    <meta property="og:image" content="https://yorix.cm/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Yorix CM - Marketplace camerounaise" />
+    <meta property="og:locale" content="fr_FR" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- TWITTER CARDS                                            -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Yorix CM — Marketplace #1 au Cameroun" />
+    <meta name="twitter:description" content="Marketplace camerounaise. Paiement MTN MoMo & Orange Money. Livraison rapide." />
+    <meta name="twitter:image" content="https://yorix.cm/og-image.jpg" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- PERFORMANCE (preconnect critiques)                       -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <link rel="preconnect" href="https://msrymchhhxitdevthvdi.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.cloudinary.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- PWA & MOBILE                                             -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <meta name="theme-color" content="#1a6b3a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Yorix CM" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SCHEMA.ORG — ORGANIZATION                                -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      "name": "Yorix CM",
+      "alternateName": "Yorix Cameroun",
+      "url": "https://yorix.cm",
+      "logo": "https://yorix.cm/icons/icon-512.png",
+      "image": "https://yorix.cm/og-image.jpg",
+      "description": "Marketplace #1 au Cameroun — Produits locaux et importés, paiement MTN MoMo et Orange Money, livraison rapide.",
+      "priceRange": "500 - 500000 FCFA",
+      "currenciesAccepted": "XAF",
+      "paymentAccepted": ["Mobile Money", "Orange Money", "MTN Mobile Money", "Cash"],
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "CM",
+        "addressLocality": "Douala",
+        "addressRegion": "Littoral"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+237696565654",
+        "contactType": "customer service",
+        "areaServed": "CM",
+        "availableLanguage": ["French", "English"]
+      },
+      "sameAs": [
+        "https://www.facebook.com/yorixcm",
+        "https://www.instagram.com/yorixcm",
+        "https://wa.me/237696565654"
+      ]
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SCHEMA.ORG — WEBSITE avec SearchAction                   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Yorix CM",
+      "url": "https://yorix.cm",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://yorix.cm/?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- GOOGLE ANALYTICS 4                                       -->
+    <!-- ═══════════════════════════════════════════════════════ -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZL6KY5F1PW"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -14,121 +132,50 @@
       gtag('config', 'G-ZL6KY5F1PW');
     </script>
 
-    <!-- ══════════════════════════════════════════════
-         2. CONTENTSQUARE — Heatmaps & Session Replay
-         Voir où cliquent tes visiteurs, rejouer les sessions
-    ══════════════════════════════════════════════ -->
-    <script src="https://t.contentsquare.net/uxa/62d0f3d7bf94b.js"></script>
-
-    <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
-    <!-- SEO -->
-    <title>Yorix CM — Marketplace en ligne Cameroun | MTN MoMo & Orange Money</title>
-    <meta name="description" content="Achetez et vendez en ligne au Cameroun. Livraison express à Douala et Yaoundé, paiement sécurisé MTN MoMo & Orange Money, Escrow Yorix, produits locaux camerounais." />
-    <meta name="keywords" content="marketplace Cameroun, acheter en ligne Cameroun, vendre en ligne Yaoundé, MTN MoMo paiement, Orange Money, livraison Douala, livraison Yaoundé, e-commerce Cameroun, produits locaux camerounais, Yorix CM" />
-    <meta name="author" content="Yorix CM" />
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
-    <meta name="language" content="French" />
-    <meta name="geo.region" content="CM" />
-    <meta name="geo.country" content="Cameroon" />
-    <meta name="geo.placename" content="Douala, Cameroun" />
-    <meta name="theme-color" content="#1a6b3a" />
-    <link rel="canonical" href="https://yorix.cm/" />
-
-    <!-- Open Graph -->
-    <meta property="og:type"         content="website" />
-    <meta property="og:site_name"    content="Yorix CM" />
-    <meta property="og:locale"       content="fr_CM" />
-    <meta property="og:url"          content="https://yorix.cm/" />
-    <meta property="og:title"        content="Yorix CM — Marketplace #1 au Cameroun" />
-    <meta property="og:description"  content="Achetez et vendez en ligne au Cameroun. Livraison express, paiement MTN MoMo & Orange Money, Escrow sécurisé." />
-    <meta property="og:image"        content="https://yorix.cm/og-image.jpg" />
-    <meta property="og:image:width"  content="1200" />
-    <meta property="og:image:height" content="630" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="Yorix CM — Marketplace Cameroun" />
-    <meta name="twitter:description" content="Achetez et vendez en ligne au Cameroun. MTN MoMo, Orange Money, Escrow, Livraison express." />
-    <meta name="twitter:image"       content="https://yorix.cm/og-image.jpg" />
-
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="icon"             type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon"             type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon"             type="image/png" sizes="16x16" href="/favicon-16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-capable"          content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title"            content="Yorix CM" />
-    <meta name="mobile-web-app-capable"                content="yes" />
-    <meta name="application-name"                      content="Yorix CM" />
-    <meta name="msapplication-TileColor"               content="#1a6b3a" />
-
-    <!-- JSON-LD -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Yorix CM",
-      "url": "https://yorix.cm",
-      "logo": "https://yorix.cm/logo.png",
-      "description": "Marketplace en ligne au Cameroun — produits locaux, paiement MTN MoMo & Orange Money, livraison express.",
-      "foundingDate": "2026",
-      "areaServed": { "@type": "Country", "name": "Cameroun" },
-      "contactPoint": [{ "@type": "ContactPoint", "telephone": "+237-696-565-654", "contactType": "customer service", "availableLanguage": ["French","English"] }],
-      "sameAs": ["https://wa.me/237696565654"]
-    }
-    </script>
-
-    <!-- Preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://res.cloudinary.com" />
-    <link rel="preconnect" href="https://www.googletagmanager.com" />
-    <link rel="dns-prefetch" href="https://msrymchhhxitdevthvdi.supabase.co" />
-    <link rel="dns-prefetch" href="https://t.contentsquare.net" />
-
-    <!-- Service Worker PWA -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SERVICE WORKER                                           -->
+    <!-- ═══════════════════════════════════════════════════════ -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(reg) {
-              console.log('[Yorix PWA] SW enregistré :', reg.scope);
-            })
-            .catch(function(err) {
-              console.warn('[Yorix PWA] Erreur SW :', err);
-            });
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW:', err));
         });
       }
     </script>
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "07f6b246-5850-41e1-b77c-3d634c9435c6",
-    });
-  });
-</script>
   </head>
-  <!--Start of Tawk.to Script-->
-<script>
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/69d78c540bbf2e1c31eff82c/1jlovoaob';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
-<!--End of Tawk.to Script-->
   <body>
-    <div id="root"></div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- CONTENU SEO VISIBLE PAR GOOGLE (avant que React charge)  -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div id="root">
+      <noscript>
+        <div style="font-family:sans-serif;max-width:720px;margin:40px auto;padding:20px;">
+          <h1>Yorix CM — Marketplace #1 au Cameroun 🇨🇲</h1>
+          <p>
+            <strong>Bienvenue sur Yorix CM</strong>, la marketplace camerounaise de référence pour acheter et vendre en ligne.
+          </p>
+          <h2>Nos services</h2>
+          <ul>
+            <li>🛍️ Marketplace avec +85 000 produits locaux et importés</li>
+            <li>🚚 Livraison rapide à Yaoundé, Douala, Bafoussam, Bamenda et partout au Cameroun</li>
+            <li>📱 Paiement sécurisé MTN Mobile Money et Orange Money</li>
+            <li>🔐 Protection Escrow — votre argent bloqué jusqu'à livraison</li>
+            <li>👷 Plus de 3 000 prestataires vérifiés (plombiers, électriciens, coiffeuses...)</li>
+            <li>🎓 Yorix Academy — formations pour entrepreneurs camerounais</li>
+            <li>💼 Yorix Business — solution B2B pour entreprises</li>
+          </ul>
+          <h2>Catégories populaires</h2>
+          <p>Téléphones & HighTech · Mode & Accessoires · Alimentation · Maison & Décoration · Agricole · Beauté & Soins · BTP · Automobile · Éducation · Services</p>
+          <h2>Contact</h2>
+          <p>
+            📞 WhatsApp : <a href="https://wa.me/237696565654">+237 696 56 56 54</a><br/>
+            ✉️ Email : <a href="mailto:support@yorix.cm">support@yorix.cm</a><br/>
+            📍 Douala, Akwa · Yaoundé, Bastos
+          </p>
+          <p><em>Pour utiliser Yorix CM, veuillez activer JavaScript dans votre navigateur.</em></p>
+        </div>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
