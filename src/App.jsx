@@ -4140,12 +4140,11 @@ const supprimerUser = async (uid, email) => {
     {id:"deliveries",   icon:"🚚", label:"Livraisons",  badge:adminDeliveries.filter(d=>d.statut==="commande_recue").length||null},
     {id:"utilisateurs", icon:"👥", label:"Utilisateurs"},
     {id:"vendeurs",     icon:"🏪", label:"Vendeurs"},
-    {id:"prestataires", icon:"👷", label:"Prestataires", badge:prestatairesCount||null},
+    {id:"prestataires", icon:"👷", label:"Prestataires"},
     {id:"revenus",      icon:"💰", label:"Revenus"},
     {id:"loyalty",      icon:"🌟", label:"Yorix Points"},
     {id:"alertes",      icon:"🔔", label:"Alertes",     badge:alertes.length||null},
   ];
-
   // ─── Helpers UI ───
   const StatCard = ({icon,val,lbl,trend,col,ic,onClick}) => (
     <div className="stat-card" style={{cursor:onClick?"pointer":"default",transition:"transform .15s,box-shadow .15s"}}
