@@ -1544,33 +1544,6 @@ useEffect(() => {
         </section>
       )}
 
-// ═══════════════════════════════════════════════════════════════
-//  YORIX CM — FIX BUILD ERROR
-//  Erreur : balises div/section mal fermées autour de ligne 1591
-//  
-//  ✅ SOLUTION : remplacer TOUT le bloc page="livraison" par celui ci-dessous
-// ═══════════════════════════════════════════════════════════════
-
-
-// ┌─────────────────────────────────────────────────────────────┐
-// │ ÉTAPE 1 : OUVRE App.jsx SUR GITHUB → CLIQUE EDIT (crayon)   │
-// │ ÉTAPE 2 : Ctrl+F → CHERCHE :                                │
-// │     {page==="livraison"&&(                                  │
-// │ ÉTAPE 3 : Sélectionne TOUT depuis cette ligne JUSQU'À       │
-// │     (la fermeture de cette page, juste avant l'escrow)      │
-// │     {/* ════════ PAGE : ESCROW ════════ */}                │
-// │ ÉTAPE 4 : Remplace par le code ci-dessous                   │
-// └─────────────────────────────────────────────────────────────┘
-
-
-// 🔍 ANCRE DE DÉBUT (à chercher) :
-//    {page==="livraison"&&(
-// 
-// 🔍 ANCRE DE FIN (à chercher) :
-//    {/* ════════ PAGE : ESCROW ════════ */}
-//
-// ✏️ REMPLACE TOUT CE QUI EST ENTRE LES DEUX ANCRES (l'ancre de fin reste, l'ancre de début aussi) :
-
 
       {/* ════════ PAGE : LIVRAISON ════════ */}
       {page==="livraison"&&(
