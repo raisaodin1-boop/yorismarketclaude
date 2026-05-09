@@ -10,7 +10,7 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
     { id: 1, client: "Amina T.",    service: "Coiffure à domicile",  date: "Demain 10h",       adresse: "Akwa, Douala",    budget: "5 000 FCFA", status: "pending" },
     { id: 2, client: "Bertrand K.", service: "Réparation téléphone", date: "Aujourd'hui 15h", adresse: "Bastos, Yaoundé", budget: "3 500 FCFA", status: "pending" },
   ]);
-  const [serviceForm, setServiceForm]     = useState({ nom: "", categorie: "", description: "", prix: "", ville: "", disponible: true });
+  const [serviceForm, setServiceForm]     = useState({ nom: "", categorie: "", description: "", prix: "", tarif_type: "projet", ville: "", disponible: true });
   const [serviceSaved, setServiceSaved]   = useState(false);
   const [mesServices, setMesServices]     = useState([]);
 
@@ -60,9 +60,11 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
     const { error } = await supabase.from("services").insert({
       ...serviceForm,
       prix: Number(serviceForm.prix),
+      tarif_type: serviceForm.tarif_type || "projet",
       provider_id: user.id,
       provider_nom: userData?.nom,
     });
+
     if (error) {
       console.error("Erreur publication service:", error);
       alert("Erreur : " + error.message);
@@ -126,15 +128,33 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
           {serviceSaved && <div className="success-msg">✅ Service publié !</div>}
           <div className="prod-form">
             <div className="form-row">
+             <div className="form-group">
+                <label className="form-label">Type de tarification *</label>
+                <select
+                  className="form-select"
+                  value={serviceForm.tarif_type}
+                  onChange={e => setServiceForm(f => ({ ...f, tarif_type: e.target.value }))}
+                >
+                  <option value="projet">📋 Forfait projet (recommandé : 10 000 FCFA)</option>
+                  <option value="heure">⏱ Tarif horaire (recommandé : 5 000 FCFA/h)</option>
+                </select>
+              </div>
               <div className="form-group">
-                <label className="form-label">Nom du service *</label>
+                <label className="form-label">
+                  Prix (FCFA) {serviceForm.tarif_type === "heure" ? "/h" : "/projet"} *
+                </label>
                 <input
                   className="form-input"
-                  placeholder="Ex: Coiffure à domicile"
-                  value={serviceForm.nom}
-                  onChange={e => setServiceForm(f => ({ ...f, nom: e.target.value }))}
+                  type="number"
+                  placeholder={serviceForm.tarif_type === "heure" ? "Ex: 5000" : "Ex: 10000"}
+                  value={serviceForm.prix}
+                  onChange={e => setServiceForm(f => ({ ...f, prix: e.target.value }))}
                 />
+                <div style={{fontSize:".7rem", color:"var(--gray)", marginTop:5}}>
+                  💡 Tarifs Yorix recommandés : <strong>10 000 FCFA/projet</strong> ou <strong>5 000 FCFA/heure</strong>
+                </div>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Catégorie</label>
                 <select
