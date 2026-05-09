@@ -30,83 +30,399 @@ const TARIFS = {
 //  Recherche le nom → utilise les coordonnées pour calculer la distance
 // ═══════════════════════════════════════════════════════════════
 const QUARTIERS = {
-  // ─── YAOUNDÉ ───
-  "bastos":         { ville: "Yaoundé", coords: [3.8920, 11.5180] },
-  "ahala":          { ville: "Yaoundé", coords: [3.8160, 11.4980] },
-  "mvan":           { ville: "Yaoundé", coords: [3.8270, 11.5210] },
-  "mvog ada":       { ville: "Yaoundé", coords: [3.8580, 11.5290] },
-  "mvog-ada":       { ville: "Yaoundé", coords: [3.8580, 11.5290] },
-  "mokolo":         { ville: "Yaoundé", coords: [3.8810, 11.5100] },
-  "messa":          { ville: "Yaoundé", coords: [3.8740, 11.5050] },
-  "biyem-assi":     { ville: "Yaoundé", coords: [3.8430, 11.4830] },
-  "biyem assi":     { ville: "Yaoundé", coords: [3.8430, 11.4830] },
-  "essos":          { ville: "Yaoundé", coords: [3.8780, 11.5380] },
-  "ngoa-ekele":     { ville: "Yaoundé", coords: [3.8650, 11.5200] },
-  "ngoa ekele":     { ville: "Yaoundé", coords: [3.8650, 11.5200] },
-  "nlongkak":       { ville: "Yaoundé", coords: [3.8950, 11.5290] },
-  "tsinga":         { ville: "Yaoundé", coords: [3.8830, 11.5050] },
-  "etoudi":         { ville: "Yaoundé", coords: [3.9120, 11.5380] },
-  "nsimeyong":      { ville: "Yaoundé", coords: [3.8480, 11.4940] },
-  "obili":          { ville: "Yaoundé", coords: [3.8660, 11.4910] },
-  "olembe":         { ville: "Yaoundé", coords: [3.9320, 11.4890] },
-  "centre ville":   { ville: "Yaoundé", coords: [3.8670, 11.5170] },
-  "centre-ville":   { ville: "Yaoundé", coords: [3.8670, 11.5170] },
-  "yaoundé":        { ville: "Yaoundé", coords: [3.8670, 11.5170] },
-  "emana":          { ville: "Yaoundé", coords: [3.9070, 11.5160] },
-  "elig-essono":    { ville: "Yaoundé", coords: [3.8890, 11.5290] },
-  "etoa-meki":      { ville: "Yaoundé", coords: [3.8920, 11.5350] },
-  "djoungolo":      { ville: "Yaoundé", coords: [3.8970, 11.5420] },
-  "nkoabang":       { ville: "Yaoundé", coords: [3.8430, 11.6210] },
-  "soa":            { ville: "Yaoundé", coords: [3.9760, 11.6290] },
-  "mfoundi":        { ville: "Yaoundé", coords: [3.8650, 11.5170] },
-  "melen":          { ville: "Yaoundé", coords: [3.8550, 11.4970] },
-  "etoug-ebe":      { ville: "Yaoundé", coords: [3.8740, 11.4890] },
-  "simbock":        { ville: "Yaoundé", coords: [3.8260, 11.4820] },
+  const QUARTIERS = {
+  // ─── YAOUNDÉ I ───
+  "bastos": { ville: "Yaoundé", coords: [3.8920, 11.5180] },
+  "etoudi": { ville: "Yaoundé", coords: [3.9120, 11.5380] },
+  "messassi": { ville: "Yaoundé", coords: [3.8740, 11.5050] },
+  "nlongkak": { ville: "Yaoundé", coords: [3.8950, 11.5290] },
+  "elig essono": { ville: "Yaoundé", coords: [3.8890, 11.5290] },
+  "elig-essono": { ville: "Yaoundé", coords: [3.8890, 11.5290] },
+  "etoa meki": { ville: "Yaoundé", coords: [3.8920, 11.5350] },
+  "etoa-meki": { ville: "Yaoundé", coords: [3.8920, 11.5350] },
+  "emana": { ville: "Yaoundé", coords: [3.9070, 11.5160] },
+  "olembe": { ville: "Yaoundé", coords: [3.9320, 11.4890] },
+  "tongolo": { ville: "Yaoundé", coords: [3.9010, 11.5270] },
+  "nyom": { ville: "Yaoundé", coords: [3.9440, 11.4970] },
+  "okolo": { ville: "Yaoundé", coords: [3.9030, 11.5240] },
 
-  // ─── DOUALA ───
-  "akwa":           { ville: "Douala", coords: [4.0430, 9.7060] },
-  "bonanjo":        { ville: "Douala", coords: [4.0530, 9.6900] },
-  "bonapriso":      { ville: "Douala", coords: [4.0290, 9.6890] },
-  "bonaberi":       { ville: "Douala", coords: [4.0820, 9.6670] },
-  "deido":          { ville: "Douala", coords: [4.0660, 9.7090] },
-  "bali":           { ville: "Douala", coords: [4.0440, 9.6970] },
-  "bepanda":        { ville: "Douala", coords: [4.0790, 9.7160] },
-  "ndokotti":       { ville: "Douala", coords: [4.0500, 9.7350] },
-  "logbessou":      { ville: "Douala", coords: [4.0950, 9.7490] },
-  "logpom":         { ville: "Douala", coords: [4.0760, 9.7610] },
-  "makepe":         { ville: "Douala", coords: [4.0840, 9.7320] },
-  "kotto":          { ville: "Douala", coords: [4.0560, 9.7390] },
-  "yassa":          { ville: "Douala", coords: [4.0070, 9.7820] },
-  "japoma":         { ville: "Douala", coords: [4.0240, 9.8010] },
-  "village":        { ville: "Douala", coords: [4.0700, 9.7770] },
-  "ndogbong":       { ville: "Douala", coords: [4.0600, 9.7530] },
-  "pk8":            { ville: "Douala", coords: [4.1000, 9.7860] },
-  "pk9":            { ville: "Douala", coords: [4.1080, 9.7920] },
-  "pk10":           { ville: "Douala", coords: [4.1160, 9.7980] },
-  "pk12":           { ville: "Douala", coords: [4.1310, 9.8090] },
-  "pk14":           { ville: "Douala", coords: [4.1450, 9.8200] },
-  "douala":         { ville: "Douala", coords: [4.0510, 9.7080] },
-  "marché central": { ville: "Douala", coords: [4.0490, 9.7050] },
-  "new-bell":       { ville: "Douala", coords: [4.0650, 9.7230] },
-  "new bell":       { ville: "Douala", coords: [4.0650, 9.7230] },
+  // ─── YAOUNDÉ II ───
+  "mokolo": { ville: "Yaoundé", coords: [3.8810, 11.5100] },
+  "tsinga": { ville: "Yaoundé", coords: [3.8830, 11.5050] },
+  "cite verte": { ville: "Yaoundé", coords: [3.8790, 11.5190] },
+  "cité verte": { ville: "Yaoundé", coords: [3.8790, 11.5190] },
+  "madagascar": { ville: "Yaoundé", coords: [3.8780, 11.5120] },
+  "ekoudou": { ville: "Yaoundé", coords: [3.8800, 11.5070] },
+  "briqueterie": { ville: "Yaoundé", coords: [3.8790, 11.5060] },
+  "messa": { ville: "Yaoundé", coords: [3.8740, 11.5050] },
+  "messa carriere": { ville: "Yaoundé", coords: [3.8760, 11.5040] },
+  "messa carrière": { ville: "Yaoundé", coords: [3.8760, 11.5040] },
+  "febe": { ville: "Yaoundé", coords: [3.8670, 11.5030] },
+  "oliga": { ville: "Yaoundé", coords: [3.8850, 11.5180] },
 
-  // ─── BAFOUSSAM ───
-  "bafoussam":      { ville: "Bafoussam", coords: [5.4781, 10.4179] },
-  "tougang":        { ville: "Bafoussam", coords: [5.4870, 10.4280] },
-  "tamdja":         { ville: "Bafoussam", coords: [5.4690, 10.4080] },
-  "djeleng":        { ville: "Bafoussam", coords: [5.4920, 10.4350] },
+  // ─── YAOUNDÉ III ───
+  "obili": { ville: "Yaoundé", coords: [3.8660, 11.4910] },
+  "ngoa ekele": { ville: "Yaoundé", coords: [3.8650, 11.5200] },
+  "ngoa-ekele": { ville: "Yaoundé", coords: [3.8650, 11.5200] },
+  "melen": { ville: "Yaoundé", coords: [3.8610, 11.4850] },
+  "melen 4": { ville: "Yaoundé", coords: [3.8590, 11.4860] },
+  "melen 8": { ville: "Yaoundé", coords: [3.8580, 11.4840] },
+  "olezoa": { ville: "Yaoundé", coords: [3.8520, 11.5120] },
+  "dakar": { ville: "Yaoundé", coords: [3.8500, 11.5180] },
+  "efoulan": { ville: "Yaoundé", coords: [3.8350, 11.5100] },
+  "ahala": { ville: "Yaoundé", coords: [3.8160, 11.4980] },
+  "nsam": { ville: "Yaoundé", coords: [3.8400, 11.5300] },
+  "obobogo": { ville: "Yaoundé", coords: [3.8290, 11.5200] },
+  "nsimeyong": { ville: "Yaoundé", coords: [3.8480, 11.4940] },
+  "nkolmesseng": { ville: "Yaoundé", coords: [3.8560, 11.5480] },
 
-  // ─── BAMENDA ───
-  "bamenda":        { ville: "Bamenda", coords: [5.9597, 10.1456] },
-  "commercial":     { ville: "Bamenda", coords: [5.9650, 10.1500] },
-  "nkwen":          { ville: "Bamenda", coords: [5.9750, 10.1600] },
-  "mendankwe":      { ville: "Bamenda", coords: [5.9830, 10.1380] },
+  // ─── YAOUNDÉ IV ───
+  "mvan": { ville: "Yaoundé", coords: [3.8270, 11.5210] },
+  "mvan nord": { ville: "Yaoundé", coords: [3.8310, 11.5200] },
+  "mvan sud": { ville: "Yaoundé", coords: [3.8230, 11.5190] },
+  "odza": { ville: "Yaoundé", coords: [3.8000, 11.5500] },
+  "ekounou": { ville: "Yaoundé", coords: [3.8420, 11.5480] },
+  "biteng": { ville: "Yaoundé", coords: [3.8120, 11.5600] },
+  "kondengui": { ville: "Yaoundé", coords: [3.8500, 11.5600] },
+  "mimboman": { ville: "Yaoundé", coords: [3.8580, 11.5700] },
+  "nkolndongo": { ville: "Yaoundé", coords: [3.8510, 11.5530] },
+  "mvog mbi": { ville: "Yaoundé", coords: [3.8440, 11.5350] },
+  "mvog-mbi": { ville: "Yaoundé", coords: [3.8440, 11.5350] },
+  "ekoumdoum": { ville: "Yaoundé", coords: [3.8060, 11.5650] },
 
-  // ─── KRIBI ───
-  "kribi":          { ville: "Kribi", coords: [2.9405, 9.9098] },
+  // ─── YAOUNDÉ V ───
+  "mvog ada": { ville: "Yaoundé", coords: [3.8580, 11.5290] },
+  "mvog-ada": { ville: "Yaoundé", coords: [3.8580, 11.5290] },
+  "essos": { ville: "Yaoundé", coords: [3.8780, 11.5380] },
+  "mfandena": { ville: "Yaoundé", coords: [3.8710, 11.5450] },
+  "quartier fouda": { ville: "Yaoundé", coords: [3.8670, 11.5260] },
+  "fouda": { ville: "Yaoundé", coords: [3.8670, 11.5260] },
+  "ngousso": { ville: "Yaoundé", coords: [3.8920, 11.5500] },
+  "ngoulmekong": { ville: "Yaoundé", coords: [3.8720, 11.5350] },
+  "eleveur": { ville: "Yaoundé", coords: [3.8830, 11.5440] },
 
-  // ─── GAROUA ───
-  "garoua":         { ville: "Garoua", coords: [9.3265, 13.3958] },
+  // ─── YAOUNDÉ VI ───
+  "biyem assi": { ville: "Yaoundé", coords: [3.8430, 11.4830] },
+  "biyem-assi": { ville: "Yaoundé", coords: [3.8430, 11.4830] },
+  "mendong": { ville: "Yaoundé", coords: [3.8320, 11.4700] },
+  "simbock": { ville: "Yaoundé", coords: [3.8100, 11.4600] },
+  "etoug ebe": { ville: "Yaoundé", coords: [3.8400, 11.4700] },
+  "etoug-ebe": { ville: "Yaoundé", coords: [3.8400, 11.4700] },
+  "mvog betsi": { ville: "Yaoundé", coords: [3.8470, 11.4780] },
+  "mvog-betsi": { ville: "Yaoundé", coords: [3.8470, 11.4780] },
+  "elig effa": { ville: "Yaoundé", coords: [3.8510, 11.4750] },
+  "elig-effa": { ville: "Yaoundé", coords: [3.8510, 11.4750] },
+
+  // ─── YAOUNDÉ VII ───
+  "nkolbisson": { ville: "Yaoundé", coords: [3.8700, 11.4500] },
+  "etetak": { ville: "Yaoundé", coords: [3.8760, 11.4560] },
+  "oyom abang": { ville: "Yaoundé", coords: [3.8800, 11.4620] },
+  "oyom-abang": { ville: "Yaoundé", coords: [3.8800, 11.4620] },
+  "minkoameyos": { ville: "Yaoundé", coords: [3.8600, 11.4400] },
+  "nkolso": { ville: "Yaoundé", coords: [3.8680, 11.4450] },
+    "centre ville": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
+"centre-ville": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
+"yaounde": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
+"yaoundé": { ville: "Yaoundé", coords: [3.8670, 11.5170] }
+};
+
+  const QUARTIERS_DOUALA = {
+  // ─── DOUALA I (Bonanjo / Akwa / Deido) ───
+  "akwa": { ville: "Douala", coords: [4.0511, 9.7679] },
+  "bonanjo": { ville: "Douala", coords: [4.0430, 9.6940] },
+  "deido": { ville: "Douala", coords: [4.0600, 9.7300] },
+  "deïdo": { ville: "Douala", coords: [4.0600, 9.7300] },
+  "bonapriso": { ville: "Douala", coords: [4.0320, 9.7080] },
+  "bonapriso village": { ville: "Douala", coords: [4.0300, 9.7100] },
+  "bali": { ville: "Douala", coords: [4.0500, 9.7480] },
+  "new bell": { ville: "Douala", coords: [4.0450, 9.7350] },
+  "new-bell": { ville: "Douala", coords: [4.0450, 9.7350] },
+  "bonadibong": { ville: "Douala", coords: [4.0550, 9.7420] },
+
+  // ─── DOUALA II (New Bell / Bepanda / Makepe) ───
+  "bepanda": { ville: "Douala", coords: [4.0700, 9.7500] },
+  "bependa": { ville: "Douala", coords: [4.0700, 9.7500] },
+  "makepe": { ville: "Douala", coords: [4.0800, 9.7600] },
+  "makepé": { ville: "Douala", coords: [4.0800, 9.7600] },
+  "makepe missoke": { ville: "Douala", coords: [4.0850, 9.7650] },
+  "makepe petit pays": { ville: "Douala", coords: [4.0870, 9.7700] },
+  "ndogpassi": { ville: "Douala", coords: [4.0600, 9.7800] },
+  "ndogbong": { ville: "Douala", coords: [4.0720, 9.7750] },
+  "cite cicam": { ville: "Douala", coords: [4.0780, 9.7580] },
+  "cité cicam": { ville: "Douala", coords: [4.0780, 9.7580] },
+
+  // ─── DOUALA III (Logbaba / Nyalla / PK zones) ───
+  "logbaba": { ville: "Douala", coords: [4.0200, 9.8000] },
+  "nyalla": { ville: "Douala", coords: [4.0100, 9.7900] },
+  "nyala": { ville: "Douala", coords: [4.0100, 9.7900] },
+  "pk8": { ville: "Douala", coords: [4.0000, 9.8100] },
+  "pk9": { ville: "Douala", coords: [3.9950, 9.8150] },
+  "pk10": { ville: "Douala", coords: [3.9900, 9.8200] },
+  "pk11": { ville: "Douala", coords: [3.9850, 9.8250] },
+  "pk12": { ville: "Douala", coords: [3.9800, 9.8300] },
+  "bassa": { ville: "Douala", coords: [4.0400, 9.7900] },
+  "ndokoti": { ville: "Douala", coords: [4.0500, 9.7800] },
+  "yassa": { ville: "Douala", coords: [4.0000, 9.8350] },
+
+  // ─── DOUALA IV (Bonaberi) ───
+  "bonaberi": { ville: "Douala", coords: [4.0700, 9.6800] },
+  "bonabéry": { ville: "Douala", coords: [4.0700, 9.6800] },
+  "nkomba": { ville: "Douala", coords: [4.0750, 9.6700] },
+  "bojongo": { ville: "Douala", coords: [4.0800, 9.6650] },
+  "bonendale": { ville: "Douala", coords: [4.0900, 9.6600] },
+  "bonassama": { ville: "Douala", coords: [4.0600, 9.6900] },
+  "bonamikano": { ville: "Douala", coords: [4.0650, 9.6880] },
+
+  // ─── DOUALA V (Kotto / Logpom / Denver) ───
+  "kotto": { ville: "Douala", coords: [4.0900, 9.7800] },
+  "kotto village": { ville: "Douala", coords: [4.0920, 9.7820] },
+  "logpom": { ville: "Douala", coords: [4.0950, 9.7900] },
+  "denver": { ville: "Douala", coords: [4.1000, 9.7880] },
+  "bangue": { ville: "Douala", coords: [4.0850, 9.7850] },
+  "bangue 1": { ville: "Douala", coords: [4.0840, 9.7840] },
+  "bangue 2": { ville: "Douala", coords: [4.0860, 9.7860] },
+  "pk14": { ville: "Douala", coords: [3.9700, 9.8400] },
+  "pk13": { ville: "Douala", coords: [3.9750, 9.8350] },
+
+  // ─── DOUALA GLOBAL / CENTRE UX ───
+  "douala": { ville: "Douala", coords: [4.0511, 9.7679] },
+  "centre douala": { ville: "Douala", coords: [4.0511, 9.7679] },
+  "centre-ville douala": { ville: "Douala", coords: [4.0511, 9.7679] },
+  "aeroport douala": { ville: "Douala", coords: [4.0061, 9.7195] },
+  "aéroport douala": { ville: "Douala", coords: [4.0061, 9.7195] },
+  "port autonome": { ville: "Douala", coords: [4.0400, 9.6800] },
+
+  // ─── ZONES COMMERCIALES / BUSINESS ───
+  "marche central": { ville: "Douala", coords: [4.0480, 9.7500] },
+  "marché central": { ville: "Douala", coords: [4.0480, 9.7500] },
+  "mboppi": { ville: "Douala", coords: [4.0550, 9.7600] },
+  "douche municipale": { ville: "Douala", coords: [4.0530, 9.7520] },
+  "village": { ville: "Douala", coords: [4.0580, 9.7400] },
+  "feu rouge bessengue": { ville: "Douala", coords: [4.0600, 9.7700] },
+  "bessengue": { ville: "Douala", coords: [4.0610, 9.7690] }
+};
+
+  const QUARTIERS_BAFOUSSAM = {
+  // ─── BAFOUSSAM I (Centre administratif / Commercial) ───
+  "bafoussam": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
+  "centre ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
+  "centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
+  "centre commercial": { ville: "Bafoussam", coords: [5.4790, 10.4180] },
+  "marché a": { ville: "Bafoussam", coords: [5.4800, 10.4190] },
+  "marche a": { ville: "Bafoussam", coords: [5.4800, 10.4190] },
+  "marché central": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
+  "marche central": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
+  "banengo": { ville: "Bafoussam", coords: [5.4860, 10.4100] },
+  "banéngo": { ville: "Bafoussam", coords: [5.4860, 10.4100] },
+  "tougang": { ville: "Bafoussam", coords: [5.4740, 10.4250] },
+  "kamkop": { ville: "Bafoussam", coords: [5.4820, 10.4210] },
+  "haoussa": { ville: "Bafoussam", coords: [5.4770, 10.4200] },
+
+  // ─── BAFOUSSAM II (Tamdja / Djeleng / Famla) ───
+  "djeleng": { ville: "Bafoussam", coords: [5.4700, 10.4300] },
+  "tamdja": { ville: "Bafoussam", coords: [5.4680, 10.4270] },
+  "famla": { ville: "Bafoussam", coords: [5.4650, 10.4350] },
+  "tamdja carrefour": { ville: "Bafoussam", coords: [5.4690, 10.4280] },
+  "cassette": { ville: "Bafoussam", coords: [5.4720, 10.4320] },
+  "carrière": { ville: "Bafoussam", coords: [5.4670, 10.4380] },
+  "carriere": { ville: "Bafoussam", coords: [5.4670, 10.4380] },
+  "banock": { ville: "Bafoussam", coords: [5.4710, 10.4400] },
+  "ngouache": { ville: "Bafoussam", coords: [5.4730, 10.4450] },
+
+  // ─── BAFOUSSAM III (Toket / Tyo-ville / Ndiendam) ───
+  "toket": { ville: "Bafoussam", coords: [5.4900, 10.4300] },
+  "tyo ville": { ville: "Bafoussam", coords: [5.4880, 10.4260] },
+  "tyo-ville": { ville: "Bafoussam", coords: [5.4880, 10.4260] },
+  "ndiendam": { ville: "Bafoussam", coords: [5.4920, 10.4350] },
+  "kouogouo": { ville: "Bafoussam", coords: [5.4950, 10.4380] },
+  "tchitchap": { ville: "Bafoussam", coords: [5.4930, 10.4420] },
+  "kouekong": { ville: "Bafoussam", coords: [5.5000, 10.4400] },
+
+  // ─── AXES & POINTS STRATÉGIQUES ───
+  "entrée de ville": { ville: "Bafoussam", coords: [5.4750, 10.4100] },
+  "entree de ville": { ville: "Bafoussam", coords: [5.4750, 10.4100] },
+  "sortie bafang": { ville: "Bafoussam", coords: [5.4600, 10.4000] },
+  "sortie douala": { ville: "Bafoussam", coords: [5.4700, 10.4050] },
+  "sortie yaounde": { ville: "Bafoussam", coords: [5.4850, 10.4300] },
+  "sortie yaoundé": { ville: "Bafoussam", coords: [5.4850, 10.4300] },
+
+  // ─── ÉDUCATION / HÔPITAUX / SERVICES ───
+  "hopital regional": { ville: "Bafoussam", coords: [5.4790, 10.4220] },
+  "hôpital régional": { ville: "Bafoussam", coords: [5.4790, 10.4220] },
+  "universite des montagnes": { ville: "Bafoussam", coords: [5.5000, 10.4500] },
+  "université des montagnes": { ville: "Bafoussam", coords: [5.5000, 10.4500] },
+  "prefecture": { ville: "Bafoussam", coords: [5.4780, 10.4160] },
+  "préfecture": { ville: "Bafoussam", coords: [5.4780, 10.4160] },
+
+  // ─── QUARTIERS POPULAIRES / RÉSIDENTIELS ───
+  "banengo village": { ville: "Bafoussam", coords: [5.4870, 10.4090] },
+  "famla 2": { ville: "Bafoussam", coords: [5.4640, 10.4370] },
+  "djeleng 5": { ville: "Bafoussam", coords: [5.4710, 10.4310] },
+  "tougang village": { ville: "Bafoussam", coords: [5.4730, 10.4260] },
+  "kamkop 2": { ville: "Bafoussam", coords: [5.4830, 10.4220] },
+
+  // ─── TRANSPORT / GARES ───
+  "gare routiere": { ville: "Bafoussam", coords: [5.4770, 10.4180] },
+  "gare routière": { ville: "Bafoussam", coords: [5.4770, 10.4180] },
+  "agence de voyage": { ville: "Bafoussam", coords: [5.4780, 10.4190] },
+  "carrefour total": { ville: "Bafoussam", coords: [5.4760, 10.4210] },
+
+  // ─── GLOBAL UX / MATCHING ───
+  "bafoussam centre": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
+  "bafoussam centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] }
+};
+
+  const QUARTIERS_BAMENDA = {
+  // ─── BAMENDA I (Up Station / Commercial Avenue / Nkwen core) ───
+  "bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "centre ville": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "centre-ville": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "commercial avenue": { ville: "Bamenda", coords: [5.9590, 10.1510] },
+  "commercial avenue food market": { ville: "Bamenda", coords: [5.9580, 10.1520] },
+  "up station": { ville: "Bamenda", coords: [5.9700, 10.1600] },
+  "upstation": { ville: "Bamenda", coords: [5.9700, 10.1600] },
+  "station": { ville: "Bamenda", coords: [5.9680, 10.1590] },
+  "hospital roundabout": { ville: "Bamenda", coords: [5.9650, 10.1560] },
+  "city chemist roundabout": { ville: "Bamenda", coords: [5.9610, 10.1540] },
+  "meta quarters": { ville: "Bamenda", coords: [5.9660, 10.1630] },
+  "old town": { ville: "Bamenda", coords: [5.9560, 10.1480] },
+
+  // ─── BAMENDA II (Mankon / Food Market / Below Foncha) ───
+  "mankon": { ville: "Bamenda", coords: [5.9750, 10.1700] },
+  "mankon town": { ville: "Bamenda", coords: [5.9740, 10.1690] },
+  "food market": { ville: "Bamenda", coords: [5.9570, 10.1530] },
+  "main market": { ville: "Bamenda", coords: [5.9580, 10.1520] },
+  "below foncha": { ville: "Bamenda", coords: [5.9520, 10.1490] },
+  "foncha street": { ville: "Bamenda", coords: [5.9530, 10.1500] },
+  "cow street": { ville: "Bamenda", coords: [5.9550, 10.1510] },
+  "mobile nkwen": { ville: "Bamenda", coords: [5.9800, 10.1800] },
+  "cow fence": { ville: "Bamenda", coords: [5.9540, 10.1500] },
+
+  // ─── BAMENDA III (Nkwen / Mile 2 / Mile 3 / Mile 4 / Finance) ───
+  "nkwen": { ville: "Bamenda", coords: [5.9850, 10.1850] },
+  "mile 2": { ville: "Bamenda", coords: [5.9780, 10.1760] },
+  "mile 3": { ville: "Bamenda", coords: [5.9860, 10.1840] },
+  "mile 4": { ville: "Bamenda", coords: [5.9950, 10.1930] },
+  "mile 5": { ville: "Bamenda", coords: [6.0050, 10.2020] },
+  "finance junction": { ville: "Bamenda", coords: [5.9820, 10.1810] },
+  "finance": { ville: "Bamenda", coords: [5.9820, 10.1810] },
+  "hospital roundabout nkwen": { ville: "Bamenda", coords: [5.9840, 10.1820] },
+  "fons palace nkwen": { ville: "Bamenda", coords: [5.9890, 10.1880] },
+
+  // ─── UNIVERSITY / EDUCATION HUB ───
+  "bambili": { ville: "Bamenda", coords: [5.9900, 10.2500] },
+  "university of bamenda": { ville: "Bamenda", coords: [5.9910, 10.2480] },
+  "university of bamenda bambili": { ville: "Bamenda", coords: [5.9910, 10.2480] },
+  "ambili": { ville: "Bamenda", coords: [5.9880, 10.2450] },
+
+  // ─── MAJOR TRANSPORT / ROAD AXES ───
+  "bus station": { ville: "Bamenda", coords: [5.9600, 10.1540] },
+  "main bus station": { ville: "Bamenda", coords: [5.9600, 10.1540] },
+  "travel agency park": { ville: "Bamenda", coords: [5.9590, 10.1530] },
+  "small soppo": { ville: "Bamenda", coords: [5.9500, 10.1450] },
+  "big soppo": { ville: "Bamenda", coords: [5.9450, 10.1400] },
+  "soppo": { ville: "Bamenda", coords: [5.9480, 10.1430] },
+
+  // ─── GOVERNMENT / ADMINISTRATIVE ───
+  "governor's office": { ville: "Bamenda", coords: [5.9670, 10.1580] },
+  "governors office": { ville: "Bamenda", coords: [5.9670, 10.1580] },
+  "grandstand": { ville: "Bamenda", coords: [5.9640, 10.1570] },
+  "court": { ville: "Bamenda", coords: [5.9630, 10.1560] },
+
+  // ─── HEALTH / SERVICES ───
+  "bamenda regional hospital": { ville: "Bamenda", coords: [5.9650, 10.1560] },
+  "regional hospital": { ville: "Bamenda", coords: [5.9650, 10.1560] },
+  "cbc hospital": { ville: "Bamenda", coords: [5.9800, 10.1800] },
+
+  // ─── BUSINESS / HIGH ACTIVITY ───
+  "city chemist": { ville: "Bamenda", coords: [5.9610, 10.1540] },
+  "pharmacy roundabout": { ville: "Bamenda", coords: [5.9620, 10.1550] },
+  "ntamulung": { ville: "Bamenda", coords: [5.9900, 10.2100] },
+  "mulang": { ville: "Bamenda", coords: [5.9870, 10.2050] },
+
+  // ─── GLOBAL UX / MATCHING ───
+  "bamenda centre": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "bamenda center": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "bamenda town": { ville: "Bamenda", coords: [5.9631, 10.1591] }
+};
+
+ const CAMEROON_CITIES = {
+  // ─── KRIBI (5 points) ───
+  "kribi": { ville: "Kribi", coords: [2.9373, 9.9070] },
+  "kribi centre": { ville: "Kribi", coords: [2.9373, 9.9070] },
+  "grand batanga": { ville: "Kribi", coords: [2.9500, 9.9200] },
+  "mboa manga": { ville: "Kribi", coords: [2.9300, 9.9100] },
+  "port de kribi": { ville: "Kribi", coords: [2.9000, 9.8800] },
+
+  // ─── GAROUA (5 points) ───
+  "garoua": { ville: "Garoua", coords: [9.3010, 13.3970] },
+  "garoua centre": { ville: "Garoua", coords: [9.3010, 13.3970] },
+  "plateau": { ville: "Garoua", coords: [9.3050, 13.4000] },
+  "pitoa road": { ville: "Garoua", coords: [9.3200, 13.4100] },
+  "poumpoumre": { ville: "Garoua", coords: [9.2950, 13.3900] },
+
+  // ─── NGAOUNDÉRÉ (5 points) ───
+  "ngaoundere": { ville: "Ngaoundéré", coords: [7.3277, 13.5847] },
+  "ngaoundéré": { ville: "Ngaoundéré", coords: [7.3277, 13.5847] },
+  "ngaoundere centre": { ville: "Ngaoundéré", coords: [7.3277, 13.5847] },
+  "dang": { ville: "Ngaoundéré", coords: [7.3400, 13.5900] },
+  "universite ngaoundere": { ville: "Ngaoundéré", coords: [7.3500, 13.6000] },
+
+  // ─── MAROUA (5 points) ───
+  "maroua": { ville: "Maroua", coords: [10.5913, 14.3159] },
+  "maroua centre": { ville: "Maroua", coords: [10.5913, 14.3159] },
+  "domayo": { ville: "Maroua", coords: [10.6000, 14.3200] },
+  "harde": { ville: "Maroua", coords: [10.5850, 14.3100] },
+  "pitoare": { ville: "Maroua", coords: [10.5950, 14.3250] },
+
+  // ─── EBOLOWA (5 points) ───
+  "ebolowa": { ville: "Ebolowa", coords: [2.9167, 11.1500] },
+  "ebolowa centre": { ville: "Ebolowa", coords: [2.9167, 11.1500] },
+  "nko'ovos": { ville: "Ebolowa", coords: [2.9200, 11.1550] },
+  "mekalat": { ville: "Ebolowa", coords: [2.9100, 11.1450] },
+  "engo": { ville: "Ebolowa", coords: [2.9250, 11.1600] },
+
+  // ─── BERTOUA (7 points) ───
+  "bertoua": { ville: "Bertoua", coords: [4.5773, 13.6846] },
+  "bertoua centre": { ville: "Bertoua", coords: [4.5773, 13.6846] },
+  "tigaza": { ville: "Bertoua", coords: [4.5800, 13.6900] },
+  "monou": { ville: "Bertoua", coords: [4.5700, 13.6800] },
+  "mokolo bertoua": { ville: "Bertoua", coords: [4.5750, 13.6880] },
+  "nkolbikon": { ville: "Bertoua", coords: [4.5850, 13.6950] },
+  "gare routiere bertoua": { ville: "Bertoua", coords: [4.5780, 13.6860] },
+
+  // ─── AUTRES GRANDES VILLES (1 point chacune) ───
+  "buea": { ville: "Buea", coords: [4.1550, 9.2310] },
+  "limbe": { ville: "Limbe", coords: [4.0244, 9.2061] },
+  "kumba": { ville: "Kumba", coords: [4.6363, 9.4469] },
+  "bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "bafoussam": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
+  "douala": { ville: "Douala", coords: [4.0511, 9.7679] },
+  "yaounde": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
+  "yaoundé": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
+  "edea": { ville: "Edéa", coords: [3.8000, 10.1330] },
+  "edea": { ville: "Edéa", coords: [3.8000, 10.1330] },
+  "sangmelima": { ville: "Sangmélima", coords: [2.9330, 11.9830] },
+  "mbalmayo": { ville: "Mbalmayo", coords: [3.5167, 11.5000] },
+  "nkongsamba": { ville: "Nkongsamba", coords: [4.9500, 9.9330] },
+  "dschang": { ville: "Dschang", coords: [5.4430, 10.0540] },
+  "foumban": { ville: "Foumban", coords: [5.7260, 10.8980] },
+  "foumbot": { ville: "Foumbot", coords: [5.5080, 10.6320] },
+  "kousseri": { ville: "Kousseri", coords: [12.0760, 15.0300] },
+  "mokolo": { ville: "Mokolo", coords: [10.7420, 13.8020] },
+  "meiganga": { ville: "Meiganga", coords: [6.5167, 14.3000] },
+  "tibati": { ville: "Tibati", coords: [6.4667, 12.6333] },
+  "batouri": { ville: "Batouri", coords: [4.4330, 14.3670] },
+  "yokadouma": { ville: "Yokadouma", coords: [3.5167, 15.0500] },
+  "abong mbang": { ville: "Abong-Mbang", coords: [3.9833, 13.1833] },
+  "ebolowa sud": { ville: "Ebolowa", coords: [2.9167, 11.1500] },
+  "wum": { ville: "Wum", coords: [6.3833, 10.0667] },
+  "kumbo": { ville: "Kumbo", coords: [6.2000, 10.6667] },
+  "mbouda": { ville: "Mbouda", coords: [5.6260, 10.2550] },
+  "tiko": { ville: "Tiko", coords: [4.0750, 9.3600] },
+  "mutengene": { ville: "Mutengene", coords: [4.0910, 9.3140] },
+  "eyumojock": { ville: "Eyumojock", coords: [5.7500, 8.9833] },
+  "mamfe": { ville: "Mamfe", coords: [5.7510, 9.3130] }
 };
 
 // ── DISTANCES MOYENNES PAR VILLE (fallback si quartier non trouvé) ──
