@@ -82,7 +82,7 @@ import { ChatUsers } from "./components/ChatUsers";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { OptimizedImage } from "./components/OptimizedImage";
 import { PushManager } from "./components/PushManager";
-
+import { OnboardingModal } from "./components/OnboardingModal";
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
 // ═══════════════════════════════════════════════════════════════
@@ -158,6 +158,10 @@ useEffect(() => {
   const [prestVilleFilter, setPrestVilleFilter] = useState(""); // ✅ Filtre ville prestataires
  const [selectedPrest, setSelectedPrest]   = useState(null);   // ✅ Modal détail prestataire
   const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false); // ✅ Modal demande livraison
+  
+  // ═══ ONBOARDING (nouveau) ═══
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [pendingAction, setPendingAction]   = useState(null); // mémorise l'action choisie avant connexion
    // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
   const [academyLoading, setAcademyLoading] = useState(true);
@@ -314,6 +318,68 @@ useEffect(() => {
   const [chatMsg, setChatMsg]       = useState("");
   const [chatBlocked, setChatBlocked] = useState(false);
   const chatEndRef = useRef(null);
+
+  // ── ONBOARDING : afficher au 1er chargement si jamais vu ──
+  useEffect(() => {
+    const seen = localStorage.getItem("yorix_onboarding_seen");
+    if (!seen) {
+      // Petit délai pour laisser la page se charger
+      const t = setTimeout(() => setOnboardingOpen(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  // ── HANDLER : choix d'une action onboarding ──
+  const handleOnboardingAction = useCallback((actionId) => {
+    // Marquer comme vu
+    localStorage.setItem("yorix_onboarding_seen", "1");
+    setOnboardingOpen(false);
+
+    // Routes selon l'action
+    const routes = {
+      buy:      { needAuth: false, page: "produits" },
+      sell:     { needAuth: true,  role: "seller",   page: "dashboard" },
+      service:  { needAuth: false, page: "prestataires" },
+      delivery: { needAuth: true,  role: "buyer",    action: "openDelivery" },
+    };
+
+    const target = routes[actionId];
+    if (!target) return;
+
+    // Si l'action nécessite une connexion ET que l'utilisateur n'est pas connecté
+    if (target.needAuth && !user) {
+      setPendingAction(actionId);
+      setSelectedRole(target.role || "buyer");
+      setAuthTab("register");
+      setAuthOpen(true);
+      return;
+    }
+
+    // Sinon, exécuter l'action directement
+    executePendingAction(actionId);
+  }, [user]);
+
+  // ── EXÉCUTION de l'action après connexion réussie ──
+  const executePendingAction = useCallback((actionId) => {
+    const id = actionId || pendingAction;
+    if (!id) return;
+
+    if (id === "buy")        goPage("produits");
+    else if (id === "sell")  goPage("dashboard");
+    else if (id === "service") goPage("prestataires");
+    else if (id === "delivery") {
+      goPage("livraison");
+      setTimeout(() => setDemandeLivraisonOpen(true), 300);
+    }
+
+    setPendingAction(null);
+  }, [pendingAction]);
+
+  // ── Marquer onboarding comme vu lors de la fermeture manuelle ──
+  const handleCloseOnboarding = useCallback(() => {
+    localStorage.setItem("yorix_onboarding_seen", "1");
+    setOnboardingOpen(false);
+  }, []);
 
   // ── NAVIGATION ──
   const goPage = useCallback((p) => {
