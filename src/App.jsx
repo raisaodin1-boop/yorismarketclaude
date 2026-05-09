@@ -1544,51 +1544,51 @@ useEffect(() => {
         </section>
       )}
 
-     {/* ════════ PAGE : LIVRAISON ════════ */}
+// ═══════════════════════════════════════════════════════════════
+//  YORIX CM — FIX BUILD ERROR
+//  Erreur : balises div/section mal fermées autour de ligne 1591
+//  
+//  ✅ SOLUTION : remplacer TOUT le bloc page="livraison" par celui ci-dessous
+// ═══════════════════════════════════════════════════════════════
+
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ ÉTAPE 1 : OUVRE App.jsx SUR GITHUB → CLIQUE EDIT (crayon)   │
+// │ ÉTAPE 2 : Ctrl+F → CHERCHE :                                │
+// │     {page==="livraison"&&(                                  │
+// │ ÉTAPE 3 : Sélectionne TOUT depuis cette ligne JUSQU'À       │
+// │     (la fermeture de cette page, juste avant l'escrow)      │
+// │     {/* ════════ PAGE : ESCROW ════════ */}                │
+// │ ÉTAPE 4 : Remplace par le code ci-dessous                   │
+// └─────────────────────────────────────────────────────────────┘
+
+
+// 🔍 ANCRE DE DÉBUT (à chercher) :
+//    {page==="livraison"&&(
+// 
+// 🔍 ANCRE DE FIN (à chercher) :
+//    {/* ════════ PAGE : ESCROW ════════ */}
+//
+// ✏️ REMPLACE TOUT CE QUI EST ENTRE LES DEUX ANCRES (l'ancre de fin reste, l'ancre de début aussi) :
+
+
+      {/* ════════ PAGE : LIVRAISON ════════ */}
       {page==="livraison"&&(
         <div className="anim">
           {/* CTA flottant mobile */}
           <DeliveryStickyMobile onOpenFullModal={() => setDemandeLivraisonOpen(true)} />
-          
+
           <section className="sec">
-
-
 
             {/* ═══ SUIVI TEMPS RÉEL ═══ */}
             <DeliveryTracker />
 
-           {/* ── NOUVEAU HERO : QUICK ORDER ── */}
+            {/* ═══ NOUVEAU HERO : QUICK ORDER ═══ */}
             <DeliveryQuickOrder
               user={user}
               userData={userData}
               onOpenFullModal={() => setDemandeLivraisonOpen(true)}
             />
-
-              {/* Stats livraison */}
-              <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:20}}>
-                {[["🏍️","850+","Livreurs actifs"],["⏱️","~25 min","Temps moyen"],["⭐","4.8/5","Note moyenne"],["📦","12K+","Livraisons/mois"]].map(([ic,val,lbl])=>(
-                  <div key={lbl}>
-                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-                      <span style={{fontSize:"1rem"}}>{ic}</span>
-                      <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--yellow)"}}>{val}</span>
-                    </div>
-                    <div style={{fontSize:".62rem",color:"rgba(255,255,255,.35)"}}>{lbl}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* CTA commander livraison */}
-              <div style={{display:"flex", gap:10, flexWrap:"wrap"}}>
-                <button
-                  style={{background:"var(--yellow)",color:"#0d1f14",border:"none",padding:"11px 20px",borderRadius:9,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:".85rem",cursor:"pointer"}}
-                  onClick={() => setDemandeLivraisonOpen(true)}
-                >📦 Demander une livraison</button>
-                <button
-                  style={{background:"rgba(255,255,255,.09)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",padding:"11px 20px",borderRadius:9,fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".85rem",cursor:"pointer"}}
-                  onClick={()=>{ setAuthTab("register"); setSelectedRole("delivery"); setAuthOpen(true); }}
-                >🏍️ Devenir livreur Yorix</button>
-              </div>
-            </div>
 
             {/* ── COMMENT ÇA MARCHE ── */}
             <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:22,marginBottom:20}}>
@@ -1659,7 +1659,7 @@ useEffect(() => {
                         : "⏸️ Non disponible pour le moment"
                       }
                     </div>
-                   <button
+                    <button
                       style={{width:"100%",background:d.dispo?"var(--green)":"var(--border)",color:d.dispo?"#fff":"var(--gray)",border:"none",padding:"8px",borderRadius:8,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".75rem",cursor:d.dispo?"pointer":"default"}}
                       onClick={() => d.dispo && setDemandeLivraisonOpen(true)}
                     >{d.dispo?"📦 Demander livraison":"⏳ Voir plus tard"}</button>
@@ -1668,7 +1668,7 @@ useEffect(() => {
               </div>
             </div>
 
-          {/* ── CAS D'USAGE + B2B + TÉMOIGNAGES ── */}
+            {/* ═══ CAS D'USAGE + B2B + TÉMOIGNAGES ═══ */}
             <DeliveryUseCases
               onCommander={() => setDemandeLivraisonOpen(true)}
               onOpenFullModal={() => setDemandeLivraisonOpen(true)}
@@ -1692,7 +1692,7 @@ useEffect(() => {
           </section>
         </div>
       )}
-
+ 
       {/* ════════ PAGE : ESCROW ════════ */}
       {page==="escrow"&&(
         <section className="sec anim">
