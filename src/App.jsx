@@ -87,6 +87,7 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { OptimizedImage } from "./components/OptimizedImage";
 import { PushManager } from "./components/PushManager";
 import { OnboardingModal } from "./components/OnboardingModal";
+import { ContractAcceptance, CONTRACT_VERSION } from "./components/ContractAcceptance";
 import { PasswordInput } from "./components/PasswordInput";
 
 // ═══════════════════════════════════════════════════════════════
@@ -163,7 +164,48 @@ useEffect(() => {
   const [prestCatFilter, setPrestCatFilter] = useState("");     // ✅ Filtre catégorie prestataires
   const [prestVilleFilter, setPrestVilleFilter] = useState(""); // ✅ Filtre ville prestataires
  const [selectedPrest, setSelectedPrest]   = useState(null);   // ✅ Modal détail prestataire
-  const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false); // ✅ Modal demande livraison
+const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
+  
+  // ═══ CONTRACT ACCEPTANCE ═══
+  const [contractOpen, setContractOpen]               = useState(false);
+  const [contractAccepted, setContractAccepted]       = useState(false);
+  const [pendingRegistration, setPendingRegistration] = useState(null);
+
+
+// ═══ MODIFICATION 3 : MODIFIER doRegister POUR PASSER PAR LE CONTRAT ═══
+
+// 🔍 CHERCHER (DÉBUT de la fonction doRegister) :
+  const doRegister = async () => {
+    setAuthError(""); setAuthLoading(true);
+    try {
+      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
+      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
+
+// ✏️ REMPLACER PAR :
+  const doRegister = async () => {
+    setAuthError(""); setAuthLoading(true);
+    try {
+      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
+      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
+      
+      // ═══ CONTRAT OBLIGATOIRE pour les rôles professionnels ═══
+      const PRO_ROLES = ["seller", "provider", "delivery"];
+      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
+        // Stocker les infos d'inscription en attente
+        setPendingRegistration({
+          nom: authForm.nom,
+          email: authForm.email,
+          tel: authForm.tel,
+          password: authForm.password,
+          role: selectedRole,
+        });
+        // Ouvrir le modal de contrat
+        setAuthLoading(false);
+        setContractOpen(true);
+        return; // Stopper ici, on reprendra après acceptation
+      }
+
+
   
   // ═══ ONBOARDING (nouveau) ═══
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -515,13 +557,23 @@ useEffect(() => {
     const { error } = await supabase.auth.signInWithOAuth({ provider:"google", options:{ redirectTo:window.location.origin } });
     if (error) setAuthError(error.message);
   };
-
-  const doLogout = async () => {
+const doLogout = async () => {
     await supabase.auth.signOut();
     setUser(null); setUserData(null); setUserRole(null);
     setDashTab("overview");
     goPage("home");
   };
+  // ═══ HANDLER : Contrat accepté → reprendre l'inscription ═══
+  const handleContractAccepted = async (acceptanceData) => {
+    setContractOpen(false);
+    setContractAccepted(true);
+    // Re-déclencher l'inscription maintenant que le contrat est accepté
+    setTimeout(() => {
+      doRegister();
+    }, 200);
+  };
+
+
 
   // ── PANIER ──
  const addToCart = useCallback((p) => {
@@ -724,7 +776,22 @@ useEffect(() => {
     <>
       <style>{makeCSS(dark)}</style>
 
-     {/* ── ONBOARDING MODAL ── */}
+    {/* ── CONTRACT ACCEPTANCE MODAL ── */}
+      <ContractAcceptance
+        open={contractOpen}
+        onClose={() => {
+          setContractOpen(false);
+          setAuthLoading(false);
+          setAuthError("Vous devez accepter le contrat pour finaliser votre inscription.");
+        }}
+        onAccepted={handleContractAccepted}
+        user={user}
+        userData={userData}
+        role={selectedRole}
+        authForm={authForm}
+      />
+
+      {/* ── ONBOARDING MODAL ── */}
       <OnboardingModal
         open={onboardingOpen}
         onClose={handleCloseOnboarding}
