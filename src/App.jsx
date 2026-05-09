@@ -435,9 +435,13 @@ useEffect(() => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email:authForm.email, password:authForm.password });
       if (error) throw error;
-      setUser(data.user);
+     setUser(data.user);
       await chargerProfil(data.user.id);
       setAuthOpen(false);
+      // Si une action onboarding est en attente, l'exécuter
+      if (pendingAction) {
+        setTimeout(() => executePendingAction(pendingAction), 300);
+      }
       // Email de bienvenue automatique (non bloquant)
       sendEmail({
         to:      authForm.email,
@@ -487,9 +491,13 @@ useEffect(() => {
       if (profileError) console.error("Profile insert error:", profileError);
 
       await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).then(r => r.error && console.error(r.error));
-      await chargerProfil(uid);
+     await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
+      // Si une action onboarding est en attente, l'exécuter
+      if (pendingAction) {
+        setTimeout(() => executePendingAction(pendingAction), 500);
+      }
     } catch (err) {
       console.error("Register error:", err);
       setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message);
@@ -710,6 +718,14 @@ useEffect(() => {
     <>
       <style>{makeCSS(dark)}</style>
 
+     {/* ── ONBOARDING MODAL ── */}
+      <OnboardingModal
+        open={onboardingOpen}
+        onClose={handleCloseOnboarding}
+        onSelectAction={handleOnboardingAction}
+        user={user}
+      />
+
       {/* ── AUTH MODAL ── */}
       {/* ── MODAL DEMANDE LIVRAISON ── */}
       {demandeLivraisonOpen && (
@@ -895,6 +911,27 @@ useEffect(() => {
         </div>
 
         <div className="nav-actions">
+         {/* Bouton Démarrer (ouvre onboarding) */}
+          <button
+            onClick={() => setOnboardingOpen(true)}
+            title="Que cherchez-vous ?"
+            style={{
+              background: "linear-gradient(135deg, var(--green, #1a6b3a), #0d4d28)",
+              color: "#fff",
+              border: "none",
+              padding: "7px 14px",
+              borderRadius: 8,
+              fontFamily: "'Syne',sans-serif",
+              fontWeight: 700,
+              fontSize: ".75rem",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(26,107,58,.25)",
+            }}
+          >
+            🚀 Démarrer
+          </button>
+
           {/* Dark mode */}
           <button
             className="dark-toggle"
@@ -903,7 +940,6 @@ useEffect(() => {
           >
             {dark?"☀️":"🌙"}
           </button>
-
           {/* Notifs (si connecté) */}
           {user && (
             <button className="icon-btn" onClick={()=>setNotifOpen(o=>!o)} title="Notifications">
@@ -1272,11 +1308,8 @@ useEffect(() => {
                 </div>
 
                 <div className="hero-ctas">
-                  <button className="cta-y" onClick={()=>goPage("produits")}>🛍️ Voir les produits</button>
-                  <button
-                    className="cta-w"
-                    onClick={()=>{setCartOpen(true);}}
-                  >🛒 Mon panier</button>
+                  <button className="cta-y" onClick={()=>setOnboardingOpen(true)}>🚀 Commencer maintenant</button>
+                  <button className="cta-w" onClick={()=>goPage("produits")}>🛍️ Voir les produits</button>
                 </div>
 
                 <div className="hero-stats">
