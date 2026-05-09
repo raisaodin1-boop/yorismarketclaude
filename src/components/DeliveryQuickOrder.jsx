@@ -1,56 +1,98 @@
 // ═══════════════════════════════════════════════════════════════
-//  YORIX CM — DELIVERY QUICK ORDER (HERO CONVERTER)
-//  Calculateur de tarif instantané + commande en 15 secondes
-//  ✅ Adresse départ + arrivée
-//  ✅ Type de colis (icônes visuelles)
-//  ✅ Estimation prix + temps en temps réel
-//  ✅ CTA principal "Commander maintenant"
-//  ✅ Alternative WhatsApp Fast Order
+//  YORIX CM — DELIVERY QUICK ORDER (HERO CONVERTER) v3
+//  ✅ Tarifs définitifs Yorix CM
+//  ✅ Mode urgent = tarif × 2
+//  
+//  GRILLE TARIFAIRE :
+//  📄 Enveloppe    : 1 000 F + 75 F/km
+//  📦 Petit colis  : 1 500 F + 100 F/km
+//  📮 Moyen colis  : 2 000 F + 200 F/km
+//  🪑 Gros colis   : 3 000 F + 300 F/km
+//  🍱 Repas        : 1 500 F + 75 F/km
+//  🛒 Courses      : 2 500 F + 300 F/km
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from "react";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 
-// ── Tarifs par type de colis (FCFA / km) ──
+// ── TARIFS YORIX CM (FCFA) ──
 const TARIFS = {
-  document:    { base: 500,  parKm: 250, icon: "📄", label: "Document",      desc: "Lettres, dossiers" },
-  petit_colis: { base: 800,  parKm: 350, icon: "📦", label: "Petit colis",   desc: "< 5 kg" },
-  moyen_colis: { base: 1200, parKm: 500, icon: "📮", label: "Moyen colis",   desc: "5 à 20 kg" },
-  gros_colis:  { base: 2000, parKm: 800, icon: "🪑", label: "Gros colis",    desc: "> 20 kg, mobilier" },
-  repas:       { base: 600,  parKm: 300, icon: "🍱", label: "Repas",         desc: "Restaurants" },
-  courses:     { base: 1000, parKm: 400, icon: "🛒", label: "Courses",       desc: "Marché, supermarché" },
+  document: {
+    base: 1000,
+    parKm: 75,
+    icon: "📄",
+    label: "Enveloppe",
+    desc: "Lettres, documents",
+  },
+  petit_colis: {
+    base: 1500,
+    parKm: 100,
+    icon: "📦",
+    label: "Petit colis",
+    desc: "Moins de 5 kg",
+  },
+  moyen_colis: {
+    base: 2000,
+    parKm: 200,
+    icon: "📮",
+    label: "Moyen colis",
+    desc: "5 à 20 kg",
+  },
+  gros_colis: {
+    base: 3000,
+    parKm: 300,
+    icon: "🪑",
+    label: "Gros colis",
+    desc: "Plus de 20 kg",
+  },
+  repas: {
+    base: 1500,
+    parKm: 75,
+    icon: "🍱",
+    label: "Repas",
+    desc: "Restaurants, plats",
+  },
+  courses: {
+    base: 2500,
+    parKm: 300,
+    icon: "🛒",
+    label: "Courses",
+    desc: "Marché, supermarché",
+  },
 };
 
-// ── Distances approximatives par paire de villes (km) ──
+// ── DISTANCES MOYENNES INTRA-VILLE (en km) ──
 const DISTANCES_INTRA = {
-  "Douala":     [3, 12],
-  "Yaoundé":    [3, 14],
-  "Bafoussam":  [2, 8],
-  "Bamenda":    [2, 10],
-  "Kribi":      [2, 6],
-  "Garoua":     [2, 8],
+  "Douala":     [3, 10],
+  "Yaoundé":    [3, 12],
+  "Bafoussam":  [2, 7],
+  "Bamenda":    [2, 8],
+  "Kribi":      [2, 5],
+  "Garoua":     [2, 7],
 };
 
 export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
   const [depart, setDepart]       = useState("");
   const [arrivee, setArrivee]     = useState("");
   const [ville, setVille]         = useState("Douala");
-  const [typeColis, setTypeColis] = useState("petit_colis");
+  const [typeColis, setTypeColis] = useState("document");
   const [urgent, setUrgent]       = useState(false);
 
-  // ── Calcul tarif instantané ──
+  // ── CALCUL TARIF INSTANTANÉ ──
   const estimation = useMemo(() => {
     if (!depart.trim() || !arrivee.trim()) return null;
 
     const tarif = TARIFS[typeColis];
-    const [distMin, distMax] = DISTANCES_INTRA[ville] || [3, 12];
+    const [distMin, distMax] = DISTANCES_INTRA[ville] || [3, 10];
     const distEstimee = (distMin + distMax) / 2;
 
+    // Calcul prix de base
     let prix = tarif.base + (distEstimee * tarif.parKm);
-    let tempsMin = Math.round(15 + distEstimee * 3);
 
+    // Mode urgent : tarif × 2
+    let tempsMin = Math.round(20 + distEstimee * 3);
     if (urgent) {
-      prix *= 1.5;
+      prix = prix * 2;
       tempsMin = Math.round(tempsMin * 0.6);
     }
 
@@ -62,12 +104,13 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
       tempsMin,
       tempsMax: tempsMin + 10,
       distance: distEstimee.toFixed(1),
-      fourchetteMin: Math.ceil((prix * 0.85) / 100) * 100,
-      fourchetteMax: Math.ceil((prix * 1.15) / 100) * 100,
+      // Fourchette ±10% pour gérer les variations réelles
+      fourchetteMin: Math.ceil((prix * 0.9) / 100) * 100,
+      fourchetteMax: Math.ceil((prix * 1.1) / 100) * 100,
     };
   }, [depart, arrivee, ville, typeColis, urgent]);
 
-  // ── Commander via WhatsApp ──
+  // ── COMMANDER VIA WHATSAPP ──
   const commanderWhatsApp = () => {
     if (!depart.trim() || !arrivee.trim()) {
       alert("Indiquez d'abord les adresses de départ et de destination.");
@@ -80,8 +123,8 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
       "📍 *Départ :* " + depart,
       "🏠 *Destination :* " + arrivee,
       "🏙️ *Ville :* " + ville,
-      "📦 *Type de colis :* " + tarif.icon + " " + tarif.label + " (" + tarif.desc + ")",
-      urgent ? "⚡ *Mode urgent* (prioritaire)" : "",
+      "📦 *Type :* " + tarif.icon + " " + tarif.label + " (" + tarif.desc + ")",
+      urgent ? "⚡ *Mode urgent activé* (tarif × 2, livraison prioritaire)" : "",
       "",
       estimation ? "💰 *Estimation :* " + estimation.fourchetteMin.toLocaleString() + " - " + estimation.fourchetteMax.toLocaleString() + " FCFA" : "",
       estimation ? "⏱ *Temps estimé :* " + estimation.tempsMin + "-" + estimation.tempsMax + " min" : "",
@@ -155,7 +198,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               maxWidth: 540,
             }}
           >
-            Commandez un livreur en 15 secondes. Estimation tarifaire instantanée. Suivi GPS en temps réel.
+            Commandez un livreur en 15 secondes. Tarif à partir de <strong style={{color:"var(--yellow, #fcd116)"}}>1 000 FCFA</strong>. Suivi GPS en temps réel.
           </p>
         </div>
 
@@ -177,7 +220,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: ".95rem", pointerEvents: "none" }}>📍</span>
               <input
                 type="text"
-                placeholder="Départ (ex: Boutique Akwa, Douala)"
+                placeholder="Départ (ex: Bastos, Yaoundé)"
                 value={depart}
                 onChange={(e) => setDepart(e.target.value)}
                 style={{
@@ -198,7 +241,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: ".95rem", pointerEvents: "none" }}>🏠</span>
               <input
                 type="text"
-                placeholder="Destination (ex: Bonanjo, Douala)"
+                placeholder="Destination (ex: Ahala, Yaoundé)"
                 value={arrivee}
                 onChange={(e) => setArrivee(e.target.value)}
                 style={{
@@ -258,7 +301,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                 transition: "all .2s",
               }}
             >
-              ⚡ {urgent ? "Mode urgent activé" : "Activer mode urgent"}
+              ⚡ {urgent ? "Urgent activé (×2)" : "Mode urgent (×2)"}
             </button>
           </div>
 
@@ -301,6 +344,9 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                 >
                   <div style={{ fontSize: "1.2rem", marginBottom: 3 }}>{t.icon}</div>
                   <div style={{ fontSize: ".7rem", fontWeight: 700, fontFamily: "'Syne',sans-serif" }}>{t.label}</div>
+                  <div style={{ fontSize: ".58rem", color: "rgba(255,255,255,.5)", marginTop: 2 }}>
+                    dès {t.base.toLocaleString()} F
+                  </div>
                 </button>
               ))}
             </div>
@@ -326,7 +372,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
           >
             <div>
               <div style={{ fontSize: ".68rem", color: "rgba(255,255,255,.6)", fontWeight: 700, marginBottom: 3 }}>
-                💰 ESTIMATION TARIFAIRE
+                💰 ESTIMATION TARIFAIRE {urgent && "⚡ URGENT"}
               </div>
               <div
                 style={{
@@ -341,6 +387,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               </div>
               <div style={{ fontSize: ".72rem", color: "rgba(255,255,255,.65)", marginTop: 3 }}>
                 ⏱ {estimation.tempsMin}–{estimation.tempsMax} min · 📏 ~{estimation.distance} km
+                {urgent && " · ⚡ Tarif × 2"}
               </div>
             </div>
             <div
