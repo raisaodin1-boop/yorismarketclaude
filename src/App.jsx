@@ -67,6 +67,9 @@ import { AcademyDetail } from "./components/AcademyDetail";
 import { AcademyContactForm } from "./components/AcademyContactForm";
 import { OrderCardWithTracking } from "./components/OrderCardWithTracking";
 import { DeliveryTracker } from "./components/DeliveryTracker";
+import { DeliveryQuickOrder } from "./components/DeliveryQuickOrder";
+import { DeliveryUseCases } from "./components/DeliveryUseCases";
+import { DeliveryStickyMobile } from "./components/DeliveryStickyMobile";
 import { FicheProduit } from "./components/FicheProduit";
 import { BuyerDashboard } from "./components/BuyerDashboard";
 import { ProviderDashboard } from "./components/ProviderDashboard";
@@ -1544,23 +1547,22 @@ useEffect(() => {
      {/* ════════ PAGE : LIVRAISON ════════ */}
       {page==="livraison"&&(
         <div className="anim">
+          {/* CTA flottant mobile */}
+          <DeliveryStickyMobile onOpenFullModal={() => setDemandeLivraisonOpen(true)} />
+          
           <section className="sec">
+
+
 
             {/* ═══ SUIVI TEMPS RÉEL ═══ */}
             <DeliveryTracker />
 
-            {/* ── HERO LIVRAISON ── */}
-            <div style={{background:"linear-gradient(135deg,#0a1410,#1a3a24,#0d3320)",borderRadius:16,padding:28,color:"#fff",marginBottom:20,position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",top:-20,right:-20,width:160,height:160,background:"rgba(79,209,125,.06)",borderRadius:"50%"}}/>
-              <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(252,209,22,.14)",color:"var(--yellow)",border:"1px solid rgba(252,209,22,.28)",padding:"4px 12px",borderRadius:50,fontSize:".72rem",fontWeight:700,marginBottom:14}}>
-                🛵 Yorix Ride — Livraison Express Cameroun
-              </div>
-              <h2 style={{fontFamily:"'Syne',sans-serif",fontSize:"1.5rem",fontWeight:800,marginBottom:8,lineHeight:1.2}}>
-                Livraison à domicile<br/><span style={{color:"#4fd17d"}}>comme Uber, partout au Cameroun</span>
-              </h2>
-              <p style={{color:"rgba(255,255,255,.6)",fontSize:".85rem",lineHeight:1.75,marginBottom:20,maxWidth:480}}>
-                Commandez un produit, un livreur proche de vous accepte la mission en quelques secondes. Suivi GPS en temps réel, paiement à la livraison.
-              </p>
+           {/* ── NOUVEAU HERO : QUICK ORDER ── */}
+            <DeliveryQuickOrder
+              user={user}
+              userData={userData}
+              onOpenFullModal={() => setDemandeLivraisonOpen(true)}
+            />
 
               {/* Stats livraison */}
               <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:20}}>
@@ -1665,6 +1667,12 @@ useEffect(() => {
                 ))}
               </div>
             </div>
+
+          {/* ── CAS D'USAGE + B2B + TÉMOIGNAGES ── */}
+            <DeliveryUseCases
+              onCommander={() => setDemandeLivraisonOpen(true)}
+              onOpenFullModal={() => setDemandeLivraisonOpen(true)}
+            />
 
             {/* ── REJOINDRE COMME LIVREUR ── */}
             <div style={{background:"linear-gradient(135deg,#1a3a24,#0d3320)",borderRadius:14,padding:24,marginTop:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
