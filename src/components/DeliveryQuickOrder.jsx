@@ -122,7 +122,7 @@ const QUARTIERS = {
     "centre ville": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
 "centre-ville": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
 "yaounde": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
-"yaoundé": { ville: "Yaoundé", coords: [3.8670, 11.5170] }
+"yaoundé": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
 
   // ─── DOUALA I (Bonanjo / Akwa / Deido) ───
   "akwa": { ville: "Douala", coords: [4.0511, 9.7679] },
@@ -196,7 +196,7 @@ const QUARTIERS = {
   "douche municipale": { ville: "Douala", coords: [4.0530, 9.7520] },
   "village": { ville: "Douala", coords: [4.0580, 9.7400] },
   "feu rouge bessengue": { ville: "Douala", coords: [4.0600, 9.7700] },
-  "bessengue": { ville: "Douala", coords: [4.0610, 9.7690] }
+  "bessengue": { ville: "Douala", coords: [4.0610, 9.7690] },
 
   // ─── BAFOUSSAM I (Centre administratif / Commercial) ───
   "bafoussam": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
@@ -264,7 +264,7 @@ const QUARTIERS = {
 
   // ─── GLOBAL UX / MATCHING ───
   "bafoussam centre": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
-  "bafoussam centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] }
+  "bafoussam centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
 
   // ─── BAMENDA I (Up Station / Commercial Avenue / Nkwen core) ───
   "bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
@@ -336,7 +336,7 @@ const QUARTIERS = {
   // ─── GLOBAL UX / MATCHING ───
   "bamenda centre": { ville: "Bamenda", coords: [5.9631, 10.1591] },
   "bamenda center": { ville: "Bamenda", coords: [5.9631, 10.1591] },
-  "bamenda town": { ville: "Bamenda", coords: [5.9631, 10.1591] }
+  "bamenda town": { ville: "Bamenda", coords: [5.9631, 10.1591] },
 
   // ─── KRIBI (5 points) ───
   "kribi": { ville: "Kribi", coords: [2.9373, 9.9070] },
