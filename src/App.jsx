@@ -87,6 +87,8 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { OptimizedImage } from "./components/OptimizedImage";
 import { PushManager } from "./components/PushManager";
 import { OnboardingModal } from "./components/OnboardingModal";
+import { PasswordInput } from "./components/PasswordInput";
+
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE
 // ═══════════════════════════════════════════════════════════════
@@ -797,10 +799,33 @@ useEffect(() => {
               <label className="form-label">Email <span>*</span></label>
               <input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/>
             </div>
-            <div className="form-group">
+             <div className="form-group">
               <label className="form-label">Mot de passe <span>*</span></label>
-              <input className="form-input" type="password" placeholder="••••••••" value={authForm.password} onChange={e => setAuthForm(f=>({...f,password:e.target.value}))}/>
+              <PasswordInput
+                value={authForm.password}
+                onChange={(val) => setAuthForm(f => ({ ...f, password: val }))}
+                placeholder={authTab === "login" ? "Entrez votre mot de passe" : "Choisissez un mot de passe"}
+                autoComplete={authTab === "login" ? "current-password" : "new-password"}
+                showStrength={authTab === "register"}
+                showRules={authTab === "register"}
+                ariaLabel="Mot de passe"
+                id="auth-password"
+              />
+              {authTab === "login" && (
+                <div style={{
+                  fontSize: ".7rem",
+                  color: "var(--gray)",
+                  marginTop: 5,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}>
+                  💡 Cliquez sur l'œil pour afficher ou masquer votre mot de passe
+                </div>
+              )}
             </div>
+
+
             <button className="form-submit" onClick={authTab==="login" ? doLogin : doRegister} disabled={authLoading} style={{fontSize:".9rem",padding:"13px"}}>
               {authLoading
                 ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Chargement...</>
