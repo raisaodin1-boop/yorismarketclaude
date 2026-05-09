@@ -30,7 +30,6 @@ const TARIFS = {
 //  Recherche le nom → utilise les coordonnées pour calculer la distance
 // ═══════════════════════════════════════════════════════════════
 const QUARTIERS = {
-  const QUARTIERS = {
   // ─── YAOUNDÉ I ───
   "bastos": { ville: "Yaoundé", coords: [3.8920, 11.5180] },
   "etoudi": { ville: "Yaoundé", coords: [3.9120, 11.5380] },
@@ -44,7 +43,7 @@ const QUARTIERS = {
   "olembe": { ville: "Yaoundé", coords: [3.9320, 11.4890] },
   "tongolo": { ville: "Yaoundé", coords: [3.9010, 11.5270] },
   "nyom": { ville: "Yaoundé", coords: [3.9440, 11.4970] },
-  "okolo": { ville: "Yaoundé", coords: [3.9030, 11.5240] },
+  "mokolo": { ville: "Yaoundé", coords: [3.9030, 11.5240] },
 
   // ─── YAOUNDÉ II ───
   "mokolo": { ville: "Yaoundé", coords: [3.8810, 11.5100] },
