@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrchestrator";
 import { confirmCheckout, createCheckoutIntent, initPaymentCinetPay } from "../lib/checkoutApi";
+import { CheckoutProgressBar } from "./CheckoutProgressBar";
 
 export function CheckoutPage({
   user,
@@ -19,11 +20,34 @@ export function CheckoutPage({
   const [address, setAddress] = useState(userData?.adresse || "");
   const [locationType, setLocationType] = useState("home");
   const [checkoutError, setCheckoutError] = useState("");
+  const [orderDone, setOrderDone] = useState(null);
 
   const checkoutType = useMemo(() => detectCheckoutType(cartItems), [cartItems]);
 
   const canContinueIdentity = Boolean((userData?.nom || "").trim() && (userData?.telephone || "").trim());
   const hasItems = cartItems.length > 0;
+
+  const progressActiveIndex = useMemo(() => {
+    if (orderDone) return 3;
+    if (!hasItems) return 0;
+    if (step <= 2) return 1;
+    return 2;
+  }, [step, hasItems, orderDone]);
+
+  const handleProgressNavigate = useCallback(
+    (i) => {
+      if (orderDone) return;
+      if (i === 0) {
+        goPage("cart");
+        return;
+      }
+      if (i === 1 && step >= 3) {
+        setStep(1);
+        setCheckoutError("");
+      }
+    },
+    [goPage, step, orderDone]
+  );
 
   const openWhatsAppFallback = (intentId) => {
     const lines = cartItems
@@ -88,12 +112,14 @@ export function CheckoutPage({
 
       if (paymentMethod === "whatsapp_backup" || !confirmation?.order_group_id) {
         openWhatsAppFallback(intent.checkout_intent_id);
-      } else {
-        alert("✅ Checkout confirmé. Suivez votre commande depuis votre dashboard.");
       }
 
       setCartItems([]);
-      goPage("dashboard");
+      setOrderDone({
+        mode: paymentMethod === "whatsapp_backup" || !confirmation?.order_group_id ? "whatsapp" : "standard",
+        orderGroupId: confirmation?.order_group_id || null,
+        intentId: intent.checkout_intent_id,
+      });
     } catch (e) {
       console.warn("Checkout:", e?.message || e);
       setCheckoutError("Impossible de finaliser le checkout. Utilisez le backup WhatsApp.");
@@ -103,13 +129,61 @@ export function CheckoutPage({
   };
 
   return (
-    <section className="sec anim" style={{ maxWidth: 980, margin: "0 auto" }}>
-      <h1 className="h2" style={{ marginBottom: 6 }}>Checkout Yorix</h1>
-      <p style={{ color: "var(--gray)", marginBottom: 14 }}>
-        Flow intelligent: {checkoutType === "mixed" ? "panier mixte" : checkoutType === "service_only" ? "services" : "produits"}.
+    <section className="sec anim checkout-page-wrap">
+      <CheckoutProgressBar
+        activeIndex={progressActiveIndex}
+        onNavigate={handleProgressNavigate}
+        navigationDisabled={Boolean(orderDone)}
+      />
+
+      <h1 className="sec-title" style={{ marginBottom: 6 }}>
+        {orderDone ? "Commande enregistrée" : "Finaliser la commande"}
+      </h1>
+      <p style={{ color: "var(--gray)", marginBottom: 16, fontSize: ".88rem" }}>
+        {orderDone
+          ? "Merci pour votre confiance. Conservez votre référence pour le suivi."
+          : `Étape suivante après le panier : adresse & livraison, puis paiement sécurisé (${
+              checkoutType === "mixed" ? "panier mixte" : checkoutType === "service_only" ? "prestations" : "produits"
+            }).`}
       </p>
 
-      {!hasItems && (
+      {orderDone && (
+        <div className="card checkout-confirm-card">
+          <div className="checkout-confirm-icon" aria-hidden>
+            ✅
+          </div>
+          <h2 className="h2" style={{ fontSize: "1.05rem", marginBottom: 8 }}>
+            {orderDone.mode === "whatsapp" ? "Finalisez sur WhatsApp" : "Récapitulatif"}
+          </h2>
+          <p style={{ color: "var(--gray)", marginBottom: 12, lineHeight: 1.45 }}>
+            {orderDone.mode === "whatsapp"
+              ? "Une conversation WhatsApp a été ouverte avec le détail de votre commande. Notre équipe confirme le paiement (MoMo, Orange ou autre) avec vous."
+              : "Votre commande a été enregistrée. Suivez l’avancement depuis votre espace client."}
+          </p>
+          <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12, marginBottom: 16, textAlign: "left", fontSize: ".84rem" }}>
+            {orderDone.orderGroupId && (
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                <span>Groupe commande</span>
+                <strong style={{ wordBreak: "break-all" }}>{orderDone.orderGroupId}</strong>
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <span>Réf. checkout</span>
+              <strong style={{ wordBreak: "break-all" }}>{orderDone.intentId}</strong>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+            <button type="button" className="form-submit" style={{ width: "auto", minWidth: 200 }} onClick={() => goPage("dashboard")}>
+              Voir mon espace
+            </button>
+            <button type="button" className="btn-ghost" onClick={() => goPage("produits")}>
+              Continuer mes achats
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!hasItems && !orderDone && (
         <div className="empty-state">
           <div className="empty-icon">🛒</div>
           <p>Votre panier est vide.</p>
@@ -119,14 +193,18 @@ export function CheckoutPage({
         </div>
       )}
 
-      {hasItems && (
+      {hasItems && !orderDone && (
         <div style={{ display: "grid", gap: 12 }}>
           <div className="card">
-            <div style={{ fontWeight: 700, marginBottom: 10 }}>Étape {step}/3</div>
             {step === 1 && (
-              <div style={{ display: "grid", gap: 8 }}>
-                <div>Client: <strong>{userData?.nom || "Non renseigné"}</strong></div>
-                <div>Téléphone: <strong>{userData?.telephone || "Non renseigné"}</strong></div>
+              <div style={{ display: "grid", gap: 10 }}>
+                <div style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--ink)" }}>Adresse & contact</div>
+                <div style={{ fontSize: ".86rem" }}>
+                  Client : <strong>{userData?.nom || "Non renseigné"}</strong>
+                </div>
+                <div style={{ fontSize: ".86rem" }}>
+                  Téléphone : <strong>{userData?.telephone || "Non renseigné"}</strong>
+                </div>
                 <input
                   className="form-input"
                   placeholder="Adresse de livraison / localisation"
@@ -135,60 +213,66 @@ export function CheckoutPage({
                 />
                 <button
                   className="form-submit"
-                  style={{ width: "auto" }}
+                  style={{ width: "100%" }}
                   disabled={!canContinueIdentity}
                   onClick={() => setStep(2)}
                 >
-                  Continuer
+                  Continuer vers la livraison
+                </button>
+                <button type="button" className="btn-ghost" style={{ width: "100%" }} onClick={() => goPage("cart")}>
+                  ← Retour au panier
                 </button>
               </div>
             )}
 
             {step === 2 && (
-              <div style={{ display: "grid", gap: 8 }}>
-                <label className="form-label">Fulfillment</label>
-                <select
-                  className="form-input"
-                  value={locationType}
-                  onChange={(e) => setLocationType(e.target.value)}
-                >
-                  <option value="home">A domicile</option>
+              <div style={{ display: "grid", gap: 10 }}>
+                <div style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--ink)" }}>Mode de réception</div>
+                <label className="form-label">Livraison / retrait / en ligne</label>
+                <select className="form-input" value={locationType} onChange={(e) => setLocationType(e.target.value)}>
+                  <option value="home">À domicile</option>
                   <option value="shop">En boutique / retrait</option>
                   <option value="online">En ligne (services)</option>
                 </select>
-                <button className="form-submit" style={{ width: "auto" }} onClick={() => setStep(3)}>
-                  Continuer vers paiement
+                <button className="form-submit" style={{ width: "100%" }} onClick={() => setStep(3)}>
+                  Continuer vers le paiement
+                </button>
+                <button type="button" className="btn-ghost" style={{ width: "100%" }} onClick={() => setStep(1)}>
+                  ← Retour à l&apos;adresse
                 </button>
               </div>
             )}
 
             {step === 3 && (
-              <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "grid", gap: 10 }}>
+                <div style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--ink)" }}>Paiement</div>
                 <label className="form-label">Mode de paiement</label>
-                <select
-                  className="form-input"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                >
-                  <option value="cinetpay">CinetPay (MoMo/Orange/Card)</option>
-                  <option value="cod">Paiement a la livraison</option>
+                <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                  <option value="cinetpay">CinetPay (MoMo / Orange / carte)</option>
+                  <option value="cod">Paiement à la livraison</option>
                   <option value="whatsapp_backup">Backup WhatsApp</option>
                 </select>
 
                 <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Sous-total</span><strong>{summary.subtotal.toLocaleString()} FCFA</strong>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".88rem" }}>
+                    <span>Sous-total</span>
+                    <strong>{summary.subtotal.toLocaleString()} FCFA</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Livraison</span><strong>{summary.delivery ? `${summary.delivery.toLocaleString()} FCFA` : "Offerte / N/A"}</strong>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".88rem", marginTop: 4 }}>
+                    <span>Livraison</span>
+                    <strong>{summary.delivery ? `${summary.delivery.toLocaleString()} FCFA` : "Offerte / N/A"}</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                    <span>Total</span><strong>{summary.total.toLocaleString()} FCFA</strong>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--border)", fontWeight: 700 }}>
+                    <span>Total</span>
+                    <strong>{summary.total.toLocaleString()} FCFA</strong>
                   </div>
                 </div>
                 {checkoutError && <div className="info-msg" style={{ color: "var(--red)" }}>{checkoutError}</div>}
-                <button className="form-submit" onClick={handlePlaceOrder} disabled={loading}>
-                  {loading ? "Traitement..." : "Confirmer checkout"}
+                <button className="form-submit" type="button" onClick={handlePlaceOrder} disabled={loading}>
+                  {loading ? "Traitement..." : "Confirmer la commande"}
+                </button>
+                <button type="button" className="btn-ghost" style={{ width: "100%" }} onClick={() => setStep(2)} disabled={loading}>
+                  ← Retour à la livraison
                 </button>
               </div>
             )}
@@ -198,4 +282,3 @@ export function CheckoutPage({
     </section>
   );
 }
-

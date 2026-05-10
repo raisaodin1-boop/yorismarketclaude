@@ -1,4 +1,5 @@
 import { OptimizedImage } from "./OptimizedImage";
+import { CheckoutProgressBar } from "./CheckoutProgressBar";
 
 export function CartPage({
   cartItems,
@@ -28,6 +29,8 @@ export function CartPage({
           Continuer mes achats
         </button>
       </div>
+
+      <CheckoutProgressBar activeIndex={0} />
 
       {cartItems.length === 0 ? (
         <div className="cart-page-empty">

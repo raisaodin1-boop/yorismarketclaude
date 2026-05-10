@@ -396,6 +396,80 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .cart-page-summary h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
 .cart-page-reco{margin-top:24px;}
 
+/* Checkout flow — barre de progression (Panier → Adresse → Paiement → Confirmation) */
+.checkout-page-wrap{max-width:980px;margin:0 auto;}
+.checkout-progress{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 10px 14px;
+  margin-bottom:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+.checkout-progress-list{
+  list-style:none;margin:0;padding:0;display:flex;align-items:stretch;width:100%;
+}
+.checkout-progress-item{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;
+}
+.checkout-progress-cluster{
+  display:flex;align-items:center;width:100%;min-width:0;
+}
+.checkout-progress-lead{
+  flex:1;height:3px;background:var(--border);border-radius:2px;margin-right:6px;
+  min-width:6px;align-self:center;
+  transition:background .25s ease;
+}
+.checkout-progress-lead--on{
+  background:linear-gradient(90deg,var(--green),#2ec27e);
+}
+.checkout-progress .checkout-progress-node{
+  flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;
+  width:92px;padding:6px 4px;background:transparent;border:none;cursor:default;
+  color:var(--ink);font-family:inherit;
+  transition:transform .15s ease,opacity .15s ease;
+  min-height:auto;min-width:0;touch-action:manipulation;
+}
+.checkout-progress-node:disabled{
+  opacity:1;cursor:default;
+}
+.checkout-progress-node:not(:disabled){
+  cursor:pointer;
+}
+.checkout-progress-node:not(:disabled):hover{
+  transform:translateY(-1px);
+}
+.checkout-progress-node-inner{
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1rem;border:2px solid var(--border);background:var(--surface2);
+  transition:border-color .2s,background .2s,color .2s;
+}
+.checkout-progress-node--todo .checkout-progress-node-inner{color:var(--gray);opacity:.72;}
+.checkout-progress-node--current .checkout-progress-node-inner{
+  border-color:var(--green);background:var(--green-pale);box-shadow:0 0 0 3px rgba(79,209,125,.22);
+  font-weight:800;
+}
+.checkout-progress-node--done .checkout-progress-node-inner{
+  border-color:var(--green);background:var(--green);color:#fff;font-size:.95rem;line-height:1;
+}
+.checkout-progress-label{
+  font-size:.69rem;font-weight:700;color:var(--gray);text-align:center;line-height:1.2;
+  max-width:100%;
+}
+.checkout-progress-node--current .checkout-progress-label{color:var(--ink);font-weight:800;}
+.checkout-progress-node--done .checkout-progress-label{color:var(--green);}
+.checkout-progress-label-compact{display:none;}
+.checkout-confirm-card{text-align:center;padding:8px 4px 4px;}
+.checkout-confirm-icon{font-size:2.4rem;line-height:1;margin-bottom:4px;}
+
+@media(max-width:520px){
+  .checkout-progress-node{width:72px;padding:4px 2px;}
+  .checkout-progress-node-inner{width:32px;height:32px;font-size:.9rem;}
+  .checkout-progress-label{font-size:.62rem;}
+  .checkout-progress-label-full{display:none;}
+  .checkout-progress-label-compact{display:inline;}
+}
+
 @media(max-width:900px){
   .admin-layout{flex-direction:column;}
   .admin-sidebar{
@@ -776,6 +850,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .cart-page-item{align-items:flex-start;}
   .cart-page-thumb{width:82px;height:82px;}
   .cart-page-actions{flex-wrap:wrap;justify-content:flex-start;}
+  .checkout-progress{padding:10px 6px;}
+  .checkout-progress-node{width:min(22vw,80px);}
 }
 /* ========================================
    YORIX CM - MOBILE FIXES
