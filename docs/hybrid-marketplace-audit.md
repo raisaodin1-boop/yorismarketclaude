@@ -12,6 +12,8 @@
 
 ## Added Migration Targets
 - `checkout_intents`: canonique pour le checkout dynamique.
+- `confirm_checkout` (Edge) : après insertion des commandes produit en livraison (hors **pickup**), insertion auto dans `deliveries` + codes `YX-*` renvoyés dans `delivery_tracking`.
+- `checkout_return_status` (Edge) : retour depuis CinetPay — JWT + vérif acheteur, sync statut `/payment/check` si `pending`, lecture `delivery_tracking`; appel depuis `CheckoutPage` (`?status=return&tx=YRXPAY-…`).
 - `order_items`: découplage des lignes commande.
 - `service_bookings`: réservation prestation avec statut dédié.
 - `payment_transactions`: traçabilité fournisseur paiement.

@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
+import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 
 function uuidish(v: string) {
@@ -64,6 +65,34 @@ Deno.serve(async (req) => {
       if (patchErr) throw patchErr;
     }
 
+    const productIds = [...new Set(
+      items
+        .filter((line) => (line.kind || "product") === "product")
+        .map((line) => String(line.id)),
+    )];
+    const vendeurByProduct = new Map<string, string | null>();
+    if (productIds.length) {
+      const { data: prows } = await supabase
+        .from("products")
+        .select("id,vendeur_id")
+        .in("id", productIds);
+      for (const r of prows || []) {
+        const row = r as { id?: string; vendeur_id?: string | null };
+        if (row.id) vendeurByProduct.set(String(row.id), row.vendeur_id ?? null);
+      }
+    }
+
+    const deliveryTracking: { order_id: string; code_suivi: string }[] = [];
+
+    const clientNom = String(customer.nom || "Client Yorix");
+    const clientTel = String(customer.telephone || "");
+    const addrFromBody =
+      typeof body?.address === "string" && body.address.trim() !== ""
+        ? body.address.trim()
+        : "";
+    const adresseLivraison = addrFromBody ||
+      String(customer.adresse || customer.ville || "Cameroun");
+
     const ordersCreated: any[] = [];
     for (const item of items) {
       if (item.kind === "service") {
@@ -95,11 +124,21 @@ Deno.serve(async (req) => {
       const commission = Math.round(gross * 0.05);
       const net = gross - commission;
 
+      const pid = String(item.id ?? "");
+      const vendeurRaw = (item as { vendeur_id?: string | null }).vendeur_id;
+      const vendeurId =
+        vendeurRaw != null && vendeurRaw !== ""
+          ? String(vendeurRaw)
+          : vendeurByProduct.get(pid) ?? null;
+
+      const fulfillment = String(item.fulfillmentMode || "delivery");
+
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
           order_group_id: orderGroupId,
           product_id: item.id,
+          vendeur_id: vendeurId,
           client_id: customer.id || null,
           client_nom: customer.nom || "Client Yorix",
           telephone: customer.telephone || "",
@@ -129,6 +168,29 @@ Deno.serve(async (req) => {
       });
       if (itemError) throw itemError;
 
+      if (fulfillment !== "pickup") {
+        const vn = String((item as { vendeur_nom?: string }).vendeur_nom || "vendeur");
+        const vville = String((item as { ville?: string }).ville || "").trim();
+        const pickup = vville !== ""
+          ? `Boutique ${vn}, ${vville}`
+          : "Boutique Yorix";
+        try {
+          const { code } = await insertAutoDelivery(supabase, {
+            orderId: String(order.id),
+            clientNom,
+            clientTel,
+            adresseLivraison,
+            adresseCollecte: pickup,
+          });
+          deliveryTracking.push({ order_id: String(order.id), code_suivi: code });
+        } catch (derr) {
+          console.error(
+            "confirm_checkout livraison auto:",
+            derr instanceof Error ? derr.message : derr,
+          );
+        }
+      }
+
       ordersCreated.push({ type: "order", id: order.id });
     }
 
@@ -144,6 +206,7 @@ Deno.serve(async (req) => {
       checkout_intent_id: checkoutIntentId,
       order_group_id: orderGroupId,
       created: ordersCreated,
+      delivery_tracking: deliveryTracking,
       total: intentAfter?.total ?? totals.total,
       delivery_fee: intentAfter?.delivery_fee ?? totals.deliveryFee,
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,

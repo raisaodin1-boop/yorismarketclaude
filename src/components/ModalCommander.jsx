@@ -10,6 +10,7 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState({});
   const [done, setDone]       = useState(false);
+  const [deliveryTracking, setDeliveryTracking] = useState([]);
 
   const validate = () => {
     const e = {};
@@ -40,16 +41,27 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
             qty: 1,
             price: subtotal,
             fulfillmentMode: "delivery",
+            vendeur_id: product.vendeur_id ?? null,
+            vendeur_nom: product.vendeur_nom || "",
+            ville: product.ville || "",
           },
         ],
         summary: { subtotal, delivery: 0, total: subtotal },
       });
-      await confirmCheckout({
+      const confirmation = await confirmCheckout({
         checkout_intent_id: intent.checkout_intent_id,
         payment_method: "whatsapp_backup",
+        address: userData?.adresse || userData?.ville || "",
       });
+      const codes = Array.isArray(confirmation?.delivery_tracking)
+        ? confirmation.delivery_tracking
+        : [];
+      setDeliveryTracking(codes);
       setDone(true);
-      setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
+      setTimeout(() => {
+        onSuccess?.();
+        onClose();
+      }, codes.length > 0 ? 5000 : 2000);
     } catch (err) {
       console.error("creerCommande:", err);
       alert("Erreur lors de la commande : " + err.message);
@@ -65,7 +77,15 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
         <p className="modal-sub">{product.name_fr}</p>
 
         {done ? (
-          <div className="success-msg">✅ Commande créée avec succès ! Vous serez contacté(e) sous peu.</div>
+          <div className="success-msg">
+            <div>✅ Commande créée avec succès ! Vous serez contacté(e) sous peu.</div>
+            {deliveryTracking.length > 0 && (
+              <div style={{ marginTop: 10, fontSize: ".85rem" }}>
+                📦 Suivi :{" "}
+                <strong>{deliveryTracking.map((t) => t.code_suivi).join(", ")}</strong>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             {/* Résumé prix */}

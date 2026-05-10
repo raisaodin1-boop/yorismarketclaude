@@ -25,6 +25,10 @@ export function buildCheckoutIntent({ items, user, userData, summary }) {
       price: Number(item.prix || 0),
       fulfillmentMode: item.fulfillmentMode || (item.kind === "service" ? "booking" : "delivery"),
       booking: item.booking || null,
+      provider_id: item.provider_id ?? null,
+      vendeur_id: item.vendeur_id ?? null,
+      vendeur_nom: item.vendeur_nom ?? "",
+      ville: item.ville ?? "",
     })),
     summary,
   };

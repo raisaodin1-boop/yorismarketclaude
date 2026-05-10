@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CITIES } from "../lib/constants";
 import {
   clearCheckoutDraft,
@@ -9,12 +10,23 @@ import {
   validateCheckoutAddressStep,
 } from "../domain/checkoutForm";
 import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrchestrator";
-import { confirmCheckout, createCheckoutIntent, initPaymentCinetPay } from "../lib/checkoutApi";
+import {
+  checkoutReturnStatus,
+  confirmCheckout,
+  createCheckoutIntent,
+  initPaymentCinetPay,
+} from "../lib/checkoutApi";
+import { PAGE_PATH } from "../lib/seoRoutes";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
+
+/** Avant redirection CinetPay ; secours si l’URL de retour perd le query `tx`. */
+const CINETPAY_RETURN_TX_KEY = "yorix_cinetpay_return_tx";
+/** Mis à true au moment du départ paiement ; évite une relecture automatique hors contexte retour. */
+const CINETPAY_RETURN_EXPECT_KEY = "yorix_expect_cinetpay_return";
 
 /** Numéro wa.me sans + ni espaces ; défaut +237696565654 (Yorix). */
 function waMeRecipient(configured) {
@@ -49,6 +61,10 @@ export function CheckoutPage({
   orangeNumber,
   persistCheckoutContact,
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const processedCinetpayReturnRef = useRef(new Set());
+
   const [step, setStep] = useState(1);
 
   const [phoneLocal, setPhoneLocal] = useState("");
@@ -64,6 +80,7 @@ export function CheckoutPage({
   const [carrier, setCarrier] = useState("seller");
   const [checkoutError, setCheckoutError] = useState("");
   const [orderDone, setOrderDone] = useState(null);
+  const [cinetpayReturnBanner, setCinetpayReturnBanner] = useState("");
 
   const [addressErrors, setAddressErrors] = useState({});
   const [attemptedAdvance, setAttemptedAdvance] = useState(false);
@@ -184,6 +201,124 @@ export function CheckoutPage({
     }
   }, [checkoutType, locationType]);
 
+  /** Retour CinetPay : `?status=return&tx=YRXPAY-…` + secours sessionStorage après redirection paiement. */
+  useEffect(() => {
+    if (orderDone) return undefined;
+
+    let cancelled = false;
+
+    function clearStoredTx() {
+      try {
+        sessionStorage.removeItem(CINETPAY_RETURN_TX_KEY);
+        sessionStorage.removeItem(CINETPAY_RETURN_EXPECT_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    async function hydrateFromPaymentReturn(txRef) {
+      const data = await checkoutReturnStatus({ transaction_ref: txRef });
+      if (cancelled) return;
+
+      const deliveryTracking = Array.isArray(data.delivery_tracking) ? data.delivery_tracking : [];
+      const pay = String(data.payment_status || "");
+
+      setCartItems([]);
+      setCheckoutError("");
+      setOrderDone({
+        mode: "cinetpay_return",
+        paymentStatus: pay,
+        orderGroupId: data.order_group_id || null,
+        intentId: data.checkout_intent_id || "",
+        providerRef: data.provider_ref || txRef,
+        deliveryTracking,
+        amountReturned: Number(data.amount || 0),
+        currencyReturned: String(data.currency || "XAF"),
+      });
+
+      processedCinetpayReturnRef.current.add(txRef);
+      setCinetpayReturnBanner("");
+      clearStoredTx();
+      navigate(PAGE_PATH.checkout, { replace: true });
+    }
+
+    const params = new URLSearchParams(location.search || "");
+    const st = params.get("status");
+    let rawTx = params.get("tx");
+    if (rawTx) {
+      try {
+        rawTx = decodeURIComponent(String(rawTx).trim());
+      } catch {
+        rawTx = String(rawTx).trim();
+      }
+    }
+
+    let storedTx = "";
+    let expectReturn = false;
+    try {
+      storedTx = sessionStorage.getItem(CINETPAY_RETURN_TX_KEY) || "";
+      expectReturn = sessionStorage.getItem(CINETPAY_RETURN_EXPECT_KEY) === "1";
+    } catch {
+      storedTx = "";
+    }
+
+    const hasReturnHint =
+      st === "return" ||
+      (rawTx && rawTx.startsWith("YRXPAY-")) ||
+      (expectReturn && Boolean(storedTx.startsWith("YRXPAY-")) && location.pathname === PAGE_PATH.checkout);
+    if (!hasReturnHint) return undefined;
+
+    const cand = [];
+    if (rawTx?.startsWith("YRXPAY-")) cand.push(rawTx.trim());
+    if ((st === "return" || expectReturn) && storedTx.startsWith("YRXPAY-")) cand.push(storedTx.trim());
+
+    const txRefFirst = cand.find(Boolean) || "";
+
+    if (!txRefFirst) {
+      setCinetpayReturnBanner((prev) =>
+        st === "return"
+          ? "Retour paiement incomplet — référence manquante. Consultez vos e-mails CinetPay ou réessayez."
+          : prev,
+      );
+      return undefined;
+    }
+
+    if (processedCinetpayReturnRef.current.has(txRefFirst)) return undefined;
+
+    if (!user?.id) {
+      try {
+        sessionStorage.setItem(CINETPAY_RETURN_TX_KEY, txRefFirst);
+      } catch {
+        /* ignore */
+      }
+      setCinetpayReturnBanner(
+        "Reconnectez-vous pour afficher le récapitulatif de paiement et les codes de suivi.",
+      );
+      return undefined;
+    }
+
+    (async () => {
+      try {
+        setLoading(true);
+        setCheckoutError("");
+        await hydrateFromPaymentReturn(txRefFirst);
+      } catch (e) {
+        if (!cancelled) {
+          setCheckoutError(
+            e instanceof Error ? e.message : "Impossible de charger le résumé après paiement.",
+          );
+          processedCinetpayReturnRef.current.delete(txRefFirst);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.search, user?.id, navigate, setCartItems, orderDone]);
+
   const persistIdentityIfPossible = useCallback(async () => {
     if (typeof persistCheckoutContact !== "function" || !user?.id) return;
     try {
@@ -248,6 +383,8 @@ export function CheckoutPage({
       let intentId = null;
       let orderGroupId = null;
       let serverRecap = null;
+      /** @type {{ order_id: string; code_suivi: string }[]} */
+      let deliveryTracking = [];
       try {
         const intentPayload = buildCheckoutIntent({
           items: cartItems,
@@ -274,6 +411,9 @@ export function CheckoutPage({
                 address: mergedUserData.adresse,
               });
               orderGroupId = confirmation?.order_group_id || null;
+              if (Array.isArray(confirmation?.delivery_tracking)) {
+                deliveryTracking = confirmation.delivery_tracking;
+              }
             } catch (ce) {
               console.warn("confirm checkout (WhatsApp):", ce?.message || ce);
             }
@@ -290,6 +430,7 @@ export function CheckoutPage({
         mode: "whatsapp",
         orderGroupId,
         intentId: intentId || `LOCAL-${Date.now()}`,
+        deliveryTracking,
       });
       setLoading(false);
       return;
@@ -321,6 +462,14 @@ export function CheckoutPage({
           channel: "ALL",
         });
         if (payment?.payment_url) {
+          try {
+            if (payment.transaction_ref) {
+              sessionStorage.setItem(CINETPAY_RETURN_TX_KEY, String(payment.transaction_ref));
+              sessionStorage.setItem(CINETPAY_RETURN_EXPECT_KEY, "1");
+            }
+          } catch {
+            /* ignore */
+          }
           window.location.href = payment.payment_url;
           return;
         }
@@ -339,6 +488,9 @@ export function CheckoutPage({
         mode: !confirmation?.order_group_id ? "whatsapp" : "standard",
         orderGroupId: confirmation?.order_group_id || null,
         intentId: intent.checkout_intent_id,
+        deliveryTracking: Array.isArray(confirmation?.delivery_tracking)
+          ? confirmation.delivery_tracking
+          : [],
       });
     } catch (e) {
       console.warn("Checkout:", e?.message || e);
@@ -387,20 +539,73 @@ export function CheckoutPage({
             }).`}
       </p>
 
+      {cinetpayReturnBanner && !orderDone && (
+        <div
+          role="status"
+          style={{
+            marginBottom: 14,
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: "var(--surface2)",
+            border: "1px solid var(--accent-gold-soft, rgba(176,142,74,.25))",
+            fontSize: ".86rem",
+            lineHeight: 1.45,
+          }}
+        >
+          {cinetpayReturnBanner}
+        </div>
+      )}
+
       {orderDone && (
         <div className="card checkout-confirm-card">
           <div className="checkout-confirm-icon" aria-hidden>
             ✅
           </div>
           <h2 className="h2" style={{ fontSize: "1.05rem", marginBottom: 8 }}>
-            {orderDone.mode === "whatsapp" ? "Finalisez sur WhatsApp" : "Récapitulatif"}
+            {orderDone.mode === "whatsapp"
+              ? "Finalisez sur WhatsApp"
+              : orderDone.mode === "cinetpay_return"
+                ? "Paiement CinetPay"
+                : "Récapitulatif"}
           </h2>
           <p style={{ color: "var(--gray)", marginBottom: 12, lineHeight: 1.45 }}>
             {orderDone.mode === "whatsapp"
               ? "Une conversation WhatsApp a été ouverte avec le détail de votre commande. Notre équipe confirme le paiement (MoMo, Orange ou autre) avec vous."
-              : "Votre commande a été enregistrée. Suivez l’avancement depuis votre espace client."}
+              : orderDone.mode === "cinetpay_return"
+                ? "Statut mis à jour depuis notre serveur. En cas de « en attente », le webhook peut encore finaliser sous quelques minutes."
+                : "Votre commande a été enregistrée. Suivez l’avancement depuis votre espace client."}
           </p>
-          <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12, marginBottom: 16, textAlign: "left", fontSize: ".84rem" }}>
+            <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12, marginBottom: 16, textAlign: "left", fontSize: ".84rem" }}>
+            {orderDone.mode === "cinetpay_return" && orderDone.paymentStatus && (
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                <span>État paiement</span>
+                <strong>
+                  {orderDone.paymentStatus === "paid"
+                    ? "Payé"
+                    : orderDone.paymentStatus === "failed"
+                      ? "Échoué"
+                      : orderDone.paymentStatus === "pending"
+                        ? "En attente"
+                        : orderDone.paymentStatus}
+                </strong>
+              </div>
+            )}
+            {orderDone.mode === "cinetpay_return" &&
+              orderDone.amountReturned != null &&
+              Number.isFinite(Number(orderDone.amountReturned)) && (
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                  <span>Montant enregistré</span>
+                  <strong>
+                    {Number(orderDone.amountReturned).toLocaleString()} {orderDone.currencyReturned || "XAF"}
+                  </strong>
+                </div>
+              )}
+            {orderDone.providerRef && orderDone.mode === "cinetpay_return" && (
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: orderDone.orderGroupId ? 6 : 0 }}>
+                <span>Réf. transaction</span>
+                <strong style={{ wordBreak: "break-all" }}>{orderDone.providerRef}</strong>
+              </div>
+            )}
             {orderDone.orderGroupId && (
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
                 <span>Groupe commande</span>
@@ -411,6 +616,21 @@ export function CheckoutPage({
               <span>Réf. checkout</span>
               <strong style={{ wordBreak: "break-all" }}>{orderDone.intentId}</strong>
             </div>
+            {Array.isArray(orderDone.deliveryTracking) && orderDone.deliveryTracking.length > 0 && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border-subtle, #e5e5e5)" }}>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>Codes de suivi livraison</div>
+                <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.5 }}>
+                  {orderDone.deliveryTracking.map((row) => (
+                    <li key={row.order_id}>
+                      <strong style={{ letterSpacing: ".02em" }}>{row.code_suivi}</strong>
+                    </li>
+                  ))}
+                </ul>
+                <p style={{ margin: "8px 0 0", fontSize: ".78rem", color: "var(--gray)" }}>
+                  Suivez l’avancement sur la page Livraison avec ce code.
+                </p>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
             <button type="button" className="form-submit" style={{ width: "auto", minWidth: 200 }} onClick={() => goPage("dashboard")}>
