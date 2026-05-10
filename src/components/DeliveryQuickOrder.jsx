@@ -199,11 +199,9 @@ const QUARTIERS = {
   "bessengue": { ville: "Douala", coords: [4.0610, 9.7690] },
 
   // ─── BAFOUSSAM I (Centre administratif / Commercial) ───
-  "bafoussam": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
   "centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
   "centre commercial": { ville: "Bafoussam", coords: [5.4790, 10.4180] },
   "marche a": { ville: "Bafoussam", coords: [5.4800, 10.4190] },
-  "marché centrale": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
   "marche central": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
   "banéngo": { ville: "Bafoussam", coords: [5.4860, 10.4100] },
   "tougang": { ville: "Bafoussam", coords: [5.4740, 10.4250] },
@@ -264,7 +262,6 @@ const QUARTIERS = {
   "bafoussam centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
 
   // ─── BAMENDA I (Up Station / Commercial Avenue / Nkwen core) ───
-  "bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
   "centre-ville": { ville: "Bamenda", coords: [5.9631, 10.1591] },
   "commercial avenue": { ville: "Bamenda", coords: [5.9590, 10.1510] },
   "commercial avenue food market": { ville: "Bamenda", coords: [5.9580, 10.1520] },
@@ -379,10 +376,6 @@ const QUARTIERS = {
   "buea": { ville: "Buea", coords: [4.1550, 9.2310] },
   "limbe": { ville: "Limbe", coords: [4.0244, 9.2061] },
   "kumba": { ville: "Kumba", coords: [4.6363, 9.4469] },
-  "bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
-  "bafoussam": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
-  "douala": { ville: "Douala", coords: [4.0511, 9.7679] },
-  "yaoundé": { ville: "Yaoundé", coords: [3.8670, 11.5170] },
   "edea": { ville: "Edéa", coords: [3.8000, 10.1330] },
   "sangmelima": { ville: "Sangmélima", coords: [2.9330, 11.9830] },
   "mbalmayo": { ville: "Mbalmayo", coords: [3.5167, 11.5000] },
@@ -391,7 +384,6 @@ const QUARTIERS = {
   "foumban": { ville: "Foumban", coords: [5.7260, 10.8980] },
   "foumbot": { ville: "Foumbot", coords: [5.5080, 10.6320] },
   "kousseri": { ville: "Kousseri", coords: [12.0760, 15.0300] },
-  "mokolo": { ville: "Mokolo", coords: [10.7420, 13.8020] },
   "meiganga": { ville: "Meiganga", coords: [6.5167, 14.3000] },
   "tibati": { ville: "Tibati", coords: [6.4667, 12.6333] },
   "batouri": { ville: "Batouri", coords: [4.4330, 14.3670] },
