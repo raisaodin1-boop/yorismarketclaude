@@ -17,8 +17,12 @@ Deno.serve(async (req) => {
     const CINETPAY_API_KEY = Deno.env.get("CINETPAY_API_KEY");
     const CINETPAY_SITE_ID = Deno.env.get("CINETPAY_SITE_ID");
     const APP_BASE_URL = Deno.env.get("APP_BASE_URL") || "https://www.yorix.cm";
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
     if (!CINETPAY_API_KEY || !CINETPAY_SITE_ID) {
       return ok({ error: "Missing CinetPay credentials in env" }, { status: 500 });
+    }
+    if (!SUPABASE_URL) {
+      return ok({ error: "Missing SUPABASE_URL for webhook URL" }, { status: 500 });
     }
 
     const txRef = `YRXPAY-${orderGroupId}-${Date.now()}`;
@@ -30,8 +34,8 @@ Deno.serve(async (req) => {
       currency: "XAF",
       description: `Yorix checkout ${orderGroupId}`,
       channels: body?.channel || "ALL",
-      notify_url: `${APP_BASE_URL}/functions/v1/webhook_cinetpay`,
-      return_url: `${APP_BASE_URL}/checkout?status=return&tx=${txRef}`,
+      notify_url: `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/webhook_cinetpay`,
+      return_url: `${APP_BASE_URL.replace(/\/$/, "")}/checkout?status=return&tx=${txRef}`,
       metadata: JSON.stringify({
         checkout_intent_id: checkoutIntentId,
         order_group_id: orderGroupId,

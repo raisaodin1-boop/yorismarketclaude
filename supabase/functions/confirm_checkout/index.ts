@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 
 function uuidish(v: string) {
@@ -32,7 +33,10 @@ Deno.serve(async (req) => {
     if (!intent) return ok({ error: "Checkout intent not found" }, { status: 404 });
 
     const payload = intent.payload || {};
-    const items = Array.isArray(payload.items) ? payload.items : [];
+    const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
+    const priceRes = await applyCatalogPricing(supabase, itemsRaw);
+    if (priceRes.error) return ok({ error: priceRes.error }, { status: 400 });
+    const items = priceRes.lines;
     const customer = payload.customer || {};
     const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
 

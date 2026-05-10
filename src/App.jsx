@@ -53,13 +53,11 @@ import {
 
 import {
   uploadSingleImage,
-  creerCommandeSupabase,
   getUserProfile,
   getUserRole,
   filtrerMsg,
   sendEmail,
   emailBienvenue,
-  creerLivraisonAutomatique,
   updateLivraisonStatut,
   genererCodeSuivi,
 } from "./utils/helpers";
@@ -826,63 +824,6 @@ export default function Yorix() {
     }
     setUserData((prev) => (prev ? { ...prev, ...payload } : prev));
   }, [user?.id]);
-
-  const passerCommande = async () => {
-    if (!user) { setAuthOpen(true); return; }
-    try {
-      const orderPromises = cartItems.map(item =>
-        supabase.from("orders").insert({
-          product_id: item.id,
-          vendeur_id: item.vendeur_id,
-          client_id: user.id,
-          client_nom: userData?.nom || user.email,
-          telephone: userData?.telephone || "",
-          montant: item.prix * item.qty,
-          commission: Math.round(item.prix * item.qty * 0.05),
-          montant_vendeur: Math.round(item.prix * item.qty * 0.95),
-          status: "pending",
-          livraison_status: "pending",
-          escrow_status: "pending",
-        }).select().single()
-      );
-      const orderResults = await Promise.all(orderPromises);
-      const createdOrders = orderResults.map(r => r.data).filter(Boolean);
-
-      const codesSuivis = [];
-      for (const order of createdOrders) {
-        const item = cartItems.find(i => i.id === order.product_id);
-        try {
-          const { code } = await creerLivraisonAutomatique({
-            supabase,
-            orderId:           order.id,
-            clientNom:         userData?.nom || user.email,
-            clientTel:         userData?.telephone || "",
-            adresseLivraison:  userData?.ville || "Cameroun",
-            adresseCollecte:   item?.ville ? `Boutique ${item.vendeur_nom || "vendeur"}, ${item.ville}` : "Boutique Yorix",
-            distanceKm:        3.5,
-            tempsEstimeMin:    25,
-          });
-          codesSuivis.push(code);
-        } catch (errLiv) {
-          console.warn("Livraison non créée pour commande", order.id, errLiv);
-        }
-      }
-
-      setCartItems([]);
-
-      if (codesSuivis.length > 0) {
-        const codesStr = codesSuivis.join(", ");
-        const msg = `✅ Commande créée avec succès !\n\n📦 Code${codesSuivis.length > 1 ? "s" : ""} de suivi : ${codesStr}\n\nVous serez contacté(e) pour le paiement. Vous pouvez suivre votre livraison sur la page Livraison.`;
-        alert(msg);
-      } else {
-        alert("✅ Commande créée ! Vous serez contacté(e) pour le paiement.");
-      }
-
-      goPage("dashboard");
-    } catch (err) {
-      alert("Erreur : " + err.message);
-    }
-  };
 
   // ── CHAT ──
   const sendChat = async () => {
