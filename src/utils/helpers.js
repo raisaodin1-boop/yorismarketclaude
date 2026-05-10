@@ -134,18 +134,14 @@ export async function creerCommandeSupabase({ product, clientNom, telephone, use
 export async function getUserProfile(uid) {
   const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
   if (error) { console.error("getUserProfile ERROR:", error); return null; }
-  console.log("USER DATA:", data);
   return data;
 }
 
 export function getUserRole(profileData) {
   const valid = ["buyer", "seller", "delivery", "provider", "admin"];
-  const role  = profileData?.role;
-  if (role && valid.includes(role)) {
-    console.log("ROLE FINAL:", role);
-    return role;
-  }
-  console.log("ROLE FINAL: seller (fallback)");
+  const role = profileData?.role;
+  if (role === "superadmin") return "admin";
+  if (role && valid.includes(role)) return role;
   return "buyer";
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { ROLE_LABELS } from "../lib/constants";
+import { ROLE_LABELS, CATS } from "../lib/constants";
 import { LoyaltyAdminTab } from "./LoyaltyAdminTab";
 
 // ─────────────────────────────────────────────────────────────
@@ -49,22 +49,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [selectedPrest, setSelectedPrest]     = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(null);
 
-  // ═══════════ SÉCURITÉ ADMIN ═══════════
-  if (!user || (userData?.role !== "admin" && userData?.role !== "superadmin")) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 16, padding: 40 }}>
-        <div style={{ fontSize: "4rem" }}>🔒</div>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.4rem", color: "var(--ink)" }}>Accès refusé</div>
-        <p style={{ color: "var(--gray)", textAlign: "center", maxWidth: 400, lineHeight: 1.7 }}>
-          Cette page est réservée aux administrateurs Yorix.<br />
-          Connectez-vous avec un compte admin pour y accéder.
-        </p>
-        <button className="form-submit" style={{ width: "auto", padding: "10px 24px" }} onClick={() => goPage("home")}>
-          ← Retour à l'accueil
-        </button>
-      </div>
-    );
-  }
+  const isAuthorized = Boolean(user && (userData?.role === "admin" || userData?.role === "superadmin"));
 
   // ═══════════ TOAST ═══════════
   const showToast = (msg, type = "success") => {
@@ -73,7 +58,11 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   // ═══════════ CHARGEMENT DES DONNÉES ═══════════
-  useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [refreshKey]);
+  useEffect(() => {
+    if (!isAuthorized) return;
+    loadAll();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps -- loadAll stable enough pour refreshKey */
+  }, [refreshKey, isAuthorized]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -181,6 +170,7 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   // ═══════════ REALTIME DELIVERIES ═══════════
   useEffect(() => {
+    if (!isAuthorized) return undefined;
     const channel = supabase
       .channel("admin-deliveries-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "deliveries" }, () => {
@@ -189,7 +179,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       })
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [isAuthorized]);
 
   // ═══════════ ACTIONS LIVRAISONS ═══════════
   const assignerLivreur = async (delivery, livreur) => {
@@ -396,7 +386,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const maxChartRev = Math.max(...chartVentes.map(d => d.revenue), 1);
   const maxChartI   = Math.max(...chartInscrits.map(d => d.val), 1);
 
-  const CATS_LIST = ["Téléphones & HighTech", "Mode & Accesoires", "Alimentation", "Maison & Decoration", "Agricole", "Beauté & Soins", "BTP", "Automobile", "Éducation", "Services"];
+  const CATS_LIST = CATS;
 
   // ═══════════ NAVIGATION ═══════════
   const deliveriesEnAttente = adminDeliveries.filter(d => d.statut === "commande_recue" && !d.livreur_id).length;
@@ -463,6 +453,23 @@ export function AdminDashboard({ user, userData, goPage }) {
       </span>
     );
   };
+
+  // ═══════════ SÉCURITÉ (après tous les hooks) ═══════════
+  if (!isAuthorized) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 16, padding: 40 }}>
+        <div style={{ fontSize: "4rem" }}>🔒</div>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.4rem", color: "var(--ink)" }}>Accès refusé</div>
+        <p style={{ color: "var(--gray)", textAlign: "center", maxWidth: 400, lineHeight: 1.7 }}>
+          Cette page est réservée aux administrateurs Yorix.<br />
+          Connectez-vous avec un compte admin pour y accéder.
+        </p>
+        <button className="form-submit" style={{ width: "auto", padding: "10px 24px" }} onClick={() => goPage("home")}>
+          ← Retour à l'accueil
+        </button>
+      </div>
+    );
+  }
 
   // ═══════════ LOADING ═══════════
   if (loading) {

@@ -388,15 +388,37 @@ export default function Yorix() {
 
   // ── SUPABASE AUTH ──
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) { setUser(session.user); chargerProfil(session.user.id); }
-      setLoading(false);
-    });
+    let cancelled = false;
+    supabase.auth
+      .getSession()
+      .then(({ data: { session }, error }) => {
+        if (cancelled) return;
+        if (error) console.warn("Auth getSession:", error.message);
+        if (session?.user) {
+          setUser(session.user);
+          chargerProfil(session.user.id);
+        }
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.warn("Auth getSession:", e?.message || e);
+        if (!cancelled) setLoading(false);
+      });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) { setUser(session.user); chargerProfil(session.user.id); }
-      else { setUser(null); setUserData(null); setUserRole(null); setNotifs([]); }
+      if (session?.user) {
+        setUser(session.user);
+        chargerProfil(session.user.id);
+      } else {
+        setUser(null);
+        setUserData(null);
+        setUserRole(null);
+        setNotifs([]);
+      }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const chargerProfil = async (uid) => {
@@ -414,7 +436,8 @@ export default function Yorix() {
     const load = async () => {
       let q = supabase.from("products").select("*").or("actif.eq.true,actif.is.null").order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
       if (filterCat) q = q.eq("categorie", filterCat);
-      const { data } = await q;
+      const { data, error } = await q;
+      if (error) console.warn("Produits:", error.message);
       setProduits(data || []);
       setProduitsLoading(false);
     };
@@ -431,7 +454,7 @@ export default function Yorix() {
   useEffect(() => {
     if (route.categorySlug) {
       const name = slugToCategoryName(route.categorySlug, CATS);
-      if (name) setFilterCat(name);
+      setFilterCat(name || "");
     } else if (route.page === "produits" && routePath === "/produits") {
       setFilterCat("");
     }
@@ -469,10 +492,15 @@ export default function Yorix() {
   useEffect(() => {
     if (route.page !== "productDetail" || !route.productSlug) {
       setDetailProduct(null);
+      setDetailProductLoading(false);
       return;
     }
     const { id } = parseEntitySlug(route.productSlug);
-    if (!id) return;
+    if (!id) {
+      setDetailProduct(null);
+      setDetailProductLoading(false);
+      return;
+    }
     let cancelled = false;
     setDetailProductLoading(true);
     supabase
@@ -480,9 +508,16 @@ export default function Yorix() {
       .select("*")
       .eq("id", id)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn("Détail produit:", error.message);
+        setDetailProduct(data || null);
+        setDetailProductLoading(false);
+      })
+      .catch((e) => {
         if (!cancelled) {
-          setDetailProduct(data || null);
+          console.warn("Détail produit:", e?.message || e);
+          setDetailProduct(null);
           setDetailProductLoading(false);
         }
       });
@@ -492,9 +527,15 @@ export default function Yorix() {
   }, [route.page, route.productSlug]);
 
   useEffect(() => {
-    if (route.page !== "prestDetail" || !route.prestSlug) return;
+    if (route.page !== "prestDetail" || !route.prestSlug) {
+      if (route.page !== "prestDetail") setSelectedPrest(null);
+      return;
+    }
     const { id } = parseEntitySlug(route.prestSlug);
-    if (!id) return;
+    if (!id) {
+      setSelectedPrest(null);
+      return;
+    }
     const demo = PREST_DATA.find((p) => p.id === id);
     if (demo) {
       setSelectedPrest(demo);
@@ -523,6 +564,8 @@ export default function Yorix() {
         realisations: 0,
         isReal: true,
       });
+    } else {
+      setSelectedPrest(null);
     }
   }, [route.page, route.prestSlug, allServices]);
 
@@ -874,7 +917,8 @@ export default function Yorix() {
     [goPage]
   );
 
-  const roleChipClass = () => ({ buyer:"chip-buyer", seller:"chip-seller", delivery:"chip-delivery", provider:"chip-provider" }[userRole] || "chip-buyer");
+  const roleChipClass = () =>
+    ({ buyer:"chip-buyer", seller:"chip-seller", delivery:"chip-delivery", provider:"chip-provider", admin:"chip-admin" }[userRole] || "chip-buyer");
 
   const getDashNav = () => {
     if (userRole === "seller")   return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🏪",id:"mesProduits",label:"Mes produits"},{icon:"➕",id:"ajouterProduit",label:"Ajouter produit"},{icon:"📦",id:"commandes",label:"Commandes"},{icon:"💰",id:"wallet",label:"Wallet"}];

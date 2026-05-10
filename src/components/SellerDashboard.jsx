@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { CATS as PRODUCT_CATS } from "../lib/constants";
 import { uploadSingleImage } from "../utils/helpers";
 
 // ─────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const [pendingConfirm, setPendingConfirm] = useState(null);
 
   // Listes locales utilisées par le formulaire
-  const CATS   = ["Téléphones & HighTech", "Mode & Accesoires", "Alimentation", "Maison & Decoration", "Agricole", "Beauté & Soins", "BTP", "Automobile", "Éducation", "Services", "Autre"];
+  const CATS = [...PRODUCT_CATS, "Autre"];
   const VILLES = ["Yaoundé", "Douala", "Bafoussam", "Bamenda", "Garoua", "Maroua", "Ngaoundéré", "Bertoua", "Ebolowa", "Kribi"];
 
   const STATUS_LABELS = { pending: "En attente", paid: "Payée", shipped: "Expédiée", delivered: "Livrée", cancelled: "Annulée" };

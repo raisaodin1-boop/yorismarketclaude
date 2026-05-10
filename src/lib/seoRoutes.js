@@ -44,6 +44,11 @@ export const METIER_SLUG_TO_CATEGORY = {
   couture: "Couture",
 };
 
+/** Slugs historiques (ex. typo dans l’URL) → libellé actuel dans CATS */
+export const CATEGORY_SLUG_LEGACY = {
+  "mode-accesoires": "Mode & Accessoires",
+};
+
 export function categoryToSlug(cat) {
   return slugify(cat || "");
 }
@@ -133,6 +138,8 @@ export function pathForPage(page, opts = {}) {
 /** Retrouve le libellé catégorie produit depuis l’URL /categories/:slug */
 export function slugToCategoryName(slug, categories = []) {
   if (!slug) return "";
+  const legacyName = CATEGORY_SLUG_LEGACY[slug];
+  if (legacyName && categories.includes(legacyName)) return legacyName;
   const hit = categories.find((c) => categoryToSlug(c) === slug);
   return hit || "";
 }

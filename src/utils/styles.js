@@ -58,6 +58,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .chip-seller{background:var(--green-pale);color:var(--green);}
 .chip-delivery{background:#fff3cd;color:#856404;}
 .chip-provider{background:#ede7f6;color:#6a1b9a;}
+.chip-admin{background:#fef3c7;color:#92400e;}
 
 /* TABS */
 .nav-tabs{background:var(--green);display:flex;padding:0 24px;overflow-x:auto;scrollbar-width:none;}
@@ -713,9 +714,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .why-grid{grid-template-columns:repeat(2,1fr);}
   .proof-bar{gap:14px;}
   .footer-grid{grid-template-columns:1fr 1fr;}
-  .dash-layout{grid-template-columns:1fr;padding:0 14px;}
-  .dash-sidebar{display:none;}
-  .dash-content{padding-left:0;}
+  .dash-layout{grid-template-columns:1fr;padding:0 14px;gap:12px;}
+  .dash-sidebar{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:8px;
+    position:sticky;
+    top:56px;
+    z-index:200;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    padding:10px 12px;
+    border-radius:10px;
+  }
+  .dash-sidebar::-webkit-scrollbar{height:4px;}
+  .dash-avatar,.dash-name,.dash-role-badge{display:none;}
+  .dash-nav{display:flex;flex-direction:row;flex-wrap:nowrap;gap:4px;min-width:min-content;}
+  .dash-nav-item{white-space:nowrap;flex-shrink:0;font-size:.72rem;padding:7px 10px;}
+  .dash-nav-divider{display:none;width:0;height:0;margin:0;padding:0;border:none;}
+  .dash-content{padding-left:0;min-width:0;}
   .dash-stats{grid-template-columns:repeat(2,1fr);}
   .mobile-nav{display:block;}
   .wa-float{bottom:100px;}
