@@ -4,13 +4,14 @@
 //  ✅ Upload multiple Cloudinary
 //  ✅ Commandes Supabase (orders)
 //  ✅ Avis / Étoiles / Commentaires
-//  ✅ Avis / Étoiles / Commentaires
 //  ✅ Commission automatique 5%
 //  ✅ Livraison avec statuts
 //  ✅ Escrow simulé
 //  ✅ Dashboard vendeur complet
 //  ✅ Notifications temps réel
 //  ✅ 4 rôles : buyer / seller / delivery / provider
+//  ✅ Contrat d'acceptation obligatoire pour pros
+//  ✅ Password input premium avec œil
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -99,7 +100,7 @@ export default function Yorix() {
   const [page, setPage]           = useState("home");
   const [user, setUser]           = useState(null);
   const [userData, setUserData]   = useState(null);
- const [userRole, setUserRole] = useState(null);
+  const [userRole, setUserRole]   = useState(null);
   const [loading, setLoading]     = useState(true);
 
   // Auth
@@ -113,26 +114,27 @@ export default function Yorix() {
   // Produits
   const [produits, setProduits]                 = useState([]);
   const [produitsLoading, setProduitsLoading]   = useState(true);
-  const [allServices, setAllServices] = useState([]);
+  const [allServices, setAllServices]           = useState([]);
 
-useEffect(() => {
-  const loadServices = async () => {
-    const { data, error } = await supabase
-      .from("services")
-      .select("*")
-      .eq("actif", true)
-      .eq("disponible", true)
-      .order("created_at", { ascending: false });
-    if (!error) setAllServices(data || []);
-  };
-  loadServices();
-}, []);
+  useEffect(() => {
+    const loadServices = async () => {
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("actif", true)
+        .eq("disponible", true)
+        .order("created_at", { ascending: false });
+      if (!error) setAllServices(data || []);
+    };
+    loadServices();
+  }, []);
+
   const [search, setSearch]                     = useState("");
   const [filterCat, setFilterCat]               = useState("");
 
   // Panier
   const [cartOpen, setCartOpen]   = useState(false);
- const [cartItems, setCartItems] = useState(() => {
+  const [cartItems, setCartItems] = useState(() => {
     try {
       const saved = localStorage.getItem("yorix_cart");
       return saved ? JSON.parse(saved) : [];
@@ -154,63 +156,28 @@ useEffect(() => {
   const [dashTab, setDashTab] = useState("overview");
 
   // Divers
-  const [waOpen, setWaOpen]                 = useState(false);
-  const [nlEmail, setNlEmail]               = useState("");
-  const [nlSent, setNlSent]                 = useState(false);
-  const [wishlist, setWishlist]             = useState(new Set());
-  const [loyaltyPts, setLoyaltyPts]         = useState(320); 
-  const [blogFilter, setBlogFilter]         = useState("TOUT"); // ✅ Filtre blog par catégorie
-  const [prestSearch, setPrestSearch]       = useState("");     // ✅ Recherche prestataires
-  const [prestCatFilter, setPrestCatFilter] = useState("");     // ✅ Filtre catégorie prestataires
-  const [prestVilleFilter, setPrestVilleFilter] = useState(""); // ✅ Filtre ville prestataires
- const [selectedPrest, setSelectedPrest]   = useState(null);   // ✅ Modal détail prestataire
-const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
-  
+  const [waOpen, setWaOpen]                     = useState(false);
+  const [nlEmail, setNlEmail]                   = useState("");
+  const [nlSent, setNlSent]                     = useState(false);
+  const [wishlist, setWishlist]                 = useState(new Set());
+  const [loyaltyPts, setLoyaltyPts]             = useState(320);
+  const [blogFilter, setBlogFilter]             = useState("TOUT");
+  const [prestSearch, setPrestSearch]           = useState("");
+  const [prestCatFilter, setPrestCatFilter]     = useState("");
+  const [prestVilleFilter, setPrestVilleFilter] = useState("");
+  const [selectedPrest, setSelectedPrest]       = useState(null);
+  const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
+
   // ═══ CONTRACT ACCEPTANCE ═══
   const [contractOpen, setContractOpen]               = useState(false);
   const [contractAccepted, setContractAccepted]       = useState(false);
   const [pendingRegistration, setPendingRegistration] = useState(null);
 
-
-// ═══ MODIFICATION 3 : MODIFIER doRegister POUR PASSER PAR LE CONTRAT ═══
-
-// 🔍 CHERCHER (DÉBUT de la fonction doRegister) :
-  const doRegister = async () => {
-    setAuthError(""); setAuthLoading(true);
-    try {
-      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
-      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
-
-// ✏️ REMPLACER PAR :
-  const doRegister = async () => {
-    setAuthError(""); setAuthLoading(true);
-    try {
-      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
-      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
-      
-      // ═══ CONTRAT OBLIGATOIRE pour les rôles professionnels ═══
-      const PRO_ROLES = ["seller", "provider", "delivery"];
-      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
-        // Stocker les infos d'inscription en attente
-        setPendingRegistration({
-          nom: authForm.nom,
-          email: authForm.email,
-          tel: authForm.tel,
-          password: authForm.password,
-          role: selectedRole,
-        });
-        // Ouvrir le modal de contrat
-        setAuthLoading(false);
-        setContractOpen(true);
-        return; // Stopper ici, on reprendra après acceptation
-      }
-
-
-  
-  // ═══ ONBOARDING (nouveau) ═══
+  // ═══ ONBOARDING ═══
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [pendingAction, setPendingAction]   = useState(null); // mémorise l'action choisie avant connexion
-   // Academy
+  const [pendingAction, setPendingAction]   = useState(null);
+
+  // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
   const [academyLoading, setAcademyLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -238,41 +205,27 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
     goPage("academyContact");
   };
 
-  const [inscriptionSent, setInscriptionSent] = useState(false);
+  const [inscriptionSent, setInscriptionSent]       = useState(false);
   const [inscriptionLoading, setInscriptionLoading] = useState(false);
-  const [inscriptionError, setInscriptionError] = useState("");
+  const [inscriptionError, setInscriptionError]     = useState("");
   const [inscriptionForm, setInscriptionForm] = useState({ nom:"",prenom:"",tel:"",email:"",metier:"",ville:"",experience:"",tarif:"",bio:"" });
 
   // ─────────────────────────────────────────────────────────────
   // SOUMETTRE CANDIDATURE PRESTATAIRE (avec Supabase + email + WA)
   // ─────────────────────────────────────────────────────────────
   const soumettreCandidaturePrestataire = async () => {
-    // Reset erreur
     setInscriptionError("");
 
-    // Validation
-    if (!inscriptionForm.nom.trim()) {
-      setInscriptionError("Le nom est obligatoire");
-      return;
-    }
-    if (!inscriptionForm.tel.trim()) {
-      setInscriptionError("Le téléphone est obligatoire");
-      return;
-    }
-    if (!inscriptionForm.metier) {
-      setInscriptionError("Veuillez choisir un métier");
-      return;
-    }
-    // Validation email si renseigné
+    if (!inscriptionForm.nom.trim()) { setInscriptionError("Le nom est obligatoire"); return; }
+    if (!inscriptionForm.tel.trim()) { setInscriptionError("Le téléphone est obligatoire"); return; }
+    if (!inscriptionForm.metier)     { setInscriptionError("Veuillez choisir un métier"); return; }
     if (inscriptionForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inscriptionForm.email)) {
-      setInscriptionError("Email invalide");
-      return;
+      setInscriptionError("Email invalide"); return;
     }
 
     setInscriptionLoading(true);
 
     try {
-      // 1️⃣ Enregistrement dans Supabase (table prestataires)
       const { data, error } = await supabase
         .from("prestataires")
         .insert({
@@ -291,13 +244,8 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
         .select()
         .single();
 
-      // Si la table n'existe pas ou erreur Supabase, on continue quand même
-      // (on enverra au moins l'email + WhatsApp à l'admin)
-      if (error) {
-        console.warn("Table prestataires Supabase:", error.message);
-      }
+      if (error) console.warn("Table prestataires Supabase:", error.message);
 
-      // 2️⃣ Préparer le message WhatsApp pour l'admin Yorix
       const wamsg = [
         "👷 *NOUVELLE CANDIDATURE PRESTATAIRE YORIX*",
         "",
@@ -322,11 +270,9 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
         "Yorix CM 🇨🇲",
       ].filter(Boolean).join("\n");
 
-      // 3️⃣ Ouvrir WhatsApp avec le message pré-rempli
       const waUrl = `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(wamsg)}`;
       window.open(waUrl, "_blank");
 
-      // 4️⃣ Envoyer email à l'admin (non bloquant)
       const sujet = `Nouvelle candidature prestataire — ${inscriptionForm.nom} (${inscriptionForm.metier})`;
       const corps = [
         "Bonjour,",
@@ -348,10 +294,8 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
       ].filter(Boolean).join("\n");
 
       const mailtoUrl = `mailto:raisaodin1@gmail.com?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
-      // Ouvrir dans un nouvel onglet pour ne pas casser le flux
       setTimeout(() => window.open(mailtoUrl, "_blank"), 500);
 
-      // 5️⃣ Succès
       setInscriptionSent(true);
 
     } catch (err) {
@@ -363,15 +307,14 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
   };
 
   const [chatMessages, setChatMessages] = useState([{ text:"Bonjour ! Comment puis-je vous aider ?", me:false, time:"10:02" }]);
-  const [chatMsg, setChatMsg]       = useState("");
-  const [chatBlocked, setChatBlocked] = useState(false);
+  const [chatMsg, setChatMsg]           = useState("");
+  const [chatBlocked, setChatBlocked]   = useState(false);
   const chatEndRef = useRef(null);
 
   // ── ONBOARDING : afficher au 1er chargement si jamais vu ──
   useEffect(() => {
     const seen = localStorage.getItem("yorix_onboarding_seen");
     if (!seen) {
-      // Petit délai pour laisser la page se charger
       const t = setTimeout(() => setOnboardingOpen(true), 800);
       return () => clearTimeout(t);
     }
@@ -379,11 +322,9 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
 
   // ── HANDLER : choix d'une action onboarding ──
   const handleOnboardingAction = useCallback((actionId) => {
-    // Marquer comme vu
     localStorage.setItem("yorix_onboarding_seen", "1");
     setOnboardingOpen(false);
 
-    // Routes selon l'action
     const routes = {
       buy:      { needAuth: false, page: "produits" },
       sell:     { needAuth: true,  role: "seller",   page: "dashboard" },
@@ -394,7 +335,6 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
     const target = routes[actionId];
     if (!target) return;
 
-    // Si l'action nécessite une connexion ET que l'utilisateur n'est pas connecté
     if (target.needAuth && !user) {
       setPendingAction(actionId);
       setSelectedRole(target.role || "buyer");
@@ -403,7 +343,6 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
       return;
     }
 
-    // Sinon, exécuter l'action directement
     executePendingAction(actionId);
   }, [user]);
 
@@ -445,7 +384,7 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session?.user) { setUser(session.user); chargerProfil(session.user.id); }
-     else { setUser(null); setUserData(null); setUserRole(null); setNotifs([]); }
+      else { setUser(null); setUserData(null); setUserRole(null); setNotifs([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -455,7 +394,6 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
     const role    = getUserRole(profile);
     setUserData(profile);
     setUserRole(role);
-    // Notifs
     const { data } = await supabase.from("notifications").select("*").eq("user_id", uid).order("created_at", { ascending:false }).limit(10);
     setNotifs(data || []);
   };
@@ -483,14 +421,12 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email:authForm.email, password:authForm.password });
       if (error) throw error;
-     setUser(data.user);
+      setUser(data.user);
       await chargerProfil(data.user.id);
       setAuthOpen(false);
-      // Si une action onboarding est en attente, l'exécuter
       if (pendingAction) {
         setTimeout(() => executePendingAction(pendingAction), 300);
       }
-      // Email de bienvenue automatique (non bloquant)
       sendEmail({
         to:      authForm.email,
         subject: `Bienvenue sur Yorix, ${authForm.nom} ! 🎉`,
@@ -506,17 +442,32 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
       if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
       if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
 
+      // ═══ CONTRAT OBLIGATOIRE pour les rôles professionnels ═══
+      const PRO_ROLES = ["seller", "provider", "delivery"];
+      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
+        setPendingRegistration({
+          nom: authForm.nom,
+          email: authForm.email,
+          tel: authForm.tel,
+          password: authForm.password,
+          role: selectedRole,
+        });
+        setAuthLoading(false);
+        setContractOpen(true);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: authForm.email,
         password: authForm.password,
-        options: { 
-  data: { 
-    display_name: authForm.nom,
-    nom: authForm.nom,
-    telephone: authForm.tel,
-    role: selectedRole
-  } 
-},
+        options: {
+          data: {
+            display_name: authForm.nom,
+            nom: authForm.nom,
+            telephone: authForm.tel,
+            role: selectedRole
+          }
+        },
       });
       if (error) throw error;
 
@@ -524,25 +475,27 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
       if (!uid) throw new Error("Erreur création compte.");
 
       const { error: profileError } = await supabase.from("profiles").upsert({
-  id:         uid,
-  nom:        authForm.nom,
-  email:      authForm.email,
-  telephone:  authForm.tel,
-  role:       selectedRole,
-  langue:     "fr",
-  actif:      true,
-  verifie:    false,
-  note:       0,
-  nombre_avis: 0,
-  total_commandes: 0,
-});
+        id:         uid,
+        nom:        authForm.nom,
+        email:      authForm.email,
+        telephone:  authForm.tel,
+        role:       selectedRole,
+        langue:     "fr",
+        actif:      true,
+        verifie:    false,
+        note:       0,
+        nombre_avis: 0,
+        total_commandes: 0,
+      });
       if (profileError) console.error("Profile insert error:", profileError);
 
       await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).then(r => r.error && console.error(r.error));
-     await chargerProfil(uid);
+      await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom:"", email:"", tel:"", password:"" });
-      // Si une action onboarding est en attente, l'exécuter
+      // Reset pour la prochaine inscription
+      setContractAccepted(false);
+      setPendingRegistration(null);
       if (pendingAction) {
         setTimeout(() => executePendingAction(pendingAction), 500);
       }
@@ -557,12 +510,14 @@ const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
     const { error } = await supabase.auth.signInWithOAuth({ provider:"google", options:{ redirectTo:window.location.origin } });
     if (error) setAuthError(error.message);
   };
-const doLogout = async () => {
+
+  const doLogout = async () => {
     await supabase.auth.signOut();
     setUser(null); setUserData(null); setUserRole(null);
     setDashTab("overview");
     goPage("home");
   };
+
   // ═══ HANDLER : Contrat accepté → reprendre l'inscription ═══
   const handleContractAccepted = async (acceptanceData) => {
     setContractOpen(false);
@@ -573,16 +528,13 @@ const doLogout = async () => {
     }, 200);
   };
 
-
-
   // ── PANIER ──
- const addToCart = useCallback((p) => {
+  const addToCart = useCallback((p) => {
     if (!p?.id) {
       console.warn("⚠️ Produit sans ID, ignoré:", p);
       return;
     }
 
-    // Parser image_urls proprement (peut être string JSON ou array)
     let imgArr = [];
     if (Array.isArray(p.image_urls)) {
       imgArr = p.image_urls;
@@ -590,7 +542,6 @@ const doLogout = async () => {
       try { imgArr = JSON.parse(p.image_urls); } catch { imgArr = []; }
     }
 
-    // Image finale : image principale d'abord, puis première du tableau
     const img = (p.image && p.image.startsWith("http"))
       ? p.image
       : (imgArr[0] && imgArr[0].startsWith("http") ? imgArr[0] : null);
@@ -613,15 +564,15 @@ const doLogout = async () => {
     });
     setCartOpen(true);
   }, []);
-  const changeQty = (id, d) => setCartItems(prev => prev.map(i => i.id===id ? {...i, qty:Math.max(1,i.qty+d)} : i));
-  const removeItem = (id) => setCartItems(prev => prev.filter(i => i.id!==id));
-  const totalQty   = cartItems.reduce((a,i) => a+i.qty, 0);
-  const totalPrice = cartItems.reduce((a,i) => a+(i.prix*i.qty), 0);
+
+  const changeQty   = (id, d) => setCartItems(prev => prev.map(i => i.id===id ? {...i, qty:Math.max(1,i.qty+d)} : i));
+  const removeItem  = (id) => setCartItems(prev => prev.filter(i => i.id!==id));
+  const totalQty    = cartItems.reduce((a,i) => a+i.qty, 0);
+  const totalPrice  = cartItems.reduce((a,i) => a+(i.prix*i.qty), 0);
 
   const passerCommande = async () => {
     if (!user) { setAuthOpen(true); setCartOpen(false); return; }
     try {
-      // 1️⃣ Créer les commandes
       const orderPromises = cartItems.map(item =>
         supabase.from("orders").insert({
           product_id: item.id,
@@ -640,7 +591,6 @@ const doLogout = async () => {
       const orderResults = await Promise.all(orderPromises);
       const createdOrders = orderResults.map(r => r.data).filter(Boolean);
 
-      // 2️⃣ Créer automatiquement les livraisons pour chaque commande
       const codesSuivis = [];
       for (const order of createdOrders) {
         const item = cartItems.find(i => i.id === order.product_id);
@@ -661,11 +611,9 @@ const doLogout = async () => {
         }
       }
 
-      // 3️⃣ Vider le panier
       setCartItems([]);
       setCartOpen(false);
 
-      // 4️⃣ Afficher un message avec les codes de suivi
       if (codesSuivis.length > 0) {
         const codesStr = codesSuivis.join(", ");
         const msg = `✅ Commande créée avec succès !\n\n📦 Code${codesSuivis.length > 1 ? "s" : ""} de suivi : ${codesStr}\n\nVous serez contacté(e) pour le paiement. Vous pouvez suivre votre livraison sur la page Livraison.`;
@@ -699,26 +647,20 @@ const doLogout = async () => {
 
   const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
- const marquerNotifLue = async (notif) => {
-    // Accepter soit un objet notif complet, soit juste un ID (pour compatibilité)
+  const marquerNotifLue = async (notif) => {
     const id = typeof notif === "object" ? notif.id : notif;
     const notification = typeof notif === "object" ? notif : notifs.find(n => n.id === id);
-    
-    // 1. Marquer comme lu dans la base (avec try/catch propre)
+
     try {
       const { error } = await supabase.from("notifications").update({ lu: true }).eq("id", id);
       if (error) console.warn("marquerNotifLue:", error.message);
     } catch (e) {
       console.warn("marquerNotifLue exception:", e?.message);
     }
-    
-    // 2. Mise à jour locale immédiate (UI réactive)
+
     setNotifs(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
-    
-    // 3. Fermer le drawer
     setNotifOpen(false);
-    
-    // 4. Rediriger selon le type de notification
+
     if (notification) {
       if (notification.type === "new_product" || notification.link?.includes("/products/")) {
         goPage("produits");
@@ -728,17 +670,18 @@ const doLogout = async () => {
       }
     }
   };
+
   const marquerToutesLues = async () => {
     const ids = notifs.filter(n => !n.lu).map(n => n.id);
     if (ids.length === 0) return;
-    
+
     try {
       const { error } = await supabase.from("notifications").update({ lu: true }).in("id", ids);
       if (error) console.warn("marquerToutesLues:", error.message);
     } catch (e) {
       console.warn("marquerToutesLues exception:", e?.message);
     }
-    
+
     setNotifs(prev => prev.map(n => ({ ...n, lu: true })));
   };
 
@@ -755,14 +698,14 @@ const doLogout = async () => {
   };
 
   const TABS = [
-  {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🚚 Livraison",p:"livraison"},
-  {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
-  {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
-  {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
-  ...(user && (userData?.role==="admin" || userData?.role==="superadmin")
-    ? [{l:"⚙️ Admin",p:"admin"}]
-    : []),
-];
+    {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🚚 Livraison",p:"livraison"},
+    {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
+    {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
+    {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
+    ...(user && (userData?.role==="admin" || userData?.role==="superadmin")
+      ? [{l:"⚙️ Admin",p:"admin"}]
+      : []),
+  ];
 
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
@@ -776,7 +719,7 @@ const doLogout = async () => {
     <>
       <style>{makeCSS(dark)}</style>
 
-    {/* ── CONTRACT ACCEPTANCE MODAL ── */}
+      {/* ── CONTRACT ACCEPTANCE MODAL ── */}
       <ContractAcceptance
         open={contractOpen}
         onClose={() => {
@@ -799,7 +742,6 @@ const doLogout = async () => {
         user={user}
       />
 
-      {/* ── AUTH MODAL ── */}
       {/* ── MODAL DEMANDE LIVRAISON ── */}
       {demandeLivraisonOpen && (
         <ModalDemandeLivraison
@@ -811,6 +753,8 @@ const doLogout = async () => {
           }}
         />
       )}
+
+      {/* ── AUTH MODAL ── */}
       {authOpen && (
         <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setAuthOpen(false)}>
           <div className="modal" style={{width:"100%",maxWidth:480,margin:"0 auto"}}>
@@ -866,7 +810,7 @@ const doLogout = async () => {
               <label className="form-label">Email <span>*</span></label>
               <input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/>
             </div>
-             <div className="form-group">
+            <div className="form-group">
               <label className="form-label">Mot de passe <span>*</span></label>
               <PasswordInput
                 value={authForm.password}
@@ -892,7 +836,6 @@ const doLogout = async () => {
               )}
             </div>
 
-
             <button className="form-submit" onClick={authTab==="login" ? doLogin : doRegister} disabled={authLoading} style={{fontSize:".9rem",padding:"13px"}}>
               {authLoading
                 ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Chargement...</>
@@ -911,6 +854,7 @@ const doLogout = async () => {
           </div>
         </div>
       )}
+
       {/* ── TOPBAR ── */}
       <div className="topbar">
         <div className="topbar-l">
@@ -949,65 +893,64 @@ const doLogout = async () => {
             onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
             autoComplete="off"
           />
-         {search.trim().length >= 2 && (
-  <div style={{
-    position: "absolute", top: "100%", left: 0, right: 0,
-    background: "var(--bg)", border: "1px solid var(--border)",
-    borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-    zIndex: 9999, maxHeight: 320, overflowY: "auto", marginTop: 4
-  }}>
-    {produits
-      .filter(p =>
-        (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
-        (p.description_fr || "").toLowerCase().includes(search.toLowerCase())
-      )
-      .slice(0, 8)
-      .map(p => (
-        <div
-          key={p.id}
-          onClick={() => {
-            setSearch("");
-            goPage("produits");
-          }}
-          style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 14px", cursor: "pointer",
-            borderBottom: "1px solid var(--border)", fontSize: 13
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
-          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-        >
-          {p.image && (
-            <img
-              src={p.image}
-              style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 6 }}
-              alt=""
-              onError={e => e.currentTarget.style.display = "none"}
-            />
-          )}
-          <div>
-            <div style={{ fontWeight: 500 }}>{p.name_fr}</div>
-            <div style={{ color: "var(--gray)", fontSize: 12 }}>
-              {p.prix?.toLocaleString()} FCFA
+          {search.trim().length >= 2 && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0,
+              background: "var(--bg)", border: "1px solid var(--border)",
+              borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+              zIndex: 9999, maxHeight: 320, overflowY: "auto", marginTop: 4
+            }}>
+              {produits
+                .filter(p =>
+                  (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
+                  (p.description_fr || "").toLowerCase().includes(search.toLowerCase())
+                )
+                .slice(0, 8)
+                .map(p => (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      setSearch("");
+                      goPage("produits");
+                    }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 14px", cursor: "pointer",
+                      borderBottom: "1px solid var(--border)", fontSize: 13
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    {p.image && (
+                      <img
+                        src={p.image}
+                        style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 6 }}
+                        alt=""
+                        onError={e => e.currentTarget.style.display = "none"}
+                      />
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{p.name_fr}</div>
+                      <div style={{ color: "var(--gray)", fontSize: 12 }}>
+                        {p.prix?.toLocaleString()} FCFA
+                      </div>
+                    </div>
+                  </div>
+                ))
+              }
+              {produits.filter(p =>
+                (p.name_fr || "").toLowerCase().includes(search.toLowerCase())
+              ).length === 0 && (
+                <div style={{ padding: 14, color: "var(--gray)", fontSize: 13, textAlign: "center" }}>
+                  Aucun résultat pour "{search}"
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      ))
-    }
-    {produits.filter(p =>
-      (p.name_fr || "").toLowerCase().includes(search.toLowerCase())
-    ).length === 0 && (
-      <div style={{ padding: 14, color: "var(--gray)", fontSize: 13, textAlign: "center" }}>
-        Aucun résultat pour "{search}"
-      </div>
-    )}
-  </div>
-)}
+          )}
           <button onClick={()=>goPage("produits")}>🔍</button>
         </div>
 
         <div className="nav-actions">
-         {/* Bouton Démarrer (ouvre onboarding) */}
           <button
             onClick={() => setOnboardingOpen(true)}
             title="Que cherchez-vous ?"
@@ -1028,7 +971,6 @@ const doLogout = async () => {
             🚀 Démarrer
           </button>
 
-          {/* Dark mode */}
           <button
             className="dark-toggle"
             onClick={()=>setDark(d=>!d)}
@@ -1036,19 +978,17 @@ const doLogout = async () => {
           >
             {dark?"☀️":"🌙"}
           </button>
-          {/* Notifs (si connecté) */}
+
           {user && (
             <button className="icon-btn" onClick={()=>setNotifOpen(o=>!o)} title="Notifications">
               🔔{unread>0 && <span className="ibadge">{unread}</span>}
             </button>
           )}
 
-          {/* Panier */}
           <button className="icon-btn" onClick={()=>setCartOpen(true)} title="Mon panier">
             🛒{totalQty>0 && <span className="ibadge">{totalQty}</span>}
           </button>
 
-          {/* Boutons Auth */}
           {!user ? (
             <>
               <button
@@ -1114,246 +1054,240 @@ const doLogout = async () => {
         </div>
       )}
 
-     {/* — CART — */}
       {/* ═══ CART DRAWER AMAZON STYLE ═══ */}
-<div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
-<div className={`cart-drawer${cartOpen?" open":""}`}>
-  {/* Header */}
-  <div className="cart-header">
-    <div className="cart-header-left">
-      <div className="cart-header-icon">🛒</div>
-      <div>
-        <div className="cart-title">Mon panier</div>
-        <div className="cart-subtitle">
-          {totalQty === 0 ? "Vide" : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
+      <div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
+      <div className={`cart-drawer${cartOpen?" open":""}`}>
+        <div className="cart-header">
+          <div className="cart-header-left">
+            <div className="cart-header-icon">🛒</div>
+            <div>
+              <div className="cart-title">Mon panier</div>
+              <div className="cart-subtitle">
+                {totalQty === 0 ? "Vide" : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
+              </div>
+            </div>
+          </div>
+          <button className="cart-close" onClick={() => setCartOpen(false)}>✕</button>
         </div>
-      </div>
-    </div>
-    <button className="cart-close" onClick={() => setCartOpen(false)}>✕</button>
-  </div>
 
-  {/* Trust bar */}
-  {cartItems.length > 0 && (
-    <div className="cart-trust-bar">
-      <span>🔒 Paiement sécurisé</span>
-      <span>🚚 Livraison rapide</span>
-      <span>✅ Garantie Yorix</span>
-    </div>
-  )}
+        {cartItems.length > 0 && (
+          <div className="cart-trust-bar">
+            <span>🔒 Paiement sécurisé</span>
+            <span>🚚 Livraison rapide</span>
+            <span>✅ Garantie Yorix</span>
+          </div>
+        )}
 
-  {/* Empty state */}
-  {cartItems.length === 0 ? (
-    <div className="cart-empty">
-      <div className="cart-empty-icon">🛒</div>
-      <div className="cart-empty-title">Votre panier est vide</div>
-      <div className="cart-empty-sub">
-        Parcourez notre catalogue et ajoutez vos produits préférés pour commander.
-      </div>
-      <button className="cart-empty-btn" onClick={() => { setCartOpen(false); goPage("produits"); }}>
-        🛍️ Explorer les produits
-      </button>
-    </div>
-  ) : (
-    <>
-      {/* Items list */}
-      <div className="cart-items">
-        {cartItems.map(item => {
-          const sousTotal = item.prix * item.qty;
-          const stockBadge =
-            item.stock == null ? null :
-            item.stock === 0 ? { cls: "ci-tag-stock-out", txt: "❌ Rupture" } :
-            item.stock <= 5 ? { cls: "ci-tag-stock-low", txt: `⚠️ ${item.stock} restants` } :
-            { cls: "ci-tag-stock-ok", txt: "✅ En stock" };
+        {cartItems.length === 0 ? (
+          <div className="cart-empty">
+            <div className="cart-empty-icon">🛒</div>
+            <div className="cart-empty-title">Votre panier est vide</div>
+            <div className="cart-empty-sub">
+              Parcourez notre catalogue et ajoutez vos produits préférés pour commander.
+            </div>
+            <button className="cart-empty-btn" onClick={() => { setCartOpen(false); goPage("produits"); }}>
+              🛍️ Explorer les produits
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="cart-items">
+              {cartItems.map(item => {
+                const sousTotal = item.prix * item.qty;
+                const stockBadge =
+                  item.stock == null ? null :
+                  item.stock === 0 ? { cls: "ci-tag-stock-out", txt: "❌ Rupture" } :
+                  item.stock <= 5 ? { cls: "ci-tag-stock-low", txt: `⚠️ ${item.stock} restants` } :
+                  { cls: "ci-tag-stock-ok", txt: "✅ En stock" };
 
-          return (
-            <div key={item.id} className="cart-item">
-              <div className="ci-img">
-  <OptimizedImage
-    src={item.image}
-    alt={item.name}
-    width={120}
-    fallbackEmoji="📦"
-    style={{ width: "100%", height: "100%" }}
-  />
-</div>
-              <div className="ci-info">
-                <div className="ci-name">{item.name}</div>
-                {item.vendeur_nom && (
-                  <div className="ci-vendeur">🏪 Vendeur : <strong>{item.vendeur_nom}</strong></div>
-                )}
-                <div className="ci-meta">
-                  {item.categorie && <span className="ci-tag">{item.categorie}</span>}
-                  {item.ville && <span className="ci-tag">📍 {item.ville}</span>}
-                  {stockBadge && <span className={`ci-tag ${stockBadge.cls}`}>{stockBadge.txt}</span>}
+                return (
+                  <div key={item.id} className="cart-item">
+                    <div className="ci-img">
+                      <OptimizedImage
+                        src={item.image}
+                        alt={item.name}
+                        width={120}
+                        fallbackEmoji="📦"
+                        style={{ width: "100%", height: "100%" }}
+                      />
+                    </div>
+                    <div className="ci-info">
+                      <div className="ci-name">{item.name}</div>
+                      {item.vendeur_nom && (
+                        <div className="ci-vendeur">🏪 Vendeur : <strong>{item.vendeur_nom}</strong></div>
+                      )}
+                      <div className="ci-meta">
+                        {item.categorie && <span className="ci-tag">{item.categorie}</span>}
+                        {item.ville && <span className="ci-tag">📍 {item.ville}</span>}
+                        {stockBadge && <span className={`ci-tag ${stockBadge.cls}`}>{stockBadge.txt}</span>}
+                      </div>
+                      <div className="ci-bottom">
+                        <div className="ci-price-block">
+                          <span className="ci-unit-price">{item.prix?.toLocaleString()} FCFA / unité</span>
+                          <span className="ci-total-price">{sousTotal.toLocaleString()} FCFA</span>
+                        </div>
+                        <div className="ci-qty">
+                          <button className="qty-btn" onClick={() => changeQty(item.id, -1)}>−</button>
+                          <span className="qty-val">{item.qty}</span>
+                          <button className="qty-btn" onClick={() => changeQty(item.id, 1)}>+</button>
+                        </div>
+                      </div>
+                    </div>
+                    <button className="ci-del" onClick={() => removeItem(item.id)} title="Retirer">🗑</button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="cart-footer">
+              <div className="cart-promo-row">
+                🎁 <strong>Plus que {Math.max(0, 50000 - totalPrice).toLocaleString()} FCFA</strong> pour la livraison offerte !
+              </div>
+
+              <div className="cart-summary">
+                <div className="cart-total-row">
+                  <span>Sous-total ({totalQty} article{totalQty > 1 ? "s" : ""})</span>
+                  <strong>{totalPrice.toLocaleString()} FCFA</strong>
                 </div>
-                <div className="ci-bottom">
-                  <div className="ci-price-block">
-                    <span className="ci-unit-price">{item.prix?.toLocaleString()} FCFA / unité</span>
-                    <span className="ci-total-price">{sousTotal.toLocaleString()} FCFA</span>
-                  </div>
-                  <div className="ci-qty">
-                    <button className="qty-btn" onClick={() => changeQty(item.id, -1)}>−</button>
-                    <span className="qty-val">{item.qty}</span>
-                    <button className="qty-btn" onClick={() => changeQty(item.id, 1)}>+</button>
-                  </div>
+                <div className="cart-total-row">
+                  <span>🚚 Livraison estimée</span>
+                  <strong>{totalPrice >= 50000 ? "Offerte ✨" : `${LIVRAISON_FEE.toLocaleString()} FCFA`}</strong>
+                </div>
+                <div className="cart-total-row discount">
+                  <span>🔐 Protection Escrow</span>
+                  <strong>Incluse</strong>
+                </div>
+                <div className="cart-divider" />
+                <div className="cart-total-row grand">
+                  <span>TOTAL À PAYER</span>
+                  <strong>{(totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE)).toLocaleString()} FCFA</strong>
                 </div>
               </div>
-              <button className="ci-del" onClick={() => removeItem(item.id)} title="Retirer">🗑</button>
+
+              <div className="cart-payment-section">
+                <div className="cart-payment-title">💳 Choisir un mode de paiement</div>
+                <div className="cart-payment-grid">
+                  <button
+                    className="cart-pay-btn momo"
+                    onClick={() => {
+                      const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
+                      const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
+                      const msg = [
+                        "🛒 *NOUVELLE COMMANDE YORIX*",
+                        "",
+                        "💳 *Mode de paiement :* MTN Mobile Money",
+                        `📱 *Numéro MoMo :* ${MOMO_NUMBER}`,
+                        "",
+                        "📦 *Produits commandés :*",
+                        lignes,
+                        "",
+                        `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
+                        `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
+                        `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
+                        "",
+                        "👤 *Client :*",
+                        `Nom : ${userData?.nom || "____"}`,
+                        `Téléphone : ${userData?.telephone || "____"}`,
+                        `Adresse : ____`,
+                        "",
+                        "✅ *Instructions :*",
+                        `1. J'effectue le paiement MoMo au ${MOMO_NUMBER}`,
+                        "2. J'envoie la capture du paiement sur ce WhatsApp",
+                        "3. Je confirme mon adresse de livraison",
+                        "",
+                        "Merci Yorix ! 🇨🇲",
+                      ].join("\n");
+                      window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+                    }}
+                  >
+                    <div className="cart-pay-icon">📱</div>
+                    <div className="cart-pay-label">MTN MoMo</div>
+                    <div className="cart-pay-number">{MOMO_NUMBER}</div>
+                  </button>
+
+                  <button
+                    className="cart-pay-btn orange"
+                    onClick={() => {
+                      const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
+                      const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
+                      const msg = [
+                        "🛒 *NOUVELLE COMMANDE YORIX*",
+                        "",
+                        "💳 *Mode de paiement :* Orange Money",
+                        `📱 *Numéro Orange Money :* ${ORANGE_NUMBER}`,
+                        "",
+                        "📦 *Produits commandés :*",
+                        lignes,
+                        "",
+                        `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
+                        `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
+                        `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
+                        "",
+                        "👤 *Client :*",
+                        `Nom : ${userData?.nom || "____"}`,
+                        `Téléphone : ${userData?.telephone || "____"}`,
+                        `Adresse : ____`,
+                        "",
+                        "✅ *Instructions :*",
+                        `1. J'effectue le paiement Orange Money au ${ORANGE_NUMBER}`,
+                        "2. J'envoie la capture du paiement sur ce WhatsApp",
+                        "3. Je confirme mon adresse de livraison",
+                        "",
+                        "Merci Yorix ! 🇨🇲",
+                      ].join("\n");
+                      window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+                    }}
+                  >
+                    <div className="cart-pay-icon">🔶</div>
+                    <div className="cart-pay-label">Orange Money</div>
+                    <div className="cart-pay-number">{ORANGE_NUMBER}</div>
+                  </button>
+                </div>
+
+                <button
+                  className="cart-wa-confirm"
+                  onClick={() => {
+                    const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
+                    const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
+                    const msg = [
+                      "🛒 *NOUVELLE COMMANDE YORIX*",
+                      "",
+                      "📦 *Produits commandés :*",
+                      lignes,
+                      "",
+                      `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
+                      `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
+                      `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
+                      "",
+                      "👤 *Client :*",
+                      `Nom : ${userData?.nom || "____"}`,
+                      `Téléphone : ${userData?.telephone || "____"}`,
+                      `Adresse : ____`,
+                      "",
+                      "💳 *Modes de paiement disponibles :*",
+                      `📱 MTN MoMo : ${MOMO_NUMBER}`,
+                      `🔶 Orange Money : ${ORANGE_NUMBER}`,
+                      "",
+                      "👉 Après paiement, j'envoie la capture sur ce WhatsApp.",
+                      "",
+                      "Merci Yorix ! 🇨🇲",
+                    ].join("\n");
+                    window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
+                  }}
+                >
+                  💬 Commander via WhatsApp
+                </button>
+
+                <div className="cart-info-text">
+                  Après paiement, envoyez la capture au <strong>+237 {PAYMENT_WA_NUMBER.slice(3)}</strong><br/>
+                  pour valider votre commande.
+                </div>
+              </div>
             </div>
-          );
-        })}
+          </>
+        )}
       </div>
 
-      {/* Footer */}
-      <div className="cart-footer">
-        <div className="cart-promo-row">
-          🎁 <strong>Plus que {Math.max(0, 50000 - totalPrice).toLocaleString()} FCFA</strong> pour la livraison offerte !
-        </div>
-
-        <div className="cart-summary">
-          <div className="cart-total-row">
-            <span>Sous-total ({totalQty} article{totalQty > 1 ? "s" : ""})</span>
-            <strong>{totalPrice.toLocaleString()} FCFA</strong>
-          </div>
-          <div className="cart-total-row">
-            <span>🚚 Livraison estimée</span>
-            <strong>{totalPrice >= 50000 ? "Offerte ✨" : `${LIVRAISON_FEE.toLocaleString()} FCFA`}</strong>
-          </div>
-          <div className="cart-total-row discount">
-            <span>🔐 Protection Escrow</span>
-            <strong>Incluse</strong>
-          </div>
-          <div className="cart-divider" />
-          <div className="cart-total-row grand">
-            <span>TOTAL À PAYER</span>
-            <strong>{(totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE)).toLocaleString()} FCFA</strong>
-          </div>
-        </div>
-
-        {/* Payment methods */}
-        <div className="cart-payment-section">
-          <div className="cart-payment-title">💳 Choisir un mode de paiement</div>
-          <div className="cart-payment-grid">
-            <button
-              className="cart-pay-btn momo"
-              onClick={() => {
-                const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
-                const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-                const msg = [
-                  "🛒 *NOUVELLE COMMANDE YORIX*",
-                  "",
-                  "💳 *Mode de paiement :* MTN Mobile Money",
-                  `📱 *Numéro MoMo :* ${MOMO_NUMBER}`,
-                  "",
-                  "📦 *Produits commandés :*",
-                  lignes,
-                  "",
-                  `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
-                  `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
-                  `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
-                  "",
-                  "👤 *Client :*",
-                  `Nom : ${userData?.nom || "____"}`,
-                  `Téléphone : ${userData?.telephone || "____"}`,
-                  `Adresse : ____`,
-                  "",
-                  "✅ *Instructions :*",
-                  `1. J'effectue le paiement MoMo au ${MOMO_NUMBER}`,
-                  "2. J'envoie la capture du paiement sur ce WhatsApp",
-                  "3. Je confirme mon adresse de livraison",
-                  "",
-                  "Merci Yorix ! 🇨🇲",
-                ].join("\n");
-                window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-              }}
-            >
-              <div className="cart-pay-icon">📱</div>
-              <div className="cart-pay-label">MTN MoMo</div>
-              <div className="cart-pay-number">{MOMO_NUMBER}</div>
-            </button>
-
-            <button
-              className="cart-pay-btn orange"
-              onClick={() => {
-                const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
-                const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-                const msg = [
-                  "🛒 *NOUVELLE COMMANDE YORIX*",
-                  "",
-                  "💳 *Mode de paiement :* Orange Money",
-                  `📱 *Numéro Orange Money :* ${ORANGE_NUMBER}`,
-                  "",
-                  "📦 *Produits commandés :*",
-                  lignes,
-                  "",
-                  `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
-                  `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
-                  `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
-                  "",
-                  "👤 *Client :*",
-                  `Nom : ${userData?.nom || "____"}`,
-                  `Téléphone : ${userData?.telephone || "____"}`,
-                  `Adresse : ____`,
-                  "",
-                  "✅ *Instructions :*",
-                  `1. J'effectue le paiement Orange Money au ${ORANGE_NUMBER}`,
-                  "2. J'envoie la capture du paiement sur ce WhatsApp",
-                  "3. Je confirme mon adresse de livraison",
-                  "",
-                  "Merci Yorix ! 🇨🇲",
-                ].join("\n");
-                window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-              }}
-            >
-              <div className="cart-pay-icon">🔶</div>
-              <div className="cart-pay-label">Orange Money</div>
-              <div className="cart-pay-number">{ORANGE_NUMBER}</div>
-            </button>
-          </div>
-
-          <button
-            className="cart-wa-confirm"
-            onClick={() => {
-              const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
-              const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-              const msg = [
-                "🛒 *NOUVELLE COMMANDE YORIX*",
-                "",
-                "📦 *Produits commandés :*",
-                lignes,
-                "",
-                `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
-                `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
-                `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
-                "",
-                "👤 *Client :*",
-                `Nom : ${userData?.nom || "____"}`,
-                `Téléphone : ${userData?.telephone || "____"}`,
-                `Adresse : ____`,
-                "",
-                "💳 *Modes de paiement disponibles :*",
-                `📱 MTN MoMo : ${MOMO_NUMBER}`,
-                `🔶 Orange Money : ${ORANGE_NUMBER}`,
-                "",
-                "👉 Après paiement, j'envoie la capture sur ce WhatsApp.",
-                "",
-                "Merci Yorix ! 🇨🇲",
-              ].join("\n");
-              window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-            }}
-          >
-            💬 Commander via WhatsApp
-          </button>
-
-          <div className="cart-info-text">
-            Après paiement, envoyez la capture au <strong>+237 {PAYMENT_WA_NUMBER.slice(3)}</strong><br/>
-            pour valider votre commande.
-          </div>
-        </div>
-      </div>
-    </>
-  )}
-</div>
       {/* ── TABS ── */}
       <div className="nav-tabs">{TABS.map(t=><div key={t.p} className={`tab${page===t.p?" active":""}`} onClick={()=>goPage(t.p)}>{t.l}</div>)}</div>
 
@@ -1368,18 +1302,15 @@ const doLogout = async () => {
       {page==="home"&&(
         <div className="anim">
           <Helmet>
-  <title>Yorix CM — Marketplace #1 au Cameroun</title>
-  <meta name="description" content="Achetez et vendez en ligne au Cameroun. 
-    Paiement MTN MoMo et Orange Money. Livraison rapide à Yaoundé et Douala." />
-  <meta property="og:title" content="Yorix CM — Marketplace #1 au Cameroun" />
-  <meta property="og:description" content="La marketplace camerounaise 
-    avec paiement mobile." />
-  <meta property="og:image" content="https://yorix.cm/icons/icon-512.png" />
-  <meta property="og:url" content="https://yorix.cm" />
-  <meta property="og:type" content="website" />
-</Helmet>
+            <title>Yorix CM — Marketplace #1 au Cameroun</title>
+            <meta name="description" content="Achetez et vendez en ligne au Cameroun. Paiement MTN MoMo et Orange Money. Livraison rapide à Yaoundé et Douala." />
+            <meta property="og:title" content="Yorix CM — Marketplace #1 au Cameroun" />
+            <meta property="og:description" content="La marketplace camerounaise avec paiement mobile." />
+            <meta property="og:image" content="https://yorix.cm/icons/icon-512.png" />
+            <meta property="og:url" content="https://yorix.cm" />
+            <meta property="og:type" content="website" />
+          </Helmet>
 
-          {/* ── TRUST BANNER ── */}
           <div className="trust-banner">
             <div className="tb-item">🚚 Livraison rapide à Yaoundé &amp; Douala</div>
             <div className="tb-item">🔒 Paiement 100% sécurisé</div>
@@ -1387,7 +1318,6 @@ const doLogout = async () => {
             <div className="tb-item">📱 Support WhatsApp 7j/7</div>
           </div>
 
-          {/* ── HERO ── */}
           <section className="hero">
             <div className="hero-inner">
               <div>
@@ -1395,7 +1325,6 @@ const doLogout = async () => {
                 <h1>Achetez et faites-vous<br/>livrer à <em>Yaoundé</em></h1>
                 <p className="hero-sub">Produits locaux & importés · Prestataires vérifiés · Livraison express · MTN MoMo & Orange Money</p>
 
-                {/* Badges confiance */}
                 <div className="hero-badges">
                   <span className="hbadge hbadge-yellow">⭐ +2 000 avis clients</span>
                   <span className="hbadge hbadge-green">📦 +100 produits vendus</span>
@@ -1434,7 +1363,6 @@ const doLogout = async () => {
                     <span key={s} className="pop-tag" onClick={()=>{setSearch(s);goPage("produits");}}>{s}</span>
                   ))}
                 </div>
-                {/* Mini trust dans hero card */}
                 <div style={{marginTop:12,paddingTop:10,borderTop:"1px solid rgba(255,255,255,.1)",display:"flex",flexDirection:"column",gap:4}}>
                   {["✅ Paiement sécurisé MTN MoMo","🚚 Livraison Yaoundé & Douala","🔐 Remboursement garanti Escrow"].map(t=>(
                     <div key={t} style={{fontSize:".68rem",color:"rgba(255,255,255,.65)",display:"flex",alignItems:"center",gap:5}}>{t}</div>
@@ -1444,7 +1372,6 @@ const doLogout = async () => {
             </div>
           </section>
 
-          {/* ── SOCIAL PROOF BAR ── */}
           <div className="proof-bar">
             <div className="proof-item"><span className="proof-num">2 400+</span> commandes passées</div>
             <div className="proof-item"><span className="proof-num">850+</span> vendeurs actifs</div>
@@ -1452,7 +1379,6 @@ const doLogout = async () => {
             <div className="proof-item"><span className="proof-num">J+1</span> livraison Yaoundé</div>
           </div>
 
-          {/* ── OFFRES FLASH DU JOUR ── */}
           <section className="sec" style={{paddingBottom:0}}>
             <div className="sec-head">
               <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1464,7 +1390,6 @@ const doLogout = async () => {
                 <FlashCountdown/>
               </div>
             </div>
-            {/* Bandeau promo */}
             <div style={{background:"linear-gradient(135deg,#ff4444,#ff6b35)",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
               <div>
                 <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"#fff",marginBottom:3}}>🔥 Promo du jour — jusqu'à -30% sur tous les téléphones !</div>
@@ -1475,7 +1400,6 @@ const doLogout = async () => {
                 onClick={()=>{ setFilterCat("Téléphones"); goPage("produits"); }}
               >🛍️ Voir les promos</button>
             </div>
-            {/* Grille flash : les 4 premiers produits avec badge flash simulé */}
             {!produitsLoading && produits.length > 0 && (
               <ProdGrid
                 prods={produits.slice(0,4).map((p,i) => ({
@@ -1489,7 +1413,6 @@ const doLogout = async () => {
             )}
           </section>
 
-          {/* ── PRODUITS RÉCENTS ── */}
           <section className="sec">
             <div className="sec-head">
               <h2 className="sec-title">🔥 Produits populaires</h2>
@@ -1503,7 +1426,6 @@ const doLogout = async () => {
             }
           </section>
 
-          {/* ── TRUST BAND ── */}
           <div className="trust">
             <div className="trust-inner">
               {[
@@ -1517,7 +1439,6 @@ const doLogout = async () => {
             </div>
           </div>
 
-          {/* ── POURQUOI CHOISIR YORIX ── */}
           <div className="why-section">
             <div className="why-inner">
               <div style={{textAlign:"center",marginBottom:4}}>
@@ -1541,55 +1462,53 @@ const doLogout = async () => {
             </div>
           </div>
 
-         {/* — PRESTATAIRES — */}
-<section className="sec">
-  <div className="sec-head">
-    <h2 className="sec-title">🧑‍💼 Prestataires de confiance</h2>
-    <span className="sec-link" onClick={() => goPage("prestataires")}>Voir tous →</span>
-  </div>
-  <div className="prest-grid">
-    {allServices.length === 0 ? (
-      <div style={{gridColumn:"1/-1", textAlign:"center", padding:30, color:"var(--gray)"}}>
-        Aucun prestataire pour le moment.
-      </div>
-    ) : (
-      allServices.slice(0, 3).map(s => (
-        <div key={s.id} className="prest-card">
-          <div className="prest-top">
-            <div className="prest-av">🧑‍💼</div>
-            <div>
-              <div className="prest-name">{s.provider_nom || "Prestataire"}</div>
-              <div className="prest-meta">{s.nom}</div>
+          <section className="sec">
+            <div className="sec-head">
+              <h2 className="sec-title">🧑‍💼 Prestataires de confiance</h2>
+              <span className="sec-link" onClick={() => goPage("prestataires")}>Voir tous →</span>
             </div>
-          </div>
-          <div className="prest-tags">
-            {s.categorie && <span className="ptag">{s.categorie}</span>}
-            {s.ville && <span className="ptag">📍 {s.ville}</span>}
-          </div>
-          <div className="prest-footer">
-            <div>
-              <div className="prest-price">{Number(s.prix).toLocaleString()} F</div>
-              <div style={{fontSize:".69rem",color:"var(--gray)"}}>
-                ⭐ {s.note || 0} · {s.nombre_avis || 0} avis
-              </div>
-            </div>
-            <button 
-              className="btn-hire"
-              onClick={() => window.open(
-                `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire pour : ${s.nom} (${s.provider_nom})`)}`,
-                '_blank'
+            <div className="prest-grid">
+              {allServices.length === 0 ? (
+                <div style={{gridColumn:"1/-1", textAlign:"center", padding:30, color:"var(--gray)"}}>
+                  Aucun prestataire pour le moment.
+                </div>
+              ) : (
+                allServices.slice(0, 3).map(s => (
+                  <div key={s.id} className="prest-card">
+                    <div className="prest-top">
+                      <div className="prest-av">🧑‍💼</div>
+                      <div>
+                        <div className="prest-name">{s.provider_nom || "Prestataire"}</div>
+                        <div className="prest-meta">{s.nom}</div>
+                      </div>
+                    </div>
+                    <div className="prest-tags">
+                      {s.categorie && <span className="ptag">{s.categorie}</span>}
+                      {s.ville && <span className="ptag">📍 {s.ville}</span>}
+                    </div>
+                    <div className="prest-footer">
+                      <div>
+                        <div className="prest-price">{Number(s.prix).toLocaleString()} F</div>
+                        <div style={{fontSize:".69rem",color:"var(--gray)"}}>
+                          ⭐ {s.note || 0} · {s.nombre_avis || 0} avis
+                        </div>
+                      </div>
+                      <button
+                        className="btn-hire"
+                        onClick={() => window.open(
+                          `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire pour : ${s.nom} (${s.provider_nom})`)}`,
+                          '_blank'
+                        )}
+                      >
+                        Contacter
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
-            >
-              Contacter
-            </button>
-          </div>
-        </div>
-      ))
-    )}
-  </div>
-</section>
+            </div>
+          </section>
 
-          {/* ── NEWSLETTER ── */}
           <div className="newsletter">
             <div className="nl-title">📬 Restez informé(e)</div>
             <p className="nl-sub">Les meilleures offres Yorix directement dans votre boîte mail.</p>
@@ -1602,7 +1521,6 @@ const doLogout = async () => {
             }
           </div>
 
-          {/* ── WA STICKY MOBILE ── */}
           <div className="wa-sticky">
             <span className="wa-sticky-text">📱 Commander maintenant</span>
             <button
@@ -1612,7 +1530,6 @@ const doLogout = async () => {
               Commander via WhatsApp
             </button>
           </div>
-
         </div>
       )}
 
@@ -1626,7 +1543,6 @@ const doLogout = async () => {
               {filterCat && <button className="btn-ghost" style={{fontSize:".72rem",padding:"4px 10px"}} onClick={()=>setFilterCat("")}>✕ {filterCat}</button>}
             </div>
           </div>
-          {/* Filtres catégories */}
           <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:18}}>
             <button onClick={()=>setFilterCat("")} style={{padding:"5px 12px",borderRadius:50,border:"1.5px solid var(--border)",background:!filterCat?"var(--green)":"var(--surface)",color:!filterCat?"#fff":"var(--ink)",font:"600 .72rem 'DM Sans',sans-serif",cursor:"pointer"}}>Tout</button>
             {CATS.map(c=><button key={c} onClick={()=>setFilterCat(c)} style={{padding:"5px 12px",borderRadius:50,border:"1.5px solid var(--border)",background:filterCat===c?"var(--green)":"var(--surface)",color:filterCat===c?"#fff":"var(--ink)",font:"600 .72rem 'DM Sans',sans-serif",cursor:"pointer"}}>{c}</button>)}
@@ -1637,26 +1553,20 @@ const doLogout = async () => {
         </section>
       )}
 
-
       {/* ════════ PAGE : LIVRAISON ════════ */}
       {page==="livraison"&&(
         <div className="anim">
-          {/* CTA flottant mobile */}
           <DeliveryStickyMobile onOpenFullModal={() => setDemandeLivraisonOpen(true)} />
 
           <section className="sec">
-
-            {/* ═══ SUIVI TEMPS RÉEL ═══ */}
             <DeliveryTracker />
 
-            {/* ═══ NOUVEAU HERO : QUICK ORDER ═══ */}
             <DeliveryQuickOrder
               user={user}
               userData={userData}
               onOpenFullModal={() => setDemandeLivraisonOpen(true)}
             />
 
-            {/* ── COMMENT ÇA MARCHE ── */}
             <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:22,marginBottom:20}}>
               <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:16,letterSpacing:"-.3px"}}>🗺️ Comment fonctionne Yorix Ride ?</h3>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
@@ -1676,7 +1586,6 @@ const doLogout = async () => {
               </div>
             </div>
 
-            {/* ── TARIFS ── */}
             <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:22,marginBottom:20}}>
               <h3 style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1rem",color:"var(--ink)",marginBottom:14}}>💰 Tarifs de livraison</h3>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
@@ -1695,7 +1604,6 @@ const doLogout = async () => {
               </div>
             </div>
 
-            {/* ── LIVREURS DISPONIBLES ── */}
             <div>
               <div className="sec-head"><h3 className="sec-title">🏍️ Livreurs disponibles maintenant</h3></div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
@@ -1734,13 +1642,11 @@ const doLogout = async () => {
               </div>
             </div>
 
-            {/* ═══ CAS D'USAGE + B2B + TÉMOIGNAGES ═══ */}
             <DeliveryUseCases
               onCommander={() => setDemandeLivraisonOpen(true)}
               onOpenFullModal={() => setDemandeLivraisonOpen(true)}
             />
 
-            {/* ── REJOINDRE COMME LIVREUR ── */}
             <div style={{background:"linear-gradient(135deg,#1a3a24,#0d3320)",borderRadius:14,padding:24,marginTop:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
               <div>
                 <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:"1.1rem",color:"#fff",marginBottom:5}}>🏍️ Devenez livreur Yorix</div>
@@ -1754,11 +1660,10 @@ const doLogout = async () => {
                 onClick={()=>{ setAuthTab("register"); setSelectedRole("delivery"); setAuthOpen(true); }}
               >🚀 S'inscrire comme livreur</button>
             </div>
-
           </section>
         </div>
       )}
- 
+
       {/* ════════ PAGE : ESCROW ════════ */}
       {page==="escrow"&&(
         <section className="sec anim">
@@ -1778,7 +1683,7 @@ const doLogout = async () => {
         </section>
       )}
 
-     {/* ════════ PAGE : PRESTATAIRES — VERSION PREMIUM v2 ════════ */}
+      {/* ════════ PAGE : PRESTATAIRES ════════ */}
       {page==="prestataires"&&(
         <PrestPage
           user={user}
@@ -1838,12 +1743,12 @@ const doLogout = async () => {
                   <div className="form-group"><label className="form-label">Tarif (FCFA)</label><input className="form-input" value={inscriptionForm.tarif} onChange={e=>setInscriptionForm(f=>({...f,tarif:e.target.value}))} placeholder="Ex: 15 000/h"/></div>
                   <div className="form-group full"><label className="form-label">Présentation</label><textarea className="form-textarea" value={inscriptionForm.bio} onChange={e=>setInscriptionForm(f=>({...f,bio:e.target.value}))} placeholder="Décrivez vos compétences..."/></div>
                 </div>
-                <button 
-                  className="form-submit" 
+                <button
+                  className="form-submit"
                   disabled={inscriptionLoading}
                   onClick={soumettreCandidaturePrestataire}
                 >
-                  {inscriptionLoading 
+                  {inscriptionLoading
                     ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Envoi en cours...</>
                     : "🚀 Soumettre ma candidature"
                   }
@@ -1871,7 +1776,7 @@ const doLogout = async () => {
         </section>
       )}
 
-            {/* ═══════════════ PAGE : ACADEMY (dynamique Supabase) ═══════════════ */}
+      {/* ═══════════════ PAGE : ACADEMY ═══════════════ */}
       {page==="academy"&&(
         <section className="sec anim">
           <div style={{background:"linear-gradient(135deg,#1a3a24,#0a1410)",borderRadius:14,padding:28,marginBottom:20,textAlign:"center"}}>
@@ -1908,7 +1813,6 @@ const doLogout = async () => {
         </section>
       )}
 
-      {/* ═══════════════ PAGE : ACADEMY DETAIL (article teaser) ═══════════════ */}
       {page==="academyDetail"&&(
         <AcademyDetail
           course={selectedCourse}
@@ -1917,7 +1821,6 @@ const doLogout = async () => {
         />
       )}
 
-      {/* ═══════════════ PAGE : ACADEMY CONTACT (formulaire) ═══════════════ */}
       {page==="academyContact"&&(
         <AcademyContactForm
           course={selectedCourse}
@@ -1927,12 +1830,9 @@ const doLogout = async () => {
         />
       )}
 
-
-      {/* ════════ PAGE : BLOG — VERSION PRO ════════ */}
+      {/* ════════ PAGE : BLOG ════════ */}
       {page==="blog"&&(
         <section className="sec anim">
-
-          {/* ── HERO BLOG ── */}
           <div style={{
             background: "linear-gradient(135deg, #0a1410 0%, #1a3a24 50%, #0d3320 100%)",
             borderRadius: 16,
@@ -1943,46 +1843,24 @@ const doLogout = async () => {
             overflow: "hidden",
             textAlign: "center",
           }}>
-            <div style={{
-              position: "absolute", top: -40, right: -40, width: 200, height: 200,
-              background: "rgba(252,209,22,.08)", borderRadius: "50%",
-            }}/>
-            <div style={{
-              position: "absolute", bottom: -60, left: -50, width: 180, height: 180,
-              background: "rgba(79,209,125,.06)", borderRadius: "50%",
-            }}/>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, background: "rgba(252,209,22,.08)", borderRadius: "50%" }}/>
+            <div style={{ position: "absolute", bottom: -60, left: -50, width: 180, height: 180, background: "rgba(79,209,125,.06)", borderRadius: "50%" }}/>
 
             <div style={{ position: "relative", zIndex: 2 }}>
-              <div style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                background: "rgba(252,209,22,.14)", color: "var(--yellow)",
-                border: "1px solid rgba(252,209,22,.28)",
-                padding: "5px 14px", borderRadius: 50,
-                fontSize: ".72rem", fontWeight: 700, marginBottom: 14,
-              }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.28)", padding: "5px 14px", borderRadius: 50, fontSize: ".72rem", fontWeight: 700, marginBottom: 14 }}>
                 📰 Yorix Journal
               </div>
-              <h1 style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "2rem", fontWeight: 800,
-                marginBottom: 10, letterSpacing: "-.5px", lineHeight: 1.15,
-              }}>
+              <h1 style={{ fontFamily: "'Syne',sans-serif", fontSize: "2rem", fontWeight: 800, marginBottom: 10, letterSpacing: "-.5px", lineHeight: 1.15 }}>
                 Tout l'actu du <span style={{ color: "var(--yellow)" }}>commerce camerounais</span>
               </h1>
-              <p style={{
-                color: "rgba(255,255,255,.65)", fontSize: ".9rem",
-                maxWidth: 560, margin: "0 auto", lineHeight: 1.7,
-              }}>
+              <p style={{ color: "rgba(255,255,255,.65)", fontSize: ".9rem", maxWidth: 560, margin: "0 auto", lineHeight: 1.7 }}>
                 Guides pratiques, analyses de marché, conseils business et tendances locales.
                 Écrit par notre équipe et des experts camerounais.
               </p>
             </div>
           </div>
 
-          {/* ── FILTRES CATÉGORIES ── */}
-          <div style={{
-            display: "flex", gap: 8, flexWrap: "wrap",
-            marginBottom: 24, justifyContent: "center",
-          }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24, justifyContent: "center" }}>
             {(() => {
               const cats = ["TOUT", ...Array.from(new Set(BLOG_DATA.map(p => p.cat)))];
               return cats.map(c => (
@@ -2005,7 +1883,6 @@ const doLogout = async () => {
             })()}
           </div>
 
-          {/* ── ARTICLE FEATURED (le premier avec featured: true) ── */}
           {(() => {
             const featured = BLOG_DATA.find(p => p.featured && (blogFilter === "TOUT" || p.cat === blogFilter));
             if (!featured) return null;
@@ -2021,75 +1898,36 @@ const doLogout = async () => {
                 onMouseOver={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 30px rgba(0,0,0,.1)"; }}
                 onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
               >
-                <div style={{
-                  background: featured.color_bg || "var(--green-pale)",
-                  minHeight: 280, position: "relative",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  overflow: "hidden",
-                }}>
+                <div style={{ background: featured.color_bg || "var(--green-pale)", minHeight: 280, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                   {featured.image ? (
-                    <img
-                      src={featured.image}
-                      alt={featured.title}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-                      onError={e => { e.currentTarget.style.display = "none"; }}
-                    />
+                    <img src={featured.image} alt={featured.title} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} onError={e => { e.currentTarget.style.display = "none"; }} />
                   ) : (
                     <div style={{ fontSize: "6rem", opacity: .5 }}>{featured.emoji}</div>
                   )}
-                  <span style={{
-                    position: "absolute", top: 16, left: 16,
-                    background: "var(--yellow)", color: "#0d1f14",
-                    padding: "5px 12px", borderRadius: 50,
-                    fontSize: ".68rem", fontWeight: 800,
-                    fontFamily: "'Syne',sans-serif",
-                    boxShadow: "0 4px 12px rgba(0,0,0,.15)",
-                  }}>
+                  <span style={{ position: "absolute", top: 16, left: 16, background: "var(--yellow)", color: "#0d1f14", padding: "5px 12px", borderRadius: 50, fontSize: ".68rem", fontWeight: 800, fontFamily: "'Syne',sans-serif", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
                     ⭐ À LA UNE
                   </span>
                 </div>
                 <div style={{ padding: "28px 26px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div style={{
-                    fontSize: ".68rem", fontWeight: 800, color: "var(--green)",
-                    letterSpacing: ".08em", marginBottom: 10,
-                  }}>
+                  <div style={{ fontSize: ".68rem", fontWeight: 800, color: "var(--green)", letterSpacing: ".08em", marginBottom: 10 }}>
                     {featured.emoji} {featured.cat}
                   </div>
-                  <h2 style={{
-                    fontFamily: "'Syne',sans-serif", fontSize: "1.4rem", fontWeight: 800,
-                    color: "var(--ink)", marginBottom: 10, letterSpacing: "-.3px",
-                    lineHeight: 1.25,
-                  }}>
+                  <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.4rem", fontWeight: 800, color: "var(--ink)", marginBottom: 10, letterSpacing: "-.3px", lineHeight: 1.25 }}>
                     {featured.title}
                   </h2>
-                  <p style={{
-                    fontSize: ".86rem", color: "var(--gray)",
-                    lineHeight: 1.7, marginBottom: 16,
-                  }}>
+                  <p style={{ fontSize: ".86rem", color: "var(--gray)", lineHeight: 1.7, marginBottom: 16 }}>
                     {featured.excerpt}
                   </p>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
                     {featured.tags?.map(t => (
-                      <span key={t} style={{
-                        background: "var(--surface2)", color: "var(--gray)",
-                        padding: "3px 10px", borderRadius: 50,
-                        fontSize: ".67rem", fontWeight: 600,
-                      }}>
+                      <span key={t} style={{ background: "var(--surface2)", color: "var(--gray)", padding: "3px 10px", borderRadius: 50, fontSize: ".67rem", fontWeight: 600 }}>
                         #{t}
                       </span>
                     ))}
                   </div>
-                  <div style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    paddingTop: 14, borderTop: "1px solid var(--border)",
-                  }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 14, borderTop: "1px solid var(--border)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                      <div style={{
-                        width: 34, height: 34, borderRadius: "50%",
-                        background: "var(--green)", color: "#fff",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".82rem",
-                      }}>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--green)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".82rem" }}>
                         {featured.author_avatar || "Y"}
                       </div>
                       <div>
@@ -2101,12 +1939,7 @@ const doLogout = async () => {
                         </div>
                       </div>
                     </div>
-                    <button style={{
-                      background: "var(--green)", color: "#fff", border: "none",
-                      padding: "8px 16px", borderRadius: 9,
-                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
-                      cursor: "pointer",
-                    }}>
+                    <button style={{ background: "var(--green)", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 9, fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", cursor: "pointer" }}>
                       Lire l'article →
                     </button>
                   </div>
@@ -2115,12 +1948,7 @@ const doLogout = async () => {
             );
           })()}
 
-          {/* ── GRILLE ARTICLES ── */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 18,
-          }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 18 }}>
             {BLOG_DATA
               .filter(p => !p.featured || blogFilter !== "TOUT")
               .filter(p => blogFilter === "TOUT" || p.cat === blogFilter)
@@ -2128,99 +1956,45 @@ const doLogout = async () => {
                 <article
                   key={p.id}
                   onClick={() => window.open(p.external_url, "_blank", "noopener,noreferrer")}
-                  style={{
-                    background: "var(--surface)", border: "1px solid var(--border)",
-                    borderRadius: 14, overflow: "hidden",
-                    cursor: "pointer", transition: "transform .2s, box-shadow .2s, border-color .2s",
-                    display: "flex", flexDirection: "column",
-                  }}
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden", cursor: "pointer", transition: "transform .2s, box-shadow .2s, border-color .2s", display: "flex", flexDirection: "column" }}
                   onMouseOver={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 14px 28px rgba(0,0,0,.1)"; e.currentTarget.style.borderColor = "var(--green-light)"; }}
                   onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
-                  {/* Image / visuel */}
-                  <div style={{
-                    height: 180, position: "relative",
-                    background: p.color_bg || "var(--green-pale)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    overflow: "hidden",
-                  }}>
+                  <div style={{ height: 180, position: "relative", background: p.color_bg || "var(--green-pale)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                     {p.image ? (
-                      <img
-                        src={p.image}
-                        alt={p.title}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={e => { e.currentTarget.style.display = "none"; }}
-                      />
+                      <img src={p.image} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.currentTarget.style.display = "none"; }} />
                     ) : (
                       <div style={{ fontSize: "4rem", opacity: .6 }}>{p.emoji}</div>
                     )}
-                    <span style={{
-                      position: "absolute", top: 12, left: 12,
-                      background: "rgba(255,255,255,.95)", backdropFilter: "blur(10px)",
-                      color: "var(--ink)", padding: "4px 11px", borderRadius: 50,
-                      fontSize: ".64rem", fontWeight: 800, letterSpacing: ".05em",
-                      fontFamily: "'Syne',sans-serif",
-                    }}>
+                    <span style={{ position: "absolute", top: 12, left: 12, background: "rgba(255,255,255,.95)", backdropFilter: "blur(10px)", color: "var(--ink)", padding: "4px 11px", borderRadius: 50, fontSize: ".64rem", fontWeight: 800, letterSpacing: ".05em", fontFamily: "'Syne',sans-serif" }}>
                       {p.emoji} {p.cat}
                     </span>
-                    <span style={{
-                      position: "absolute", top: 12, right: 12,
-                      background: "rgba(0,0,0,.6)", backdropFilter: "blur(10px)",
-                      color: "#fff", padding: "4px 10px", borderRadius: 50,
-                      fontSize: ".62rem", fontWeight: 700,
-                      display: "flex", alignItems: "center", gap: 3,
-                    }}>
+                    <span style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,.6)", backdropFilter: "blur(10px)", color: "#fff", padding: "4px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                       ⏱ {p.read}
                     </span>
                   </div>
 
-                  {/* Contenu */}
                   <div style={{ padding: "16px 16px 14px", flex: 1, display: "flex", flexDirection: "column" }}>
-                    <h3 style={{
-                      fontFamily: "'Syne',sans-serif", fontSize: ".98rem", fontWeight: 800,
-                      color: "var(--ink)", marginBottom: 8,
-                      letterSpacing: "-.2px", lineHeight: 1.3,
-                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}>
+                    <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: ".98rem", fontWeight: 800, color: "var(--ink)", marginBottom: 8, letterSpacing: "-.2px", lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {p.title}
                     </h3>
-                    <p style={{
-                      fontSize: ".78rem", color: "var(--gray)",
-                      lineHeight: 1.6, marginBottom: 12, flex: 1,
-                      display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}>
+                    <p style={{ fontSize: ".78rem", color: "var(--gray)", lineHeight: 1.6, marginBottom: 12, flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {p.excerpt}
                     </p>
 
-                    {/* Tags */}
                     {p.tags && p.tags.length > 0 && (
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12 }}>
                         {p.tags.slice(0, 2).map(t => (
-                          <span key={t} style={{
-                            background: "var(--surface2)", color: "var(--gray)",
-                            padding: "2px 8px", borderRadius: 50,
-                            fontSize: ".6rem", fontWeight: 600,
-                          }}>
+                          <span key={t} style={{ background: "var(--surface2)", color: "var(--gray)", padding: "2px 8px", borderRadius: 50, fontSize: ".6rem", fontWeight: 600 }}>
                             #{t}
                           </span>
                         ))}
                       </div>
                     )}
 
-                    {/* Footer auteur */}
-                    <div style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      paddingTop: 11, borderTop: "1px solid var(--border)",
-                    }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 11, borderTop: "1px solid var(--border)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <div style={{
-                          width: 26, height: 26, borderRadius: "50%",
-                          background: "var(--green)", color: "#fff",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".68rem",
-                        }}>
+                        <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--green)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".68rem" }}>
                           {p.author_avatar || "Y"}
                         </div>
                         <div>
@@ -2232,10 +2006,7 @@ const doLogout = async () => {
                           </div>
                         </div>
                       </div>
-                      <span style={{
-                        fontSize: ".68rem", fontWeight: 700, color: "var(--green)",
-                        display: "flex", alignItems: "center", gap: 3,
-                      }}>
+                      <span style={{ fontSize: ".68rem", fontWeight: 700, color: "var(--green)", display: "flex", alignItems: "center", gap: 3 }}>
                         Lire →
                       </span>
                     </div>
@@ -2244,7 +2015,6 @@ const doLogout = async () => {
               ))}
           </div>
 
-          {/* ── Message si aucun article ── */}
           {BLOG_DATA.filter(p => blogFilter === "TOUT" || p.cat === blogFilter).length === 0 && (
             <div className="empty-state" style={{ padding: "60px 0" }}>
               <div className="empty-icon">📰</div>
@@ -2259,44 +2029,21 @@ const doLogout = async () => {
             </div>
           )}
 
-          {/* ── CTA NEWSLETTER BLOG ── */}
-          <div style={{
-            background: "linear-gradient(135deg, var(--green-pale), #fef9e0)",
-            border: "2px solid var(--green-light)",
-            borderRadius: 14, padding: "26px 28px",
-            marginTop: 32, textAlign: "center",
-          }}>
+          <div style={{ background: "linear-gradient(135deg, var(--green-pale), #fef9e0)", border: "2px solid var(--green-light)", borderRadius: 14, padding: "26px 28px", marginTop: 32, textAlign: "center" }}>
             <div style={{ fontSize: "2.5rem", marginBottom: 8 }}>📬</div>
-            <h3 style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "1.2rem", fontWeight: 800,
-              color: "var(--ink)", marginBottom: 8, letterSpacing: "-.3px",
-            }}>
+            <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.2rem", fontWeight: 800, color: "var(--ink)", marginBottom: 8, letterSpacing: "-.3px" }}>
               Ne rate aucun article
             </h3>
-            <p style={{
-              fontSize: ".84rem", color: "var(--gray)",
-              marginBottom: 16, maxWidth: 460, margin: "0 auto 16px",
-              lineHeight: 1.6,
-            }}>
+            <p style={{ fontSize: ".84rem", color: "var(--gray)", marginBottom: 16, maxWidth: 460, margin: "0 auto 16px", lineHeight: 1.6 }}>
               Reçois chaque semaine nos meilleurs guides et analyses directement dans ta boîte mail.
             </p>
-            <div style={{
-              display: "flex", gap: 8, maxWidth: 400, margin: "0 auto",
-              flexWrap: "wrap", justifyContent: "center",
-            }}>
+            <div style={{ display: "flex", gap: 8, maxWidth: 400, margin: "0 auto", flexWrap: "wrap", justifyContent: "center" }}>
               <input
                 type="email"
                 placeholder="ton@email.cm"
                 value={nlEmail}
                 onChange={e => setNlEmail(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 200,
-                  padding: "11px 14px", borderRadius: 9,
-                  border: "1.5px solid var(--border)",
-                  background: "var(--surface)", color: "var(--ink)",
-                  fontFamily: "'DM Sans',sans-serif", fontSize: ".85rem",
-                  outline: "none",
-                }}
+                style={{ flex: 1, minWidth: 200, padding: "11px 14px", borderRadius: 9, border: "1.5px solid var(--border)", background: "var(--surface)", color: "var(--ink)", fontFamily: "'DM Sans',sans-serif", fontSize: ".85rem", outline: "none" }}
               />
               <button
                 onClick={async () => {
@@ -2305,22 +2052,16 @@ const doLogout = async () => {
                     setNlSent(true);
                   }
                 }}
-                style={{
-                  background: "var(--green)", color: "#fff", border: "none",
-                  padding: "11px 22px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
-                  cursor: "pointer", whiteSpace: "nowrap",
-                }}
+                style={{ background: "var(--green)", color: "#fff", border: "none", padding: "11px 22px", borderRadius: 9, fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem", cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 {nlSent ? "✅ Abonné(e) !" : "S'abonner 🚀"}
               </button>
             </div>
           </div>
-
         </section>
       )}
-      
-            {/* ═══════════════ PAGE : FIDÉLITÉ (système complet) ═══════════════ */}
+
+      {/* ═══════════════ PAGE : FIDÉLITÉ ═══════════════ */}
       {page==="loyalty"&&(
         <LoyaltyPage
           user={user}
@@ -2331,7 +2072,6 @@ const doLogout = async () => {
         />
       )}
 
-
       {/* ════════ PAGE : DASHBOARD ════════ */}
       {page==="dashboard"&&(
         user?(
@@ -2339,8 +2079,8 @@ const doLogout = async () => {
             <div className="dash-sidebar">
               <div className="dash-avatar">{userData?.nom?.[0]||"U"}</div>
               <div className="dash-name" title={userData?.nom || user.email}>
-  {userData?.nom || user.email?.split("@")[0] || "Utilisateur"}
-</div>
+                {userData?.nom || user.email?.split("@")[0] || "Utilisateur"}
+              </div>
               <div className="dash-role-badge"><span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole||"buyer"]}</span></div>
               <div className="dash-nav">
                 {getDashNav().map(item=>(
@@ -2353,18 +2093,16 @@ const doLogout = async () => {
             </div>
 
             <div className="dash-content">
-              {/* Messages commun à tous */}
               {dashTab==="messages"&&(
-  <>
-    <div className="dash-page-title">💬 Messagerie Yorix</div>
-    <div className="info-msg">🔐 Messagerie sécurisée entre acheteurs et vendeurs. Tes discussions sont privées et protégées.</div>
-    <ChatUsers 
-      user={user} 
-      userData={userData}
-    />
-  </>
-)}
-              {/* Dashboards par rôle */}
+                <>
+                  <div className="dash-page-title">💬 Messagerie Yorix</div>
+                  <div className="info-msg">🔐 Messagerie sécurisée entre acheteurs et vendeurs. Tes discussions sont privées et protégées.</div>
+                  <ChatUsers
+                    user={user}
+                    userData={userData}
+                  />
+                </>
+              )}
               {dashTab!=="messages"&&userRole==="seller"&&<SellerDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
               {dashTab!=="messages"&&userRole==="delivery"&&<DeliveryDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
               {dashTab!=="messages"&&userRole==="provider"&&<ProviderDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>}
@@ -2438,7 +2176,6 @@ const doLogout = async () => {
             </div>
           ))}
         </div>
-        {/* Barre inscription rapide mobile si non connecté */}
         {!user && (
           <div style={{borderTop:"1px solid var(--border)",padding:"8px 16px",display:"flex",gap:8}}>
             <button
@@ -2453,16 +2190,17 @@ const doLogout = async () => {
         )}
       </div>
 
-
       {/* ════════ PAGE : ADMIN ════════ */}
       {page==="admin"&&(
         <AdminDashboard user={user} userData={userData} goPage={goPage}/>
       )}
 
-      {/* ════════ PAGE : CONTACT ════════ */}
+      {/* ════════ PAGES LÉGALES ════════ */}
       {page==="cgv"&&<PagesLegales type="cgv" goPage={goPage}/>}
       {page==="mentions"&&<PagesLegales type="mentions" goPage={goPage}/>}
       {page==="confidentialite"&&<PagesLegales type="confidentialite" goPage={goPage}/>}
+
+      {/* ════════ PAGE : CONTACT ════════ */}
       {page==="contact"&&(
         <section className="sec anim">
           <div style={{maxWidth:700,margin:"0 auto"}}>
