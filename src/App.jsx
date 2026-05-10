@@ -80,6 +80,7 @@ import {
   LazyFicheProduit,
   LazyPrestPage,
   LazyCheckoutPage,
+  LazyCartPage,
   LazyAcademyDetail,
   LazyAcademyContactForm,
   LazyLoyaltyPage,
@@ -99,7 +100,6 @@ import {
   removeCartItem,
   computeCartSummary,
 } from "./domain/cartDomain";
-import { isFeatureEnabled } from "./lib/featureFlags";
 import { OptimizedImage } from "./components/OptimizedImage";
 import { PushManager } from "./components/PushManager";
 import { OnboardingModal } from "./components/OnboardingModal";
@@ -152,7 +152,6 @@ export default function Yorix() {
   const [filterCat, setFilterCat]               = useState("");
 
   // Panier
-  const [cartOpen, setCartOpen]   = useState(false);
   const [cartItems, setCartItems] = useState(() => loadCart());
 
   // Sauvegarde automatique du panier à chaque modification
@@ -193,7 +192,6 @@ export default function Yorix() {
 
   const [detailProduct, setDetailProduct] = useState(null);
   const [detailProductLoading, setDetailProductLoading] = useState(false);
-  const checkoutV2Enabled = isFeatureEnabled("checkout_v2");
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -387,7 +385,6 @@ export default function Yorix() {
   const goPage = useCallback((p, opts = {}) => {
     navigate(pathForPage(p, opts));
     window.scrollTo(0, 0);
-    setCartOpen(false);
     setNotifOpen(false);
   }, [navigate]);
 
@@ -692,24 +689,21 @@ export default function Yorix() {
     const cartItem = makeProductCartItem(p);
     if (!cartItem) return;
     setCartItems((prev) => upsertCartItem(prev, cartItem));
-    setCartOpen(true);
   }, []);
 
   const addServiceToCart = useCallback((service) => {
     const cartItem = makeServiceCartItem(service);
     if (!cartItem) return;
     setCartItems((prev) => upsertCartItem(prev, cartItem));
-    setCartOpen(true);
   }, []);
 
   const changeQty = (id, d, kind = null) => setCartItems((prev) => updateCartQty(prev, id, kind, d));
   const removeItem = (id, kind = null) => setCartItems((prev) => removeCartItem(prev, id, kind));
   const cartSummary = useMemo(() => computeCartSummary(cartItems, LIVRAISON_FEE), [cartItems]);
   const totalQty = cartSummary.qty;
-  const totalPrice = cartSummary.subtotal;
 
   const passerCommande = async () => {
-    if (!user) { setAuthOpen(true); setCartOpen(false); return; }
+    if (!user) { setAuthOpen(true); return; }
     try {
       const orderPromises = cartItems.map(item =>
         supabase.from("orders").insert({
@@ -750,7 +744,6 @@ export default function Yorix() {
       }
 
       setCartItems([]);
-      setCartOpen(false);
 
       if (codesSuivis.length > 0) {
         const codesStr = codesSuivis.join(", ");
@@ -1414,7 +1407,7 @@ export default function Yorix() {
             </button>
           )}
 
-          <button className="icon-btn" onClick={()=>setCartOpen(true)} title="Mon panier">
+          <button className="icon-btn" onClick={()=>goPage("cart")} title="Mon panier">
             🛒{totalQty>0 && <span className="ibadge">{totalQty}</span>}
           </button>
 
@@ -1483,258 +1476,7 @@ export default function Yorix() {
         </div>
       )}
 
-      {/* ═══ CART DRAWER AMAZON STYLE ═══ */}
-      <div className={`cart-overlay${cartOpen?" open":""}`} onClick={()=>setCartOpen(false)}/>
-      <div className={`cart-drawer${cartOpen?" open":""}`}>
-        <div className="cart-header">
-          <div className="cart-header-left">
-            <div className="cart-header-icon">🛒</div>
-            <div>
-              <div className="cart-title">Mon panier</div>
-              <div className="cart-subtitle">
-                {totalQty === 0 ? "Vide" : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
-              </div>
-            </div>
-          </div>
-          <button className="cart-close" onClick={() => setCartOpen(false)}>✕</button>
-        </div>
-
-        {cartItems.length > 0 && (
-          <div className="cart-trust-bar">
-            <span>🔒 Paiement sécurisé</span>
-            <span>🚚 Livraison rapide</span>
-            <span>✅ Garantie Yorix</span>
-          </div>
-        )}
-
-        {cartItems.length === 0 ? (
-          <div className="cart-empty">
-            <div className="cart-empty-icon">🛒</div>
-            <div className="cart-empty-title">Votre panier est vide</div>
-            <div className="cart-empty-sub">
-              Parcourez notre catalogue et ajoutez vos produits préférés pour commander.
-            </div>
-            <button className="cart-empty-btn" onClick={() => { setCartOpen(false); goPage("produits"); }}>
-              🛍️ Explorer les produits
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="cart-items">
-              {cartItems.map(item => {
-                const sousTotal = item.prix * item.qty;
-                const stockBadge =
-                  item.stock == null ? null :
-                  item.stock === 0 ? { cls: "ci-tag-stock-out", txt: "❌ Rupture" } :
-                  item.stock <= 5 ? { cls: "ci-tag-stock-low", txt: `⚠️ ${item.stock} restants` } :
-                  { cls: "ci-tag-stock-ok", txt: "✅ En stock" };
-
-                return (
-                  <div key={`${item.kind || "product"}-${item.id}`} className="cart-item">
-                    <div className="ci-img">
-                      <OptimizedImage
-                        src={item.image}
-                        alt={item.name}
-                        width={120}
-                        fallbackEmoji="📦"
-                        style={{ width: "100%", height: "100%" }}
-                      />
-                    </div>
-                    <div className="ci-info">
-                      <div className="ci-name">{item.name}</div>
-                      <div className="ci-vendeur">
-                        {item.kind === "service" ? "🛠️ Service / réservation" : "📦 Produit physique"}
-                      </div>
-                      {item.vendeur_nom && (
-                        <div className="ci-vendeur">🏪 Vendeur : <strong>{item.vendeur_nom}</strong></div>
-                      )}
-                      {item.provider_nom && (
-                        <div className="ci-vendeur">👷 Prestataire : <strong>{item.provider_nom}</strong></div>
-                      )}
-                      <div className="ci-meta">
-                        {item.categorie && <span className="ci-tag">{item.categorie}</span>}
-                        {item.ville && <span className="ci-tag">📍 {item.ville}</span>}
-                        {stockBadge && <span className={`ci-tag ${stockBadge.cls}`}>{stockBadge.txt}</span>}
-                      </div>
-                      <div className="ci-bottom">
-                        <div className="ci-price-block">
-                          <span className="ci-unit-price">{item.prix?.toLocaleString()} FCFA / unité</span>
-                          <span className="ci-total-price">{sousTotal.toLocaleString()} FCFA</span>
-                        </div>
-                        <div className="ci-qty">
-                          <button className="qty-btn" onClick={() => changeQty(item.id, -1, item.kind)}>−</button>
-                          <span className="qty-val">{item.qty}</span>
-                          <button className="qty-btn" onClick={() => changeQty(item.id, 1, item.kind)}>+</button>
-                        </div>
-                      </div>
-                    </div>
-                    <button className="ci-del" onClick={() => removeItem(item.id, item.kind)} title="Retirer">🗑</button>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="cart-footer">
-              <div className="cart-promo-row">
-                🎁 <strong>Plus que {Math.max(0, 50000 - cartSummary.productsSubtotal).toLocaleString()} FCFA</strong> pour la livraison offerte !
-              </div>
-
-              <div className="cart-summary">
-                <div className="cart-total-row">
-                  <span>Sous-total ({totalQty} article{totalQty > 1 ? "s" : ""})</span>
-                  <strong>{cartSummary.subtotal.toLocaleString()} FCFA</strong>
-                </div>
-                <div className="cart-total-row">
-                  <span>🚚 Livraison estimée</span>
-                  <strong>{cartSummary.delivery ? `${cartSummary.delivery.toLocaleString()} FCFA` : "Offerte ✨"}</strong>
-                </div>
-                <div className="cart-total-row discount">
-                  <span>🔐 Protection Escrow</span>
-                  <strong>Incluse</strong>
-                </div>
-                <div className="cart-divider" />
-                <div className="cart-total-row grand">
-                  <span>TOTAL À PAYER</span>
-                  <strong>{cartSummary.total.toLocaleString()} FCFA</strong>
-                </div>
-              </div>
-
-              {checkoutV2Enabled && (
-                <button
-                  className="form-submit"
-                  style={{ width: "100%", marginBottom: 10 }}
-                  onClick={() => {
-                    setCartOpen(false);
-                    goPage("checkout");
-                  }}
-                >
-                  ⚡ Checkout sécurisé
-                </button>
-              )}
-
-              <div className="cart-payment-section">
-                <div className="cart-payment-title">💳 Choisir un mode de paiement</div>
-                <div className="cart-payment-grid">
-                  <button
-                    className="cart-pay-btn momo"
-                    onClick={() => {
-                      const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
-                      const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-                      const msg = [
-                        "🛒 *NOUVELLE COMMANDE YORIX*",
-                        "",
-                        "💳 *Mode de paiement :* MTN Mobile Money",
-                        `📱 *Numéro MoMo :* ${MOMO_NUMBER}`,
-                        "",
-                        "📦 *Produits commandés :*",
-                        lignes,
-                        "",
-                        `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
-                        `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
-                        `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
-                        "",
-                        "👤 *Client :*",
-                        `Nom : ${userData?.nom || "____"}`,
-                        `Téléphone : ${userData?.telephone || "____"}`,
-                        `Adresse : ____`,
-                        "",
-                        "✅ *Instructions :*",
-                        `1. J'effectue le paiement MoMo au ${MOMO_NUMBER}`,
-                        "2. J'envoie la capture du paiement sur ce WhatsApp",
-                        "3. Je confirme mon adresse de livraison",
-                        "",
-                        "Merci Yorix ! 🇨🇲",
-                      ].join("\n");
-                      window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-                    }}
-                  >
-                    <div className="cart-pay-icon">📱</div>
-                    <div className="cart-pay-label">MTN MoMo</div>
-                    <div className="cart-pay-number">{MOMO_NUMBER}</div>
-                  </button>
-
-                  <button
-                    className="cart-pay-btn orange"
-                    onClick={() => {
-                      const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
-                      const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-                      const msg = [
-                        "🛒 *NOUVELLE COMMANDE YORIX*",
-                        "",
-                        "💳 *Mode de paiement :* Orange Money",
-                        `📱 *Numéro Orange Money :* ${ORANGE_NUMBER}`,
-                        "",
-                        "📦 *Produits commandés :*",
-                        lignes,
-                        "",
-                        `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
-                        `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
-                        `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
-                        "",
-                        "👤 *Client :*",
-                        `Nom : ${userData?.nom || "____"}`,
-                        `Téléphone : ${userData?.telephone || "____"}`,
-                        `Adresse : ____`,
-                        "",
-                        "✅ *Instructions :*",
-                        `1. J'effectue le paiement Orange Money au ${ORANGE_NUMBER}`,
-                        "2. J'envoie la capture du paiement sur ce WhatsApp",
-                        "3. Je confirme mon adresse de livraison",
-                        "",
-                        "Merci Yorix ! 🇨🇲",
-                      ].join("\n");
-                      window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-                    }}
-                  >
-                    <div className="cart-pay-icon">🔶</div>
-                    <div className="cart-pay-label">Orange Money</div>
-                    <div className="cart-pay-number">{ORANGE_NUMBER}</div>
-                  </button>
-                </div>
-
-                <button
-                  className="cart-wa-confirm"
-                  onClick={() => {
-                    const total = totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE);
-                    const lignes = cartItems.map(i => `• ${i.name} (x${i.qty}) = ${(i.prix*i.qty).toLocaleString()} FCFA`).join("\n");
-                    const msg = [
-                      "🛒 *NOUVELLE COMMANDE YORIX*",
-                      "",
-                      "📦 *Produits commandés :*",
-                      lignes,
-                      "",
-                      `💰 Sous-total : ${totalPrice.toLocaleString()} FCFA`,
-                      `🚚 Livraison : ${totalPrice >= 50000 ? "Gratuite" : LIVRAISON_FEE.toLocaleString() + " FCFA"}`,
-                      `💵 *TOTAL : ${total.toLocaleString()} FCFA*`,
-                      "",
-                      "👤 *Client :*",
-                      `Nom : ${userData?.nom || "____"}`,
-                      `Téléphone : ${userData?.telephone || "____"}`,
-                      `Adresse : ____`,
-                      "",
-                      "💳 *Modes de paiement disponibles :*",
-                      `📱 MTN MoMo : ${MOMO_NUMBER}`,
-                      `🔶 Orange Money : ${ORANGE_NUMBER}`,
-                      "",
-                      "👉 Après paiement, j'envoie la capture sur ce WhatsApp.",
-                      "",
-                      "Merci Yorix ! 🇨🇲",
-                    ].join("\n");
-                    window.open(`https://wa.me/${PAYMENT_WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-                  }}
-                >
-                  💬 Commander via WhatsApp
-                </button>
-
-                <div className="cart-info-text">
-                  Après paiement, envoyez la capture au <strong>+237 {PAYMENT_WA_NUMBER.slice(3)}</strong><br/>
-                  pour valider votre commande.
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      {/* Drawer supprimé au profit de la page panier dédiée */}
 
       {/* ── TABS ── */}
       <div className="nav-tabs">{TABS.map(t=><div key={t.p} className={`tab${tabActive(t.p)?" active":""}`} onClick={()=>goPage(t.p)}>{t.l}</div>)}</div>
@@ -1883,6 +1625,22 @@ export default function Yorix() {
             }}
             syncFilters={prestSyncFilters}
             onAddServiceToCart={addServiceToCart}
+          />
+        </Suspense>
+      )}
+
+      {page==="cart"&&(
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement panier..." />}>
+          <LazyCartPage
+            cartItems={cartItems}
+            cartSummary={cartSummary}
+            changeQty={changeQty}
+            removeItem={removeItem}
+            goPage={goPage}
+            addToCart={addToCart}
+            produits={produits}
+            wishlist={wishlist}
+            toggleWish={toggleWish}
           />
         </Suspense>
       )}

@@ -49,6 +49,10 @@ export const LazyCheckoutPage = lazy(() =>
   import("./components/CheckoutPage").then((m) => ({ default: m.CheckoutPage }))
 );
 
+export const LazyCartPage = lazy(() =>
+  import("./components/CartPage").then((m) => ({ default: m.CartPage }))
+);
+
 export const LazyAcademyDetail = lazy(() =>
   import("./components/AcademyDetail").then((m) => ({ default: m.AcademyDetail }))
 );

@@ -99,6 +99,7 @@ export const PAGE_PATH = {
   dashboard: "/dashboard",
   admin: "/admin",
   checkout: "/checkout",
+  cart: "/panier",
   devenirVendeur: "/devenir-vendeur",
   devenirLivreur: "/devenir-livreur",
 };
@@ -238,6 +239,8 @@ export function parsePathname(pathname) {
     dashboard: "dashboard",
     admin: "admin",
     checkout: "checkout",
+    panier: "cart",
+    cart: "cart",
     "devenir-vendeur": "devenirVendeur",
     "devenir-livreur": "devenirLivreur",
     "devenir-prestataire": "inscription",

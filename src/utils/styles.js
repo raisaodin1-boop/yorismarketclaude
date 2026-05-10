@@ -376,6 +376,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .cart-info-text{font-size:.67rem;color:var(--gray);text-align:center;margin-top:8px;line-height:1.5;}
 .cart-info-text strong{color:var(--green);}
 
+/* Cart Page Premium */
+.cart-page-wrap{max-width:1280px;}
+.cart-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+.cart-page-sub{font-size:.84rem;color:var(--gray);margin-top:4px;}
+.cart-page-empty{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:42px 22px;text-align:center;}
+.cart-page-grid{display:grid;grid-template-columns:1.5fr .8fr;gap:16px;align-items:start;}
+.cart-page-main{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.cart-page-trust{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.cart-page-trust span{background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:50px;font-size:.7rem;color:var(--gray);font-weight:600;}
+.cart-page-item{display:flex;gap:12px;border:1px solid var(--border);background:var(--surface2);border-radius:12px;padding:10px;margin-bottom:10px;}
+.cart-page-thumb{width:96px;height:96px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--surface);}
+.cart-page-content{flex:1;min-width:0;}
+.cart-page-title{font-family:'Syne',sans-serif;font-size:.93rem;font-weight:700;color:var(--ink);}
+.cart-page-meta{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0;}
+.cart-page-line{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.cart-page-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;}
+.cart-page-summary{position:sticky;top:96px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.cart-page-summary h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
+.cart-page-reco{margin-top:24px;}
+
 @media(max-width:900px){
   .admin-layout{flex-direction:column;}
   .admin-sidebar{
@@ -751,6 +771,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .tb-item{font-size:.68rem;}
   .prod-badge-row{gap:3px;}
   .pb{font-size:.55rem;}
+  .cart-page-grid{grid-template-columns:1fr;gap:12px;}
+  .cart-page-summary{position:static;}
+  .cart-page-item{align-items:flex-start;}
+  .cart-page-thumb{width:82px;height:82px;}
+  .cart-page-actions{flex-wrap:wrap;justify-content:flex-start;}
 }
 /* ========================================
    YORIX CM - MOBILE FIXES
