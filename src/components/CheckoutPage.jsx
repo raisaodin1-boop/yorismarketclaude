@@ -10,9 +10,21 @@ import {
 } from "../domain/checkoutForm";
 import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrchestrator";
 import { confirmCheckout, createCheckoutIntent, initPaymentCinetPay } from "../lib/checkoutApi";
+import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
+
+/** Numéro wa.me sans + ni espaces ; défaut +237696565654 (Yorix). */
+function waMeRecipient(configured) {
+  const official = String(YORIX_WA_NUMBER).replace(/\D/g, "");
+  const raw = String(configured ?? "").replace(/\D/g, "");
+  if (!raw) return official;
+  if (raw.startsWith("237") && raw.length >= 12) return raw.slice(0, 12);
+  if (raw.length === 9 && /^6\d{8}$/.test(raw)) return `237${raw}`;
+  if (raw.length >= 10 && raw.startsWith("237")) return raw.slice(0, 12);
+  return official;
+}
 
 function deliveryEstimateHint(ville, locationType, carrier) {
   const v = (ville || "").toLowerCase();
@@ -208,7 +220,9 @@ export function CheckoutPage({
       "",
       `Modes disponibles: MTN ${momoNumber} / Orange ${orangeNumber}`,
     ].join("\n");
-    window.open(`https://wa.me/${fallbackWhatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank");
+    const phone = waMeRecipient(fallbackWhatsappNumber || YORIX_WA_NUMBER);
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handlePlaceOrder = async () => {
@@ -223,6 +237,50 @@ export function CheckoutPage({
     }
     setCheckoutError("");
     setLoading(true);
+
+    if (paymentMethod === "whatsapp_backup") {
+      let intentId = null;
+      let orderGroupId = null;
+      try {
+        const intentPayload = buildCheckoutIntent({
+          items: cartItems,
+          user,
+          userData: mergedUserData,
+          summary,
+        });
+        try {
+          const intent = await createCheckoutIntent(intentPayload);
+          intentId = intent?.checkout_intent_id || null;
+          if (intentId) {
+            try {
+              const confirmation = await confirmCheckout({
+                checkout_intent_id: intentId,
+                payment_method: paymentMethod,
+                location_type: locationType,
+                address: mergedUserData.adresse,
+              });
+              orderGroupId = confirmation?.order_group_id || null;
+            } catch (ce) {
+              console.warn("confirm checkout (WhatsApp):", ce?.message || ce);
+            }
+          }
+        } catch (ie) {
+          console.warn("create intent (WhatsApp):", ie?.message || ie);
+        }
+      } catch (e) {
+        console.warn("checkout WhatsApp préparation:", e?.message || e);
+      }
+      openWhatsAppFallback(intentId);
+      setCartItems([]);
+      setOrderDone({
+        mode: "whatsapp",
+        orderGroupId,
+        intentId: intentId || `LOCAL-${Date.now()}`,
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const intentPayload = buildCheckoutIntent({
         items: cartItems,
@@ -251,19 +309,19 @@ export function CheckoutPage({
         }
       }
 
-      if (paymentMethod === "whatsapp_backup" || !confirmation?.order_group_id) {
+      if (!confirmation?.order_group_id) {
         openWhatsAppFallback(intent.checkout_intent_id);
       }
 
       setCartItems([]);
       setOrderDone({
-        mode: paymentMethod === "whatsapp_backup" || !confirmation?.order_group_id ? "whatsapp" : "standard",
+        mode: !confirmation?.order_group_id ? "whatsapp" : "standard",
         orderGroupId: confirmation?.order_group_id || null,
         intentId: intent.checkout_intent_id,
       });
     } catch (e) {
       console.warn("Checkout:", e?.message || e);
-      setCheckoutError("Impossible de finaliser le checkout. Utilisez le backup WhatsApp ou réessayez.");
+      setCheckoutError("Impossible de finaliser le checkout. Réessayez ou contactez Yorix sur WhatsApp (+237 696 56 56 54).");
     } finally {
       setLoading(false);
     }
