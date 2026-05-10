@@ -762,7 +762,7 @@ function ContractContent({ role, roleInfo }) {
       <p>Yorix peut modifier ce contrat. Vous serez notifié par email et devrez réaccepter la nouvelle version lors de votre prochaine connexion.</p>
 
       <Heading>ARTICLE 13 — RÉSILIATION</Heading>
-      <p>Vous pouvez résilier à tout moment via <strong>support@yorix.cm</strong>. Yorix peut résilier sans préavis en cas de manquement grave, fraude, ou note < 3,0/5.</p>
+      <p>Vous pouvez résilier à tout moment via <strong>support@yorix.cm</strong>. Yorix peut résilier sans préavis en cas de manquement grave, fraude.</p>
 
       <Heading>ARTICLE 14 — DROIT APPLICABLE</Heading>
       <p>Contrat régi par le <strong>droit camerounais</strong>. En cas de litige : tribunaux compétents de <strong>Douala</strong>.</p>
