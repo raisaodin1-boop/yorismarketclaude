@@ -3,11 +3,12 @@ export function MarketingBreadcrumb({ items }) {
   if (!Array.isArray(items) || items.length === 0) return null;
   return (
     <nav className="yorix-bc" aria-label="Fil d'ariane">
-      <ol className="yorix-bc__list">
+      {/* div plutôt que ol : évite les numéros 1. 2. sans CSS (liste native). */}
+      <div className="yorix-bc__list">
         {items.map((it, idx) => {
           const last = idx === items.length - 1;
           return (
-            <li key={`${it.label}-${idx}`} className="yorix-bc__item">
+            <span key={`${it.label}-${idx}`} className="yorix-bc__segment">
               {!last && typeof it.onClick === "function" ? (
                 <button type="button" className="yorix-bc__link" onClick={it.onClick}>
                   {it.label}
@@ -18,14 +19,14 @@ export function MarketingBreadcrumb({ items }) {
                 </span>
               )}
               {!last && (
-                <span className="yorix-bc__sep" aria-hidden>
-                  /
+                <span className="yorix-bc__sep" aria-hidden="true">
+                  ›
                 </span>
               )}
-            </li>
+            </span>
           );
         })}
-      </ol>
+      </div>
     </nav>
   );
 }

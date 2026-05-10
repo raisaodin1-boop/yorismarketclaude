@@ -109,7 +109,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
   if (!user) {
     return (
       <section className="sec anim yorix-pro-page loy-page">
-        <div className="yorix-bc-row">
+        <div className="yorix-bc-row yorix-bc-row--loy">
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Fidélité Yorix Points" }]} />
         </div>
         <div className="yorix-loy-panel-guest">
@@ -160,10 +160,11 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       )}
 
       <section className="sec anim yorix-pro-page loy-page">
-        <div className="yorix-bc-row">
+        <div className="yorix-bc-row yorix-bc-row--loy">
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Programme fidélité" }]} />
         </div>
 
+        <div className="loy-shell">
         <div className="yorix-loy-dash-wrap">
           <div className="yorix-loy-dash-deco" aria-hidden />
           <div className="yorix-loy-dash-deco yorix-loy-dash-deco--b" aria-hidden />
@@ -421,6 +422,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
             </div>
           </div>
         )}
+        </div>{/* .loy-shell */}
       </section>
     </>
   );
