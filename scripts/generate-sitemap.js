@@ -1,5 +1,6 @@
 // Génère sitemap.xml au prebuild — URLs alignées sur src/lib/seoRoutes.js
 import { createClient } from "@supabase/supabase-js";
+import { loadEnv } from "vite";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import {
@@ -11,10 +12,60 @@ import {
   categoryToSlug,
 } from "../src/lib/seoRoutes.js";
 import { CATS } from "../src/lib/constants.js";
+import {
+  SUPABASE_PROJECT_URL,
+  SUPABASE_ANON_PUBLISHABLE_KEY,
+} from "../src/lib/supabaseDefaults.js";
 
-const SUPABASE_URL = "https://msrymchhhxitdevthvdi.supabase.co";
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const today = new Date().toISOString().split("T")[0];
+
+/** Résout URL + clé pour Node : process.env > fichiers .env (Vite) > défauts projet (même source que le client). */
+function resolveSupabaseConfig() {
+  const cwd = process.cwd();
+  const fromProd = loadEnv("production", cwd, "");
+  const fromDev = loadEnv("development", cwd, "");
+
+  const urlCandidates = [
+    process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_URL,
+    fromProd.VITE_SUPABASE_URL,
+    fromProd.SUPABASE_URL,
+    fromDev.VITE_SUPABASE_URL,
+    fromDev.SUPABASE_URL,
+    SUPABASE_PROJECT_URL,
+  ].filter(Boolean);
+
+  const url = urlCandidates[0] ?? SUPABASE_PROJECT_URL;
+  const explicitAnon =
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    fromProd.VITE_SUPABASE_ANON_KEY ||
+    fromProd.SUPABASE_ANON_KEY ||
+    fromDev.VITE_SUPABASE_ANON_KEY ||
+    fromDev.SUPABASE_ANON_KEY;
+
+  const anonKey = explicitAnon || SUPABASE_ANON_PUBLISHABLE_KEY;
+
+  /** D’où vient au moins la clé utilisée pour l’écriture du log */
+  let sourceHint;
+  if (explicitAnon) {
+    const fromProcess =
+      Boolean(process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY);
+    const fromDotenvFiles = Boolean(
+      fromProd.VITE_SUPABASE_ANON_KEY ||
+        fromProd.SUPABASE_ANON_KEY ||
+        fromDev.VITE_SUPABASE_ANON_KEY ||
+        fromDev.SUPABASE_ANON_KEY
+    );
+    if (fromProcess) sourceHint = "env CI/shell ou export manuel";
+    else if (fromDotenvFiles) sourceHint = "fichier .env / .env.local (loadEnv Vite)";
+    else sourceHint = "env ou .env";
+  } else {
+    sourceHint = "supabaseDefaults.js (identique au client SPA — aucune variable requise en local)";
+  }
+
+  return { url, anonKey, sourceHint };
+}
 
 function urlEntry(loc, lastmod, priority, changefreq) {
   return `  <url>
@@ -46,33 +97,38 @@ const staticSeoPages = [
   [PAGE_PATH.devenirLivreur, "0.8", "monthly"],
 ];
 
-async function fetchProducts() {
-  if (!SUPABASE_ANON_KEY) return [];
+async function fetchProducts(supabase) {
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("products")
-      .select("id, name_fr, updated_at")
+      .select("id, name_fr, created_at")
       .or("actif.eq.true,actif.is.null")
       .limit(2000);
+    if (error) {
+      console.warn(`⚠️ Sitemap — produits: ${error.message} (${error.code ?? "sans code"})`);
+      return [];
+    }
     return data || [];
   } catch (err) {
-    console.warn("⚠️ Erreur produits sitemap:", err.message);
+    console.warn("⚠️ Sitemap — produits (exception réseau):", err.message);
     return [];
   }
 }
 
-async function fetchServices() {
-  if (!SUPABASE_ANON_KEY) return [];
+async function fetchServices(supabase) {
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("services")
       .select("id, provider_nom, created_at")
       .eq("actif", true)
       .limit(1000);
+    if (error) {
+      console.warn(`⚠️ Sitemap — services: ${error.message} (${error.code ?? "sans code"})`);
+      return [];
+    }
     return data || [];
-  } catch {
+  } catch (err) {
+    console.warn("⚠️ Sitemap — services (exception réseau):", err.message);
     return [];
   }
 }
@@ -109,10 +165,13 @@ function metierVilleUrls() {
   return out;
 }
 
-
 async function generate() {
-  const products = await fetchProducts();
-  const services = await fetchServices();
+  const { url, anonKey, sourceHint } = resolveSupabaseConfig();
+  console.log(`ℹ️ Sitemap — connexion Supabase (${sourceHint})`);
+
+  const supabase = createClient(url, anonKey);
+  const products = await fetchProducts(supabase);
+  const services = await fetchServices(supabase);
 
   const urls = [];
 
@@ -137,7 +196,7 @@ async function generate() {
     urls.push(
       urlEntry(
         `/produit/${slug}`,
-        (p.updated_at || today).split("T")[0],
+        (p.created_at || today).split("T")[0],
         "0.72",
         "weekly"
       )
@@ -165,7 +224,9 @@ ${urls.join("\n")}
   if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
   writeFileSync(join(publicDir, "sitemap.xml"), xml);
-  console.log(`✅ sitemap.xml — ${urls.length} URLs (produits: ${products.length}, services: ${services.length})`);
+  console.log(
+    `✅ sitemap.xml — ${urls.length} URLs (produits: ${products.length}, services: ${services.length})`
+  );
 }
 
 generate().catch((err) => {
