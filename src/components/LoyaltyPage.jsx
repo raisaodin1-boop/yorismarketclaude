@@ -8,18 +8,46 @@ import { LoyaltyRedeemModal } from "./LoyaltyRedeemModal";
 // ─────────────────────────────────────────────────────────────
 // PAGE PRINCIPALE : LOYALTY (fidélité, points, récompenses)
 // ─────────────────────────────────────────────────────────────
+
+const LEVEL_LABEL_FR = {
+  bronze: "Bronze",
+  argent: "Argent",
+  or: "Or",
+  platine: "Platine",
+};
+
+function packCardAccentClass(badge) {
+  if (badge === "meilleur_deal") return "loy-pack-card--deal";
+  if (badge === "populaire") return "loy-pack-card--pop";
+  if (badge) return "loy-pack-card--new";
+  return "";
+}
+
+function packBadgeClass(badge) {
+  if (badge === "meilleur_deal") return "loy-pack-badge--deal";
+  if (badge === "populaire") return "loy-pack-badge--pop";
+  return "loy-pack-badge--new";
+}
+
+function packBadgeLabel(badge) {
+  if (badge === "meilleur_deal") return "🔥 Meilleur deal";
+  if (badge === "populaire") return "⭐ Populaire";
+  if (badge) return "🆕 Nouveau";
+  return "";
+}
+
 export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab }) {
-  const [packs, setPacks]                 = useState([]);
-  const [rewards, setRewards]             = useState([]);
-  const [transactions, setTransactions]   = useState([]);
-  const [redemptions, setRedemptions]     = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [selectedPack, setSelectedPack]   = useState(null);
+  const [packs, setPacks]                   = useState([]);
+  const [rewards, setRewards]               = useState([]);
+  const [transactions, setTransactions]     = useState([]);
+  const [redemptions, setRedemptions]       = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [selectedPack, setSelectedPack]     = useState(null);
   const [selectedReward, setSelectedReward] = useState(null);
-  const [currentPoints, setCurrentPoints] = useState(0);
-  const [totalGagnes, setTotalGagnes]     = useState(0);
-  const [currentLevel, setCurrentLevel]   = useState("bronze");
-  const [tab, setTab]                     = useState("rewards");
+  const [currentPoints, setCurrentPoints]   = useState(0);
+  const [totalGagnes, setTotalGagnes]       = useState(0);
+  const [currentLevel, setCurrentLevel]     = useState("bronze");
+  const [tab, setTab]                       = useState("rewards");
 
   const loadAll = async () => {
     setLoading(true);
@@ -75,9 +103,12 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
     parrainage:        { label: "Parrainage",          emoji: "👥", color: "#2563eb" },
   };
 
+  const levelFr = LEVEL_LABEL_FR[currentLevel] || currentLevel;
+  const nextLevelFr = currentLevel === "bronze" ? "Argent" : currentLevel === "argent" ? "Or" : currentLevel !== "platine" ? "Platine" : "";
+
   if (!user) {
     return (
-      <section className="sec anim yorix-pro-page">
+      <section className="sec anim yorix-pro-page loy-page">
         <div className="yorix-bc-row">
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Fidélité Yorix Points" }]} />
         </div>
@@ -85,16 +116,21 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           <div className="yorix-loy-ico-big" aria-hidden>
             🌟
           </div>
-          <h2 className="yorix-loy-h2">Yorix Points — Programme de fidélité</h2>
+          <h2 className="yorix-loy-h2">Yorix Points</h2>
           <p className="yorix-loy-p">
-            Gagnez des points à chaque achat, vente ou avis posté. Échangez-les contre des bons d&apos;achat, des livraisons gratuites et bien plus.
+            Programme de fidélité marketplace : cumulez des points à chaque achat, vente ou avis, puis convertissez-les en réductions et avantages.
           </p>
+          <div className="yorix-loy-guest-perks">
+            <span className="yorix-loy-guest-perk">Cashback en points</span>
+            <span className="yorix-loy-guest-perk">Niveaux VIP</span>
+            <span className="yorix-loy-guest-perk">Codes promo exclusifs</span>
+          </div>
           <div className="yorix-loy-cta-row">
             <button type="button" className="cta-y" onClick={() => { setAuthTab?.("register"); setAuthOpen?.(true); }}>
-              🎁 Créer mon compte (+50 pts offerts)
+              Créer un compte — +50 pts
             </button>
             <button type="button" className="cta-w" onClick={() => { setAuthTab?.("login"); setAuthOpen?.(true); }}>
-              🔑 Me connecter
+              J&apos;ai déjà un compte
             </button>
           </div>
         </div>
@@ -123,155 +159,105 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
         />
       )}
 
-      <section className="sec anim yorix-pro-page">
+      <section className="sec anim yorix-pro-page loy-page">
         <div className="yorix-bc-row">
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Programme fidélité" }]} />
         </div>
+
         <div className="yorix-loy-dash-wrap">
           <div className="yorix-loy-dash-deco" aria-hidden />
           <div className="yorix-loy-dash-deco yorix-loy-dash-deco--b" aria-hidden />
 
-          <div style={{ position: "relative", zIndex: 2 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+          <div className="yorix-loy-inner">
+            <div className="yorix-loy-kpi-head">
               <div>
-                <div style={{ fontSize: ".72rem", opacity: .7, fontWeight: 600, marginBottom: 3 }}>YORIX POINTS</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: ".92rem", fontWeight: 600, opacity: .88 }}>
-                  Mes points
-                </div>
+                <div className="yorix-loy-kpi-label">Programme</div>
+                <div className="yorix-loy-kpi-sub">Mes Yorix Points</div>
               </div>
               <LevelBadge level={currentLevel} size="lg" />
             </div>
 
-            <div style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "2.8rem", fontWeight: 800,
-              color: "var(--yellow)", lineHeight: 1, marginBottom: 4,
-            }}>
-              {currentPoints.toLocaleString("fr-FR")}{" "}
-              <span style={{ fontSize: "1rem", color: "rgba(255,255,255,.6)" }}>pts</span>
+            <div className="yorix-loy-big-pts">
+              {currentPoints.toLocaleString("fr-FR")}
+              <span className="yorix-loy-pts-suffix"> pts</span>
             </div>
 
-            <div style={{ fontSize: ".72rem", opacity: .65, marginBottom: 14 }}>
-              Total gagné : {totalGagnes.toLocaleString("fr-FR")} pts · Niveau {currentLevel}
-              {currentLevel !== "platine" &&
-                ` · ${pointsToNext.toLocaleString("fr-FR")} pts pour ${
-                  currentLevel === "bronze" ? "Argent"
-                  : currentLevel === "argent" ? "Or"
-                  : "Platine"
-                }`}
+            <div className="yorix-loy-meta">
+              Total cumulé : <strong>{totalGagnes.toLocaleString("fr-FR")} pts</strong> · Niveau <strong>{levelFr}</strong>
+              {currentLevel !== "platine" && (
+                <>
+                  {" "}
+                  · Encore{" "}
+                  <strong>{pointsToNext.toLocaleString("fr-FR")} pts</strong> pour {nextLevelFr}
+                </>
+              )}
             </div>
 
             {currentLevel !== "platine" && (
-              <div style={{ background: "rgba(255,255,255,.15)", borderRadius: 50, height: 8, overflow: "hidden" }}>
-                <div style={{
-                  background: "linear-gradient(90deg, var(--yellow), #ffd84a)",
-                  borderRadius: 50, height: "100%", width: `${progressPct}%`,
-                  transition: "width .8s ease",
-                }} />
+              <div className="yorix-loy-progress" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100}>
+                <div className="yorix-loy-progress-bar" style={{ width: `${progressPct}%` }} />
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-              <button
-                onClick={() => setTab("packs")}
-                style={{
-                  background: "var(--yellow)", color: "#0d1f14", border: "none",
-                  padding: "9px 18px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".8rem",
-                  cursor: "pointer", flex: "1 1 auto",
-                }}
-              >
-                💎 Acheter des points
+            <div className="yorix-loy-actions">
+              <button type="button" className="yorix-loy-btn-pri" onClick={() => setTab("packs")}>
+                Acheter des points
               </button>
-              <button
-                onClick={() => setTab("rewards")}
-                style={{
-                  background: "rgba(255,255,255,.15)", color: "#fff",
-                  border: "1px solid rgba(255,255,255,.25)",
-                  padding: "9px 18px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".8rem",
-                  cursor: "pointer", flex: "1 1 auto",
-                }}
-              >
-                🎁 Échanger
+              <button type="button" className="yorix-loy-btn-sec" onClick={() => setTab("rewards")}>
+                Échanger mes points
               </button>
             </div>
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
+        <div className="loy-stats-grid">
           {[
-            { icon: "🛍️", val: transactions.filter(t => t.type === "achat").length, lbl: "Achats" },
-            { icon: "💰", val: transactions.filter(t => t.type === "vente").length, lbl: "Ventes" },
-            { icon: "⭐", val: transactions.filter(t => t.type === "avis").length,  lbl: "Avis" },
-            { icon: "🎁", val: redemptions.length,                                   lbl: "Échanges" },
-          ].map(s => (
-            <div key={s.lbl} style={{
-              background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: 10, padding: "12px 10px", textAlign: "center",
-            }}>
-              <div style={{ fontSize: "1.3rem", marginBottom: 2 }}>{s.icon}</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)" }}>
-                {s.val}
-              </div>
-              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{s.lbl}</div>
+            { icon: "🛍️", val: transactions.filter((t) => t.type === "achat").length, lbl: "Achats" },
+            { icon: "💰", val: transactions.filter((t) => t.type === "vente").length, lbl: "Ventes" },
+            { icon: "⭐", val: transactions.filter((t) => t.type === "avis").length, lbl: "Avis" },
+            { icon: "🎁", val: redemptions.length, lbl: "Échanges" },
+          ].map((s) => (
+            <div key={s.lbl} className="loy-stat-card">
+              <div className="loy-stat-ico" aria-hidden>{s.icon}</div>
+              <div className="loy-stat-val">{s.val}</div>
+              <div className="loy-stat-lbl">{s.lbl}</div>
             </div>
           ))}
         </div>
 
-        <div style={{
-          background: "var(--green-pale)", border: "1px solid var(--green-light)",
-          borderRadius: 12, padding: 16, marginBottom: 18,
-        }}>
-          <div style={{
-            fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem",
-            color: "var(--green)", marginBottom: 10,
-          }}>
-            💡 Comment gagner des points ?
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+        <div className="loy-howto">
+          <div className="loy-howto-title">Comment gagner des points ?</div>
+          <div className="loy-howto-grid">
             {[
-              { emoji: "🛍️", t: "Chaque achat", d: "1 point / 500 FCFA dépensés" },
-              { emoji: "💰", t: "Chaque vente", d: "1 point / 500 FCFA vendus" },
-              { emoji: "⭐", t: "Avis clients", d: "2 à 10 pts selon la note" },
-            ].map(w => (
-              <div key={w.t} style={{
-                background: "var(--surface)", borderRadius: 9, padding: 12, textAlign: "center",
-              }}>
-                <div style={{ fontSize: "1.8rem", marginBottom: 5 }}>{w.emoji}</div>
-                <div style={{
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
-                  color: "var(--ink)", marginBottom: 3,
-                }}>
-                  {w.t}
-                </div>
-                <div style={{ fontSize: ".7rem", color: "var(--gray)" }}>{w.d}</div>
+              { emoji: "🛍️", t: "Chaque achat", d: "1 point pour 500 FCFA dépensés sur le catalogue." },
+              { emoji: "💰", t: "Chaque vente", d: "1 point pour 500 FCFA vendus côté vendeur." },
+              { emoji: "⭐", t: "Avis clients", d: "Bonus selon votre note pour aider la communauté." },
+            ].map((w) => (
+              <div key={w.t} className="loy-howto-card">
+                <div className="loy-howto-emoji" aria-hidden>{w.emoji}</div>
+                <div className="loy-howto-h">{w.t}</div>
+                <div className="loy-howto-d">{w.d}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{
-          display: "flex", gap: 6, marginBottom: 16,
-          borderBottom: "1px solid var(--border)", overflowX: "auto",
-        }}>
+        <div className="loy-tabs" role="tablist" aria-label="Sections fidélité">
           {[
-            { id: "rewards", label: "🎁 Récompenses", count: rewards.length },
-            { id: "packs",   label: "💎 Acheter pts", count: packs.length },
-            { id: "history", label: "📜 Historique",  count: transactions.length },
-          ].map(t => (
+            { id: "rewards", label: "Récompenses", count: rewards.length },
+            { id: "packs", label: "Packs points", count: packs.length },
+            { id: "history", label: "Historique", count: transactions.length },
+          ].map((t) => (
             <button
               key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`loy-tab${tab === t.id ? " is-active" : ""}`}
               onClick={() => setTab(t.id)}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                padding: "10px 14px",
-                fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
-                color: tab === t.id ? "var(--green)" : "var(--gray)",
-                borderBottom: tab === t.id ? "3px solid var(--green)" : "3px solid transparent",
-                whiteSpace: "nowrap",
-              }}
             >
-              {t.label} {t.count > 0 && <span style={{ opacity: .6, fontSize: ".72rem" }}>({t.count})</span>}
+              {t.label}
+              {t.count > 0 && <span className="loy-tab-count">({t.count})</span>}
             </button>
           ))}
         </div>
@@ -280,49 +266,37 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           (loading ? (
             <div className="loading"><div className="spinner" />Chargement...</div>
           ) : rewards.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">🎁</div><p>Aucune récompense disponible</p></div>
+            <div className="empty-state"><div className="empty-icon">🎁</div><p>Aucune récompense disponible pour le moment.</p></div>
           ) : (
             <div className="rewards-grid">
-              {rewards.map(r => {
+              {rewards.map((r) => {
                 const canAfford = currentPoints >= r.cout_points;
                 return (
                   <div
                     key={r.id}
-                    className="reward-card"
-                    style={{ opacity: canAfford ? 1 : 0.72, position: "relative", overflow: "hidden" }}
+                    className={`reward-card${canAfford ? "" : " is-locked"}`}
                   >
                     {r.valeur_fcfa && (
-                      <span style={{
-                        position: "absolute", top: 8, right: 8,
-                        background: "var(--green)", color: "#fff",
-                        fontSize: ".58rem", fontWeight: 700,
-                        padding: "2px 7px", borderRadius: 4,
-                      }}>
+                      <span className="loy-reward-val-badge">
                         {r.valeur_fcfa.toLocaleString("fr-FR")} F
                       </span>
                     )}
                     <div className="reward-icon" style={{ background: r.color_bg }}>{r.emoji}</div>
                     <div className="reward-name">{r.nom}</div>
                     {r.description && (
-                      <div style={{ fontSize: ".68rem", color: "var(--gray)", marginBottom: 6, textAlign: "center", lineHeight: 1.4 }}>
-                        {r.description}
-                      </div>
+                      <div className="reward-desc">{r.description}</div>
                     )}
                     <div className="reward-pts" style={{ color: canAfford ? "var(--green)" : "var(--gray)" }}>
                       {r.cout_points.toLocaleString("fr-FR")} pts
                     </div>
                     <button
-                      className="reward-btn"
+                      type="button"
+                      className={`reward-btn ${canAfford ? "reward-btn--afford" : "reward-btn--locked"}`}
                       onClick={() => setSelectedReward(r)}
-                      style={{
-                        background: canAfford ? "var(--green)" : "var(--surface2)",
-                        color: canAfford ? "#fff" : "var(--gray)",
-                        border: canAfford ? "none" : "1px solid var(--border)",
-                      }}
                     >
                       {canAfford
                         ? "Échanger"
-                        : `Il manque ${(r.cout_points - currentPoints).toLocaleString("fr-FR")} pts`}
+                        : `Encore ${(r.cout_points - currentPoints).toLocaleString("fr-FR")} pts`}
                     </button>
                   </div>
                 );
@@ -334,95 +308,56 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           (loading ? (
             <div className="loading"><div className="spinner" />Chargement...</div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
-              {packs.map(p => {
-                const bonus = p.bonus_pct ? Math.round(p.points * p.bonus_pct / 100) : 0;
+            <div className="loy-packs-grid">
+              {packs.map((p) => {
+                const bonus = p.bonus_pct ? Math.round((p.points * p.bonus_pct) / 100) : 0;
                 const total = p.points + bonus;
+                const accent = packCardAccentClass(p.badge);
                 return (
                   <div
                     key={p.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`loy-pack-card ${accent}`.trim()}
                     onClick={() => setSelectedPack(p)}
-                    style={{
-                      background: "var(--surface)",
-                      border: `2px solid ${p.badge === "meilleur_deal" ? "var(--yellow)" : p.badge === "populaire" ? "var(--green)" : "var(--border)"}`,
-                      borderRadius: 12, padding: 14, cursor: "pointer",
-                      position: "relative", transition: "transform .15s,box-shadow .15s",
-                    }}
-                    onMouseOver={e => {
-                      e.currentTarget.style.transform = "translateY(-3px)";
-                      e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,.08)";
-                    }}
-                    onMouseOut={e => {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.boxShadow = "none";
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedPack(p);
+                      }
                     }}
                   >
                     {p.badge && (
-                      <span style={{
-                        position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)",
-                        background: p.badge === "meilleur_deal" ? "var(--yellow)" : p.badge === "populaire" ? "var(--green)" : "#7c3aed",
-                        color: p.badge === "meilleur_deal" ? "#0d1f14" : "#fff",
-                        fontSize: ".6rem", fontWeight: 800, padding: "3px 10px", borderRadius: 50,
-                        textTransform: "uppercase", letterSpacing: ".05em",
-                        fontFamily: "'Syne',sans-serif",
-                      }}>
-                        {p.badge === "meilleur_deal" ? "🔥 Meilleur deal" : p.badge === "populaire" ? "⭐ Populaire" : "🆕 Nouveau"}
+                      <span className={`loy-pack-badge ${packBadgeClass(p.badge)}`}>
+                        {packBadgeLabel(p.badge)}
                       </span>
                     )}
 
-                    <div style={{
-                      fontSize: "2.5rem", textAlign: "center", marginBottom: 6,
-                      background: p.color_bg, borderRadius: "50%",
-                      width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center",
-                      margin: "4px auto 8px",
-                    }}>
+                    <div className="loy-pack-emoji-wrap" style={{ background: p.color_bg }}>
                       {p.emoji}
                     </div>
 
-                    <div style={{
-                      fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem",
-                      color: "var(--ink)", textAlign: "center", marginBottom: 4,
-                    }}>
-                      Pack {p.nom}
-                    </div>
+                    <div className="loy-pack-title">Pack {p.nom}</div>
 
-                    <div style={{
-                      fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800,
-                      color: "var(--green)", textAlign: "center",
-                    }}>
+                    <div className="loy-pack-pts">
                       {total.toLocaleString("fr-FR")} pts
                     </div>
 
                     {bonus > 0 && (
-                      <div style={{
-                        textAlign: "center", fontSize: ".68rem", color: "#f59e0b",
-                        fontWeight: 700, marginBottom: 4,
-                      }}>
+                      <div className="loy-pack-bonus">
                         +{bonus} pts bonus (+{p.bonus_pct}%)
                       </div>
                     )}
 
-                    <div style={{
-                      textAlign: "center", fontSize: ".88rem", fontWeight: 700,
-                      color: "var(--ink)", marginTop: 4,
-                    }}>
+                    <div className="loy-pack-price">
                       {p.prix_fcfa.toLocaleString("fr-FR")} FCFA
                     </div>
 
-                    <div style={{
-                      textAlign: "center", fontSize: ".6rem", color: "var(--gray)", marginTop: 2,
-                    }}>
+                    <div className="loy-pack-unit">
                       {(p.prix_fcfa / total).toFixed(1)} FCFA / pt
                     </div>
 
-                    <button style={{
-                      width: "100%", marginTop: 10,
-                      background: "var(--green)", color: "#fff", border: "none",
-                      padding: "8px", borderRadius: 8, cursor: "pointer",
-                      fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
-                    }}>
-                      💳 Acheter
-                    </button>
+                    <div className="loy-pack-buy" aria-hidden>Acheter</div>
                   </div>
                 );
               })}
@@ -435,57 +370,32 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           ) : transactions.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📜</div>
-              <p>Aucune transaction pour l'instant.</p>
-              <p style={{ fontSize: ".78rem", marginTop: 8 }}>
-                Passez une commande ou postez un avis pour gagner vos premiers points !
+              <p>Aucune transaction pour l&apos;instant.</p>
+              <p style={{ fontSize: ".82rem", color: "var(--gray)", marginTop: 10, maxWidth: 400 }}>
+                Passez une commande ou laissez un avis pour voir vos points apparaître ici.
               </p>
             </div>
           ) : (
-            <div style={{
-              background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: 12, overflow: "hidden",
-            }}>
-              {transactions.map((t, i) => {
+            <div className="loy-history">
+              {transactions.map((t) => {
                 const info = typeLabels[t.type] || { label: t.type, emoji: "💫", color: "var(--gray)" };
                 const isGain = t.points > 0;
                 return (
-                  <div
-                    key={t.id}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 12,
-                      padding: "12px 14px",
-                      borderBottom: i < transactions.length - 1 ? "1px solid var(--border)" : "none",
-                    }}
-                  >
-                    <div style={{
-                      width: 38, height: 38, borderRadius: "50%",
-                      background: "var(--surface2)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "1.1rem", flexShrink: 0,
-                    }}>
-                      {info.emoji}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
-                        color: "var(--ink)",
-                      }}>
-                        {info.label}
-                      </div>
-                      <div style={{ fontSize: ".68rem", color: "var(--gray)", marginTop: 2 }}>
+                  <div key={t.id} className="loy-history-row">
+                    <div className="loy-history-ico" aria-hidden>{info.emoji}</div>
+                    <div className="loy-history-body">
+                      <div className="loy-history-title">{info.label}</div>
+                      <div className="loy-history-sub">
                         {t.description || "—"}
-                        {t.montant_fcfa && ` · ${t.montant_fcfa.toLocaleString("fr-FR")} FCFA`}
+                        {t.montant_fcfa ? ` · ${t.montant_fcfa.toLocaleString("fr-FR")} FCFA` : ""}
                       </div>
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{
-                        fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem",
-                        color: isGain ? "var(--green)" : "#ce1126",
-                      }}>
+                    <div className="loy-history-pts">
+                      <div className={`loy-history-amt${isGain ? " loy-history-amt--gain" : " loy-history-amt--loss"}`}>
                         {isGain ? "+" : ""}{t.points.toLocaleString("fr-FR")}
                       </div>
-                      <div style={{ fontSize: ".6rem", color: "var(--gray)" }}>
-                        {new Date(t.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                      <div className="loy-history-date">
+                        {new Date(t.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                       </div>
                     </div>
                   </div>
@@ -495,36 +405,16 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           ))}
 
         {tab === "rewards" && redemptions.length > 0 && (
-          <div style={{ marginTop: 24 }}>
-            <div style={{
-              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem",
-              color: "var(--ink)", marginBottom: 12,
-            }}>
-              🎫 Mes codes récompenses
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 10 }}>
-              {redemptions.map(r => (
-                <div key={r.id} style={{
-                  background: "var(--surface)", border: "2px dashed var(--green-light)",
-                  borderRadius: 10, padding: 12,
-                }}>
-                  <div style={{ fontSize: ".72rem", color: "var(--gray)", marginBottom: 3 }}>
-                    {r.reward_nom}
-                  </div>
-                  <div style={{
-                    fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem",
-                    color: "var(--green)", letterSpacing: "0.03em",
-                  }}>
-                    {r.code}
-                  </div>
-                  <div style={{
-                    display: "flex", justifyContent: "space-between", marginTop: 6,
-                    fontSize: ".64rem", color: "var(--gray)",
-                  }}>
-                    <span>Status : {r.status}</span>
-                    <span>
-                      {r.expire_at ? `Expire ${new Date(r.expire_at).toLocaleDateString("fr-FR")}` : ""}
-                    </span>
+          <div>
+            <div className="loy-codes-title">Mes codes récompenses</div>
+            <div className="loy-codes-grid">
+              {redemptions.map((r) => (
+                <div key={r.id} className="loy-code-card">
+                  <div className="loy-code-name">{r.reward_nom}</div>
+                  <div className="loy-code-val">{r.code}</div>
+                  <div className="loy-code-meta">
+                    <span>Statut : {r.status}</span>
+                    <span>{r.expire_at ? `Expire le ${new Date(r.expire_at).toLocaleDateString("fr-FR")}` : ""}</span>
                   </div>
                 </div>
               ))}
