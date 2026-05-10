@@ -1,5 +1,7 @@
+import { pickCrossSellProducts } from "../domain/deliveryPolicy";
 import { OptimizedImage } from "./OptimizedImage";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
+import { FreeShippingProgress } from "./FreeShippingProgress";
 
 export function CartPage({
   cartItems,
@@ -12,9 +14,7 @@ export function CartPage({
   wishlist,
   toggleWish,
 }) {
-  const recommendations = (produits || [])
-    .filter((p) => !cartItems.some((i) => i.id === p.id))
-    .slice(0, 4);
+  const recommendations = pickCrossSellProducts(cartItems, produits, cartSummary, 6);
 
   return (
     <section className="sec anim cart-page-wrap">
@@ -31,6 +31,8 @@ export function CartPage({
       </div>
 
       <CheckoutProgressBar activeIndex={0} />
+
+      {cartItems.length > 0 && <FreeShippingProgress summary={cartSummary} variant="cart" />}
 
       {cartItems.length === 0 ? (
         <div className="cart-page-empty">
@@ -101,9 +103,24 @@ export function CartPage({
               <strong>{cartSummary.subtotal.toLocaleString()} FCFA</strong>
             </div>
             <div className="cart-total-row">
-              <span>Livraison</span>
-              <strong>{cartSummary.delivery ? `${cartSummary.delivery.toLocaleString()} FCFA` : "Offerte / N/A"}</strong>
+              <span>Livraison (produits à expédier)</span>
+              <strong>
+                {!cartSummary.hasShippableProducts
+                  ? "N/A"
+                  : cartSummary.freeShippingUnlocked
+                    ? (
+                        <span style={{ color: "var(--green)" }}>Offerte</span>
+                      )
+                    : `${cartSummary.delivery.toLocaleString()} FCFA`}
+              </strong>
             </div>
+            {cartSummary.hasShippableProducts && !cartSummary.freeShippingUnlocked && (
+              <p className="cart-info-text" style={{ textAlign: "left", marginTop: 6 }}>
+                Standard <strong>{(cartSummary.policyStandardFee ?? 1500).toLocaleString("fr-FR")} FCFA</strong> en dessous de{" "}
+                <strong>{(cartSummary.policyThreshold ?? 50000).toLocaleString("fr-FR")} FCFA</strong> d’articles livrables — pas
+                d’impact sur les prestations hors colis.
+              </p>
+            )}
             <div className="cart-total-row discount">
               <span>Protection Yorix</span>
               <strong>Incluse</strong>
@@ -126,7 +143,17 @@ export function CartPage({
       {recommendations.length > 0 && (
         <div className="cart-page-reco">
           <div className="sec-head">
-            <h2 className="sec-title">Recommandations pour vous</h2>
+            <h2 className="sec-title">
+              {cartSummary.hasShippableProducts && !cartSummary.freeShippingUnlocked
+                ? "Pour débloquer la livraison offerte"
+                : "Recommandations pour vous"}
+            </h2>
+            {cartSummary.hasShippableProducts && !cartSummary.freeShippingUnlocked && (
+              <p className="fs-reco-tip">
+                Sélection intelligente : nous mettons en avant des produits susceptibles de combler votre panier à{" "}
+                {(cartSummary.policyThreshold ?? 50000).toLocaleString("fr-FR")} FCFA d’articles livrables.
+              </p>
+            )}
           </div>
           <div className="prod-grid">
             {recommendations.map((p) => (

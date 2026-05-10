@@ -12,6 +12,7 @@ import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrche
 import { confirmCheckout, createCheckoutIntent, initPaymentCinetPay } from "../lib/checkoutApi";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
+import { FreeShippingProgress } from "./FreeShippingProgress";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
 
@@ -197,7 +198,12 @@ export function CheckoutPage({
     }
   }, [persistCheckoutContact, user?.id, mergedUserData]);
 
-  const openWhatsAppFallback = (intentId) => {
+  const openWhatsAppFallback = (intentId, recapTotals) => {
+    const t = recapTotals || {
+      subtotal: summary.subtotal,
+      delivery: summary.delivery,
+      total: summary.total,
+    };
     const lines = cartItems
       .map((i) => `• [${i.kind === "service" ? "Service" : "Produit"}] ${i.name} x${i.qty} = ${(i.prix * i.qty).toLocaleString()} FCFA`)
       .join("\n");
@@ -210,9 +216,9 @@ export function CheckoutPage({
       "",
       lines,
       "",
-      `💰 Sous-total: ${summary.subtotal.toLocaleString()} FCFA`,
-      `🚚 Livraison: ${summary.delivery ? summary.delivery.toLocaleString() + " FCFA" : "Offerte / N/A"}`,
-      `💵 Total: ${summary.total.toLocaleString()} FCFA`,
+      `💰 Sous-total: ${t.subtotal.toLocaleString()} FCFA`,
+      `🚚 Livraison: ${t.delivery ? `${t.delivery.toLocaleString()} FCFA` : "Offerte / N/A"}`,
+      `💵 Total: ${t.total.toLocaleString()} FCFA`,
       "",
       `👤 Client: ${mergedUserData.nom || "N/A"}`,
       `📱 Tel: ${telHuman}`,
@@ -241,6 +247,7 @@ export function CheckoutPage({
     if (paymentMethod === "whatsapp_backup") {
       let intentId = null;
       let orderGroupId = null;
+      let serverRecap = null;
       try {
         const intentPayload = buildCheckoutIntent({
           items: cartItems,
@@ -251,6 +258,13 @@ export function CheckoutPage({
         try {
           const intent = await createCheckoutIntent(intentPayload);
           intentId = intent?.checkout_intent_id || null;
+          if (intent != null) {
+            serverRecap = {
+              subtotal: Math.round(Number(intent.subtotal ?? summary.subtotal)),
+              delivery: Math.round(Number(intent.delivery_fee ?? summary.delivery)),
+              total: Math.round(Number(intent.total ?? summary.total)),
+            };
+          }
           if (intentId) {
             try {
               const confirmation = await confirmCheckout({
@@ -270,7 +284,7 @@ export function CheckoutPage({
       } catch (e) {
         console.warn("checkout WhatsApp préparation:", e?.message || e);
       }
-      openWhatsAppFallback(intentId);
+      openWhatsAppFallback(intentId, serverRecap);
       setCartItems([]);
       setOrderDone({
         mode: "whatsapp",
@@ -295,12 +309,15 @@ export function CheckoutPage({
         location_type: locationType,
         address: mergedUserData.adresse,
       });
+      const serverPayTotal = Math.round(
+        Number(confirmation?.total ?? intent?.total ?? summary.total),
+      );
 
       if (paymentMethod === "cinetpay") {
         const payment = await initPaymentCinetPay({
           checkout_intent_id: intent.checkout_intent_id,
           order_group_id: confirmation.order_group_id,
-          amount: summary.total,
+          amount: serverPayTotal,
           channel: "ALL",
         });
         if (payment?.payment_url) {
@@ -310,7 +327,11 @@ export function CheckoutPage({
       }
 
       if (!confirmation?.order_group_id) {
-        openWhatsAppFallback(intent.checkout_intent_id);
+        openWhatsAppFallback(intent.checkout_intent_id, {
+          subtotal: Math.round(Number(intent?.subtotal ?? summary.subtotal)),
+          delivery: Math.round(Number(intent?.delivery_fee ?? summary.delivery)),
+          total: serverPayTotal,
+        });
       }
 
       setCartItems([]);
@@ -352,6 +373,8 @@ export function CheckoutPage({
         onNavigate={handleProgressNavigate}
         navigationDisabled={Boolean(orderDone)}
       />
+
+      {!orderDone && hasItems && <FreeShippingProgress summary={summary} variant={step >= 2 ? "compact" : "cart"} />}
 
       <h1 className="sec-title" style={{ marginBottom: 6 }}>
         {orderDone ? "Commande enregistrée" : "Finaliser la commande"}
@@ -538,10 +561,20 @@ export function CheckoutPage({
                   <div style={{ fontWeight: 700, fontSize: ".82rem", marginBottom: 4 }}>Estimation délai</div>
                   <p style={{ margin: 0, fontSize: ".8rem", color: "var(--gray)", lineHeight: 1.45 }}>{deliveryHintText}</p>
                   <div style={{ marginTop: 8, fontSize: ".78rem", color: "var(--ink)" }}>
-                    Frais livraison affichés au récapitulatif :{" "}
-                    <strong>{summary.delivery ? `${summary.delivery.toLocaleString()} FCFA` : "offerts ou intégrés selon panier"}</strong>
-                    {summary.subtotal >= 50000 && hasProducts && (
-                      <span style={{ color: "var(--green)", fontWeight: 700 }}> — seuil 50 000 FCFA atteint : livraison produits souvent offerte.</span>
+                    Frais livraison (articles à livrer) :{" "}
+                    <strong>
+                      {!summary.hasShippableProducts
+                        ? "N/A pour ce panier"
+                        : summary.freeShippingUnlocked
+                          ? "offerts"
+                          : `${summary.delivery.toLocaleString()} FCFA`}
+                    </strong>
+                    {summary.freeShippingUnlocked && hasProducts && summary.hasShippableProducts && (
+                      <span style={{ color: "var(--green)", fontWeight: 700 }}>
+                        {" "}
+                        — Livraison standard offerte ({(summary.policyThreshold ?? 50000).toLocaleString("fr-FR")} FCFA d’articles
+                        livrables atteints).
+                      </span>
                     )}
                   </div>
                 </div>
@@ -566,18 +599,32 @@ export function CheckoutPage({
                 </select>
 
                 <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12 }}>
+                  {summary.hasShippableProducts && summary.freeShippingUnlocked && (
+                    <div className="fs-ship-badge" style={{ marginBottom: 10 }}>
+                      Livraison standard offerte · Bon plan Yorix
+                    </div>
+                  )}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".88rem" }}>
                     <span>Sous-total</span>
                     <strong>{summary.subtotal.toLocaleString()} FCFA</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".88rem", marginTop: 4 }}>
-                    <span>Livraison (estimation)</span>
-                    <strong>{summary.delivery ? `${summary.delivery.toLocaleString()} FCFA` : "Offerte / N/A"}</strong>
+                    <span>Livraison (produits à expédier)</span>
+                    <strong>
+                      {!summary.hasShippableProducts
+                        ? "N/A"
+                        : summary.freeShippingUnlocked
+                          ? "0 FCFA (offerte)"
+                          : `${summary.delivery.toLocaleString()} FCFA`}
+                    </strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--border)", fontWeight: 700 }}>
                     <span>Total à payer</span>
                     <strong>{summary.total.toLocaleString()} FCFA</strong>
                   </div>
+                  <p style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 8, marginBottom: 0, lineHeight: 1.35 }}>
+                    Montant validé côté serveur au paiement (seuil livraison offerte appliqué automatiquement).
+                  </p>
                 </div>
                 <p style={{ fontSize: ".72rem", color: "var(--gray)", margin: 0, lineHeight: 1.4 }}>
                   Si CinetPay est indisponible, choisissez WhatsApp : notre équipe valide votre paiement manuellement. Aucune commission affichée ici — uniquement votre total commande.

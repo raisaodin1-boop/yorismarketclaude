@@ -31,6 +31,17 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [chartInscrits, setChartInscrits]       = useState([]);
   const [topProduits, setTopProduits]           = useState([]);
   const [paymentTx, setPaymentTx]               = useState([]);
+  const [deliveryPromoStats, setDeliveryPromoStats] = useState({
+    ordersWithShippable: 0,
+    freeShippingOrders: 0,
+    paidShippingOrders: 0,
+    avgBasketShippable: 0,
+    estimatedLogisticsSubsidy: 0,
+  });
+  const [commerceForm, setCommerceForm]         = useState({
+    threshold: 50000,
+    fee: 1500,
+  });
 
   // ═══════════ FILTRES ═══════════
   const [searchProd, setSearchProd]             = useState("");
@@ -82,9 +93,16 @@ export function AdminDashboard({ user, userData, goPage }) {
         supabase.from("prestataires").select("*").order("created_at", { ascending: false }).limit(500),
         supabase.from("admin_finance_kpis").select("*").maybeSingle(),
         supabase.from("payment_transactions").select("*").order("created_at", { ascending: false }).limit(1000),
+        supabase
+          .from("checkout_intents")
+          .select("subtotal,delivery_fee,total,status,payload,created_at")
+          .order("created_at", { ascending: false })
+          .limit(650),
+        supabase.from("commerce_settings").select("*").eq("id", 1).maybeSingle(),
       ]);
 
-      const [usersR, profilesR, prodsR, ordersR, delivsR, prestsR, financeKpiR, paymentsR] = results;
+      const [usersR, profilesR, prodsR, ordersR, delivsR, prestsR, financeKpiR, paymentsR, intentsR, commerceSetR] =
+        results;
 
       const rawUsers    = usersR.status    === "fulfilled" ? (usersR.value.data    || []) : [];
       const rawProfiles = profilesR.status === "fulfilled" ? (profilesR.value.data || []) : [];
@@ -95,6 +113,35 @@ export function AdminDashboard({ user, userData, goPage }) {
       const financeKpi =
         financeKpiR.status === "fulfilled" ? (financeKpiR.value.data || null) : null;
       const paymentsData = paymentsR.status === "fulfilled" ? (paymentsR.value.data || []) : [];
+      const intentsData = intentsR.status === "fulfilled" ? (intentsR.value.data || []) : [];
+      const commerceRow = commerceSetR.status === "fulfilled" ? commerceSetR.value.data : null;
+
+      let freeShip = 0;
+      let paidShip = 0;
+      let withShippable = 0;
+      let subShipAgg = 0;
+      for (const r of intentsData) {
+        const items = Array.isArray(r.payload?.items) ? r.payload.items : [];
+        if (!items.some((i) => i.kind === "product")) continue;
+        withShippable++;
+        subShipAgg += Number(r.subtotal || 0);
+        if (Number(r.delivery_fee || 0) === 0) freeShip++;
+        else paidShip++;
+      }
+      const feeBench = Number(commerceRow?.standard_delivery_fee_xaf) || 1500;
+      setDeliveryPromoStats({
+        ordersWithShippable: withShippable,
+        freeShippingOrders: freeShip,
+        paidShippingOrders: paidShip,
+        avgBasketShippable: withShippable ? Math.round(subShipAgg / withShippable) : 0,
+        estimatedLogisticsSubsidy: freeShip * feeBench,
+      });
+      if (commerceRow) {
+        setCommerceForm({
+          threshold: Number(commerceRow.free_shipping_threshold_xaf) || 50000,
+          fee: Number(commerceRow.standard_delivery_fee_xaf) || 1500,
+        });
+      }
 
       // Fusionner users + profiles (dédupliqué par id/uid)
       const mergedMap = new Map();
@@ -400,6 +447,30 @@ export function AdminDashboard({ user, userData, goPage }) {
   const deliveriesEnAttente = adminDeliveries.filter(d => d.statut === "commande_recue" && !d.livreur_id).length;
   const prestPending = prestatairesList.filter(p => p.status === "pending").length;
 
+  const persistCommercePromo = async () => {
+    try {
+      const thr = Number(commerceForm.threshold);
+      const fee = Number(commerceForm.fee);
+      if (!(thr >= 0) || !(fee >= 0)) {
+        showToast("Seuil et frais doivent être des nombres positifs.", "error");
+        return;
+      }
+      const { error } = await supabase
+        .from("commerce_settings")
+        .update({
+          free_shipping_threshold_xaf: thr,
+          standard_delivery_fee_xaf: fee,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", 1);
+      if (error) throw error;
+      showToast("Paramètres promo livraison enregistrés.");
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      showToast("Erreur : " + (e?.message || e), "error");
+    }
+  };
+
   const NAV = [
     { id: "overview",     icon: "📊", label: "Vue d'ensemble" },
     { id: "deliveries",   icon: "🚚", label: "Livraisons",   badge: deliveriesEnAttente || null },
@@ -410,6 +481,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     { id: "livreurs",     icon: "🏍️", label: "Livreurs" },
     { id: "prestataires", icon: "👷", label: "Prestataires", badge: prestPending || null },
     { id: "revenus",      icon: "💰", label: "Revenus" },
+    { id: "commerce_promo", icon: "🎁", label: "Promo livraison" },
     { id: "loyalty",      icon: "🌟", label: "Yorix Points" },
     { id: "alertes",      icon: "🔔", label: "Alertes",      badge: alertes.length || null },
   ];
@@ -1486,6 +1558,81 @@ export function AdminDashboard({ user, userData, goPage }) {
               <div style={{ display: "flex", gap: 8 }}>
                 {chartVentes.map((d, i) => <div key={i} style={{ flex: 1, textAlign: "center", fontSize: ".63rem", color: "var(--gray)" }}>{d.label}</div>)}
               </div>
+            </div>
+          </>
+        )}
+
+        {/* ════════ PROMO LIVRAISON ════════ */}
+        {adminTab === "commerce_promo" && (
+          <>
+            <div className="admin-page-title">🎁 Livraison offerte au seuil</div>
+            <p style={{ color: "var(--gray)", fontSize: ".82rem", lineHeight: 1.55, marginTop: -6, marginBottom: 18 }}>
+              Pilotage conversion : KPI issus des derniers <strong>checkout préparés</strong>{" "}
+              (échantillon chargé depuis Supabase — à rapprocher des paiements confirmés).
+            </p>
+            <div className="stat-cards-grid" style={{ marginBottom: 22 }}>
+              <StatCard
+                icon="🎉"
+                val={deliveryPromoStats.freeShippingOrders.toLocaleString()}
+                lbl="Checkouts livraison offerte"
+                trend={`Dont ${deliveryPromoStats.ordersWithShippable.toLocaleString()} paniers avec produits`}
+                col="#eafaf1"
+                ic="#146635"
+              />
+              <StatCard
+                icon="🚚"
+                val={deliveryPromoStats.paidShippingOrders.toLocaleString()}
+                lbl="Checkouts avec frais livraison"
+                trend="Référence politique catalogue colis"
+                col="#fff9e6"
+                ic="#946200"
+              />
+              <StatCard
+                icon="📊"
+                val={`${deliveryPromoStats.avgBasketShippable.toLocaleString()} F`}
+                lbl="Panier moyen (avec produits)"
+                trend={`Coût logistique théorique subventionné ≥ ${deliveryPromoStats.estimatedLogisticsSubsidy.toLocaleString()} F`}
+                col="#e6f0ff"
+                ic="#1a4a9a"
+              />
+            </div>
+
+            <div className="admin-section">
+              <div className="admin-section-title">Réglages publics — seuils & frais standards</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: ".75rem", fontWeight: 700 }}>
+                  Seuil livraison gratuite (FCFA · produits livrés)
+                  <input
+                    className="form-input"
+                    type="number"
+                    min={0}
+                    step={500}
+                    value={commerceForm.threshold}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, threshold: e.target.value }))}
+                    style={{ maxWidth: 200 }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: ".75rem", fontWeight: 700 }}>
+                  Frais livraison standard (FCFA)
+                  <input
+                    className="form-input"
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={commerceForm.fee}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, fee: e.target.value }))}
+                    style={{ maxWidth: 200 }}
+                  />
+                </label>
+                <button type="button" className="admin-action-btn" style={{ background: "var(--green)", color: "#fff" }} onClick={persistCommercePromo}>
+                  Enregistrer
+                </button>
+              </div>
+              <p style={{ marginTop: 12, fontSize: ".7rem", color: "var(--gray)", lineHeight: 1.45 }}>
+                Les fonctions Edge <code style={{ fontSize: ".68rem" }}>create_checkout_intent</code> et{" "}
+                <code style={{ fontSize: ".68rem" }}>confirm_checkout</code> relisent automatiquement cette table.
+                Fallback env : FREE_SHIPPING_THRESHOLD_XAF · STANDARD_DELIVERY_FEE_XAF.
+              </p>
             </div>
           </>
         )}

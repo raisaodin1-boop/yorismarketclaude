@@ -56,6 +56,20 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
+
+    const { data: intent, error: intentErr } = await supabase
+      .from("checkout_intents")
+      .select("total")
+      .eq("id", checkoutIntentId)
+      .maybeSingle();
+    if (intentErr) throw intentErr;
+    if (!intent || Math.round(Number(intent.total ?? 0)) !== Math.round(amount)) {
+      return ok(
+        { error: "Amount does not match checkout total — reload and try again." },
+        { status: 400 },
+      );
+    }
+
     await supabase.from("payment_transactions").insert({
       checkout_intent_id: checkoutIntentId,
       order_group_id: orderGroupId,

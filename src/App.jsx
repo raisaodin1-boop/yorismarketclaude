@@ -37,7 +37,6 @@ import {
   MOMO_NUMBER,
   ORANGE_NUMBER,
   PAYMENT_WA_NUMBER,
-  LIVRAISON_FEE,
   CLOUD_NAME,
   UPLOAD_PRESET,
 } from "./lib/supabase";
@@ -84,6 +83,7 @@ import {
   LazyAcademyDetail,
   LazyAcademyContactForm,
   LazyLoyaltyPage,
+  LazyPromotionsPage,
   LazySellerDashboard,
   LazyBuyerDashboard,
   LazyDeliveryDashboard,
@@ -101,6 +101,7 @@ import {
   removeCartItem,
   computeCartSummary,
 } from "./domain/cartDomain";
+import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
 import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
 import { OptimizedImage } from "./components/OptimizedImage";
@@ -168,6 +169,33 @@ export default function Yorix() {
   const [notifPrefs, setNotifPrefs] = useState(() => loadNotificationPrefs());
   const notifPrefsRef = useRef(notifPrefs);
   notifPrefsRef.current = notifPrefs;
+
+  const [commerceDeliveryPolicy, setCommerceDeliveryPolicy] = useState(() => getDefaultPolicyFromEnv());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("commerce_settings")
+          .select("free_shipping_threshold_xaf, standard_delivery_fee_xaf")
+          .eq("id", 1)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        setCommerceDeliveryPolicy(
+          normalizeDeliveryPolicy({
+            freeShippingThresholdXaf: Number(data.free_shipping_threshold_xaf),
+            standardDeliveryFeeXaf: Number(data.standard_delivery_fee_xaf),
+          }),
+        );
+      } catch {
+        /* pré-migration : valeurs env / défaut */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadNotifsForUser = useCallback(async (uid, limit = 40) => {
     if (!uid) return;
@@ -775,7 +803,10 @@ export default function Yorix() {
 
   const changeQty = (id, d, kind = null) => setCartItems((prev) => updateCartQty(prev, id, kind, d));
   const removeItem = (id, kind = null) => setCartItems((prev) => removeCartItem(prev, id, kind));
-  const cartSummary = useMemo(() => computeCartSummary(cartItems, LIVRAISON_FEE), [cartItems]);
+  const cartSummary = useMemo(
+    () => computeCartSummary(cartItems, commerceDeliveryPolicy),
+    [cartItems, commerceDeliveryPolicy],
+  );
   const totalQty = cartSummary.qty;
 
   const persistCheckoutContact = useCallback(async (patch) => {
@@ -1019,7 +1050,7 @@ export default function Yorix() {
   };
 
   const TABS = [
-    {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🚚 Livraison",p:"livraison"},
+    {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🎁 Bons plans",p:"bonsPlans"},{l:"🚚 Livraison",p:"livraison"},
     {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
     {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
     {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
@@ -1600,7 +1631,25 @@ export default function Yorix() {
       <div className="pay-strip">
         <b style={{color:"var(--ink)"}}>Paiement :</b>
         <div className="pay-methods"><span className="pm mtn-b">📱 MTN MoMo</span><span className="pm ora-b">🔶 Orange Money</span><span className="pm">💳 Carte</span><span className="pm">💵 Cash</span></div>
-        <div className="strip-right"><span>🚚 J+1 Douala & Yaoundé</span><span>🔐 Escrow sécurisé</span>{user&&<span style={{color:"var(--gold)"}}>👤 {userData?.nom||user.email}</span>}</div>
+        <div className="strip-right">
+          <span>🚚 J+1 Douala & Yaoundé</span>
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={() => goPage("bonsPlans")}
+            onKeyDown={(e) => e.key === "Enter" && goPage("bonsPlans")}
+            style={{
+              cursor: "pointer",
+              fontWeight: 700,
+              color: "var(--green)",
+              textDecoration: "underline",
+            }}
+          >
+            Livraison offerte dès {commerceDeliveryPolicy.freeShippingThresholdXaf.toLocaleString("fr-FR")} FCFA
+          </span>
+          <span>🔐 Escrow sécurisé</span>
+          {user && <span style={{ color: "var(--gold)" }}>👤 {userData?.nom || user.email}</span>}
+        </div>
       </div>
 
       {/* ════════ PAGE : ACCUEIL ════════ */}
@@ -1854,6 +1903,13 @@ export default function Yorix() {
             userData={userData}
             goPage={goPage}
           />
+        </Suspense>
+      )}
+
+      {/* ═══════════════ PAGE : BONS PLANS ═══════════════ */}
+      {page === "bonsPlans" && (
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement bons plans..." />}>
+          <LazyPromotionsPage goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
         </Suspense>
       )}
 

@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 
 function uuidish(v: string) {
   return /^[0-9a-fA-F-]{16,}$/.test(v);
@@ -34,6 +35,30 @@ Deno.serve(async (req) => {
     const items = Array.isArray(payload.items) ? payload.items : [];
     const customer = payload.customer || {};
     const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
+
+    const policy = await resolveDeliveryPolicy(supabase);
+    const totals = computeCheckoutTotals(items, policy);
+    const intentSub = Math.round(Number(intent.subtotal ?? 0));
+    if (intentSub !== totals.subtotalFull) {
+      return ok(
+        { error: "Cart subtotal mismatch — refresh checkout." },
+        { status: 409 },
+      );
+    }
+
+    const del = Math.round(Number(intent.delivery_fee ?? 0));
+    const tot = Math.round(Number(intent.total ?? 0));
+    if (del !== totals.deliveryFee || tot !== totals.total) {
+      const { error: patchErr } = await supabase
+        .from("checkout_intents")
+        .update({
+          delivery_fee: totals.deliveryFee,
+          total: totals.total,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", checkoutIntentId);
+      if (patchErr) throw patchErr;
+    }
 
     const ordersCreated: any[] = [];
     for (const item of items) {
@@ -105,10 +130,19 @@ Deno.serve(async (req) => {
 
     await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
 
+    const { data: intentAfter } = await supabase
+      .from("checkout_intents")
+      .select("total, delivery_fee, subtotal")
+      .eq("id", checkoutIntentId)
+      .maybeSingle();
+
     return ok({
       checkout_intent_id: checkoutIntentId,
       order_group_id: orderGroupId,
       created: ordersCreated,
+      total: intentAfter?.total ?? totals.total,
+      delivery_fee: intentAfter?.delivery_fee ?? totals.deliveryFee,
+      subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
     });
   } catch (e) {
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });

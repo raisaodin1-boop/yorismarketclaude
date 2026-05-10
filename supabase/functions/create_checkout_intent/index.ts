@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -10,17 +11,13 @@ Deno.serve(async (req) => {
     const items = Array.isArray(body?.items) ? body.items : [];
     if (!items.length) return ok({ error: "Cart is empty" }, { status: 400 });
 
-    const subtotal = items.reduce((sum: number, item: any) => {
-      return sum + Number(item.price || 0) * Number(item.qty || 1);
-    }, 0);
-    const hasProduct = items.some((i: any) => i.kind === "product");
-    const deliveryFee = hasProduct && subtotal < 50000 ? 1500 : 0;
-    const total = subtotal + deliveryFee;
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
     );
+
+    const policy = await resolveDeliveryPolicy(supabase);
+    const totals = computeCheckoutTotals(items, policy);
 
     const { data, error } = await supabase
       .from("checkout_intents")
@@ -29,11 +26,13 @@ Deno.serve(async (req) => {
         payload: body,
         checkout_type: body?.checkoutType || "product_only",
         status: "ready",
-        subtotal,
-        delivery_fee: deliveryFee,
-        total,
+        subtotal: totals.subtotalFull,
+        delivery_fee: totals.deliveryFee,
+        total: totals.total,
       })
-      .select("id, checkout_type, subtotal, delivery_fee, total, status")
+      .select(
+        "id, checkout_type, subtotal, delivery_fee, total, status",
+      )
       .single();
 
     if (error) throw error;
@@ -45,9 +44,10 @@ Deno.serve(async (req) => {
       delivery_fee: data.delivery_fee,
       total: data.total,
       status: data.status,
+      free_shipping_unlocked: totals.freeShippingUnlocked,
+      shippable_products_subtotal: totals.shippableProductsSubtotal,
     });
   } catch (e) {
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
   }
 });
-

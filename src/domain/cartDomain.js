@@ -1,3 +1,5 @@
+import { computeCartDeliverySummary } from "./deliveryPolicy";
+
 const STORAGE_KEY = "yorix_cart";
 
 export function loadCart() {
@@ -121,22 +123,7 @@ export function removeCartItem(items, id, kind) {
   return (items || []).filter((i) => !(i.id === id && (!kind || i.kind === kind)));
 }
 
-export function computeCartSummary(items, deliveryFee = 1500) {
-  const safe = (items || []).map(normalizeCartItem).filter(Boolean);
-  const products = safe.filter((i) => i.kind === "product");
-  const services = safe.filter((i) => i.kind === "service");
-  const productsSubtotal = products.reduce((sum, i) => sum + i.prix * i.qty, 0);
-  const servicesSubtotal = services.reduce((sum, i) => sum + i.prix * i.qty, 0);
-  const qty = safe.reduce((sum, i) => sum + i.qty, 0);
-  const delivery = productsSubtotal > 0 && productsSubtotal < 50000 ? deliveryFee : 0;
-  return {
-    qty,
-    productsCount: products.length,
-    servicesCount: services.length,
-    productsSubtotal,
-    servicesSubtotal,
-    subtotal: productsSubtotal + servicesSubtotal,
-    delivery,
-    total: productsSubtotal + servicesSubtotal + delivery,
-  };
+/** @param {unknown[]} items @param {object|number} [policyOrLegacyFee] */
+export function computeCartSummary(items, policyOrLegacyFee = 1500) {
+  return computeCartDeliverySummary(items, policyOrLegacyFee);
 }

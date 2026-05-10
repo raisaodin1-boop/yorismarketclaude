@@ -396,6 +396,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .cart-page-summary h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
 .cart-page-reco{margin-top:24px;}
 
+/* Livraison offerte au seuil — UX conversion */
+.fs-ship-banner{border-radius:14px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--border);background:linear-gradient(135deg,var(--surface),var(--surface2));box-shadow:0 2px 12px rgba(0,0,0,.045);}
+.fs-ship-banner--compact{padding:11px 12px;}
+.fs-ship-banner--muted{border-style:dashed;opacity:.95;}
+.fs-ship-banner--chase{border-color:rgba(253,209,116,.95);background:linear-gradient(135deg,#fff9e9,#fef6ff);}
+.fs-ship-banner--won{border-color:rgba(46,167,107,.65);background:linear-gradient(135deg,#eafaf1,#f3fff9);}
+.fs-ship-banner-top{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+.fs-ship-eyebrow{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:var(--gray);}
+.fs-ship-eyebrow--gold{color:#946200;}
+.fs-ship-micro{font-size:.62rem;color:var(--gray);line-height:1.35;}
+.fs-ship-title{font-family:'Syne',sans-serif;font-size:.94rem;font-weight:800;color:var(--ink);line-height:1.35;margin-bottom:8px;}
+.fs-ship-title--celebrate{margin-bottom:6px;color:#146635;}
+.fs-ship-caption{font-size:.75rem;color:var(--gray);margin:0 0 6px;line-height:1.45;}
+.fs-ship-track{width:100%;height:9px;background:var(--border);border-radius:99px;overflow:hidden;}
+.fs-ship-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold,#fcd116),var(--green,#2eaa6b));transition:width .35s ease;}
+.fs-ship-meta{font-size:.7rem;color:var(--gray);margin-top:8px;font-weight:600;}
+.fs-ship-badge-live{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#fff4d8,#fde9c9);padding:6px 12px;border-radius:999px;font-size:.72rem;font-weight:800;color:#5c4200;margin-top:4px;border:1px solid rgba(253,209,116,.95);}
+.fs-ship-badge{font-size:.7rem;font-weight:800;color:#146635;background:var(--green-pale);padding:5px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;margin-top:6px;}
+.fs-reco-tip{font-size:.72rem;color:var(--gray);margin-bottom:10px;line-height:1.45;}
+@media(max-width:640px){
+  .fs-ship-title{font-size:.86rem;}
+}
+
 /* Checkout flow — barre de progression (Panier → Adresse → Paiement → Confirmation) */
 .checkout-page-wrap{max-width:980px;margin:0 auto;}
 .checkout-progress{
