@@ -78,32 +78,22 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
   if (!user) {
     return (
       <section className="sec anim yorix-pro-page">
-        <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Fidélité Yorix Points" }]} />
-        <div style={{
-          background: "linear-gradient(135deg,#1a3a24,var(--green))",
-          borderRadius: 16, padding: "40px 28px", textAlign: "center", color: "#fff",
-        }}>
-          <div style={{ fontSize: "4rem", marginBottom: 14 }}>🌟</div>
-          <h2 style={{
-            fontFamily: "'Syne',sans-serif", fontSize: "1.6rem", fontWeight: 800,
-            marginBottom: 8, letterSpacing: "-.5px",
-          }}>
-            Yorix Points — Programme de fidélité
-          </h2>
-          <p style={{ color: "rgba(255,255,255,.7)", fontSize: ".9rem", marginBottom: 20, maxWidth: 460, margin: "0 auto 20px" }}>
-            Gagnez des points à chaque achat, vente ou avis posté. Échangez-les contre des bons d'achat, des livraisons gratuites et bien plus !
+        <div className="yorix-bc-row">
+          <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Fidélité Yorix Points" }]} />
+        </div>
+        <div className="yorix-loy-panel-guest">
+          <div className="yorix-loy-ico-big" aria-hidden>
+            🌟
+          </div>
+          <h2 className="yorix-loy-h2">Yorix Points — Programme de fidélité</h2>
+          <p className="yorix-loy-p">
+            Gagnez des points à chaque achat, vente ou avis posté. Échangez-les contre des bons d&apos;achat, des livraisons gratuites et bien plus.
           </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button
-              className="cta-y"
-              onClick={() => { setAuthTab?.("register"); setAuthOpen?.(true); }}
-            >
+          <div className="yorix-loy-cta-row">
+            <button type="button" className="cta-y" onClick={() => { setAuthTab?.("register"); setAuthOpen?.(true); }}>
               🎁 Créer mon compte (+50 pts offerts)
             </button>
-            <button
-              className="cta-w"
-              onClick={() => { setAuthTab?.("login"); setAuthOpen?.(true); }}
-            >
+            <button type="button" className="cta-w" onClick={() => { setAuthTab?.("login"); setAuthOpen?.(true); }}>
               🔑 Me connecter
             </button>
           </div>
@@ -134,16 +124,12 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       )}
 
       <section className="sec anim yorix-pro-page">
-        <div style={{ marginBottom: 14 }}>
+        <div className="yorix-bc-row">
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Programme fidélité" }]} />
         </div>
-        <div style={{
-          background: "linear-gradient(135deg, #1a3a24 0%, var(--green) 60%, #2d9655 100%)",
-          borderRadius: 16, padding: "26px 24px", color: "#fff",
-          marginBottom: 18, position: "relative", overflow: "hidden",
-        }}>
-          <div style={{ position: "absolute", top: -30, right: -30, width: 180, height: 180, background: "rgba(252,209,22,.08)", borderRadius: "50%" }} />
-          <div style={{ position: "absolute", bottom: -50, left: -40, width: 160, height: 160, background: "rgba(255,255,255,.05)", borderRadius: "50%" }} />
+        <div className="yorix-loy-dash-wrap">
+          <div className="yorix-loy-dash-deco" aria-hidden />
+          <div className="yorix-loy-dash-deco yorix-loy-dash-deco--b" aria-hidden />
 
           <div style={{ position: "relative", zIndex: 2 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>

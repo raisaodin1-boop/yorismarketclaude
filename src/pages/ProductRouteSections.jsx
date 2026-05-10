@@ -23,50 +23,36 @@ export function ProductRouteSections({
 }) {
   if (showProduits) {
     return (
-      <section className="sec anim">
-        <div className="sec-head">
+      <section className="sec anim yorix-page-flow yorix-pro-page">
+        <div className="sec-head yorix-catalog-head">
           <h1 className="sec-title">
             {page === "seoCity" && seoCityName
               ? `🛍️ Achat en ligne à ${seoCityName} — produits marketplace`
               : "🛍️ Marketplace Cameroun — tous les produits"}
           </h1>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: ".8rem", color: "var(--gray)" }}>{produitsFiltres.length} résultat(s)</span>
+          <div className="yorix-sec-toolbar-end" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <span className="yorix-catalog-meta">{produitsFiltres.length} résultat(s)</span>
             {filterCat && (
-              <button className="btn-ghost" style={{ fontSize: ".72rem", padding: "4px 10px" }} onClick={() => setFilterCat("")}>
+              <button type="button" className="btn-ghost yorix-pill--ghost" onClick={() => setFilterCat("")}>
                 ✕ {filterCat}
               </button>
             )}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 18 }}>
+        <div className="yorix-pill-row" role="tablist" aria-label="Catégories">
           <button
+            type="button"
+            className={`yorix-pill${!filterCat ? " is-active" : ""}`}
             onClick={() => setFilterCat("")}
-            style={{
-              padding: "5px 12px",
-              borderRadius: 50,
-              border: "1.5px solid var(--border)",
-              background: !filterCat ? "var(--green)" : "var(--surface)",
-              color: !filterCat ? "#fff" : "var(--ink)",
-              font: "600 .72rem 'DM Sans',sans-serif",
-              cursor: "pointer",
-            }}
           >
             Tout
           </button>
           {CATS.map((c) => (
             <button
               key={c}
+              type="button"
+              className={`yorix-pill${filterCat === c ? " is-active" : ""}`}
               onClick={() => setFilterCat(c)}
-              style={{
-                padding: "5px 12px",
-                borderRadius: 50,
-                border: "1.5px solid var(--border)",
-                background: filterCat === c ? "var(--green)" : "var(--surface)",
-                color: filterCat === c ? "#fff" : "var(--ink)",
-                font: "600 .72rem 'DM Sans',sans-serif",
-                cursor: "pointer",
-              }}
             >
               {c}
             </button>
@@ -79,7 +65,7 @@ export function ProductRouteSections({
         ) : produitsFiltres.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">🔍</div>
-            <p>Aucun produit{search ? ` pour "${search}"` : ""}.</p>
+            <p>Aucun produit{search ? ` pour « ${search} »` : ""}.</p>
           </div>
         ) : (
           <ProdGrid
@@ -99,6 +85,7 @@ export function ProductRouteSections({
   if (page === "escrow" && typeof goPage === "function") {
     return (
       <EscrowPremiumPage
+        dark={dark}
         produitsLoading={produitsLoading}
         produits={produits}
         user={user}

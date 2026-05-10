@@ -266,12 +266,14 @@ export function SiteMarketingPages({
     case "contact":
       return (
         <section className="sec anim yorix-pro-page">
-          <div style={{ maxWidth: 880, margin: "0 auto" }}>
-            <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Contact" }]} />
-            <div style={{ textAlign: "center", margin: "22px auto 26px", maxWidth: 560 }}>
-              <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "clamp(1.45rem,2.5vw,1.95rem)", color: "var(--ink)", marginBottom: 10, letterSpacing: "-.4px" }}>📞 Relation client premium</h1>
-              <p style={{ color: "var(--gray)", fontSize: ".9rem", lineHeight: 1.65 }}>
-                Priorité WhatsApp sous 120 minutes · téléphone vocal · email dossier avec pièce jointe — une équipe basée localement (Douala &amp; Yaoundé).
+          <div className="yorix-contact-shell">
+            <div className="yorix-bc-row">
+              <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Contact" }]} />
+            </div>
+            <div className="yorix-contact-intro">
+              <h1 className="yorix-contact-h1">📞 Relation client premium</h1>
+              <p className="yorix-contact-lead">
+                Priorité WhatsApp sous ~120&nbsp;minutes · téléphone vocal · email pièces jointes — équipes Douala&nbsp;&amp;&nbsp;Yaoundé.
               </p>
             </div>
             <div className="yorix-contact-chips">
@@ -280,34 +282,60 @@ export function SiteMarketingPages({
                 { icon: "📞", label: "Téléphone", val: "+237 696 56 56 54", action: () => window.open("tel:+237696565654") },
                 { icon: "✉️", label: "Email", val: "support@yorix.cm", action: () => window.open("mailto:support@yorix.cm") },
               ].map((c) => (
-                <div key={c.label} onClick={c.action} style={{ background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12, padding: 18, textAlign: "center", cursor: "pointer", transition: "border-color .2s" }}
-                  onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--green)"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+                <div
+                  key={c.label}
+                  role="button"
+                  tabIndex={0}
+                  className="yorix-contact-chip"
+                  onClick={c.action}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      c.action();
+                    }
+                  }}
                 >
-                  <div style={{ fontSize: "2rem", marginBottom: 8 }}>{c.icon}</div>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".85rem", color: "var(--ink)", marginBottom: 4 }}>{c.label}</div>
-                  <div style={{ fontSize: ".78rem", color: "var(--green)", fontWeight: 600 }}>{c.val}</div>
+                  <span className="yorix-contact-chip-ico">{c.icon}</span>
+                  <span className="yorix-contact-chip-lbl">{c.label}</span>
+                  <span className="yorix-contact-chip-val">{c.val}</span>
                 </div>
               ))}
             </div>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 24, marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "1rem", color: "var(--ink)", marginBottom: 16 }}>💬 Envoyer un message</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: 11 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Nom *</label><input className="form-input" placeholder="Votre nom" /></div>
-                <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="email@exemple.cm" /></div>
+            <div className="yorix-contact-form-card">
+              <div className="yorix-contact-form-title">💬 Envoyer un message</div>
+              <div className="form-row">
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Nom <span>*</span></label>
+                  <input className="form-input" placeholder="Votre nom" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Email <span>*</span></label>
+                  <input className="form-input" type="email" placeholder="email@exemple.cm" />
+                </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Sujet *</label>
+                <label className="form-label">Sujet <span>*</span></label>
                 <select className="form-select">
                   <option value="">Choisir un sujet...</option>
-                  {["Problème avec une commande", "Signaler un vendeur", "Remboursement", "Problème de paiement", "Devenir vendeur", "Devenir livreur", "Autre"].map((s) => (<option key={s}>{s}</option>))}
+                  {["Problème avec une commande", "Signaler un vendeur", "Remboursement", "Problème de paiement", "Devenir vendeur", "Devenir livreur", "Autre"].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
                 </select>
               </div>
-              <div className="form-group"><label className="form-label">Message *</label><textarea className="form-textarea" style={{ minHeight: 90 }} placeholder="Décrivez votre demande..." /></div>
-              <button type="button" className="form-submit" onClick={() => window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix ! Je vous contacte pour : ")}`)}>📱 Envoyer via WhatsApp</button>
+              <div className="form-group">
+                <label className="form-label">Message <span>*</span></label>
+                <textarea className="form-textarea" style={{ minHeight: 90 }} placeholder="Décrivez votre demande..." />
+              </div>
+              <button
+                type="button"
+                className="form-submit"
+                onClick={() => window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix ! Je vous contacte pour : ")}`)}
+              >
+                📱 Continuer via WhatsApp
+              </button>
             </div>
-            <div style={{ background: "var(--green-pale)", border: "1px solid var(--green-light)", borderRadius: 11, padding: 16, display: "flex", gap: 14, flexWrap: "wrap" }}>
-              <div style={{ flex: 1 }}>
+            <div className="yorix-contact-info-strip">
+              <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem", color: "var(--green)", marginBottom: 6 }}>⏰ Horaires</div>
                 {[
                   ["Lun – Ven", "8h – 20h"],
@@ -315,13 +343,20 @@ export function SiteMarketingPages({
                   ["Dimanche", "10h – 16h"],
                 ].map(([j, h]) => (
                   <div key={j} style={{ display: "flex", justifyContent: "space-between", fontSize: ".75rem", padding: "3px 0", borderBottom: "1px solid var(--border)" }}>
-                    <span style={{ color: "var(--gray)" }}>{j}</span><span style={{ fontWeight: 600, color: "var(--ink)" }}>{h}</span>
+                    <span style={{ color: "var(--gray)" }}>{j}</span>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{h}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem", color: "var(--green)", marginBottom: 6 }}>📍 Bureaux</div>
-                <div style={{ fontSize: ".75rem", color: "var(--gray)", lineHeight: 1.7 }}>Douala — Akwa<br />Yaoundé — Bastos<br />📞 +237 696 56 56 54</div>
+                <div style={{ fontSize: ".75rem", color: "var(--gray)", lineHeight: 1.7 }}>
+                  Douala — Akwa
+                  <br />
+                  Yaoundé — Bastos
+                  <br />
+                  📞 +237 696 56 56 54
+                </div>
               </div>
             </div>
           </div>

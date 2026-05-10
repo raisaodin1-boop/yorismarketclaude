@@ -519,7 +519,7 @@ export function CheckoutPage({
   const deliveryHintText = deliveryEstimateHint(ville, locationType, carrier);
 
   return (
-    <section className="sec anim checkout-page-wrap">
+    <section className="sec anim checkout-page-wrap yorix-page-flow yorix-pro-page">
       <CheckoutProgressBar
         activeIndex={progressActiveIndex}
         onNavigate={handleProgressNavigate}
@@ -528,10 +528,10 @@ export function CheckoutPage({
 
       {!orderDone && hasItems && <FreeShippingProgress summary={summary} variant={step >= 2 ? "compact" : "cart"} />}
 
-      <h1 className="sec-title" style={{ marginBottom: 6 }}>
+      <h1 className="sec-title yorix-ds-tight">
         {orderDone ? "Commande enregistrée" : "Finaliser la commande"}
       </h1>
-      <p style={{ color: "var(--gray)", marginBottom: 16, fontSize: ".88rem" }}>
+      <p className="yorix-ds-lead">
         {orderDone
           ? "Merci pour votre confiance. Conservez votre référence pour le suivi."
           : `Tunnel sécurisé : adresse • livraison • paiement (${
@@ -540,18 +540,7 @@ export function CheckoutPage({
       </p>
 
       {cinetpayReturnBanner && !orderDone && (
-        <div
-          role="status"
-          style={{
-            marginBottom: 14,
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "var(--surface2)",
-            border: "1px solid var(--accent-gold-soft, rgba(176,142,74,.25))",
-            fontSize: ".86rem",
-            lineHeight: 1.45,
-          }}
-        >
+        <div role="status" className="yorix-ds-inline-banner">
           {cinetpayReturnBanner}
         </div>
       )}
@@ -575,9 +564,9 @@ export function CheckoutPage({
                 ? "Statut mis à jour depuis notre serveur. En cas de « en attente », le webhook peut encore finaliser sous quelques minutes."
                 : "Votre commande a été enregistrée. Suivez l’avancement depuis votre espace client."}
           </p>
-            <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12, marginBottom: 16, textAlign: "left", fontSize: ".84rem" }}>
+            <div className="yorix-ds-inset-panel">
             {orderDone.mode === "cinetpay_return" && orderDone.paymentStatus && (
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+              <div className="yorix-ds-kvrow">
                 <span>État paiement</span>
                 <strong>
                   {orderDone.paymentStatus === "paid"
@@ -593,7 +582,7 @@ export function CheckoutPage({
             {orderDone.mode === "cinetpay_return" &&
               orderDone.amountReturned != null &&
               Number.isFinite(Number(orderDone.amountReturned)) && (
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                <div className="yorix-ds-kvrow">
                   <span>Montant enregistré</span>
                   <strong>
                     {Number(orderDone.amountReturned).toLocaleString()} {orderDone.currencyReturned || "XAF"}
@@ -601,18 +590,18 @@ export function CheckoutPage({
                 </div>
               )}
             {orderDone.providerRef && orderDone.mode === "cinetpay_return" && (
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: orderDone.orderGroupId ? 6 : 0 }}>
+              <div className="yorix-ds-kvrow" style={{ marginBottom: orderDone.orderGroupId ? 6 : 0 }}>
                 <span>Réf. transaction</span>
                 <strong style={{ wordBreak: "break-all" }}>{orderDone.providerRef}</strong>
               </div>
             )}
             {orderDone.orderGroupId && (
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+              <div className="yorix-ds-kvrow" style={{ marginBottom: 6 }}>
                 <span>Groupe commande</span>
                 <strong style={{ wordBreak: "break-all" }}>{orderDone.orderGroupId}</strong>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <div className="yorix-ds-kvrow">
               <span>Réf. checkout</span>
               <strong style={{ wordBreak: "break-all" }}>{orderDone.intentId}</strong>
             </div>
@@ -632,7 +621,7 @@ export function CheckoutPage({
               </div>
             )}
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+          <div className="yorix-ds-stack">
             <button type="button" className="form-submit" style={{ width: "auto", minWidth: 200 }} onClick={() => goPage("dashboard")}>
               Voir mon espace
             </button>
@@ -658,10 +647,10 @@ export function CheckoutPage({
           <div className="card checkout-form-card">
             {step === 1 && (
               <div className="checkout-step-grid">
-                <div style={{ fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", gridColumn: "1 / -1" }}>
+                <div className="checkout-step-heading">
                   Adresse & contact
                 </div>
-                <p style={{ gridColumn: "1 / -1", fontSize: ".8rem", color: "var(--gray)", margin: "-4px 0 6px", lineHeight: 1.4 }}>
+                <p className="checkout-step-lead">
                   Téléphone utilisé pour la livraison et les validations MoMo / Orange. Les données sont aussi enregistrées sur cet appareil pour votre prochain passage.
                 </p>
 
@@ -747,8 +736,10 @@ export function CheckoutPage({
 
             {step === 2 && (
               <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: ".95rem", color: "var(--ink)" }}>Livraison & réception</div>
-                <p style={{ fontSize: ".8rem", color: "var(--gray)", lineHeight: 1.45, margin: 0 }}>{locationBody}</p>
+                <div className="checkout-step-heading" style={{ gridColumn: "1 / -1" }}>
+                  Livraison & réception
+                </div>
+                <p className="checkout-step-lead" style={{ marginTop: "-6px" }}>{locationBody}</p>
 
                 <label className="form-label">Mode principal</label>
                 <select className="form-input" value={locationType} onChange={(e) => setLocationType(e.target.value)}>
@@ -810,7 +801,7 @@ export function CheckoutPage({
 
             {step === 3 && (
               <div style={{ display: "grid", gap: 10 }}>
-                <div style={{ fontWeight: 700, fontSize: ".95rem", color: "var(--ink)" }}>Paiement</div>
+                <div className="checkout-step-heading">Paiement</div>
                 <label className="form-label">Mode de paiement</label>
                 <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option value="cinetpay">CinetPay — MTN MoMo, Orange Money ou carte</option>
@@ -818,17 +809,17 @@ export function CheckoutPage({
                   <option value="whatsapp_backup">WhatsApp — backup & preuve manuelle</option>
                 </select>
 
-                <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 12 }}>
+                <div className="yorix-ds-inset-panel checkout-pay-recap" style={{ marginBottom: 0 }}>
                   {summary.hasShippableProducts && summary.freeShippingUnlocked && (
                     <div className="fs-ship-badge" style={{ marginBottom: 10 }}>
                       Livraison standard offerte · Bon plan Yorix
                     </div>
                   )}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".88rem" }}>
+                  <div className="checkout-pay-recap-row">
                     <span>Sous-total</span>
                     <strong>{summary.subtotal.toLocaleString()} FCFA</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".88rem", marginTop: 4 }}>
+                  <div className="checkout-pay-recap-row">
                     <span>Livraison (produits à expédier)</span>
                     <strong>
                       {!summary.hasShippableProducts
@@ -838,7 +829,7 @@ export function CheckoutPage({
                           : `${summary.delivery.toLocaleString()} FCFA`}
                     </strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--border)", fontWeight: 700 }}>
+                  <div className="checkout-pay-recap-total">
                     <span>Total à payer</span>
                     <strong>{summary.total.toLocaleString()} FCFA</strong>
                   </div>

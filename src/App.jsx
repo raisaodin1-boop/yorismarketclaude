@@ -104,6 +104,7 @@ import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/
 import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
 import { OptimizedImage } from "./components/OptimizedImage";
 import { NotificationCenter } from "./components/NotificationCenter";
+import { PremiumSiteFooter } from "./components/layout/PremiumSiteFooter";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { ContractAcceptance, CONTRACT_VERSION } from "./components/ContractAcceptance";
 import { PasswordInput } from "./components/PasswordInput";
@@ -1428,92 +1429,71 @@ export default function Yorix() {
           <div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div>
         </div>
 
-        <div className="nav-search" style={{position:"relative"}}>
-          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}>
-            <option value="">Tout</option>
-            {CATS.map(c=><option key={c}>{c}</option>)}
-          </select>
-          <input
-            placeholder="Rechercher un produit..."
-            value={search}
-            onChange={e=>setSearch(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
-            autoComplete="off"
-          />
-          {search.trim().length >= 2 && (
-            <div style={{
-              position: "absolute", top: "100%", left: 0, right: 0,
-              background: "var(--bg)", border: "1px solid var(--border)",
-              borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-              zIndex: 9999, maxHeight: 320, overflowY: "auto", marginTop: 4
-            }}>
-              {produits
-                .filter(p =>
-                  (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
-                  (p.description_fr || "").toLowerCase().includes(search.toLowerCase())
-                )
-                .slice(0, 8)
-                .map(p => (
-                  <div
-                    key={p.id}
-                    onClick={() => {
-                      setSearch("");
-                      goPage("produits");
-                    }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 14px", cursor: "pointer",
-                      borderBottom: "1px solid var(--border)", fontSize: 13
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                  >
-                    {p.image && (
-                      <img
-                        src={p.image}
-                        style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 6 }}
-                        alt=""
-                        onError={e => e.currentTarget.style.display = "none"}
-                      />
-                    )}
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{p.name_fr}</div>
-                      <div style={{ color: "var(--gray)", fontSize: 12 }}>
-                        {p.prix?.toLocaleString()} FCFA
+        <div className="nav-search-wrap">
+          <div className="nav-search">
+            <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} aria-label="Filtrer par catégorie">
+              <option value="">Tout</option>
+              {CATS.map(c=><option key={c}>{c}</option>)}
+            </select>
+            <input
+              placeholder="Produit, marque, mot-clé…"
+              value={search}
+              onChange={e=>setSearch(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
+              autoComplete="off"
+              aria-label="Rechercher dans le catalogue"
+              aria-expanded={search.trim().length >= 2}
+              aria-haspopup="listbox"
+            />
+            {search.trim().length >= 2 && (
+              <div className="nav-search-dd" role="listbox" aria-label="Suggestions catalogue">
+                {produits
+                  .filter(p =>
+                    (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
+                    (p.description_fr || "").toLowerCase().includes(search.toLowerCase())
+                  )
+                  .slice(0, 8)
+                  .map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="nav-search-dd-item"
+                      role="option"
+                      onClick={() => {
+                        setSearch("");
+                        goPage("produits");
+                      }}
+                    >
+                      {p.image ? (
+                        <img src={p.image} className="nav-search-dd-img" alt="" onError={(e)=>{ e.currentTarget.style.visibility="hidden"; }} />
+                      ) : (
+                        <span className="nav-search-dd-img nav-search-dd-ph" aria-hidden>📦</span>
+                      )}
+                      <div style={{minWidth:0}}>
+                        <div className="nav-search-dd-t">{p.name_fr}</div>
+                        <div className="nav-search-dd-p">{p.prix?.toLocaleString()} FCFA</div>
                       </div>
-                    </div>
+                    </button>
+                  ))}
+                {produits.filter(p =>
+                  (p.name_fr || "").toLowerCase().includes(search.toLowerCase())
+                ).length === 0 && (
+                  <div className="nav-search-dd-empty">
+                    Aucun résultat pour « {search} » — touche Entrée pour ouvrir le catalogue filtré.
                   </div>
-                ))
-              }
-              {produits.filter(p =>
-                (p.name_fr || "").toLowerCase().includes(search.toLowerCase())
-              ).length === 0 && (
-                <div style={{ padding: 14, color: "var(--gray)", fontSize: 13, textAlign: "center" }}>
-                  Aucun résultat pour "{search}"
-                </div>
-              )}
-            </div>
-          )}
-          <button onClick={()=>goPage("produits")}>🔍</button>
+                )}
+              </div>
+            )}
+            <button type="button" onClick={()=>goPage("produits")} aria-label="Lancer la recherche catalogue">🔍</button>
+          </div>
         </div>
 
         <div className="nav-actions">
           <button
+            type="button"
+            className="nav-cta-onboard"
             onClick={() => setOnboardingOpen(true)}
             title="Que cherchez-vous ?"
-            style={{
-              background: "linear-gradient(135deg, var(--green, #1a6b3a), #0d4d28)",
-              color: "#fff",
-              border: "none",
-              padding: "7px 14px",
-              borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
-              fontWeight: 700,
-              fontSize: ".75rem",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              boxShadow: "0 2px 8px rgba(26,107,58,.25)",
-            }}
           >
             🚀 Démarrer
           </button>
@@ -1589,29 +1569,59 @@ export default function Yorix() {
             ☰ Navigation
           </button>
           {navQuickOpen && (
-            <div className="nav-quick-panel" role="dialog" aria-label="Liens rapides Yorix">
-              <div className="nav-quick-section">
-                <h4>Marketplace</h4>
-                <div className="nav-quick-links">
-                  {[{ l: "Accueil", p: "home" }, { l: "Produits", p: "produits" }, { l: "Panier / checkout", p: "cart" }, { l: "Bons plans", p: "bonsPlans" }, { l: "Livraison", p: "livraison" }].map((x) => (
-                    <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>{x.l}</button>
-                  ))}
+            <div className="nav-quick-panel" role="dialog" aria-label="Navigation Yorix">
+              <div className="nav-quick-mega-cols">
+                <div className="nav-quick-section">
+                  <h4>Marketplace</h4>
+                  <div className="nav-quick-links">
+                    {[
+                      { ic: "🏠", l: "Accueil", p: "home" },
+                      { ic: "🛍️", l: "Produits & catalogue", p: "produits" },
+                      { ic: "🛒", l: "Panier · paiement sécurisé", p: "cart" },
+                      { ic: "🏷️", l: "Bons plans du moment", p: "bonsPlans" },
+                      { ic: "🚚", l: "Livraison & suivi", p: "livraison" },
+                    ].map((x) => (
+                      <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>
+                        <span className="nav-quick-ico">{x.ic}</span>
+                        <span>{x.l}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="nav-quick-section">
-                <h4>Confiance · croissance</h4>
-                <div className="nav-quick-links">
-                  {[{ l: "Escrow", p: "escrow" }, { l: "Prestataires", p: "prestataires" }, { l: "Business", p: "business" }, { l: "Academy", p: "academy" }, { l: "Blog", p: "blog" }, { l: "Fidélité", p: "loyalty" }].map((x) => (
-                    <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>{x.l}</button>
-                  ))}
+                <div className="nav-quick-section">
+                  <h4>Confiance &amp; croissance</h4>
+                  <div className="nav-quick-links">
+                    {[
+                      { ic: "🔐", l: "Escrow acheteur", p: "escrow" },
+                      { ic: "🧑‍🔧", l: "Prestataires vérifiés", p: "prestataires" },
+                      { ic: "💼", l: "Yorix Business", p: "business" },
+                      { ic: "🎓", l: "Academy", p: "academy" },
+                      { ic: "📰", l: "Blog & tendances CM", p: "blog" },
+                      { ic: "⭐", l: "Programme fidélité", p: "loyalty" },
+                    ].map((x) => (
+                      <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>
+                        <span className="nav-quick-ico">{x.ic}</span>
+                        <span>{x.l}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="nav-quick-section">
-                <h4>Support</h4>
-                <div className="nav-quick-links">
-                  <button type="button" onClick={() => { setNavQuickOpen(false); goPage("contact"); }}>Contact</button>
-                  <button type="button" onClick={() => { setNavQuickOpen(false); goPage("aide"); }}>SOS · Aide</button>
-                  <button type="button" onClick={() => { setNavQuickOpen(false); goPage("faq"); }}>FAQ</button>
+                <div className="nav-quick-section">
+                  <h4>Support Yorix</h4>
+                  <div className="nav-quick-links">
+                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("contact"); }}>
+                      <span className="nav-quick-ico">📞</span>
+                      <span>Contact relation client</span>
+                    </button>
+                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("aide"); }}>
+                      <span className="nav-quick-ico">🆘</span>
+                      <span>SOS · centre d&apos;aide</span>
+                    </button>
+                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("faq"); }}>
+                      <span className="nav-quick-ico">❓</span>
+                      <span>FAQ marketplace</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2013,23 +2023,26 @@ export default function Yorix() {
       )}
 
       {/* WA FLOAT */}
-      {user && (userData?.role === "admin" || userData?.role === "superadmin") && page !== "admin" && (
-        <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title="Ouvrir l’administration">
-          ⚙️ Admin Yorix
-        </button>
-      )}
-
-      <div className="wa-float">
-        {waOpen&&<div className="wa-card">
-          <div className="wa-card-title">💬 Contacter Yorix</div>
-          <div className="wa-card-sub">Support 7j/7 · Réponse rapide</div>
-          <a href={`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! J'ai besoin d'aide.")}`} target="_blank" rel="noreferrer" className="wa-link wa-link-green">📱 WhatsApp +237 696 56 56 54</a>
-          <a href="tel:+237696565654" className="wa-link wa-link-ghost">📞 Appeler</a>
-          <a href="mailto:support@yorix.cm" className="wa-link wa-link-ghost">✉️ support@yorix.cm</a>
-        </div>}
-        <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div className="wa-pulse"/>
-          <button className="wa-btn" onClick={()=>setWaOpen(o=>!o)}>{waOpen?"✕":"💬"}</button>
+      <div className="yorix-fab-stack" aria-live="polite">
+        {user && (userData?.role === "admin" || userData?.role === "superadmin") && page !== "admin" && (
+          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title="Ouvrir l’administration">
+            ⚙️ Admin Yorix
+          </button>
+        )}
+        <div className="wa-float">
+          {waOpen && (
+            <div className="wa-card">
+              <div className="wa-card-title">💬 Contacter Yorix</div>
+              <div className="wa-card-sub">Support 7j/7 · Réponse rapide</div>
+              <a href={`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! J'ai besoin d'aide.")}`} target="_blank" rel="noreferrer" className="wa-link wa-link-green">📱 WhatsApp +237 696 56 56 54</a>
+              <a href="tel:+237696565654" className="wa-link wa-link-ghost">📞 Appeler</a>
+              <a href="mailto:support@yorix.cm" className="wa-link wa-link-ghost">✉️ support@yorix.cm</a>
+            </div>
+          )}
+          <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div className="wa-pulse"/>
+            <button type="button" className="wa-btn" aria-expanded={waOpen} onClick={()=>setWaOpen(o=>!o)}>{waOpen?"✕":"💬"}</button>
+          </div>
         </div>
       </div>
 
@@ -2087,65 +2100,7 @@ export default function Yorix() {
         </Suspense>
       )}
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-grid">
-          <div>
-            <div className="footer-logo">Yo<span>rix</span> CM</div>
-            <p className="footer-desc">La marketplace camerounaise complète — produits, prestataires, livraison, paiement MoMo sécurisé Escrow.</p>
-            <div className="footer-contact"><span>📞 +237 696 56 56 54</span><span>✉️ support@yorix.cm</span><span>🇨🇲 Douala · Yaoundé · Bafoussam · et partout</span></div>
-          </div>
-          <div className="footer-col">
-            <h4>Marketplace</h4>
-            <ul>
-              {[
-                { l: "Tous les produits", p: "produits" },
-                { l: "Acheter à Douala", nav: () => goPage("seoCity", { citySlug: "douala", mode: "acheter" }) },
-                { l: "Acheter à Yaoundé", nav: () => goPage("seoCity", { citySlug: "yaounde", mode: "acheter" }) },
-                { l: "Vendre sur Yorix", p: "devenirVendeur" },
-              ].map((i) => (
-                <li key={i.l} onClick={() => (i.nav ? i.nav() : goPage(i.p))}>{i.l}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Services &amp; villes</h4>
-            <ul>
-              {[
-                { l: "Livraison Cameroun", p: "livraison" },
-                { l: "Livraison à Douala", nav: () => goPage("livraison", { citySlug: "douala" }) },
-                { l: "Prestataires Cameroun", p: "prestataires" },
-                { l: "Prestataires à Yaoundé", nav: () => goPage("seoCity", { citySlug: "yaounde", mode: "prestataires" }) },
-                { l: "Escrow 🔐", p: "escrow" },
-                { l: "Business 💼", p: "business" },
-                { l: "Academy 🎓", p: "academy" },
-              ].map((i) => (
-                <li key={i.l} onClick={() => (i.nav ? i.nav() : goPage(i.p))}>{i.l}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Rejoindre Yorix</h4>
-            <ul>
-              {[
-                { l: "Devenir livreur", p: "devenirLivreur" },
-                { l: "Devenir prestataire", p: "inscription" },
-                { l: "FAQ", p: "faq" },
-                { l: "Centre d'aide", p: "aide" },
-                { l: "Nous contacter", p: "contact" },
-                { l: "📜 CGV", p: "cgv" },
-                { l: "🔒 Confidentialité", p: "confidentialite" },
-              ].map((i) => (
-                <li key={i.l} onClick={() => goPage(i.p)}>{i.l}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <span>© 2026 Yorix Cameroun — RC: DOUALA/2026/B237</span>
-          <div className="fb-badges"><span className="fbb">📱 MTN MoMo</span><span className="fbb">🔶 Orange Money</span><span className="fbb">🔐 Escrow</span><span className="fbb">🇨🇲 Made in CM</span></div>
-        </div>
-      </footer>
+      <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
     </>
   );
 }

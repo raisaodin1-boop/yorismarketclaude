@@ -263,12 +263,12 @@ export function HomePage({
 
       <section className="sec hp-flash-sec" style={{ paddingBottom: 0 }}>
         <div className="sec-head">
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div className="yorix-sec-toolbar">
             <h2 className="sec-title">Offres flash du jour</h2>
             <span className="hp-flash-pill">Temps limité</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>Fin dans</span>
+          <div className="yorix-sec-toolbar-end">
+            <span className="yorix-catalog-meta">Fin dans</span>
             <FlashCountdown />
           </div>
         </div>
