@@ -112,6 +112,8 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
         <div className="yorix-bc-row yorix-bc-row--loy">
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Fidélité Yorix Points" }]} />
         </div>
+        <div className="yorix-loy-hero-bleed yorix-loy-hero-bleed--guest">
+          <div className="yorix-loy-hero-inner">
         <div className="yorix-loy-panel-guest">
           <div className="yorix-loy-ico-big" aria-hidden>
             🌟
@@ -132,6 +134,8 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
             <button type="button" className="cta-w" onClick={() => { setAuthTab?.("login"); setAuthOpen?.(true); }}>
               J&apos;ai déjà un compte
             </button>
+          </div>
+        </div>
           </div>
         </div>
       </section>
@@ -164,7 +168,8 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Programme fidélité" }]} />
         </div>
 
-        <div className="loy-shell">
+        <div className="yorix-loy-hero-bleed">
+          <div className="yorix-loy-hero-inner">
         <div className="yorix-loy-dash-wrap">
           <div className="yorix-loy-dash-deco" aria-hidden />
           <div className="yorix-loy-dash-deco yorix-loy-dash-deco--b" aria-hidden />
@@ -172,8 +177,9 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           <div className="yorix-loy-inner">
             <div className="yorix-loy-kpi-head">
               <div>
-                <div className="yorix-loy-kpi-label">Programme</div>
-                <div className="yorix-loy-kpi-sub">Mes Yorix Points</div>
+                <span className="yorix-loy-kpi-label">Solde disponible · programme fidélité</span>
+                <h1 className="yorix-loy-page-h1">Mes Yorix Points</h1>
+                <p className="yorix-loy-kpi-lead">Utilisez vos points sur les récompenses ou achetez des packs pour accélérer votre progression.</p>
               </div>
               <LevelBadge level={currentLevel} size="lg" />
             </div>
@@ -210,7 +216,10 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
             </div>
           </div>
         </div>
+          </div>
+        </div>
 
+        <div className="loy-shell yorix-loy-body-stack">
         <div className="loy-stats-grid">
           {[
             { icon: "🛍️", val: transactions.filter((t) => t.type === "achat").length, lbl: "Achats" },
@@ -422,7 +431,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
             </div>
           </div>
         )}
-        </div>{/* .loy-shell */}
+        </div>{/* .loy-shell + .yorix-loy-body-stack */}
       </section>
     </>
   );
