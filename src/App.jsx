@@ -168,7 +168,35 @@ export default function Yorix() {
   const notifPrefsRef = useRef(notifPrefs);
   notifPrefsRef.current = notifPrefs;
 
+  const [navCompact, setNavCompact] = useState(false);
+  const [navQuickOpen, setNavQuickOpen] = useState(false);
+  const navQuickRef = useRef(null);
+
   const [commerceDeliveryPolicy, setCommerceDeliveryPolicy] = useState(() => getDefaultPolicyFromEnv());
+
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        setNavCompact(window.scrollY > 16);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!navQuickOpen) return undefined;
+    const close = (e) => {
+      if (navQuickRef.current && !navQuickRef.current.contains(e.target)) setNavQuickOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [navQuickOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1374,7 +1402,8 @@ export default function Yorix() {
         </div>
       )}
 
-      {/* ── TOPBAR ── */}
+      {/* ── EN-TÊTE STICKY (marketplace fluide desktop + mobile) ── */}
+      <div className={`header-sticky-stack${navCompact ? " header-sticky-stack--compact" : ""}`}>
       <div className="topbar">
         <div className="topbar-l">
           <div className="flag-wrap">
@@ -1394,7 +1423,6 @@ export default function Yorix() {
         </div>
       </div>
 
-      {/* ── NAVBAR ── */}
       <nav className="navbar">
         <div className="logo-wrap" onClick={()=>goPage("home")}>
           <div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div>
@@ -1543,32 +1571,54 @@ export default function Yorix() {
         </div>
       </nav>
 
-      {/* ── NOTIFICATIONS (centre premium) ── */}
-      {notifOpen && user && (
-        <>
-          <div className="notif-backdrop" role="presentation" onClick={() => setNotifOpen(false)} />
-          <div className="notif-drawer notif-drawer--premium">
-            <NotificationCenter
-              variant="dropdown"
-              user={user}
-              notifs={notifs}
-              goPage={goPage}
-              onMarkRead={marquerNotifLue}
-              onMarkAllRead={marquerToutesLues}
-              onDismiss={supprimerNotif}
-              onClose={() => setNotifOpen(false)}
-              onPrefsUpdated={setNotifPrefs}
-            />
-          </div>
-        </>
-      )}
+      <div className="nav-tabs-row" ref={navQuickRef}>
+        <nav className="nav-tabs" aria-label="Rubriques Yorix">
+          {TABS.map((t) => (
+            <div key={t.p} className={`tab${tabActive(t.p) ? " active" : ""}`} onClick={() => { setNavQuickOpen(false); goPage(t.p); }} role="presentation">
+              {t.l}
+            </div>
+          ))}
+        </nav>
+        <div className="nav-quick-wrap">
+          <button
+            type="button"
+            className="nav-quick-btn"
+            aria-expanded={navQuickOpen}
+            onClick={() => setNavQuickOpen((o) => !o)}
+          >
+            ☰ Navigation
+          </button>
+          {navQuickOpen && (
+            <div className="nav-quick-panel" role="dialog" aria-label="Liens rapides Yorix">
+              <div className="nav-quick-section">
+                <h4>Marketplace</h4>
+                <div className="nav-quick-links">
+                  {[{ l: "Accueil", p: "home" }, { l: "Produits", p: "produits" }, { l: "Panier / checkout", p: "cart" }, { l: "Bons plans", p: "bonsPlans" }, { l: "Livraison", p: "livraison" }].map((x) => (
+                    <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>{x.l}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="nav-quick-section">
+                <h4>Confiance · croissance</h4>
+                <div className="nav-quick-links">
+                  {[{ l: "Escrow", p: "escrow" }, { l: "Prestataires", p: "prestataires" }, { l: "Business", p: "business" }, { l: "Academy", p: "academy" }, { l: "Blog", p: "blog" }, { l: "Fidélité", p: "loyalty" }].map((x) => (
+                    <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>{x.l}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="nav-quick-section">
+                <h4>Support</h4>
+                <div className="nav-quick-links">
+                  <button type="button" onClick={() => { setNavQuickOpen(false); goPage("contact"); }}>Contact</button>
+                  <button type="button" onClick={() => { setNavQuickOpen(false); goPage("aide"); }}>SOS · Aide</button>
+                  <button type="button" onClick={() => { setNavQuickOpen(false); goPage("faq"); }}>FAQ</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-      {/* Drawer supprimé au profit de la page panier dédiée */}
-
-      {/* ── TABS ── */}
-      <div className="nav-tabs">{TABS.map(t=><div key={t.p} className={`tab${tabActive(t.p)?" active":""}`} onClick={()=>goPage(t.p)}>{t.l}</div>)}</div>
-
-      {/* ── PAY STRIP ── */}
       <div className="pay-strip">
         <b style={{color:"var(--ink)"}}>Paiement :</b>
         <div className="pay-methods"><span className="pm mtn-b">📱 MTN MoMo</span><span className="pm ora-b">🔶 Orange Money</span><span className="pm">💳 Carte</span><span className="pm">💵 Cash</span></div>
@@ -1592,6 +1642,27 @@ export default function Yorix() {
           {user && <span style={{ color: "var(--gold)" }}>👤 {userData?.nom || user.email}</span>}
         </div>
       </div>
+      </div>{/* /.header-sticky-stack */}
+
+      {/* ── NOTIFICATIONS (hors header sticky — z-index overlay) ── */}
+      {notifOpen && user && (
+        <>
+          <div className="notif-backdrop" role="presentation" onClick={() => setNotifOpen(false)} />
+          <div className="notif-drawer notif-drawer--premium">
+            <NotificationCenter
+              variant="dropdown"
+              user={user}
+              notifs={notifs}
+              goPage={goPage}
+              onMarkRead={marquerNotifLue}
+              onMarkAllRead={marquerToutesLues}
+              onDismiss={supprimerNotif}
+              onClose={() => setNotifOpen(false)}
+              onPrefsUpdated={setNotifPrefs}
+            />
+          </div>
+        </>
+      )}
 
       {/* ════════ PAGE : ACCUEIL ════════ */}
       {page==="home"&&(
@@ -1686,6 +1757,7 @@ export default function Yorix() {
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
             dark={dark}
+            goPage={goPage}
           />
         </Suspense>
       )}
@@ -1941,6 +2013,12 @@ export default function Yorix() {
       )}
 
       {/* WA FLOAT */}
+      {user && (userData?.role === "admin" || userData?.role === "superadmin") && page !== "admin" && (
+        <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title="Ouvrir l’administration">
+          ⚙️ Admin Yorix
+        </button>
+      )}
+
       <div className="wa-float">
         {waOpen&&<div className="wa-card">
           <div className="wa-card-title">💬 Contacter Yorix</div>

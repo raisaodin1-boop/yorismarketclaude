@@ -1,7 +1,9 @@
 import { BusinessForm } from "../components/BusinessForm";
 import { PagesLegales } from "../components/PagesLegales";
+import { MarketingBreadcrumb } from "../components/layout/MarketingBreadcrumb";
 import { CITIES } from "../lib/constants";
 import { BlogPage } from "./BlogPage";
+import { HelpCentrePage } from "./HelpCentrePage";
 
 export function SiteMarketingPages({
   page,
@@ -138,32 +140,89 @@ export function SiteMarketingPages({
 
     case "business":
       return (
-        <section className="sec anim">
-          <div className="biz-hero">
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.24)", padding: "4px 11px", borderRadius: 50, fontSize: ".7rem", fontWeight: 700, marginBottom: 12 }}>
-              💼 Yorix Business
+        <div className="yorix-pro-page anim">
+          <section className="yorix-bus-hero">
+            <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Business" }]} />
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.28)", padding: "5px 14px", borderRadius: 50, fontSize: ".72rem", fontWeight: 700, marginBottom: 14 }}>
+              💼 Yorix · Business Growth Hub CM
             </div>
-            <div className="biz-title">La solution B2B pour les entreprises camerounaises</div>
-            <p className="biz-sub">Achetez en gros, gérez vos fournisseurs et accédez à des tarifs professionnels exclusifs.</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="cta-y">Démarrer gratuitement</button><button className="cta-w">Voir une démo</button></div>
-            <div className="biz-feats">{[{ icon: "📦", t: "Achats en gros", p: "Tarifs dégressifs dès 10 unités" }, { icon: "🤝", t: "Fournisseurs vérifiés", p: "500+ fournisseurs certifiés" }, { icon: "📊", t: "Tableaux de bord", p: "Suivi en temps réel" }, { icon: "🔐", t: "Facturation pro", p: "Factures automatiques" }].map((f) => (<div key={f.t} className="biz-feat"><div style={{ fontSize: "1.25rem", marginBottom: 4 }}>{f.icon}</div><h4>{f.t}</h4><p>{f.p}</p></div>))}</div>
-          </div>
-          <BusinessForm />
-        </section>
+            <h1 className="yorix-bus-h1">
+              Une couche commerce pour <span>entreprises ambitieuses</span> au Cameroun
+            </h1>
+            <p className="yorix-bus-lead">
+              Achats groupe B2B, logistique, visibilité produit national, paiements traçables (MoMo · Orange Money · Escrow) et accompagnement humain WhatsApp — le tout sur une même plateforme.
+            </p>
+            <div className="yorix-bus-cta">
+              <button type="button" className="cta-y" onClick={() => window.scrollTo({ behavior: "smooth", top: 520 })}>
+                Lancer une demande
+              </button>
+              <button type="button" className="cta-w" onClick={() => goPage("academy")}>
+                Formez vos équipes
+              </button>
+            </div>
+            <div className="yorix-bus-metrics">
+              {[
+                ["4 rôles pro", "Acheteur · Vendeur · Livreur · Prestataire"],
+                ["Nationwide CM", "Douala · Yaoundé · villes satellites"],
+                ["Stack confiance", "Escrow • support humain • suivi livraisons"],
+              ].map(([t, d]) => (
+                <div key={t} className="yorix-bus-metric">
+                  <strong>{t}</strong>
+                  <span>{d}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="sec">
+            <h2 className="yorix-sec-heading">Piliers de la transformation business</h2>
+            <div className="yorix-bus-pillars">
+              {[
+                { icon: "🏬", title: "Achat groupe & sourcing", txt: "Regroupements d’offres marketplace, meilleurs prix catalogue vérifié." },
+                { icon: "📣", title: "Visibilité & campagnes", txt: "Mise en avant produits-services, boosts dans les grandes villes." },
+                { icon: "🧠", title: "Formation continue", txt: "Yorix Academy pour digitaliser vos commerciaux & magasiniers." },
+                { icon: "🏦", title: "Financement & sécurité", txt: "Paiements tracés, escrow et litiges médiation locale." },
+              ].map((b) => (
+                <article key={b.title} className="yorix-bus-pillar">
+                  <div className="yorix-bus-pillar-ico">{b.icon}</div>
+                  <h3>{b.title}</h3>
+                  <p>{b.txt}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="sec">
+            <BusinessForm />
+          </section>
+        </div>
       );
 
     case "academy":
       return (
-        <section className="sec anim">
-          <div style={{ background: "linear-gradient(135deg,#1a3a24,#0a1410)", borderRadius: 14, padding: 28, marginBottom: 20, textAlign: "center" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.24)", padding: "4px 11px", borderRadius: 50, fontSize: ".7rem", fontWeight: 700, marginBottom: 12 }}>
-              🎓 Yorix Academy
+        <section className="sec anim yorix-pro-page">
+          <div style={{ marginBottom: 18 }}>
+            <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Academy" }]} />
+          </div>
+          <div className="yorix-acad-hero">
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.26)", padding: "5px 14px", borderRadius: 50, fontSize: ".72rem", fontWeight: 700, marginBottom: 14 }}>
+              🎓 Centre d&apos;apprentissage Yorix
             </div>
-            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.45rem", fontWeight: 800, color: "#fff", marginBottom: 6, letterSpacing: "-.5px" }}>Formez-vous pour vendre mieux</h2>
-            <p style={{ color: "rgba(255,255,255,.5)", fontSize: ".85rem", marginBottom: 18 }}>Des cours créés par des experts camerounais.</p>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <h1 className="yorix-acad-h1">
+              Upskill vos équipes : <span>e-commerce terrain</span> · vente WhatsApp · logistique
+            </h1>
+            <p className="yorix-acad-sub">
+              Parcours courts, ludiques et actionnables — pensés pour les vendeurs boutiques, équipes marketing terrain et entrepreneurs diaspora retour au pays.
+            </p>
+            <div className="yorix-acad-tracks">
+              {["Retail & Marketplace", "Livraison & expérience client", "Growth business local", "Paiements & conformité"].map((t) => (
+                <span key={t} className="yorix-chip">
+                  {t}
+                </span>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 22 }}>
               <button type="button" className="cta-y" onClick={() => { const first = academyCourses.find((c) => c.prix === 0); if (first) goAcademyDetail(first); }}>Commencer gratuitement</button>
-              <button type="button" className="cta-w" onClick={() => window.scrollTo({ top: 400, behavior: "smooth" })}>Voir le catalogue</button>
+              <button type="button" className="cta-w" onClick={() => window.scrollTo({ top: 560, behavior: "smooth" })}>Voir le catalogue</button>
+              <button type="button" className="cta-w" onClick={() => goPage("blog")}>Lire nos guides</button>
             </div>
           </div>
           {academyLoading ? (
@@ -200,18 +259,22 @@ export function SiteMarketingPages({
           setNlEmail={setNlEmail}
           nlSent={nlSent}
           setNlSent={setNlSent}
+          goPage={goPage}
         />
       );
 
     case "contact":
       return (
-        <section className="sec anim">
-          <div style={{ maxWidth: 700, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.5rem", color: "var(--ink)", marginBottom: 8 }}>📞 Nous contacter</h1>
-              <p style={{ color: "var(--gray)", fontSize: ".86rem" }}>Notre équipe répond en moins de 2h · 7j/7</p>
+        <section className="sec anim yorix-pro-page">
+          <div style={{ maxWidth: 880, margin: "0 auto" }}>
+            <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Contact" }]} />
+            <div style={{ textAlign: "center", margin: "22px auto 26px", maxWidth: 560 }}>
+              <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "clamp(1.45rem,2.5vw,1.95rem)", color: "var(--ink)", marginBottom: 10, letterSpacing: "-.4px" }}>📞 Relation client premium</h1>
+              <p style={{ color: "var(--gray)", fontSize: ".9rem", lineHeight: 1.65 }}>
+                Priorité WhatsApp sous 120 minutes · téléphone vocal · email dossier avec pièce jointe — une équipe basée localement (Douala &amp; Yaoundé).
+              </p>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
+            <div className="yorix-contact-chips">
               {[
                 { icon: "📱", label: "WhatsApp", val: "+237 696 56 56 54", action: () => window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`) },
                 { icon: "📞", label: "Téléphone", val: "+237 696 56 56 54", action: () => window.open("tel:+237696565654") },
@@ -266,37 +329,7 @@ export function SiteMarketingPages({
       );
 
     case "aide":
-      return (
-        <section className="sec anim">
-          <div style={{ maxWidth: 800, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.5rem", color: "var(--ink)", marginBottom: 8 }}>🆘 Centre d'aide</h1>
-              <p style={{ color: "var(--gray)", fontSize: ".86rem" }}>Trouvez les réponses à vos questions</p>
-            </div>
-            {[
-              { cat: "🛍️ Acheter sur Yorix", faq: [{ q: "Comment passer une commande ?", r: "Cliquez sur un produit → Ajoutez au panier → Commander via WhatsApp. Le vendeur vous contacte sous 1h." }, { q: "Quels modes de paiement ?", r: "MTN Mobile Money, Orange Money, et paiement à la livraison dans certaines villes." }, { q: "Comment fonctionne l'Escrow ?", r: "Votre paiement est bloqué jusqu'à réception. Si problème, vous êtes remboursé sous 48h." }] },
-              { cat: "🏪 Vendre sur Yorix", faq: [{ q: "Comment créer ma boutique ?", r: "Inscrivez-vous Vendeur → Dashboard → Ajouter produit. Votre produit est visible immédiatement." }, { q: "Quelle est la commission Yorix ?", r: "5% sur chaque vente. Exemple : 10 000 FCFA vendus → vous recevez 9 500 FCFA." }, { q: "Comment obtenir le badge Top Vendeur ?", r: "Automatique dès 5 produits actifs, ou achetez-le 15 000 FCFA/mois." }] },
-              { cat: "🚚 Livraison", faq: [{ q: "Délais de livraison ?", r: "Intra-ville : 20–60 min. Inter-villes : 1–3 jours." }, { q: "Colis non reçu ?", r: "Contactez immédiatement : support@yorix.cm ou WhatsApp +237 696 56 56 54." }] },
-              { cat: "💰 Points & Fidélité", faq: [{ q: "Comment gagner des points ?", r: "5 points par achat, vente, livraison ou prestation. 10 points à l'inscription. 1 pt = 1 FCFA." }, { q: "Échange minimum ?", r: "500 points = 500 FCFA. Utilisables en bons d'achat ou livraisons offertes." }] },
-            ].map((section) => (
-              <div key={section.cat} style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)", padding: "8px 0", borderBottom: "2px solid var(--green-light)", marginBottom: 10 }}>{section.cat}</div>
-                {section.faq.map(({ q, r }, i) => (
-                  <details key={i} style={{ marginBottom: 8, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 9, overflow: "hidden" }}>
-                    <summary style={{ padding: "11px 14px", cursor: "pointer", fontWeight: 600, fontSize: ".83rem", color: "var(--ink)", userSelect: "none", listStyle: "none", display: "flex", justifyContent: "space-between" }}>
-                      {q}<span style={{ color: "var(--green)" }}>▾</span>
-                    </summary>
-                    <div style={{ padding: "10px 14px 14px", fontSize: ".8rem", color: "var(--gray)", lineHeight: 1.75, borderTop: "1px solid var(--border)" }}>{r}</div>
-                  </details>
-                ))}
-              </div>
-            ))}
-            <div style={{ textAlign: "center", marginTop: 20 }}>
-              <button type="button" className="btn-wa" style={{ display: "inline-flex" }} onClick={() => goPage("contact")}>📞 Contacter le support</button>
-            </div>
-          </div>
-        </section>
-      );
+      return <HelpCentrePage goPage={goPage} />;
 
     case "cgv":
       return <PagesLegales type="cgv" goPage={goPage} />;

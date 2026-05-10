@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { MarketingBreadcrumb } from "./layout/MarketingBreadcrumb";
 import { supabase } from "../lib/supabase";
 import { LevelBadge } from "./LevelBadge";
 import { LoyaltyPackModal } from "./LoyaltyPackModal";
@@ -76,7 +77,8 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
 
   if (!user) {
     return (
-      <section className="sec anim">
+      <section className="sec anim yorix-pro-page">
+        <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Fidélité Yorix Points" }]} />
         <div style={{
           background: "linear-gradient(135deg,#1a3a24,var(--green))",
           borderRadius: 16, padding: "40px 28px", textAlign: "center", color: "#fff",
@@ -131,7 +133,10 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
         />
       )}
 
-      <section className="sec anim">
+      <section className="sec anim yorix-pro-page">
+        <div style={{ marginBottom: 14 }}>
+          <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Programme fidélité" }]} />
+        </div>
         <div style={{
           background: "linear-gradient(135deg, #1a3a24 0%, var(--green) 60%, #2d9655 100%)",
           borderRadius: 16, padding: "26px 24px", color: "#fff",

@@ -1,9 +1,15 @@
+import { MarketingBreadcrumb } from "../components/layout/MarketingBreadcrumb";
 import { BLOG_DATA } from "../lib/constants";
 import { supabase } from "../lib/supabase";
 
-export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSent, setNlSent }) {
+export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSent, setNlSent, goPage }) {
   return (
-    <section className="sec anim">
+    <section className="sec anim yorix-pro-page">
+      {typeof goPage === "function" && (
+        <div style={{ marginBottom: 16 }}>
+          <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Journal / Blog" }]} />
+        </div>
+      )}
       <div
         style={{
           background: "linear-gradient(135deg, #0a1410 0%, #1a3a24 50%, #0d3320 100%)",
