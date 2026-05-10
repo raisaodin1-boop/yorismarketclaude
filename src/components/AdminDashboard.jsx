@@ -30,6 +30,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [chartVentes, setChartVentes]           = useState([]);
   const [chartInscrits, setChartInscrits]       = useState([]);
   const [topProduits, setTopProduits]           = useState([]);
+  const [paymentTx, setPaymentTx]               = useState([]);
 
   // ═══════════ FILTRES ═══════════
   const [searchProd, setSearchProd]             = useState("");
@@ -79,9 +80,11 @@ export function AdminDashboard({ user, userData, goPage }) {
         supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(1000),
         supabase.from("deliveries").select("*").order("commande_at", { ascending: false }).limit(500),
         supabase.from("prestataires").select("*").order("created_at", { ascending: false }).limit(500),
+        supabase.from("admin_finance_kpis").select("*").maybeSingle(),
+        supabase.from("payment_transactions").select("*").order("created_at", { ascending: false }).limit(1000),
       ]);
 
-      const [usersR, profilesR, prodsR, ordersR, delivsR, prestsR] = results;
+      const [usersR, profilesR, prodsR, ordersR, delivsR, prestsR, financeKpiR, paymentsR] = results;
 
       const rawUsers    = usersR.status    === "fulfilled" ? (usersR.value.data    || []) : [];
       const rawProfiles = profilesR.status === "fulfilled" ? (profilesR.value.data || []) : [];
@@ -89,6 +92,9 @@ export function AdminDashboard({ user, userData, goPage }) {
       const ordersData  = ordersR.status   === "fulfilled" ? (ordersR.value.data   || []) : [];
       const delivsData  = delivsR.status   === "fulfilled" ? (delivsR.value.data   || []) : [];
       const prestsData  = prestsR.status   === "fulfilled" ? (prestsR.value.data   || []) : [];
+      const financeKpi =
+        financeKpiR.status === "fulfilled" ? (financeKpiR.value.data || null) : null;
+      const paymentsData = paymentsR.status === "fulfilled" ? (paymentsR.value.data || []) : [];
 
       // Fusionner users + profiles (dédupliqué par id/uid)
       const mergedMap = new Map();
@@ -102,8 +108,8 @@ export function AdminDashboard({ user, userData, goPage }) {
 
       const livreursData = usersData.filter(u => u.role === "delivery");
 
-      const commissionTotal = ordersData.reduce((s, o) => s + (o.commission || 0), 0);
-      const revenueTotal    = ordersData.reduce((s, o) => s + (o.montant || 0), 0);
+      const commissionTotal = financeKpi?.yorix_commission_total ?? ordersData.reduce((s, o) => s + (o.commission || 0), 0);
+      const revenueTotal    = financeKpi?.volume_total ?? ordersData.reduce((s, o) => s + (o.montant || 0), 0);
       const revenueToday    = ordersData.filter(o => new Date(o.created_at) >= today).reduce((s, o) => s + (o.commission || 0), 0);
       const revenueWeek     = ordersData.filter(o => new Date(o.created_at) >= weekAgo).reduce((s, o) => s + (o.commission || 0), 0);
 
@@ -156,6 +162,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       setChartVentes(chartV);
       setChartInscrits(chartI);
       setTopProduits(topP);
+      setPaymentTx(paymentsData);
 
       if (usersData.length === 0 && prodsData.length === 0 && ordersData.length === 0) {
         setLoadError("⚠️ Aucune donnée chargée. Vérifiez les politiques RLS Supabase (tables users, products, orders).");
@@ -380,6 +387,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     ...commandes.filter(o => o.status === "pending").map(o => ({ type: "yellow", label: "Commande", msg: `⏳ ${o.client_nom || "Client"} — ${(o.montant || 0).toLocaleString()} FCFA` })),
     ...adminDeliveries.filter(d => d.statut === "commande_recue" && !d.livreur_id).map(d => ({ type: "yellow", label: "Livraison", msg: `🚚 ${d.code_suivi} attend un livreur` })),
     ...utilisateurs.filter(u => new Date() - new Date(u.created_at) < 86400000).map(u => ({ type: "green", label: "Nouveau", msg: `🆕 ${u.nom || u.email || "User"} — ${u.role || "buyer"}` })),
+    ...paymentTx.filter((p) => p.status === "failed").slice(0, 8).map((p) => ({ type: "red", label: "Paiement", msg: `❌ Échec ${p.provider || "N/A"} — ${p.provider_ref || p.id}` })),
   ];
 
   const maxChartV   = Math.max(...chartVentes.map(d => d.orders), 1);

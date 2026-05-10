@@ -98,6 +98,7 @@ export const PAGE_PATH = {
   confidentialite: "/politique-confidentialite",
   dashboard: "/dashboard",
   admin: "/admin",
+  checkout: "/checkout",
   devenirVendeur: "/devenir-vendeur",
   devenirLivreur: "/devenir-livreur",
 };
@@ -236,6 +237,7 @@ export function parsePathname(pathname) {
     "politique-confidentialite": "confidentialite",
     dashboard: "dashboard",
     admin: "admin",
+    checkout: "checkout",
     "devenir-vendeur": "devenirVendeur",
     "devenir-livreur": "devenirLivreur",
     "devenir-prestataire": "inscription",

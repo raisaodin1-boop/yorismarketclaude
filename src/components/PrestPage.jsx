@@ -61,6 +61,7 @@ export function PrestPage({
   onOpenPrestDetail,
   onClosePrestDetail,
   syncFilters,
+  onAddServiceToCart,
 }) {
   const openPrest = (p) => {
     setSelectedPrest(p);
@@ -1214,7 +1215,7 @@ export function PrestPage({
             </div>
 
             {/* 3 BOUTONS */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
               <button
                 onClick={() =>
                   window.open(
@@ -1244,6 +1245,33 @@ export function PrestPage({
                 }}
               >
                 📞 Appeler
+              </button>
+              <button
+                onClick={() => {
+                  if (!onAddServiceToCart) return;
+                  const priceNum =
+                    Number((selectedPrest.prix || "").toString().replace(/\D/g, "")) || 0;
+                  onAddServiceToCart({
+                    id: selectedPrest.id,
+                    name: selectedPrest.metier || selectedPrest.name,
+                    provider_nom: selectedPrest.name,
+                    provider_id: selectedPrest.isReal ? String(selectedPrest.id).replace(/^real-/, "") : null,
+                    categorie: selectedPrest.categorie,
+                    ville: selectedPrest.ville,
+                    prix: priceNum,
+                    prix_number: priceNum,
+                    photo: selectedPrest.photo,
+                  });
+                  closePrest();
+                }}
+                style={{
+                  background: "var(--surface2, #f5f5f5)", color: "var(--ink, #111)", border: "1px solid var(--border,#ddd)",
+                  padding: "11px 8px", borderRadius: 9,
+                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  cursor: "pointer",
+                }}
+              >
+                ➕ Panier
               </button>
               <button
                 onClick={() =>

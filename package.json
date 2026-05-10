@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/generate-sitemap.js",
-    "build": "vite build"
+    "build": "vite build",
+    "qa:checkout": "node scripts/qa-checkout-scenarios.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

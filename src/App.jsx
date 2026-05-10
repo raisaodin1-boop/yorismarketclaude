@@ -33,7 +33,6 @@ import { SeoHead } from "./components/seo/SeoHead";
 import { SeoLocalIntro } from "./components/seo/SeoLocalIntro";
 import {
   supabase,
-  COMMISSION_RATE,
   YORIX_WA_NUMBER,
   MOMO_NUMBER,
   ORANGE_NUMBER,
@@ -80,6 +79,7 @@ import {
   LazySiteMarketingPages,
   LazyFicheProduit,
   LazyPrestPage,
+  LazyCheckoutPage,
   LazyAcademyDetail,
   LazyAcademyContactForm,
   LazyLoyaltyPage,
@@ -89,6 +89,17 @@ import {
   LazyProviderDashboard,
   LazyAdminDashboard,
 } from "./lazyRoutes";
+import {
+  loadCart,
+  saveCart,
+  makeProductCartItem,
+  makeServiceCartItem,
+  upsertCartItem,
+  updateCartQty,
+  removeCartItem,
+  computeCartSummary,
+} from "./domain/cartDomain";
+import { isFeatureEnabled } from "./lib/featureFlags";
 import { OptimizedImage } from "./components/OptimizedImage";
 import { PushManager } from "./components/PushManager";
 import { OnboardingModal } from "./components/OnboardingModal";
@@ -142,18 +153,11 @@ export default function Yorix() {
 
   // Panier
   const [cartOpen, setCartOpen]   = useState(false);
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem("yorix_cart");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
+  const [cartItems, setCartItems] = useState(() => loadCart());
 
   // Sauvegarde automatique du panier à chaque modification
   useEffect(() => {
-    try {
-      localStorage.setItem("yorix_cart", JSON.stringify(cartItems));
-    } catch (e) { console.warn("Cart save failed:", e); }
+    saveCart(cartItems);
   }, [cartItems]);
 
   // Notifs
@@ -189,6 +193,7 @@ export default function Yorix() {
 
   const [detailProduct, setDetailProduct] = useState(null);
   const [detailProductLoading, setDetailProductLoading] = useState(false);
+  const checkoutV2Enabled = isFeatureEnabled("checkout_v2");
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -684,45 +689,24 @@ export default function Yorix() {
 
   // ── PANIER ──
   const addToCart = useCallback((p) => {
-    if (!p?.id) {
-      console.warn("⚠️ Produit sans ID, ignoré:", p);
-      return;
-    }
-
-    let imgArr = [];
-    if (Array.isArray(p.image_urls)) {
-      imgArr = p.image_urls;
-    } else if (typeof p.image_urls === "string") {
-      try { imgArr = JSON.parse(p.image_urls); } catch { imgArr = []; }
-    }
-
-    const img = (p.image && p.image.startsWith("http"))
-      ? p.image
-      : (imgArr[0] && imgArr[0].startsWith("http") ? imgArr[0] : null);
-
-    setCartItems(prev => {
-      const ex = prev.find(i => i.id === p.id);
-      if (ex) return prev.map(i => i.id === p.id ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, {
-        id:          p.id,
-        name:        p.name_fr || p.name || "Produit",
-        image:       img,
-        prix:        p.prix || 0,
-        qty:         1,
-        vendeur_id:  p.vendeur_id || null,
-        vendeur_nom: p.vendeur_nom || "",
-        categorie:   p.categorie || "",
-        ville:       p.ville || "",
-        stock:       p.stock || null,
-      }];
-    });
+    const cartItem = makeProductCartItem(p);
+    if (!cartItem) return;
+    setCartItems((prev) => upsertCartItem(prev, cartItem));
     setCartOpen(true);
   }, []);
 
-  const changeQty   = (id, d) => setCartItems(prev => prev.map(i => i.id===id ? {...i, qty:Math.max(1,i.qty+d)} : i));
-  const removeItem  = (id) => setCartItems(prev => prev.filter(i => i.id!==id));
-  const totalQty    = cartItems.reduce((a,i) => a+i.qty, 0);
-  const totalPrice  = cartItems.reduce((a,i) => a+(i.prix*i.qty), 0);
+  const addServiceToCart = useCallback((service) => {
+    const cartItem = makeServiceCartItem(service);
+    if (!cartItem) return;
+    setCartItems((prev) => upsertCartItem(prev, cartItem));
+    setCartOpen(true);
+  }, []);
+
+  const changeQty = (id, d, kind = null) => setCartItems((prev) => updateCartQty(prev, id, kind, d));
+  const removeItem = (id, kind = null) => setCartItems((prev) => removeCartItem(prev, id, kind));
+  const cartSummary = useMemo(() => computeCartSummary(cartItems, LIVRAISON_FEE), [cartItems]);
+  const totalQty = cartSummary.qty;
+  const totalPrice = cartSummary.subtotal;
 
   const passerCommande = async () => {
     if (!user) { setAuthOpen(true); setCartOpen(false); return; }
@@ -735,8 +719,8 @@ export default function Yorix() {
           client_nom: userData?.nom || user.email,
           telephone: userData?.telephone || "",
           montant: item.prix * item.qty,
-          commission: Math.round(item.prix * item.qty * COMMISSION_RATE),
-          montant_vendeur: Math.round(item.prix * item.qty * (1 - COMMISSION_RATE)),
+          commission: Math.round(item.prix * item.qty * 0.05),
+          montant_vendeur: Math.round(item.prix * item.qty * 0.95),
           status: "pending",
           livraison_status: "pending",
           escrow_status: "pending",
@@ -1546,7 +1530,7 @@ export default function Yorix() {
                   { cls: "ci-tag-stock-ok", txt: "✅ En stock" };
 
                 return (
-                  <div key={item.id} className="cart-item">
+                  <div key={`${item.kind || "product"}-${item.id}`} className="cart-item">
                     <div className="ci-img">
                       <OptimizedImage
                         src={item.image}
@@ -1558,8 +1542,14 @@ export default function Yorix() {
                     </div>
                     <div className="ci-info">
                       <div className="ci-name">{item.name}</div>
+                      <div className="ci-vendeur">
+                        {item.kind === "service" ? "🛠️ Service / réservation" : "📦 Produit physique"}
+                      </div>
                       {item.vendeur_nom && (
                         <div className="ci-vendeur">🏪 Vendeur : <strong>{item.vendeur_nom}</strong></div>
+                      )}
+                      {item.provider_nom && (
+                        <div className="ci-vendeur">👷 Prestataire : <strong>{item.provider_nom}</strong></div>
                       )}
                       <div className="ci-meta">
                         {item.categorie && <span className="ci-tag">{item.categorie}</span>}
@@ -1572,13 +1562,13 @@ export default function Yorix() {
                           <span className="ci-total-price">{sousTotal.toLocaleString()} FCFA</span>
                         </div>
                         <div className="ci-qty">
-                          <button className="qty-btn" onClick={() => changeQty(item.id, -1)}>−</button>
+                          <button className="qty-btn" onClick={() => changeQty(item.id, -1, item.kind)}>−</button>
                           <span className="qty-val">{item.qty}</span>
-                          <button className="qty-btn" onClick={() => changeQty(item.id, 1)}>+</button>
+                          <button className="qty-btn" onClick={() => changeQty(item.id, 1, item.kind)}>+</button>
                         </div>
                       </div>
                     </div>
-                    <button className="ci-del" onClick={() => removeItem(item.id)} title="Retirer">🗑</button>
+                    <button className="ci-del" onClick={() => removeItem(item.id, item.kind)} title="Retirer">🗑</button>
                   </div>
                 );
               })}
@@ -1586,17 +1576,17 @@ export default function Yorix() {
 
             <div className="cart-footer">
               <div className="cart-promo-row">
-                🎁 <strong>Plus que {Math.max(0, 50000 - totalPrice).toLocaleString()} FCFA</strong> pour la livraison offerte !
+                🎁 <strong>Plus que {Math.max(0, 50000 - cartSummary.productsSubtotal).toLocaleString()} FCFA</strong> pour la livraison offerte !
               </div>
 
               <div className="cart-summary">
                 <div className="cart-total-row">
                   <span>Sous-total ({totalQty} article{totalQty > 1 ? "s" : ""})</span>
-                  <strong>{totalPrice.toLocaleString()} FCFA</strong>
+                  <strong>{cartSummary.subtotal.toLocaleString()} FCFA</strong>
                 </div>
                 <div className="cart-total-row">
                   <span>🚚 Livraison estimée</span>
-                  <strong>{totalPrice >= 50000 ? "Offerte ✨" : `${LIVRAISON_FEE.toLocaleString()} FCFA`}</strong>
+                  <strong>{cartSummary.delivery ? `${cartSummary.delivery.toLocaleString()} FCFA` : "Offerte ✨"}</strong>
                 </div>
                 <div className="cart-total-row discount">
                   <span>🔐 Protection Escrow</span>
@@ -1605,9 +1595,22 @@ export default function Yorix() {
                 <div className="cart-divider" />
                 <div className="cart-total-row grand">
                   <span>TOTAL À PAYER</span>
-                  <strong>{(totalPrice + (totalPrice >= 50000 ? 0 : LIVRAISON_FEE)).toLocaleString()} FCFA</strong>
+                  <strong>{cartSummary.total.toLocaleString()} FCFA</strong>
                 </div>
               </div>
+
+              {checkoutV2Enabled && (
+                <button
+                  className="form-submit"
+                  style={{ width: "100%", marginBottom: 10 }}
+                  onClick={() => {
+                    setCartOpen(false);
+                    goPage("checkout");
+                  }}
+                >
+                  ⚡ Checkout sécurisé
+                </button>
+              )}
 
               <div className="cart-payment-section">
                 <div className="cart-payment-title">💳 Choisir un mode de paiement</div>
@@ -1879,6 +1882,23 @@ export default function Yorix() {
               }
             }}
             syncFilters={prestSyncFilters}
+            onAddServiceToCart={addServiceToCart}
+          />
+        </Suspense>
+      )}
+
+      {page==="checkout"&&(
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement checkout..." />}>
+          <LazyCheckoutPage
+            user={user}
+            userData={userData}
+            cartItems={cartItems}
+            summary={cartSummary}
+            setCartItems={setCartItems}
+            goPage={goPage}
+            fallbackWhatsappNumber={PAYMENT_WA_NUMBER}
+            momoNumber={MOMO_NUMBER}
+            orangeNumber={ORANGE_NUMBER}
           />
         </Suspense>
       )}

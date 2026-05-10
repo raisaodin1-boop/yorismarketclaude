@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { COMMISSION_RATE } from "../lib/supabase";
-import { creerCommandeSupabase } from "../utils/helpers";
+import { createCheckoutIntent, confirmCheckout } from "../lib/checkoutApi";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL COMMANDER (Commande + WhatsApp)
@@ -24,7 +23,31 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
     if (!validate()) return;
     setLoading(true);
     try {
-      await creerCommandeSupabase({ product, clientNom: nom, telephone: tel, userId: user?.id || null });
+      const subtotal = Number(product?.prix || 0);
+      const intent = await createCheckoutIntent({
+        checkoutType: "product_only",
+        customer: {
+          id: user?.id || null,
+          nom,
+          telephone: tel,
+          email: user?.email || "",
+          ville: userData?.ville || "",
+        },
+        items: [
+          {
+            id: product.id,
+            kind: "product",
+            qty: 1,
+            price: subtotal,
+            fulfillmentMode: "delivery",
+          },
+        ],
+        summary: { subtotal, delivery: 0, total: subtotal },
+      });
+      await confirmCheckout({
+        checkout_intent_id: intent.checkout_intent_id,
+        payment_method: "whatsapp_backup",
+      });
       setDone(true);
       setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
     } catch (err) {
@@ -33,9 +56,6 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
     }
     setLoading(false);
   };
-
-  const commission  = Math.round(product.prix * COMMISSION_RATE);
-  const netVendeur  = product.prix - commission;
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -54,14 +74,7 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
                 <span style={{ color:"var(--gray)" }}>Prix produit</span>
                 <strong>{product.prix?.toLocaleString()} FCFA</strong>
               </div>
-              <div className="commission-box" style={{ margin:0 }}>
-                <span>Commission Yorix ({Math.round(COMMISSION_RATE * 100)}%)</span>
-                <strong>−{commission.toLocaleString()} FCFA</strong>
-              </div>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".82rem", marginTop:4, fontWeight:700, color:"var(--green)" }}>
-                <span>Vendeur reçoit</span>
-                <span>{netVendeur.toLocaleString()} FCFA</span>
-              </div>
+              <div style={{ fontSize: ".75rem", color: "var(--gray)" }}>Paiement sécurisé, montant final confirmé au checkout.</div>
             </div>
 
             <div className="form-group">
