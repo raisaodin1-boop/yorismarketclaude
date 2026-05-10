@@ -702,6 +702,24 @@ export default function Yorix() {
   const cartSummary = useMemo(() => computeCartSummary(cartItems, LIVRAISON_FEE), [cartItems]);
   const totalQty = cartSummary.qty;
 
+  const persistCheckoutContact = useCallback(async (patch) => {
+    if (!user?.id || !patch) return;
+    const payload = {};
+    if (patch.telephone != null && String(patch.telephone).trim() !== "") {
+      payload.telephone = String(patch.telephone).trim();
+    }
+    if (patch.adresse != null) payload.adresse = String(patch.adresse).trim();
+    if (patch.ville != null) payload.ville = String(patch.ville).trim();
+    if (patch.nom != null) payload.nom = String(patch.nom).trim();
+    if (!Object.keys(payload).length) return;
+    const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+    if (error) {
+      console.warn("Profil checkout non sauvegardé:", error.message || error);
+      return;
+    }
+    setUserData((prev) => (prev ? { ...prev, ...payload } : prev));
+  }, [user?.id]);
+
   const passerCommande = async () => {
     if (!user) { setAuthOpen(true); return; }
     try {
@@ -1657,6 +1675,7 @@ export default function Yorix() {
             fallbackWhatsappNumber={PAYMENT_WA_NUMBER}
             momoNumber={MOMO_NUMBER}
             orangeNumber={ORANGE_NUMBER}
+            persistCheckoutContact={persistCheckoutContact}
           />
         </Suspense>
       )}
