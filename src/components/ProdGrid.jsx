@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
-import { FicheProduit } from "./FicheProduit";
 import { ModalCommander } from "./ModalCommander";
+
+const LazyFicheProduit = lazy(() =>
+  import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
+);
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : GRILLE PRODUITS (avec images optimisées Cloudinary)
@@ -157,13 +160,21 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
       </div>
 
       {ficheOpen && (
-        <FicheProduit
-          product={ficheOpen}
-          user={user}
-          userData={userData}
-          onClose={() => setFicheOpen(null)}
-          onAddToCart={onAddToCart}
-        />
+        <Suspense
+          fallback={
+            <div className="loading" style={{ justifyContent: "center", padding: 40 }}>
+              <div className="spinner" /> Chargement...
+            </div>
+          }
+        >
+          <LazyFicheProduit
+            product={ficheOpen}
+            user={user}
+            userData={userData}
+            onClose={() => setFicheOpen(null)}
+            onAddToCart={onAddToCart}
+          />
+        </Suspense>
       )}
       {cmdOpen && (
         <ModalCommander

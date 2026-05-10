@@ -199,10 +199,11 @@ const QUARTIERS = {
   "bessengue": { ville: "Douala", coords: [4.0610, 9.7690] },
 
   // ─── BAFOUSSAM I (Centre administratif / Commercial) ───
-  "centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
+  // (Pas de clé générique "centre-ville" ici — doublon JS avec Yaoundé/Bamenda ; utiliser / ajouter synonymes ci-dessous.)
   "centre commercial": { ville: "Bafoussam", coords: [5.4790, 10.4180] },
   "marche a": { ville: "Bafoussam", coords: [5.4800, 10.4190] },
-  "marche central": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
+  "marche central bafoussam": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
+  "marche central baf": { ville: "Bafoussam", coords: [5.4785, 10.4175] },
   "banéngo": { ville: "Bafoussam", coords: [5.4860, 10.4100] },
   "tougang": { ville: "Bafoussam", coords: [5.4740, 10.4250] },
   "kamkop": { ville: "Bafoussam", coords: [5.4820, 10.4210] },
@@ -262,7 +263,9 @@ const QUARTIERS = {
   "bafoussam centre-ville": { ville: "Bafoussam", coords: [5.4781, 10.4170] },
 
   // ─── BAMENDA I (Up Station / Commercial Avenue / Nkwen core) ───
-  "centre-ville": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  // Synonymes centre-ville (évite doublon de clé "centre-ville" avec Yaoundé.)
+  "centre ville bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
+  "centre-ville bamenda": { ville: "Bamenda", coords: [5.9631, 10.1591] },
   "commercial avenue": { ville: "Bamenda", coords: [5.9590, 10.1510] },
   "commercial avenue food market": { ville: "Bamenda", coords: [5.9580, 10.1520] },
   "up station": { ville: "Bamenda", coords: [5.9700, 10.1600] },
