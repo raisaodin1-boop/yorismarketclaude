@@ -84,3 +84,7 @@ export const LazyProviderDashboard = lazy(() =>
 export const LazyAdminDashboard = lazy(() =>
   import("./components/AdminDashboard").then((m) => ({ default: m.AdminDashboard }))
 );
+
+export const LazyNotificationsPage = lazy(() =>
+  import("./pages/NotificationsPage").then((m) => ({ default: m.NotificationsPage }))
+);

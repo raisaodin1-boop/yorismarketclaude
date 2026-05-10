@@ -548,19 +548,71 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .role-chip{display:none;}
   .icon-btn{width:34px;height:34px;font-size:.88rem;}
 
-/* NOTIFS */
-.notif-drawer{position:fixed;top:64px;right:16px;width:min(320px,calc(100vw - 32px));background:var(--surface);border-radius:12px;border:1px solid var(--border);box-shadow:0 6px 26px var(--shadow);z-index:400;overflow:hidden;}
+/* NOTIFS — centre premium + ancien fallback */
+.notif-backdrop{position:fixed;inset:0;background:rgba(15,20,18,.28);z-index:398;backdrop-filter:blur(2px);}
+.notif-drawer{position:fixed;top:62px;right:12px;width:min(408px,calc(100vw - 20px));max-height:calc(100vh - 72px);display:flex;flex-direction:column;background:var(--surface);border-radius:16px;border:1px solid var(--border);box-shadow:0 16px 48px rgba(0,0,0,.14),0 4px 14px rgba(26,107,58,.08);z-index:400;overflow:hidden;}
+.notif-drawer--premium{border-radius:16px;}
+.notif-hub{display:flex;flex-direction:column;height:100%;min-height:0;}
+.notif-hub--dropdown{min-height:380px;max-height:inherit;}
+.notif-hub--page{max-width:760px;margin:0 auto;}
+.notif-hub-toolbar{padding:14px 14px 10px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--surface2),var(--surface));flex-shrink:0;}
+.notif-hub-title-row{display:flex;align-items:center;gap:8px;}
+.notif-hub-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.02rem;color:var(--ink);margin:0;letter-spacing:-.3px;}
+.notif-hub-badge{background:var(--red);color:#fff;font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:50px;min-width:22px;text-align:center;}
+.notif-hub-actions-top{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;justify-content:space-between;}
+.notif-hub-close{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.9rem;line-height:1;margin-left:auto;}
+.notif-link-btn{background:none;border:none;font-size:.72rem;font-weight:700;color:var(--gray);cursor:pointer;padding:4px 0;}
+.notif-link-btn-strong{color:var(--green);}
+.notif-filter-strip{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;}
+.notif-chip{
+  flex-shrink:0;border:none;border-radius:50px;padding:6px 12px;font-size:.72rem;font-weight:700;background:var(--surface2);color:var(--gray);cursor:pointer;border:1px solid var(--border);
+}
+.notif-chip--active{background:var(--green-pale);color:var(--green);border-color:var(--green-light);}
+.notif-hub-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.notif-hub-scroll--drop{max-height:min(52vh,420px);}
+.notif-hub-scroll--page{max-height:none;}
+.notif-empty.premium{text-align:center;padding:36px 20px;color:var(--gray);}
+.notif-empty-icon{font-size:2rem;margin-bottom:8px;}
+.notif-empty-title{font-weight:700;font-size:.92rem;color:var(--ink);margin-bottom:6px;font-family:'Syne',sans-serif;}
+.notif-empty-sub{font-size:.78rem;line-height:1.45;margin:0;}
+.notif-card-list{list-style:none;margin:0;padding:8px 10px 12px;}
+.notif-card-li{
+  display:flex;gap:8px;align-items:stretch;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;
+  overflow:hidden;transition:box-shadow .18s ease,border-color .18s ease;
+}
+.notif-card-li:hover{box-shadow:0 4px 14px rgba(26,107,58,.06);}
+.notif-card-priority-critical{border-left:4px solid #b91c1c;}
+.notif-card-priority-important{border-left:4px solid #2563eb;}
+.notif-card-priority-promo{border-left:4px solid #d97706;}
+.notif-card-priority-standard{border-left:4px solid var(--green-light);}
+.notif-card-main{
+  flex:1;min-width:0;display:flex;gap:10px;padding:10px 4px 10px 10px;text-align:left;border:none;background:transparent;cursor:pointer;font:inherit;
+}
+.notif-card-unread{background:rgba(232,247,239,.52);}
+.notif-card-avatar{width:42px;height:42px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden;border:1px solid var(--border);}
+.notif-card-avatar img{width:100%;height:100%;object-fit:cover;}
+.notif-card-emoji{font-size:1.35rem;line-height:1;}
+.notif-card-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--green);border-radius:50%;border:1.5px solid var(--surface);}
+.notif-card-copy{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.notif-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.notif-card-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.82rem;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.notif-card-time{font-size:.64rem;color:var(--gray);white-space:nowrap;flex-shrink:0;}
+.notif-card-body{font-size:.74rem;color:var(--gray);line-height:1.42;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.notif-card-cta-secondary{font-size:.65rem;font-weight:700;color:var(--green);}
+.notif-card-side{display:flex;flex-direction:column;gap:4px;padding:8px 8px 8px 0;}
+.notif-mini-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.78rem;display:flex;align-items:center;justify-content:center;}
+.notif-mini-btn-del{font-size:.72rem;opacity:.75;}
+.notif-hub-footer-premium{border-top:1px solid var(--border);padding:10px 12px;background:var(--surface2);flex-shrink:0;max-height:min(240px,40vh);overflow-y:auto;}
+.notif-preferences-mini{display:grid;gap:6px;margin-bottom:8px;font-size:.72rem;color:var(--ink);}
+.notif-preferences-title{font-weight:800;font-family:'Syne',sans-serif;font-size:.74rem;color:var(--ink);}
+.notif-toggle{display:flex;align-items:center;gap:8px;font-size:.71rem;color:var(--gray);cursor:pointer;font-weight:600;}
+.notif-page-wrap{padding-bottom:48px;}
+
+/* legacy compat */
 .notif-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .notif-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.86rem;color:var(--ink);}
 .notif-clear{font-size:.69rem;color:var(--green);cursor:pointer;font-weight:600;}
-.notif-list{max-height:290px;overflow-y:auto;}
 .notif-item{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:9px;cursor:pointer;transition:background .2s;}
-.notif-item:hover{background:var(--surface2);}
-.notif-item.unread{background:var(--green-pale);}
-.notif-icon{font-size:1.2rem;flex-shrink:0;}
-.notif-body h4{font-size:.77rem;font-weight:600;color:var(--ink);margin-bottom:2px;}
-.notif-body p{font-size:.69rem;color:var(--gray);line-height:1.4;}
-.notif-time{font-size:.62rem;color:var(--gray);margin-top:2px;}
 
 /* PRESTATAIRES */
 .prest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
@@ -881,6 +933,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .cart-page-actions{flex-wrap:wrap;justify-content:flex-start;}
   .checkout-progress{padding:10px 6px;}
   .checkout-progress-node{width:min(22vw,80px);}
+  .notif-drawer{top:56px;right:8px;width:calc(100vw - 16px);border-radius:14px;}
+  .notif-hub-scroll--drop{max-height:min(48vh,380px);}
 }
 /* ========================================
    YORIX CM - MOBILE FIXES

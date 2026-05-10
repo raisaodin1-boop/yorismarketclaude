@@ -89,6 +89,7 @@ import {
   LazyDeliveryDashboard,
   LazyProviderDashboard,
   LazyAdminDashboard,
+  LazyNotificationsPage,
 } from "./lazyRoutes";
 import {
   loadCart,
@@ -100,8 +101,10 @@ import {
   removeCartItem,
   computeCartSummary,
 } from "./domain/cartDomain";
+import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
+import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
 import { OptimizedImage } from "./components/OptimizedImage";
-import { PushManager } from "./components/PushManager";
+import { NotificationCenter } from "./components/NotificationCenter";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { ContractAcceptance, CONTRACT_VERSION } from "./components/ContractAcceptance";
 import { PasswordInput } from "./components/PasswordInput";
@@ -162,6 +165,35 @@ export default function Yorix() {
   // Notifs
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs]       = useState([]);
+  const [notifPrefs, setNotifPrefs] = useState(() => loadNotificationPrefs());
+  const notifPrefsRef = useRef(notifPrefs);
+  notifPrefsRef.current = notifPrefs;
+
+  const loadNotifsForUser = useCallback(async (uid, limit = 40) => {
+    if (!uid) return;
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) console.warn("Notifications:", error.message);
+    else setNotifs(data || []);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setNotifPrefs(loadNotificationPrefs());
+      return undefined;
+    }
+    let cancelled = false;
+    ensureNotificationPrefsSynced(supabase, user.id).then((p) => {
+      if (!cancelled) setNotifPrefs(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Dashboard
   const [dashTab, setDashTab] = useState("overview");
@@ -425,12 +457,56 @@ export default function Yorix() {
 
   const chargerProfil = async (uid) => {
     const profile = await getUserProfile(uid);
-    const role    = getUserRole(profile);
+    const role = getUserRole(profile);
     setUserData(profile);
     setUserRole(role);
-    const { data } = await supabase.from("notifications").select("*").eq("user_id", uid).order("created_at", { ascending:false }).limit(10);
-    setNotifs(data || []);
+    await loadNotifsForUser(uid, 40);
   };
+
+  /* Temps réel : nouvelles lignes notifications (+ alerte bureau si autorisée) */
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    const channel = supabase
+      .channel(`notifications_rt_${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const row = payload.new;
+          setNotifs((prev) => {
+            if (prev.some((x) => x.id === row.id)) return prev;
+            return [row, ...prev].slice(0, 120);
+          });
+          try {
+            showBrowserNotificationIfPossible(enrichNotification(row), notifPrefsRef.current);
+          } catch {
+            /* ignore */
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  /* Deep link depuis une notification push (service worker) */
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return undefined;
+    const onMsg = (event) => {
+      if (event.data?.type !== "NOTIF_NAV") return;
+      const url = typeof event.data.url === "string" ? event.data.url : "/";
+      navigate(url.startsWith("/") ? url : `/${url}`);
+    };
+    navigator.serviceWorker.addEventListener("message", onMsg);
+    return () => navigator.serviceWorker.removeEventListener("message", onMsg);
+  }, [navigate]);
 
   // ── PRODUITS TEMPS RÉEL ──
   useEffect(() => {
@@ -796,9 +872,9 @@ export default function Yorix() {
 
   const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
-  const marquerNotifLue = async (notif) => {
+  const marquerNotifLue = async (notif, opts = { navigate: true, closeDrawer: true }) => {
     const id = typeof notif === "object" ? notif.id : notif;
-    const notification = typeof notif === "object" ? notif : notifs.find(n => n.id === id);
+    const notification = typeof notif === "object" ? notif : notifs.find((n) => n.id === id);
 
     try {
       const { error } = await supabase.from("notifications").update({ lu: true }).eq("id", id);
@@ -807,17 +883,37 @@ export default function Yorix() {
       console.warn("marquerNotifLue exception:", e?.message);
     }
 
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
-    setNotifOpen(false);
+    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
+    if (opts.closeDrawer) setNotifOpen(false);
 
-    if (notification) {
-      if (notification.type === "new_product" || notification.link?.includes("/products/")) {
-        goPage("produits");
-      } else if (notification.type === "new_message") {
-        goPage("dashboard");
-        setDashTab("messages");
-      }
+    if (!opts.navigate || !notification) return;
+
+    const link = String(notification.link || "").trim();
+    if (link.startsWith("http")) {
+      window.open(link, "_blank", "noopener,noreferrer");
+      return;
     }
+    if (link.startsWith("/")) {
+      navigate(link);
+      return;
+    }
+    if (notification.type === "new_product" || link.includes("/products/")) {
+      goPage("produits");
+    } else if (notification.type === "new_message") {
+      goPage("dashboard");
+      setDashTab("messages");
+    }
+  };
+
+  const supprimerNotif = async (id) => {
+    if (!id) return;
+    try {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) console.warn("supprimerNotif:", error.message);
+    } catch (e) {
+      console.warn("supprimerNotif:", e?.message);
+    }
+    setNotifs((prev) => prev.filter((n) => n.id !== id));
   };
 
   const marquerToutesLues = async () => {
@@ -1014,6 +1110,17 @@ export default function Yorix() {
         canonicalPath: canon,
         ogType: "product",
         jsonLd: [productLd, orgLd],
+      };
+    }
+
+    if (page === "notifications") {
+      return {
+        title: "Notifications — alertes commandes & messages | Yorix.cm",
+        description:
+          "Historique de vos alertes Yorix : commandes, paiements, livraisons, prestations et messages.",
+        canonicalPath: "/notifications",
+        noindex: true,
+        jsonLd: [orgLd],
       };
     }
 
@@ -1464,34 +1571,24 @@ export default function Yorix() {
         </div>
       </nav>
 
-      {/* ── NOTIFICATIONS DRAWER ── */}
+      {/* ── NOTIFICATIONS (centre premium) ── */}
       {notifOpen && user && (
-        <div className="notif-drawer">
-          <div className="notif-header">
-            <span className="notif-title">🔔 Notifications</span>
-            {unread>0 && <span className="notif-clear" onClick={marquerToutesLues}>Tout marquer lu</span>}
+        <>
+          <div className="notif-backdrop" role="presentation" onClick={() => setNotifOpen(false)} />
+          <div className="notif-drawer notif-drawer--premium">
+            <NotificationCenter
+              variant="dropdown"
+              user={user}
+              notifs={notifs}
+              goPage={goPage}
+              onMarkRead={marquerNotifLue}
+              onMarkAllRead={marquerToutesLues}
+              onDismiss={supprimerNotif}
+              onClose={() => setNotifOpen(false)}
+              onPrefsUpdated={setNotifPrefs}
+            />
           </div>
-          <div className="notif-list">
-            {notifs.length===0
-              ? <div style={{padding:"24px 14px",textAlign:"center",color:"var(--gray)",fontSize:".78rem"}}>Aucune notification</div>
-              : notifs.map(n=>(
-                  <div
-                    key={n.id}
-                    className={`notif-item${!n.lu?" unread":""}`}
-                    onClick={()=>marquerNotifLue(n)}
-                  >
-                    <div className="notif-icon">{n.icon||"🔔"}</div>
-                    <div className="notif-body">
-                      <h4>{n.titre||"Notification"}</h4>
-                      <PushManager user={user} />
-                      <p>{n.message||""}</p>
-                      <div className="notif-time">{n.created_at ? new Date(n.created_at).toLocaleString("fr-FR") : ""}</div>
-                    </div>
-                  </div>
-                ))
-            }
-          </div>
-        </div>
+        </>
       )}
 
       {/* Drawer supprimé au profit de la page panier dédiée */}
@@ -1676,6 +1773,37 @@ export default function Yorix() {
             momoNumber={MOMO_NUMBER}
             orangeNumber={ORANGE_NUMBER}
             persistCheckoutContact={persistCheckoutContact}
+          />
+        </Suspense>
+      )}
+
+      {page==="notifications"&&!user&&(
+        <section className="sec anim" style={{ maxWidth: 480, margin: "0 auto", textAlign: "center", padding: "48px 20px" }}>
+          <h1 className="sec-title" style={{ fontSize: "1.25rem" }}>Vos notifications Yorix</h1>
+          <p style={{ color: "var(--gray)", marginBottom: 22, fontSize: ".9rem", lineHeight: 1.55 }}>
+            Connectez-vous pour suivre les messages, commandes, paiements et livraisons en temps réel.
+          </p>
+          <button
+            type="button"
+            className="form-submit"
+            style={{ width: "auto", padding: "12px 28px" }}
+            onClick={() => { setAuthTab("login"); setAuthOpen(true); }}
+          >
+            Se connecter
+          </button>
+        </section>
+      )}
+      {page==="notifications"&&user&&(
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement notifications..." />}>
+          <LazyNotificationsPage
+            user={user}
+            notifs={notifs}
+            goPage={goPage}
+            onMarkRead={marquerNotifLue}
+            onMarkAllRead={marquerToutesLues}
+            onDismiss={supprimerNotif}
+            refreshNotificationsFull={() => loadNotifsForUser(user.id, 120)}
+            onPrefsUpdated={setNotifPrefs}
           />
         </Suspense>
       )}

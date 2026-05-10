@@ -1,0 +1,1 @@
+import{s as i}from"./index-CuhPclIw.js";async function t(n,e){const{data:a,error:c}=await i.functions.invoke(n,{body:e});if(c)throw c;return a}async function r(n){return t("create_checkout_intent",n)}async function u(n){return t("confirm_checkout",n)}async function s(n){return t("init_payment_cinetpay",n)}export{u as a,r as c,s as i};
