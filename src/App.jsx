@@ -1675,6 +1675,7 @@ export default function Yorix() {
             setNlEmail={setNlEmail}
             nlSent={nlSent}
             setNlSent={setNlSent}
+            freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf}
           />
         </Suspense>
       )}

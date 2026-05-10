@@ -1,7 +1,35 @@
+import { useCallback, useState } from "react";
 import { FlashCountdown } from "../components/FlashCountdown";
 import { ProdGrid } from "../components/ProdGrid";
 import { CATS, CITIES } from "../lib/constants";
+import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+
+const QUICK_LINKS = [
+  { key: "produits", label: "Produits", icon: "🛍️", desc: "Catalogue vérifié" },
+  { key: "prestataires", label: "Services", icon: "🛠️", desc: "Talents comme Fiverr" },
+  { key: "livraison", label: "Livraison", icon: "🚚", desc: "Yorix Ride & suivi" },
+  { key: "business", label: "Business", icon: "💼", desc: "B2B & pros" },
+  { key: "academy", label: "Academy", icon: "🎓", desc: "Monter en compétence" },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "Enfin une plateforme camerounaise qui ressemble aux géants — mais avec le sens du détail local.",
+    author: "Acheteur vérifié",
+    meta: "Douala · High-tech",
+  },
+  {
+    quote: "Paiement MoMo fluide, escrow rassurant. Je recommande à mes clients de passer par Yorix.",
+    author: "Vendeur pro",
+    meta: "Mode & accessoires",
+  },
+  {
+    quote: "Les prestataires sont notés, la prise de contact est simple. Parfait pour nos urgences à Yaoundé.",
+    author: "PME & services",
+    meta: "Yaoundé",
+  },
+];
 
 export function HomePage({
   filterCat,
@@ -23,46 +51,101 @@ export function HomePage({
   setNlEmail,
   nlSent,
   setNlSent,
+  freeShippingThresholdXaf = 50000,
 }) {
+  const [quickCity, setQuickCity] = useState("");
+
+  const handleHeroSearch = useCallback(() => {
+    const cityEntry = SEO_CITIES.find((c) => c.name === quickCity);
+    if (cityEntry) {
+      goPage("seoCity", { citySlug: cityEntry.slug, mode: "acheter" });
+      return;
+    }
+    goPage("produits");
+  }, [goPage, quickCity]);
+
+  const th = Number(freeShippingThresholdXaf) || 50000;
+
   return (
-    <div className="anim">
-      <div className="trust-banner">
-        <div className="tb-item">🚚 Livraison rapide à Yaoundé &amp; Douala</div>
-        <div className="tb-item">🔒 Paiement 100% sécurisé</div>
-        <div className="tb-item">✅ Produits vérifiés</div>
-        <div className="tb-item">📱 Support WhatsApp 7j/7</div>
+    <div className="home-premium anim">
+      <div className="hp-trust-marquee" role="region" aria-label="Avantages Yorix">
+        {[
+          { t: "Livraison prioritaire Grandes villes", i: "🚚" },
+          { t: "Paiement MTN MoMo & Orange Money", i: "📱" },
+          { t: "Escrow & protection acheteur", i: "🔐" },
+          { t: "Support humain WhatsApp 7j/7", i: "💬" },
+          { t: `Seuil livraison offerte dès ${th.toLocaleString("fr-FR")} FCFA`, i: "🎁" },
+        ].map((x) => (
+          <span key={x.t} className="hp-trust-node">
+            <span aria-hidden>{x.i}</span> {x.t}
+          </span>
+        ))}
       </div>
 
-      <section className="hero">
-        <div className="hero-inner">
-          <div>
-            <div className="hero-tag">🇨🇲 Marketplace #1 au Cameroun</div>
-            <h1>Achetez et faites-vous<br/>livré à <em>Yaoundé</em></h1>
-            <p className="hero-sub">Produits locaux & importés · Prestataires vérifiés · Livraison express · MTN MoMo & Orange Money</p>
-            <p style={{ fontSize: ".84rem", color: "rgba(255,255,255,.78)", lineHeight: 1.65, maxWidth: 520, marginTop: 10 }}>
-              Yorix est une marketplace camerounaise pour acheter et vendre en ligne partout au Cameroun francophone : escrow sécurisé, livraison locale et prestataires de confiance.
+      <section className="hero hp-hero-shell" aria-labelledby="hp-hero-title">
+        <div className="hp-hero-aurora" aria-hidden />
+        <div className="hero-inner hp-hero-grid">
+          <div className="hp-hero-copy">
+            <div className="hero-tag hp-hero-tag">🇨🇲 Super-app commerce · Cameroun</div>
+            <h1 id="hp-hero-title">
+              Le marché numérique <br />
+              qui <em>accélère</em> votre business
+            </h1>
+            <p className="hero-sub hp-hero-sub">
+              Produits, freelances, livraison et formation — un seul écosystème premium. Conçu pour la confiance, pensé pour la
+              conversion, ancré au Cameroun.
+            </p>
+            <p className="hp-hero-lead">
+              Yorix réunit l’ambition d’Amazon &amp; Jumia, l’agilité type Glovo sur la logistique, et l’esprit Fiverr pour les
+              services — avec escrow, mobile money et une expérience mobile irréprochable.
             </p>
 
+            <div className="hp-chip-scroller">
+              {QUICK_LINKS.map((l) => (
+                <button
+                  key={l.key}
+                  type="button"
+                  className="hp-chip"
+                  onClick={() => goPage(l.key)}
+                  title={l.desc}
+                >
+                  <span className="hp-chip-ico" aria-hidden>
+                    {l.icon}
+                  </span>
+                  <span>
+                    <span className="hp-chip-label">{l.label}</span>
+                    <span className="hp-chip-desc">{l.desc}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="hero-ctas hp-hero-ctas">
+              <button type="button" className="cta-y hp-cta-primary" onClick={() => setOnboardingOpen(true)}>
+                Démarrer · 30 s
+              </button>
+              <button type="button" className="cta-w hp-cta-ghost" onClick={() => goPage("produits")}>
+                Parcourir le catalogue
+              </button>
+              <button type="button" className="cta-w hp-cta-ghost" onClick={() => goPage("bonsPlans")}>
+                Bons plans livraison
+              </button>
+            </div>
+
             <div className="hero-badges">
-              <span className="hbadge hbadge-yellow">⭐ +2 000 avis clients</span>
-              <span className="hbadge hbadge-green">📦 +100 produits vendus</span>
-              <span className="hbadge">🔒 Paiement sécurisé</span>
-              <span className="hbadge">🚚 Livraison rapide</span>
+              <span className="hbadge hbadge-yellow">⭐ Avis &amp; notes transparents</span>
+              <span className="hbadge hbadge-green">📦 Vendeurs &amp; pros actifs</span>
+              <span className="hbadge">🛡️ Données &amp; paiements sécurisés</span>
             </div>
 
-            <div className="hero-ctas">
-              <button className="cta-y" onClick={() => setOnboardingOpen(true)}>🚀 Commencer maintenant</button>
-              <button className="cta-w" onClick={() => goPage("produits")}>🛍️ Voir les produits</button>
-            </div>
-
-            <div className="hero-stats">
+            <div className="hero-stats hp-hero-stats">
               {[
-                ["85K+", "Produits"],
-                ["12K", "Vendeurs"],
-                ["3K", "Prestataires"],
-                ["10", "Régions"],
+                ["10+", "Villes & hubs"],
+                ["24/7", "Support WhatsApp"],
+                ["100%", "Mobile money ready"],
+                ["1", "Écosystème tout-en-un"],
               ].map(([n, l]) => (
-                <div key={l}>
+                <div key={l} className="hp-stat">
                   <div className="stat-num">{n}</div>
                   <div className="stat-lbl">{l}</div>
                 </div>
@@ -70,33 +153,47 @@ export function HomePage({
             </div>
           </div>
 
-          <div className="hero-card">
-            <div className="hc-title">🔍 Recherche rapide</div>
+          <aside className="hp-search-panel" aria-label="Recherche rapide">
+            <div className="hp-panel-head">
+              <div className="hc-title">Trouver en quelques secondes</div>
+              <p className="hp-panel-sub">Filtres synchronisés avec le catalogue — même logique que sur tout le site.</p>
+            </div>
             <div className="sf">
-              <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-                <option value="">Tout</option>
+              <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} aria-label="Catégorie">
+                <option value="">Toutes catégories</option>
                 {CATS.map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
-              <input placeholder="Produit, marque..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input
+                placeholder="Produit, marque, mot-clé…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Recherche"
+              />
             </div>
             <div className="sf">
-              <select>
-                {CITIES.map((c) => (
-                  <option key={c}>{c}</option>
+              <select value={quickCity} onChange={(e) => setQuickCity(e.target.value)} aria-label="Ville">
+                <option value="">Toutes les villes</option>
+                {CITIES.filter((c) => !/^toutes/i.test(c)).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
-              <input placeholder="Budget max (FCFA)" />
+              <input placeholder="Budget max (FCFA) — optionnel" readOnly tabIndex={-1} style={{ opacity: 0.75 }} />
             </div>
-            <button className="sbtn" onClick={() => goPage("produits")}>
-              🔍 Rechercher
+            <button type="button" className="sbtn hp-sbtn" onClick={handleHeroSearch}>
+              Lancer la recherche
             </button>
             <div className="pop-row">
-              <span className="pop-lbl">Tendances :</span>
+              <span className="pop-lbl">Tendances</span>
               {["Pagne wax", "iPhone", "Karité", "BTP"].map((s) => (
-                <span
+                <button
                   key={s}
+                  type="button"
                   className="pop-tag"
                   onClick={() => {
                     setSearch(s);
@@ -104,55 +201,91 @@ export function HomePage({
                   }}
                 >
                   {s}
-                </span>
+                </button>
               ))}
             </div>
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.1)", display: "flex", flexDirection: "column", gap: 4 }}>
-              {["✅ Paiement sécurisé MTN MoMo", "🚚 Livraison Yaoundé & Douala", "🔐 Remboursement garanti Escrow"].map((t) => (
-                <div key={t} style={{ fontSize: ".68rem", color: "rgba(255,255,255,.65)", display: "flex", alignItems: "center", gap: 5 }}>
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
+            <ul className="hp-panel-bullets">
+              <li>
+                Livraison offerte du panier physique dès <strong>{th.toLocaleString("fr-FR")} FCFA</strong> ·{" "}
+                <button type="button" className="hp-inline-link" onClick={() => goPage("bonsPlans")}>
+                  Détails offre
+                </button>
+              </li>
+              <li>Commission plateforme jamais affichée au client final — expérience e-commerce mondiale.</li>
+            </ul>
+          </aside>
         </div>
       </section>
 
-      <div className="proof-bar">
-        <div className="proof-item"><span className="proof-num">2 400+</span> commandes passées</div>
-        <div className="proof-item"><span className="proof-num">850+</span> vendeurs actifs</div>
-        <div className="proof-item"><span className="proof-num">98%</span> satisfaction client</div>
-        <div className="proof-item"><span className="proof-num">J+1</span> livraison Yaoundé</div>
+      <nav className="hp-mega-strip" aria-label="Accès rapides">
+        <div className="hp-mega-inner">
+          {QUICK_LINKS.map((l) => (
+            <button key={l.key} type="button" className="hp-mega-tile" onClick={() => goPage(l.key)}>
+              <span>{l.icon}</span>
+              {l.label}
+            </button>
+          ))}
+          <button type="button" className="hp-mega-tile hp-mega-tile--accent" onClick={() => goPage("faq")}>
+            <span>❓</span>
+            FAQ
+          </button>
+        </div>
+      </nav>
+
+      <div className="proof-bar hp-proof-bar">
+        <div className="proof-item">
+          <span className="proof-num">∞</span> ambition locale, standards internationaux
+        </div>
+        <div className="proof-item">
+          <span className="proof-num">⚡</span> Tunnel d’achat optimisé mobile
+        </div>
+        <div className="proof-item">
+          <span className="proof-num">🔒</span> Escrow &amp; mobile money
+        </div>
+        <div className="proof-item">
+          <span className="proof-num">J+1</span> sur zones prioritaires
+        </div>
       </div>
 
-      <section className="sec" style={{ paddingBottom: 0 }}>
+      <section className="hp-quotes" aria-label="Témoignages">
+        <div className="hp-quotes-inner">
+          {TESTIMONIALS.map((t) => (
+            <figure key={t.author} className="hp-quote-card">
+              <blockquote>&ldquo;{t.quote}&rdquo;</blockquote>
+              <figcaption>
+                <strong>{t.author}</strong>
+                <span>{t.meta}</span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      <section className="sec hp-flash-sec" style={{ paddingBottom: 0 }}>
         <div className="sec-head">
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2 className="sec-title">⚡ Offres Flash</h2>
-            <span style={{ background: "#ff4444", color: "#fff", padding: "3px 10px", borderRadius: 50, fontSize: ".68rem", fontWeight: 800, animation: "flashPulse 1.5s infinite" }}>
-              AUJOURD'HUI SEULEMENT
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <h2 className="sec-title">Offres flash du jour</h2>
+            <span className="hp-flash-pill">Temps limité</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>Se termine dans :</span>
+            <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>Fin dans</span>
             <FlashCountdown />
           </div>
         </div>
-        <div style={{ background: "linear-gradient(135deg,#ff4444,#ff6b35)", borderRadius: 12, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <div className="hp-flash-banner">
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "#fff", marginBottom: 3 }}>
-              🔥 Promo du jour — jusqu'à -30% sur tous les téléphones !
-            </div>
-            <div style={{ fontSize: ".78rem", color: "rgba(255,255,255,.75)" }}>Offre valable uniquement aujourd'hui · Paiement MTN MoMo accepté</div>
+            <div className="hp-flash-title">Sélection éclair — high-tech &amp; lifestyle</div>
+            <div className="hp-flash-sub">Paiement MoMo / Orange · stocks selon vendeurs partenaires</div>
           </div>
           <button
-            style={{ background: "#fff", color: "#ff4444", border: "none", padding: "9px 18px", borderRadius: 8, fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".82rem", cursor: "pointer", whiteSpace: "nowrap" }}
+            type="button"
+            className="hp-flash-btn"
             onClick={() => {
-              setFilterCat("Téléphones");
+              setFilterCat("Téléphones & HighTech");
               goPage("produits");
             }}
           >
-            🛍️ Voir les promos
+            Voir les promos
           </button>
         </div>
         {!produitsLoading && produits.length > 0 && (
@@ -175,17 +308,19 @@ export function HomePage({
 
       <section className="sec">
         <div className="sec-head">
-          <h2 className="sec-title">🔥 Produits populaires</h2>
-          <span className="sec-link" onClick={() => goPage("produits")}>Voir tout →</span>
+          <h2 className="sec-title">Produits du moment</h2>
+          <span className="sec-link" onClick={() => goPage("produits")} role="link" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && goPage("produits")}>
+            Tout voir →
+          </span>
         </div>
         {produitsLoading ? (
           <div className="loading">
-            <div className="spinner" /> Chargement...
+            <div className="spinner" /> Chargement du marché…
           </div>
         ) : produits.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">🛍️</div>
-            <p>Aucun produit pour l'instant</p>
+            <p>Le catalogue se remplit — revenez très vite.</p>
           </div>
         ) : (
           <ProdGrid
@@ -200,15 +335,66 @@ export function HomePage({
         )}
       </section>
 
-      <div className="trust">
-        <div className="trust-inner">
+      <section className="hp-bento" aria-labelledby="hp-bento-title">
+        <div className="hp-bento-header">
+          <h2 id="hp-bento-title" className="hp-bento-title">
+            Une plateforme, tous vos flux de revenus
+          </h2>
+          <p className="hp-bento-sub">Inspiré des leaders mondiaux — adapté au réel du Cameroun francophone.</p>
+        </div>
+        <div className="hp-bento-grid">
+          <article className="hp-bento-card hp-bento-card--wide">
+            <div className="hp-bento-ico">🛍️</div>
+            <h3>Marketplace produits</h3>
+            <p>Découverte fluide, panier universel, checkout sécurisé — comme les grandes marketplaces africaines.</p>
+            <button type="button" className="hp-bento-link" onClick={() => goPage("produits")}>
+              Explorer →
+            </button>
+          </article>
+          <article className="hp-bento-card">
+            <div className="hp-bento-ico">🛠️</div>
+            <h3>Services &amp; talents</h3>
+            <p>Réservez des pros vérifiés : beauté, tech, BTP… expérience type marketplace de services.</p>
+            <button type="button" className="hp-bento-link" onClick={() => goPage("prestataires")}>
+              Trouver un pro →
+            </button>
+          </article>
+          <article className="hp-bento-card">
+            <div className="hp-bento-ico">🚚</div>
+            <h3>Livraison &amp; logistique</h3>
+            <p>Suivi, zones prioritaires Douala · Yaoundé, objectifs clairs comme une app de delivery moderne.</p>
+            <button type="button" className="hp-bento-link" onClick={() => goPage("livraison")}>
+              En savoir plus →
+            </button>
+          </article>
+          <article className="hp-bento-card">
+            <div className="hp-bento-ico">💼</div>
+            <h3>Yorix Business</h3>
+            <p>Outils et crédibilité pour VSE, corners digitaux et partenaires B2B.</p>
+            <button type="button" className="hp-bento-link" onClick={() => goPage("business")}>
+              Accéder →
+            </button>
+          </article>
+          <article className="hp-bento-card">
+            <div className="hp-bento-ico">🎓</div>
+            <h3>Academy</h3>
+            <p>Former vos équipes et vos clients aux bonnes pratiques e-commerce &amp; logistique.</p>
+            <button type="button" className="hp-bento-link" onClick={() => goPage("academy")}>
+              Formations →
+            </button>
+          </article>
+        </div>
+      </section>
+
+      <div className="trust hp-trust-dark">
+        <div className="trust-inner hp-trust-inner">
           {[
-            { icon: "📱", t: "MTN MoMo & Orange", p: "Paiement mobile sécurisé" },
-            { icon: "🔐", t: "Escrow Yorix", p: "Fonds protégés jusqu'à livraison" },
-            { icon: "🚚", t: "Livraison J+1", p: "Yaoundé & Douala" },
-            { icon: "🌟", t: "Vendeurs vérifiés", p: "Boutiques certifiées" },
+            { icon: "📱", t: "MTN MoMo & Orange", p: "Paiement sans friction partout où vous êtes." },
+            { icon: "🔐", t: "Escrow Yorix", p: "Les fonds avancent seulement quand vous validez." },
+            { icon: "🚚", t: "Livraison pilotée", p: "Réseau partenaires & zones prioritaires." },
+            { icon: "🌟", t: "Profils & boutiques", p: "Signaux de confiance visibles dès la fiche." },
           ].map((item) => (
-            <div key={item.t} className="ti">
+            <div key={item.t} className="ti hp-ti">
               <div className="ti-icon">{item.icon}</div>
               <div>
                 <h4>{item.t}</h4>
@@ -221,22 +407,19 @@ export function HomePage({
 
       <div className="why-section">
         <div className="why-inner">
-          <div style={{ textAlign: "center", marginBottom: 4 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--green-pale)", color: "var(--green)", padding: "4px 12px", borderRadius: 50, fontSize: ".72rem", fontWeight: 700, marginBottom: 8 }}>
-              🏆 Pourquoi nous choisissons Yorix ?
-            </div>
-            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--ink)", letterSpacing: "-.5px" }}>
-              La marketplace la plus fiable du Cameroun
-            </h2>
+          <div className="hp-why-intro">
+            <div className="hp-why-kicker">Différenciation Yorix</div>
+            <h2 className="hp-why-heading">Une expérience premium, pensée conversion</h2>
+            <p className="hp-why-sub">Clarté des prix · Parcours mobile · Réassurance à chaque étape.</p>
           </div>
           <div className="why-grid">
             {[
-              { icon: "🚚", title: "Livraison rapide", desc: "Livraison le jour même ou J+1 sur Yaoundé et Douala. Suivi GPS en temps réel." },
-              { icon: "✅", title: "Produits vérifiés", desc: "Chaque vendeur est contrôlé. Produits authentiques garantis ou remboursés." },
-              { icon: "🔒", title: "Paiement sécurisé", desc: "MTN MoMo, Orange Money, Escrow Yorix. Votre argent libéré à la réception." },
-              { icon: "📱", title: "Support WhatsApp", desc: "Notre équipe répond 7j/7 sur WhatsApp pour vous aider à chaque étape." },
+              { icon: "🚀", title: "Vitesse & clarté", desc: "Moins de friction entre l’intention et le paiement — tunnel optimisé." },
+              { icon: "🌍", title: "Locals first", desc: "Conçu au Cameroun pour les usages MoMo, WhatsApp et la log réelle." },
+              { icon: "🎯", title: "Multi-canal", desc: "Achat catalogue, réservation pros, livraison, business & formation." },
+              { icon: "💬", title: "Humain accessible", desc: "Support WhatsApp quand il faut trancher vite." },
             ].map((w) => (
-              <div key={w.title} className="why-card">
+              <div key={w.title} className="why-card hp-why-card">
                 <div className="why-icon">{w.icon}</div>
                 <div className="why-title">{w.title}</div>
                 <div className="why-desc">{w.desc}</div>
@@ -248,17 +431,25 @@ export function HomePage({
 
       <section className="sec">
         <div className="sec-head">
-          <h2 className="sec-title">🧑‍💼 Prestataires de confiance</h2>
-          <span className="sec-link" onClick={() => goPage("prestataires")}>Voir tous →</span>
+          <h2 className="sec-title">Prestataires sélectionnés</h2>
+          <span
+            className="sec-link"
+            onClick={() => goPage("prestataires")}
+            role="link"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && goPage("prestataires")}
+          >
+            Marketplace services →
+          </span>
         </div>
         <div className="prest-grid">
           {allServices.length === 0 ? (
             <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 30, color: "var(--gray)" }}>
-              Aucun prestataire pour le moment.
+              Les talents arrivent — explorez bientôt la vitrine services.
             </div>
           ) : (
             allServices.slice(0, 3).map((s) => (
-              <div key={s.id} className="prest-card">
+              <div key={s.id} className="prest-card hp-prest-card">
                 <div className="prest-top">
                   <div className="prest-av">🧑‍💼</div>
                   <div>
@@ -278,11 +469,12 @@ export function HomePage({
                     </div>
                   </div>
                   <button
+                    type="button"
                     className="btn-hire"
                     onClick={() =>
                       window.open(
-                        `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour, je cherche un prestataire pour : ${s.nom} (${s.provider_nom})`)}`,
-                        "_blank"
+                        `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(`Bonjour Yorix ! Projet : ${s.nom} (${s.provider_nom})`)}`,
+                        "_blank",
                       )
                     }
                   >
@@ -295,15 +487,23 @@ export function HomePage({
         </div>
       </section>
 
-      <div className="newsletter">
-        <div className="nl-title">📬 Restez informé(e)</div>
-        <p className="nl-sub">Les meilleures offres Yorix directement dans votre boîte mail.</p>
+      <div className="newsletter hp-newsletter">
+        <div className="nl-title">Restez dans la momentum Yorix</div>
+        <p className="nl-sub">Alertes bons plans, nouveaux hubs villes et masterclass Academy — sans spam.</p>
         {nlSent ? (
-          <div style={{ background: "rgba(255,255,255,.2)", borderRadius: 8, padding: "9px 18px", color: "#fff", fontWeight: 600 }}>✅ Vous êtes abonné(e) !</div>
+          <div className="hp-nl-success">Merci ! Vous êtes inscrit(e).</div>
         ) : (
-          <div className="nl-form">
-            <input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={(e) => setNlEmail(e.target.value)} />
+          <div className="nl-form hp-nl-form">
+            <input
+              className="nl-input"
+              placeholder="Votre meilleur email…"
+              value={nlEmail}
+              onChange={(e) => setNlEmail(e.target.value)}
+              type="email"
+              autoComplete="email"
+            />
             <button
+              type="button"
               className="nl-btn"
               onClick={async () => {
                 if (nlEmail) {
@@ -312,19 +512,20 @@ export function HomePage({
                 }
               }}
             >
-              S'abonner 🚀
+              Rejoindre
             </button>
           </div>
         )}
       </div>
 
       <div className="wa-sticky">
-        <span className="wa-sticky-text">📱 Commander maintenant</span>
+        <span className="wa-sticky-text">Commande express</span>
         <button
+          type="button"
           className="wa-sticky-btn"
-          onClick={() => window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux commander 🛍️")}`, "_blank")}
+          onClick={() => window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux passer commande 🛍️")}`, "_blank")}
         >
-          Commander via WhatsApp
+          WhatsApp
         </button>
       </div>
     </div>
