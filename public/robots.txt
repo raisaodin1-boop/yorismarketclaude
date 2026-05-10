@@ -1,0 +1,28 @@
+# robots.txt pour Yorix CM — https://www.yorix.cm
+# Mise à jour : 19 avril 2026
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /auth/
+Disallow: /*?authTab=
+Disallow: /*?code=
+
+# Fichiers indésirables (ne pas bloquer sitemap.xml)
+Disallow: /*.json$
+Allow: /sitemap.xml
+
+# Crawl-delay pour les petits bots
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+# Sitemap
+Sitemap: https://www.yorix.cm/sitemap.xml
+# Host préféré
+Host: https://www.yorix.cm
+
