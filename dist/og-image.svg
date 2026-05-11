@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070d0a"/>
+      <stop offset="40%" stop-color="#0a1f14"/>
+      <stop offset="80%" stop-color="#1a6b3a"/>
+      <stop offset="100%" stop-color="#27a85a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.15" r="0.6">
+      <stop offset="0%" stop-color="#FCD116" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#FCD116" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE566"/>
+      <stop offset="100%" stop-color="#FCD116"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Grid deco -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1">
+    <line x1="0"   y1="80"  x2="1200" y2="80"/>
+    <line x1="0"   y1="200" x2="1200" y2="200"/>
+    <line x1="0"   y1="320" x2="1200" y2="320"/>
+    <line x1="0"   y1="440" x2="1200" y2="440"/>
+    <line x1="0"   y1="560" x2="1200" y2="560"/>
+    <line x1="150" y1="0"   x2="150"  y2="630"/>
+    <line x1="450" y1="0"   x2="450"  y2="630"/>
+    <line x1="750" y1="0"   x2="750"  y2="630"/>
+    <line x1="1050" y1="0"  x2="1050" y2="630"/>
+  </g>
+
+  <!-- Y logo card -->
+  <g transform="translate(80,160)">
+    <rect width="160" height="160" rx="36" fill="url(#gold)"/>
+    <path d="M40 35 L80 90 L120 35 M80 90 L80 130" stroke="#0a1f14" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Brand -->
+  <text x="80" y="380" font-family="'Syne','Inter','Arial',sans-serif" font-size="74" font-weight="800" fill="#ffffff" letter-spacing="-2">
+    Yorix CM
+  </text>
+  <text x="80" y="440" font-family="'Syne','Inter','Arial',sans-serif" font-size="44" font-weight="700" fill="#FCD116" letter-spacing="-1">
+    Marketplace #1 au Cameroun
+  </text>
+  <text x="80" y="498" font-family="'DM Sans','Inter','Arial',sans-serif" font-size="26" font-weight="500" fill="rgba(255,255,255,0.85)">
+    Achetez, vendez, livrez · MTN MoMo &amp; Orange Money · Escrow sécurisé
+  </text>
+
+  <!-- Chips -->
+  <g transform="translate(80,540)" font-family="'Syne','Inter','Arial',sans-serif" font-size="20" font-weight="700">
+    <g>
+      <rect width="180" height="48" rx="24" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.28)"/>
+      <text x="90" y="32" text-anchor="middle" fill="#ffffff"><è<ò  Cameroun</text>
+    </g>
+    <g transform="translate(200,0)">
+      <rect width="200" height="48" rx="24" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.28)"/>
+      <text x="100" y="32" text-anchor="middle" fill="#ffffff">=š  Livraison J+1</text>
+    </g>
+    <g transform="translate(420,0)">
+      <rect width="220" height="48" rx="24" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.28)"/>
+      <text x="110" y="32" text-anchor="middle" fill="#ffffff">=  Escrow protégé</text>
+    </g>
+  </g>
+
+  <!-- URL bottom right -->
+  <text x="1120" y="585" text-anchor="end" font-family="'Syne','Inter','Arial',sans-serif" font-size="28" font-weight="800" fill="#FCD116">
+    yorix.cm
+  </text>
+</svg>

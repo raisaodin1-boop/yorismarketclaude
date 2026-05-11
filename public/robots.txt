@@ -1,28 +1,48 @@
 # robots.txt pour Yorix CM — https://www.yorix.cm
-# Mise à jour : 19 avril 2026
+# Mise à jour : 12 mai 2026
 
 User-agent: *
 Allow: /
+
+# Sections privées / techniques (non indexables)
 Disallow: /admin
+Disallow: /admin/
 Disallow: /dashboard
+Disallow: /dashboard/
 Disallow: /api/
 Disallow: /auth/
+Disallow: /checkout
+Disallow: /panier
+Disallow: /notifications
+
+# Paramètres d'authentification / callbacks Supabase
 Disallow: /*?authTab=
 Disallow: /*?code=
+Disallow: /*?access_token=
+Disallow: /*?refresh_token=
 
-# Fichiers indésirables (ne pas bloquer sitemap.xml)
-Disallow: /*.json$
+# Recherches & filtres dynamiques (éviter le crawling infini)
+Disallow: /*?search=
+Disallow: /*?q=
+Disallow: /*?sort=
+Disallow: /*?filter=
+
+# Ressources à autoriser explicitement
 Allow: /sitemap.xml
+Allow: /manifest.json
+Allow: /og-image.svg
+Allow: /favicon.svg
+Allow: /icons/
 
-# Crawl-delay pour les petits bots
+# Crawl-delay pour les bots non-Google (réduit la charge)
 User-agent: AhrefsBot
 Crawl-delay: 10
 
 User-agent: SemrushBot
 Crawl-delay: 10
 
-# Sitemap
-Sitemap: https://www.yorix.cm/sitemap.xml
-# Host préféré
-Host: https://www.yorix.cm
+User-agent: MJ12bot
+Crawl-delay: 20
 
+# Sitemap principal
+Sitemap: https://www.yorix.cm/sitemap.xml
