@@ -104,7 +104,7 @@ export function showBrowserNotificationIfPossible(enrichedRow, prefs) {
     /* eslint-disable no-new */
     new Notification(enrichedRow._title, {
       body: (enrichedRow._body || "").slice(0, 180),
-      icon: "/icons/icon-192.png",
+      icon: "/favicon.svg",
       tag: String(enrichedRow.id || enrichedRow.created_at || "yorix"),
       silent: !prefs?.sound,
     });

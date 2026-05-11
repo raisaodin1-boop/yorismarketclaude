@@ -30,8 +30,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: String(body).slice(0, 240),
-      icon: payload.icon || "/icons/icon-192.png",
-      badge: payload.badge || "/icons/icon-192.png",
+      icon: payload.icon || "/favicon.svg",
+      badge: payload.badge || "/favicon.svg",
       tag,
       vibrate: [100, 50, 100],
       renotify: true,

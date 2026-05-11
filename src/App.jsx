@@ -1037,13 +1037,47 @@ export default function Yorix() {
       name: "Yorix CM",
       alternateName: "Yorix Cameroun",
       url: SITE_URL,
-      logo: `${SITE_URL}/icons/icon-512.png`,
+      logo: `${SITE_URL}/favicon.svg`,
+      image: `${SITE_URL}/og-image.svg`,
+      email: "support@yorix.cm",
+      telephone: "+237696565654",
+      foundingDate: "2025",
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: "CM",
+        addressLocality: "Douala",
+        addressRegion: "Littoral",
+      },
       areaServed: { "@type": "Country", name: "Cameroun" },
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          telephone: "+237696565654",
+          contactType: "customer service",
+          areaServed: "CM",
+          availableLanguage: ["French", "English"],
+        },
+      ],
       sameAs: [
         "https://www.facebook.com/yorixcm",
         "https://www.instagram.com/yorixcm",
         "https://wa.me/237696565654",
       ],
+    };
+
+    // BreadcrumbList helper — Google rich snippet pour pages détail / sections
+    const buildBreadcrumbLd = (segments) => {
+      if (!segments?.length) return null;
+      return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: segments.map((s, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: s.name,
+          item: s.path?.startsWith("http") ? s.path : `${SITE_URL}${s.path || "/"}`,
+        })),
+      };
     };
     const webLd = {
       "@context": "https://schema.org",
@@ -1086,7 +1120,7 @@ export default function Yorix() {
           ? p.image
           : Array.isArray(p.image_urls) && p.image_urls[0]
             ? p.image_urls[0]
-            : `${SITE_URL}/icons/icon-512.png`;
+            : `${SITE_URL}/og-image.svg`;
       const desc =
         (p.description_fr && String(p.description_fr).slice(0, 158)) ||
         `Acheter ${p.name_fr || "ce produit"} sur Yorix — marketplace & livraison Cameroun.`;
@@ -1105,12 +1139,18 @@ export default function Yorix() {
           availability: "https://schema.org/InStock",
         },
       };
+      const productCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: "/" },
+        { name: "Produits", path: "/produits" },
+        { name: p.name_fr || "Produit", path: canon },
+      ]);
       return {
         title: `${p.name_fr || "Produit"} — achat en ligne Cameroun | Yorix.cm`,
         description: desc,
         canonicalPath: canon,
         ogType: "product",
-        jsonLd: [productLd, orgLd],
+        ogImage: img.startsWith("http") ? img : `${SITE_URL}/og-image.svg`,
+        jsonLd: [productLd, productCrumb, orgLd],
       };
     }
 
@@ -1199,11 +1239,15 @@ export default function Yorix() {
         areaServed: { "@type": "City", name: cn },
         parentOrganization: { "@type": "Organization", name: "Yorix CM" },
       };
+      const cityCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: "/" },
+        { name: cn, path: canon },
+      ]);
       return {
         title: m.title,
         description: m.desc,
         canonicalPath: canon,
-        jsonLd: [localLd, orgLd],
+        jsonLd: [localLd, cityCrumb, orgLd],
       };
     }
 
@@ -1226,14 +1270,41 @@ export default function Yorix() {
       devenirLivreur: "Devenir livreur Yorix Ride — livraison Cameroun",
       inscription: "Devenir prestataire Yorix — services Cameroun",
     };
+    const fallbackCrumbLabel = {
+      produits: "Produits",
+      livraison: "Livraison",
+      escrow: "Escrow & sécurité",
+      prestataires: "Prestataires",
+      business: "Business",
+      blog: "Blog",
+      academy: "Academy",
+      loyalty: "Fidélité",
+      contact: "Contact",
+      aide: "Centre d'aide",
+      faq: "FAQ",
+      cgv: "CGV",
+      confidentialite: "Confidentialité",
+      mentions: "Mentions légales",
+      devenirVendeur: "Devenir vendeur",
+      devenirLivreur: "Devenir livreur",
+      inscription: "Devenir prestataire",
+      bonsPlans: "Bons plans",
+    };
     const ft = fallbackTitle[page];
     if (ft) {
+      const crumbLabel = fallbackCrumbLabel[page];
+      const pageBc = crumbLabel
+        ? buildBreadcrumbLd([
+            { name: "Accueil", path: "/" },
+            { name: crumbLabel, path: PAGE_PATH[page] || canon },
+          ])
+        : null;
       return {
         title: ft,
         description:
           "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
         canonicalPath: PAGE_PATH[page] || canon,
-        jsonLd: [orgLd],
+        jsonLd: [pageBc, orgLd].filter(Boolean),
       };
     }
 
