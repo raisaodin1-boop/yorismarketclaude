@@ -1976,6 +1976,8 @@ export default function Yorix() {
             setNlEmail={setNlEmail}
             nlSent={nlSent}
             setNlSent={setNlSent}
+            user={user}
+            userData={userData}
           />
         </Suspense>
       )}

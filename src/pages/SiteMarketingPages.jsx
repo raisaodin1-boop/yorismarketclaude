@@ -4,6 +4,7 @@ import { MarketingBreadcrumb } from "../components/layout/MarketingBreadcrumb";
 import { CITIES } from "../lib/constants";
 import { BlogPage } from "./BlogPage";
 import { HelpCentrePage } from "./HelpCentrePage";
+import { AcademyPage } from "./AcademyPage";
 
 export function SiteMarketingPages({
   page,
@@ -27,6 +28,8 @@ export function SiteMarketingPages({
   setNlEmail,
   nlSent,
   setNlSent,
+  user,
+  userData,
 }) {
   switch (page) {
     case "faq":
@@ -198,56 +201,16 @@ export function SiteMarketingPages({
 
     case "academy":
       return (
-        <section className="sec anim yorix-pro-page">
-          <div style={{ marginBottom: 18 }}>
-            <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Academy" }]} />
-          </div>
-          <div className="yorix-acad-hero">
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.26)", padding: "5px 14px", borderRadius: 50, fontSize: ".72rem", fontWeight: 700, marginBottom: 14 }}>
-              🎓 Centre d&apos;apprentissage Yorix
-            </div>
-            <h1 className="yorix-acad-h1">
-              Upskill vos équipes : <span>e-commerce terrain</span> · vente WhatsApp · logistique
-            </h1>
-            <p className="yorix-acad-sub">
-              Parcours courts, ludiques et actionnables — pensés pour les vendeurs boutiques, équipes marketing terrain et entrepreneurs diaspora retour au pays.
-            </p>
-            <div className="yorix-acad-tracks">
-              {["Retail & Marketplace", "Livraison & expérience client", "Growth business local", "Paiements & conformité"].map((t) => (
-                <span key={t} className="yorix-chip">
-                  {t}
-                </span>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 22 }}>
-              <button type="button" className="cta-y" onClick={() => { const first = academyCourses.find((c) => c.prix === 0); if (first) goAcademyDetail(first); }}>Commencer gratuitement</button>
-              <button type="button" className="cta-w" onClick={() => window.scrollTo({ top: 560, behavior: "smooth" })}>Voir le catalogue</button>
-              <button type="button" className="cta-w" onClick={() => goPage("blog")}>Lire nos guides</button>
-            </div>
-          </div>
-          {academyLoading ? (
-            <div className="loading"><div className="spinner" />Chargement des formations...</div>
-          ) : academyCourses.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">🎓</div><p>Aucune formation pour l'instant</p></div>
-          ) : (
-            <div className="courses-grid">
-              {academyCourses.map((c) => (
-                <div key={c.id} className="course-card" onClick={() => goAcademyDetail(c)} style={{ cursor: "pointer" }}>
-                  <div className="course-img" style={{ background: c.color_bg || "#E8F5E9" }}>{c.emoji || "🎓"}</div>
-                  <div className="course-body">
-                    <div className={`course-level ${c.category === "DÉBUTANT" ? "lc-debutant" : c.category === "INTERMÉDIAIRE" ? "lc-intermediaire" : "lc-avance"}`}>{c.category}</div>
-                    <div className="course-title">{c.title}</div>
-                    <div className="course-meta">⏱ {c.duration} · 👥 {c.students_count || 0}</div>
-                    <div className="course-footer">
-                      <div className="course-price">{c.prix === 0 ? "Gratuit" : `${c.prix.toLocaleString("fr-FR")} FCFA`}</div>
-                      <button type="button" className="course-btn" onClick={(e) => { e.stopPropagation(); goAcademyDetail(c); }}>Démarrer →</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <AcademyPage
+          academyCourses={academyCourses}
+          academyLoading={academyLoading}
+          goAcademyDetail={goAcademyDetail}
+          goPage={goPage}
+          user={user}
+          userData={userData}
+          setAuthOpen={setAuthOpen}
+          setAuthTab={setAuthTab}
+        />
       );
 
     case "blog":
