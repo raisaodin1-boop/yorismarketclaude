@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { ROLE_LABELS, CATS } from "../lib/constants";
 import { LoyaltyAdminTab } from "./LoyaltyAdminTab";
+import { ModalEditDelivery } from "./ModalEditDelivery";
+import {
+  getStatutConfig,
+  adminAssignerLivreur,
+  adminEditerLivraison,
+  adminChangerStatut,
+  adminAnnulerLivraison,
+  openWhatsApp,
+  buildMsgLivreurAssignation,
+} from "../utils/deliveryWorkflow";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : ADMIN DASHBOARD — Yorix CM (version pro complète)
@@ -60,6 +70,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [selectedUser, setSelectedUser]       = useState(null);
   const [selectedPrest, setSelectedPrest]     = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(null);
+  const [editDelivery, setEditDelivery]       = useState(null);
 
   const isAuthorized = Boolean(user && (userData?.role === "admin" || userData?.role === "superadmin"));
 
@@ -235,50 +246,25 @@ export function AdminDashboard({ user, userData, goPage }) {
     return () => supabase.removeChannel(channel);
   }, [isAuthorized]);
 
-  // ═══════════ ACTIONS LIVRAISONS ═══════════
+  // ═══════════ ACTIONS LIVRAISONS (workflow centralisé) ═══════════
   const assignerLivreur = async (delivery, livreur) => {
     try {
-      const { error } = await supabase.from("deliveries").update({
-        livreur_id:       livreur.id || livreur.uid,
-        livreur_nom:      livreur.nom,
-        livreur_tel:      livreur.telephone,
-        livreur_vehicule: livreur.vehicule || "Moto",
-        statut:           "preparation",
-        preparation_at:   new Date().toISOString(),
-      }).eq("id", delivery.id);
-      if (error) throw error;
-
-      const msgLivreur = [
-        "🚚 *NOUVELLE MISSION YORIX*",
-        "",
-        "📦 *Code :* " + delivery.code_suivi,
-        "",
-        "👤 *CLIENT*",
-        "Nom : " + (delivery.client_nom || "N/A"),
-        "Tél : " + (delivery.client_tel || "N/A"),
-        "",
-        "📍 *TRAJET*",
-        "🔴 Collecte : " + (delivery.adresse_collecte || "N/A"),
-        "🟢 Livraison : " + (delivery.adresse_livraison || "N/A"),
-        "",
-        "⏱️ Temps estimé : " + (delivery.temps_estime_min || 25) + " min",
-        "📏 Distance : " + (delivery.distance_km || 3.5) + " km",
-        "",
-        "✅ Connecte-toi sur yorix.cm pour accepter",
-        "",
-        "Bon courage ! 💪",
-      ].join("\n");
-
-      const phoneClean = (livreur.telephone || "").replace(/[^0-9]/g, "");
-      if (phoneClean) {
-        window.open("https://wa.me/" + phoneClean + "?text=" + encodeURIComponent(msgLivreur), "_blank");
-      }
-
-      showToast("✅ Livreur " + livreur.nom + " assigné !");
+      const { delivery: updated, waOpened } = await adminAssignerLivreur({
+        delivery,
+        livreur,
+        acteurId: user?.id,
+        openWhatsAppFallback: true,
+      });
+      setAdminDeliveries(prev => prev.map(d => d.id === updated.id ? updated : d));
+      showToast(
+        waOpened
+          ? `✅ ${livreur.nom} assigné · WhatsApp envoyé`
+          : `✅ ${livreur.nom} assigné · notification in-app envoyée`
+      );
       setAssignModalOpen(null);
-      setRefreshKey(k => k + 1);
+      setEditDelivery(null);
     } catch (err) {
-      showToast("Erreur : " + err.message, "error");
+      showToast("Erreur : " + (err.message || "Assignation impossible"), "error");
     }
   };
 
@@ -289,45 +275,103 @@ export function AdminDashboard({ user, userData, goPage }) {
     if (!tel || !tel.trim()) return;
 
     try {
-      const { error } = await supabase.from("deliveries").update({
-        livreur_nom:      nom.trim(),
-        livreur_tel:      tel.trim(),
-        livreur_vehicule: "Moto",
-        statut:           "preparation",
-        preparation_at:   new Date().toISOString(),
-      }).eq("id", delivery.id);
-      if (error) throw error;
-
-      const phoneClean = tel.replace(/[^0-9]/g, "");
-      const msg = [
-        "🚚 NOUVELLE MISSION YORIX",
-        "",
-        "Code : " + delivery.code_suivi,
-        "Client : " + delivery.client_nom + " (" + delivery.client_tel + ")",
-        "Collecte : " + delivery.adresse_collecte,
-        "Livraison : " + delivery.adresse_livraison,
-      ].join("\n");
-      window.open("https://wa.me/" + phoneClean + "?text=" + encodeURIComponent(msg), "_blank");
-
-      showToast("✅ Livreur " + nom + " assigné manuellement !");
-      setRefreshKey(k => k + 1);
+      const { delivery: updated, waOpened } = await adminAssignerLivreur({
+        delivery,
+        livreur: { id: null, nom: nom.trim(), telephone: tel.trim(), vehicule: "Moto" },
+        acteurId: user?.id,
+        openWhatsAppFallback: true,
+      });
+      setAdminDeliveries(prev => prev.map(d => d.id === updated.id ? updated : d));
+      showToast(
+        waOpened
+          ? `✅ ${nom} assigné manuellement · WhatsApp envoyé`
+          : `✅ ${nom} assigné manuellement`
+      );
+      setAssignModalOpen(null);
     } catch (err) {
-      showToast("Erreur : " + err.message, "error");
+      showToast("Erreur : " + (err.message || "Assignation impossible"), "error");
     }
   };
 
   const changerStatutLivraison = async (delivery, newStatut) => {
-    const updates = { statut: newStatut };
-    const now = new Date().toISOString();
-    if (newStatut === "preparation") updates.preparation_at = now;
-    if (newStatut === "collecte")    updates.collecte_at    = now;
-    if (newStatut === "en_route")    updates.en_route_at    = now;
-    if (newStatut === "livre")       updates.livre_at       = now;
+    try {
+      const updated = await adminChangerStatut({
+        delivery,
+        nouveauStatut: newStatut,
+        acteurId: user?.id,
+        notifyClient: true,
+      });
+      setAdminDeliveries(prev => prev.map(d => d.id === updated.id ? updated : d));
+      showToast(`✅ Statut → ${getStatutConfig(newStatut).label}`);
+    } catch (err) {
+      showToast("Erreur : " + (err.message || "Mise à jour impossible"), "error");
+    }
+  };
 
-    const { error } = await supabase.from("deliveries").update(updates).eq("id", delivery.id);
-    if (error) { showToast("Erreur : " + error.message, "error"); return; }
-    showToast("✅ Statut mis à jour → " + newStatut);
-    setRefreshKey(k => k + 1);
+  const sauvegarderEditionLivraison = async (form) => {
+    if (!editDelivery) return;
+    try {
+      const updated = await adminEditerLivraison({
+        delivery: editDelivery,
+        patch:    form,
+        acteurId: user?.id,
+      });
+      setAdminDeliveries(prev => prev.map(d => d.id === updated.id ? updated : d));
+      showToast("✅ Livraison mise à jour");
+      setEditDelivery(updated);
+    } catch (err) {
+      showToast("Erreur : " + (err.message || "Mise à jour impossible"), "error");
+    }
+  };
+
+  const retirerLivreur = async () => {
+    if (!editDelivery) return;
+    if (!window.confirm(`Retirer le livreur ${editDelivery.livreur_nom || ""} de la mission ${editDelivery.code_suivi} ?`)) return;
+    try {
+      const updated = await adminEditerLivraison({
+        delivery: editDelivery,
+        patch: {
+          livreur_id:       null,
+          livreur_nom:      null,
+          livreur_tel:      null,
+          livreur_vehicule: null,
+          assigne_at:       null,
+          accepte_at:       null,
+          statut:           "commande_recue",
+        },
+        acteurId: user?.id,
+      });
+      setAdminDeliveries(prev => prev.map(d => d.id === updated.id ? updated : d));
+      showToast("Livreur retiré · mission disponible");
+      setEditDelivery(updated);
+    } catch (err) {
+      showToast("Erreur : " + (err.message || "Impossible de retirer"), "error");
+    }
+  };
+
+  const annulerLivraisonAdmin = async (motif) => {
+    if (!editDelivery) return;
+    try {
+      const updated = await adminAnnulerLivraison({
+        delivery: editDelivery,
+        motif,
+        acteurId: user?.id,
+      });
+      setAdminDeliveries(prev => prev.map(d => d.id === updated.id ? updated : d));
+      showToast("❌ Livraison annulée");
+      setEditDelivery(null);
+    } catch (err) {
+      showToast("Erreur : " + (err.message || "Annulation impossible"), "error");
+    }
+  };
+
+  const renvoyerWhatsAppLivreur = (delivery) => {
+    if (!delivery?.livreur_tel) {
+      showToast("Aucun numéro de livreur", "error");
+      return;
+    }
+    const ok = openWhatsApp(delivery.livreur_tel, buildMsgLivreurAssignation(delivery));
+    showToast(ok ? "📱 WhatsApp ouvert" : "Numéro invalide", ok ? "success" : "error");
   };
 
   // ═══════════ ACTIONS PRODUITS ═══════════
@@ -433,6 +477,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     ...produits.filter(p => (p.stock || 0) === 0).map(p => ({ type: "red", label: "Stock 0", msg: `📦 ${p.name_fr || "Produit"} — ${p.vendeur_nom || "?"}` })),
     ...commandes.filter(o => o.status === "pending").map(o => ({ type: "yellow", label: "Commande", msg: `⏳ ${o.client_nom || "Client"} — ${(o.montant || 0).toLocaleString()} FCFA` })),
     ...adminDeliveries.filter(d => d.statut === "commande_recue" && !d.livreur_id).map(d => ({ type: "yellow", label: "Livraison", msg: `🚚 ${d.code_suivi} attend un livreur` })),
+    ...adminDeliveries.filter(d => d.statut === "livreur_assigne" && d.assigne_at && (Date.now() - new Date(d.assigne_at).getTime() > 10 * 60000)).map(d => ({ type: "yellow", label: "Relance", msg: `⏰ ${d.code_suivi} : ${d.livreur_nom} n'a toujours pas répondu` })),
     ...utilisateurs.filter(u => new Date() - new Date(u.created_at) < 86400000).map(u => ({ type: "green", label: "Nouveau", msg: `🆕 ${u.nom || u.email || "User"} — ${u.role || "buyer"}` })),
     ...paymentTx.filter((p) => p.status === "failed").slice(0, 8).map((p) => ({ type: "red", label: "Paiement", msg: `❌ Échec ${p.provider || "N/A"} — ${p.provider_ref || p.id}` })),
   ];
@@ -444,7 +489,10 @@ export function AdminDashboard({ user, userData, goPage }) {
   const CATS_LIST = CATS;
 
   // ═══════════ NAVIGATION ═══════════
-  const deliveriesEnAttente = adminDeliveries.filter(d => d.statut === "commande_recue" && !d.livreur_id).length;
+  const deliveriesEnAttente = adminDeliveries.filter(d =>
+    (d.statut === "commande_recue" && !d.livreur_id) ||
+    (d.statut === "livreur_assigne")
+  ).length;
   const prestPending = prestatairesList.filter(p => p.status === "pending").length;
 
   const persistCommercePromo = async () => {
@@ -512,24 +560,17 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const StatutLivraison = ({ statut }) => {
-    const cfg = {
-      commande_recue: { label: "⏳ En attente",  color: "#f59e0b", bg: "#fef3c7" },
-      preparation:    { label: "📦 Préparation", color: "#3b82f6", bg: "#dbeafe" },
-      collecte:       { label: "🏪 Collecté",    color: "#8b5cf6", bg: "#ede9fe" },
-      en_route:       { label: "🏍️ En route",    color: "#10b981", bg: "#d1fae5" },
-      livre:          { label: "✅ Livré",       color: "#22c55e", bg: "#dcfce7" },
-      annule:         { label: "❌ Annulé",      color: "#ef4444", bg: "#fee2e2" },
-    }[statut] || { label: statut, color: "#64748b", bg: "#f1f5f9" };
-
+    const cfg = getStatutConfig(statut);
     return (
       <span style={{
         padding: "3px 10px", borderRadius: 20,
         background: cfg.bg, color: cfg.color,
         fontSize: ".72rem", fontWeight: 700,
         border: "1px solid " + cfg.color,
-        display: "inline-block",
+        display: "inline-flex", alignItems: "center", gap: 4,
+        whiteSpace: "nowrap",
       }}>
-        {cfg.label}
+        <span>{cfg.icon}</span><span>{cfg.label}</span>
       </span>
     );
   };
@@ -578,6 +619,19 @@ export function AdminDashboard({ user, userData, goPage }) {
         }}>
           {toast.type === "error" ? "❌" : "✅"} {toast.msg}
         </div>
+      )}
+
+      {/* ── MODAL ÉDITION COMPLÈTE LIVRAISON ── */}
+      {editDelivery && (
+        <ModalEditDelivery
+          delivery={editDelivery}
+          livreurs={adminLivreurs}
+          onClose={() => setEditDelivery(null)}
+          onSave={sauvegarderEditionLivraison}
+          onReassign={(liv) => assignerLivreur(editDelivery, liv)}
+          onUnassign={retirerLivreur}
+          onCancel={annulerLivraisonAdmin}
+        />
       )}
 
       {/* ── MODAL ASSIGNATION LIVREUR ── */}
@@ -907,20 +961,23 @@ export function AdminDashboard({ user, userData, goPage }) {
             </div>
 
             <div className="stat-cards-grid" style={{ marginBottom: 18 }}>
-              <StatCard icon="⏳" val={adminDeliveries.filter(d => d.statut === "commande_recue").length} lbl="En attente" col="#fef3c7" ic="#f59e0b" />
-              <StatCard icon="📦" val={adminDeliveries.filter(d => d.statut === "preparation").length} lbl="Préparation" col="#dbeafe" ic="#3b82f6" />
-              <StatCard icon="🏍️" val={adminDeliveries.filter(d => ["collecte", "en_route"].includes(d.statut)).length} lbl="En route" col="#d1fae5" ic="#10b981" />
-              <StatCard icon="✅" val={adminDeliveries.filter(d => d.statut === "livre").length} lbl="Livrées" col="#dcfce7" ic="#22c55e" />
+              <StatCard icon="⏳" val={adminDeliveries.filter(d => d.statut === "commande_recue").length} lbl="En attente livreur" col="#fef3c7" ic="#f59e0b" />
+              <StatCard icon="🏍️" val={adminDeliveries.filter(d => d.statut === "livreur_assigne").length} lbl="Assignées" col="#e0f2fe" ic="#0ea5e9" />
+              <StatCard icon="✅" val={adminDeliveries.filter(d => ["accepte","preparation","collecte","en_route"].includes(d.statut)).length} lbl="En cours" col="#d1fae5" ic="#10b981" />
+              <StatCard icon="🏁" val={adminDeliveries.filter(d => d.statut === "livre").length} lbl="Livrées" col="#dcfce7" ic="#22c55e" />
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18, background: "var(--surface)", padding: 10, borderRadius: 10, border: "1px solid var(--border)" }}>
               {[
-                { id: "all",            label: "📋 Toutes",      color: "#64748b" },
-                { id: "commande_recue", label: "⏳ En attente",  color: "#f59e0b" },
-                { id: "preparation",    label: "📦 Préparation", color: "#3b82f6" },
-                { id: "collecte",       label: "🏪 Collecté",    color: "#8b5cf6" },
-                { id: "en_route",       label: "🏍️ En route",   color: "#10b981" },
-                { id: "livre",          label: "✅ Livrées",     color: "#22c55e" },
+                { id: "all",             label: "📋 Toutes",         color: "#64748b" },
+                { id: "commande_recue",  label: "⏳ En attente",     color: "#f59e0b" },
+                { id: "livreur_assigne", label: "🏍️ Assignée",       color: "#0ea5e9" },
+                { id: "accepte",         label: "✅ Acceptée",       color: "#10b981" },
+                { id: "preparation",     label: "📦 Préparation",    color: "#3b82f6" },
+                { id: "collecte",        label: "🏪 Collecté",       color: "#8b5cf6" },
+                { id: "en_route",        label: "🚀 En route",       color: "#10b981" },
+                { id: "livre",           label: "🏁 Livrées",        color: "#22c55e" },
+                { id: "annule",          label: "❌ Annulées",       color: "#ef4444" },
               ].map(f => {
                 const count = f.id === "all" ? adminDeliveries.length : adminDeliveries.filter(d => d.statut === f.id).length;
                 const active = adminDelivFilter === f.id;
@@ -1002,16 +1059,36 @@ export function AdminDashboard({ user, userData, goPage }) {
                       )}
 
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <button onClick={() => setEditDelivery(d)} style={{
+                          background: "var(--green)", color: "#fff", border: "none",
+                          padding: "8px 14px", borderRadius: 8,
+                          fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
+                        }}>
+                          🛠️ Modifier
+                        </button>
+
                         {!d.livreur_id && !d.livreur_nom && (
                           <button onClick={() => setAssignModalOpen(d)} style={{
-                            flex: 1, minWidth: 150, background: "var(--green)", color: "#fff", border: "none",
-                            padding: "9px 14px", borderRadius: 8,
-                            fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".8rem", cursor: "pointer",
+                            background: "var(--green)", color: "#fff", border: "none",
+                            padding: "8px 14px", borderRadius: 8,
+                            fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
                           }}>
-                            🏍️ Assigner un livreur
+                            🏍️ Assigner
                           </button>
                         )}
 
+                        {d.livreur_nom && d.statut === "livreur_assigne" && (
+                          <button onClick={() => renvoyerWhatsAppLivreur(d)}
+                            style={{ background: "#25D366", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 700, cursor: "pointer" }}>
+                            🔁 Relancer WhatsApp
+                          </button>
+                        )}
+                        {d.livreur_nom && d.statut === "accepte" && (
+                          <button onClick={() => changerStatutLivraison(d, "preparation")}
+                            style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 700, cursor: "pointer" }}>
+                            📦 Démarrer préparation
+                          </button>
+                        )}
                         {d.livreur_nom && d.statut === "preparation" && (
                           <button onClick={() => changerStatutLivraison(d, "collecte")}
                             style={{ background: "#8b5cf6", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 700, cursor: "pointer" }}>
@@ -1021,19 +1098,19 @@ export function AdminDashboard({ user, userData, goPage }) {
                         {d.livreur_nom && d.statut === "collecte" && (
                           <button onClick={() => changerStatutLivraison(d, "en_route")}
                             style={{ background: "#10b981", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 700, cursor: "pointer" }}>
-                            🏍️ Marquer En route
+                            🏍️ En route
                           </button>
                         )}
                         {d.livreur_nom && d.statut === "en_route" && (
                           <button onClick={() => changerStatutLivraison(d, "livre")}
                             style={{ background: "#22c55e", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 700, cursor: "pointer" }}>
-                            ✅ Marquer Livré
+                            ✅ Livré
                           </button>
                         )}
 
                         <button onClick={() => window.open("/?page=livraison&code=" + d.code_suivi, "_blank")}
                           style={{ background: "var(--surface2)", color: "var(--ink)", border: "1px solid var(--border)", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 600, cursor: "pointer" }}>
-                          👁️ Tracker client
+                          👁️ Tracker
                         </button>
 
                         <button onClick={() => { navigator.clipboard?.writeText(d.code_suivi); showToast("Code copié : " + d.code_suivi); }}
@@ -1045,7 +1122,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                           <a href={`https://wa.me/${d.client_tel.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour ${d.client_nom || ""} ! Concernant votre livraison ${d.code_suivi}...`)}`}
                             target="_blank" rel="noreferrer"
                             style={{ background: "#25D366", color: "#fff", padding: "7px 12px", borderRadius: 8, fontSize: ".75rem", fontWeight: 700, textDecoration: "none" }}>
-                            📱 Contacter
+                            📱 Client
                           </a>
                         )}
                       </div>
