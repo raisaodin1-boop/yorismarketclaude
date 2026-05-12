@@ -1,10 +1,10 @@
-import { BusinessForm } from "../components/BusinessForm";
 import { PagesLegales } from "../components/PagesLegales";
 import { MarketingBreadcrumb } from "../components/layout/MarketingBreadcrumb";
 import { CITIES } from "../lib/constants";
 import { BlogPage } from "./BlogPage";
 import { HelpCentrePage } from "./HelpCentrePage";
 import { AcademyPage } from "./AcademyPage";
+import { BusinessPage } from "./BusinessPage";
 
 export function SiteMarketingPages({
   page,
@@ -143,60 +143,14 @@ export function SiteMarketingPages({
 
     case "business":
       return (
-        <div className="yorix-pro-page anim">
-          <section className="yorix-bus-hero">
-            <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Business" }]} />
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(252,209,22,.14)", color: "var(--yellow)", border: "1px solid rgba(252,209,22,.28)", padding: "5px 14px", borderRadius: 50, fontSize: ".72rem", fontWeight: 700, marginBottom: 14 }}>
-              💼 Yorix · Business Growth Hub CM
-            </div>
-            <h1 className="yorix-bus-h1">
-              Une couche commerce pour <span>entreprises ambitieuses</span> au Cameroun
-            </h1>
-            <p className="yorix-bus-lead">
-              Achats groupe B2B, logistique, visibilité produit national, paiements traçables (MoMo · Orange Money · Escrow) et accompagnement humain WhatsApp — le tout sur une même plateforme.
-            </p>
-            <div className="yorix-bus-cta">
-              <button type="button" className="cta-y" onClick={() => window.scrollTo({ behavior: "smooth", top: 520 })}>
-                Lancer une demande
-              </button>
-              <button type="button" className="cta-w" onClick={() => goPage("academy")}>
-                Formez vos équipes
-              </button>
-            </div>
-            <div className="yorix-bus-metrics">
-              {[
-                ["4 rôles pro", "Acheteur · Vendeur · Livreur · Prestataire"],
-                ["Nationwide CM", "Douala · Yaoundé · villes satellites"],
-                ["Stack confiance", "Escrow • support humain • suivi livraisons"],
-              ].map(([t, d]) => (
-                <div key={t} className="yorix-bus-metric">
-                  <strong>{t}</strong>
-                  <span>{d}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-          <section className="sec">
-            <h2 className="yorix-sec-heading">Piliers de la transformation business</h2>
-            <div className="yorix-bus-pillars">
-              {[
-                { icon: "🏬", title: "Achat groupe & sourcing", txt: "Regroupements d’offres marketplace, meilleurs prix catalogue vérifié." },
-                { icon: "📣", title: "Visibilité & campagnes", txt: "Mise en avant produits-services, boosts dans les grandes villes." },
-                { icon: "🧠", title: "Formation continue", txt: "Yorix Academy pour digitaliser vos commerciaux & magasiniers." },
-                { icon: "🏦", title: "Financement & sécurité", txt: "Paiements tracés, escrow et litiges médiation locale." },
-              ].map((b) => (
-                <article key={b.title} className="yorix-bus-pillar">
-                  <div className="yorix-bus-pillar-ico">{b.icon}</div>
-                  <h3>{b.title}</h3>
-                  <p>{b.txt}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-          <section className="sec">
-            <BusinessForm />
-          </section>
-        </div>
+        <BusinessPage
+          goPage={goPage}
+          user={user}
+          userData={userData}
+          setAuthOpen={setAuthOpen}
+          setAuthTab={setAuthTab}
+          setSelectedRole={setSelectedRole}
+        />
       );
 
     case "academy":
