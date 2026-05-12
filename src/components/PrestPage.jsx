@@ -58,7 +58,20 @@ export function PrestPage({
   goPage,
   setSelectedPrest,
   selectedPrest,
+  onOpenPrestDetail,
+  onClosePrestDetail,
+  syncFilters,
+  onAddServiceToCart,
 }) {
+  const openPrest = (p) => {
+    setSelectedPrest(p);
+    onOpenPrestDetail?.(p);
+  };
+  const closePrest = () => {
+    setSelectedPrest(null);
+    onClosePrestDetail?.();
+  };
+
   const [prestSearch, setPrestSearch]         = useState("");
   const [prestQuartier, setPrestQuartier]     = useState("");
   const [prestCatFilter, setPrestCatFilter]   = useState("");
@@ -66,6 +79,12 @@ export function PrestPage({
   const [triActif, setTriActif]               = useState("dispo");
   const [geoActive, setGeoActive]             = useState(false);
   const [userCoords, setUserCoords]           = useState(null);
+
+  useEffect(() => {
+    if (!syncFilters) return;
+    setPrestCatFilter(syncFilters.cat || "");
+    setPrestVilleFilter(syncFilters.ville || "");
+  }, [syncFilters]);
 
   // ── Géolocalisation ──
   const activerGeo = () => {
@@ -650,7 +669,7 @@ export function PrestPage({
               }}
             >
               {topPrests.map((p) => (
-                <PrestCard key={p.id} p={p} onClick={() => setSelectedPrest(p)} />
+                <PrestCard key={p.id} p={p} onClick={() => openPrest(p)} />
               ))}
             </div>
           </>
@@ -680,7 +699,7 @@ export function PrestPage({
               }}
             >
               {otherPrests.map((p) => (
-                <PrestCard key={p.id} p={p} onClick={() => setSelectedPrest(p)} />
+                <PrestCard key={p.id} p={p} onClick={() => openPrest(p)} />
               ))}
             </div>
           </>
@@ -1011,10 +1030,10 @@ export function PrestPage({
       {selectedPrest && (
         <div
           className="modal-overlay"
-          onClick={(e) => e.target === e.currentTarget && setSelectedPrest(null)}
+          onClick={(e) => e.target === e.currentTarget && closePrest()}
         >
           <div className="modal" style={{ maxWidth: 540 }}>
-            <button className="modal-close" onClick={() => setSelectedPrest(null)}>✕</button>
+            <button type="button" className="modal-close" onClick={() => closePrest()}>✕</button>
 
             {/* Photo/Avatar header */}
             <div
@@ -1196,7 +1215,7 @@ export function PrestPage({
             </div>
 
             {/* 3 BOUTONS */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
               <button
                 onClick={() =>
                   window.open(
@@ -1226,6 +1245,33 @@ export function PrestPage({
                 }}
               >
                 📞 Appeler
+              </button>
+              <button
+                onClick={() => {
+                  if (!onAddServiceToCart) return;
+                  const priceNum =
+                    Number((selectedPrest.prix || "").toString().replace(/\D/g, "")) || 0;
+                  onAddServiceToCart({
+                    id: selectedPrest.id,
+                    name: selectedPrest.metier || selectedPrest.name,
+                    provider_nom: selectedPrest.name,
+                    provider_id: selectedPrest.isReal ? String(selectedPrest.id).replace(/^real-/, "") : null,
+                    categorie: selectedPrest.categorie,
+                    ville: selectedPrest.ville,
+                    prix: priceNum,
+                    prix_number: priceNum,
+                    photo: selectedPrest.photo,
+                  });
+                  closePrest();
+                }}
+                style={{
+                  background: "var(--surface2, #f5f5f5)", color: "var(--ink, #111)", border: "1px solid var(--border,#ddd)",
+                  padding: "11px 8px", borderRadius: 9,
+                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  cursor: "pointer",
+                }}
+              >
+                ➕ Panier
               </button>
               <button
                 onClick={() =>

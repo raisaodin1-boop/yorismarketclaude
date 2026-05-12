@@ -6,10 +6,7 @@ import { CITIES } from "../lib/constants";
 // COMPOSANT : DASHBOARD PROVIDER (PRESTATAIRE)
 // ─────────────────────────────────────────────────────────────
 export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
-  const [demandes, setDemandes] = useState([
-    { id: 1, client: "Amina T.",    service: "Coiffure à domicile",  date: "Demain 10h",       adresse: "Akwa, Douala",    budget: "5 000 FCFA", status: "pending" },
-    { id: 2, client: "Bertrand K.", service: "Réparation téléphone", date: "Aujourd'hui 15h", adresse: "Bastos, Yaoundé", budget: "3 500 FCFA", status: "pending" },
-  ]);
+  const [demandes, setDemandes] = useState([]);
   const [serviceForm, setServiceForm]     = useState({ nom: "", categorie: "", description: "", prix: "", tarif_type: "projet", ville: "", disponible: true });
   const [serviceSaved, setServiceSaved]   = useState(false);
   const [mesServices, setMesServices]     = useState([]);
@@ -17,12 +14,30 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
   useEffect(() => {
     if (!user?.id) return;
     const loadMesServices = async () => {
-      const { data, error } = await supabase
-        .from("services")
-        .select("*")
-        .eq("provider_id", user.id)
-        .order("created_at", { ascending: false });
-      if (!error) setMesServices(data || []);
+      const [{ data: servicesData, error: serviceErr }, { data: bookingData, error: bookingErr }] =
+        await Promise.all([
+          supabase.from("services").select("*").eq("provider_id", user.id).order("created_at", { ascending: false }),
+          supabase
+            .from("service_bookings")
+            .select("*")
+            .eq("provider_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(100),
+        ]);
+      if (!serviceErr) setMesServices(servicesData || []);
+      if (!bookingErr) {
+        setDemandes(
+          (bookingData || []).map((b) => ({
+            id: b.id,
+            client: b.client_nom || "Client Yorix",
+            service: b.notes || "Prestation",
+            date: `${b.booking_date || "Date à confirmer"} ${b.booking_time || ""}`.trim(),
+            adresse: b.location_address || "Adresse à confirmer",
+            budget: "Selon service",
+            status: b.status || "reserved",
+          }))
+        );
+      }
     };
     loadMesServices();
   }, [user?.id]);
@@ -49,8 +64,15 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
     setMesServices(prev => prev.map(s => s.id === id ? { ...s, disponible: !current } : s));
   };
 
-  const repondre = (id, accepte) =>
-    setDemandes(prev => prev.map(d => d.id === id ? { ...d, status: accepte ? "accepted" : "refused" } : d));
+  const repondre = async (id, accepte) => {
+    const nextStatus = accepte ? "accepted" : "refused";
+    const { error } = await supabase.from("service_bookings").update({ status: nextStatus }).eq("id", id);
+    if (error) {
+      alert("Erreur : " + error.message);
+      return;
+    }
+    setDemandes((prev) => prev.map((d) => (d.id === id ? { ...d, status: nextStatus } : d)));
+  };
 
   const saveService = async () => {
     if (!serviceForm.nom || !serviceForm.prix) {
@@ -82,7 +104,7 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
           <div className="dash-page-title">Bonjour {userData?.nom} 👷</div>
           <div className="dash-stats">
             {[
-              { icon: "📋", val: demandes.filter(d => d.status === "pending").length,  lbl: "Demandes" },
+              { icon: "📋", val: demandes.filter(d => d.status === "reserved" || d.status === "pending").length,  lbl: "Demandes" },
               { icon: "✅", val: demandes.filter(d => d.status === "accepted").length, lbl: "Acceptées" },
               { icon: "💰", val: "85 000 F", lbl: "Ce mois", trend: "+12%" },
               { icon: "⭐", val: "4.9/5",    lbl: "Ma note", trend: "" },
@@ -101,7 +123,7 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
           }}>
             Demandes en attente
           </div>
-          {demandes.filter(d => d.status === "pending").map(d => (
+          {demandes.filter(d => d.status === "reserved" || d.status === "pending").map(d => (
             <div key={d.id} className="order-card" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <div style={{ display: "flex", gap: 12 }}>
                 <div className="oc-icon">🔧</div>

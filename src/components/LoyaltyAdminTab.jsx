@@ -103,7 +103,7 @@ export function LoyaltyAdminTab({ user, userData, showToast }) {
                     Vous pouvez dès maintenant échanger vos points contre des bons d'achat, livraisons gratuites, réductions et bien plus encore.
                   </p>
                   <div style="text-align:center;margin-top:24px;">
-                    <a href="https://yorix.cm/loyalty" style="display:inline-block;background:#1a6b3a;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;">
+                    <a href="https://www.yorix.cm/loyalty" style="display:inline-block;background:#1a6b3a;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;">
                       🎁 Voir mes récompenses
                     </a>
                   </div>

@@ -6,17 +6,18 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/generate-sitemap.js",
-    "build": "vite build"
+    "build": "vite build",
+    "qa:checkout": "node scripts/qa-checkout-scenarios.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "^2.105.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
-    "firebase": "^12.11.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.0",
-    "vite": "^4.4.0"
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.0"
   }
 }

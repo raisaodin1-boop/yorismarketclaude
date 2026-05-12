@@ -134,18 +134,14 @@ export async function creerCommandeSupabase({ product, clientNom, telephone, use
 export async function getUserProfile(uid) {
   const { data, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
   if (error) { console.error("getUserProfile ERROR:", error); return null; }
-  console.log("USER DATA:", data);
   return data;
 }
 
 export function getUserRole(profileData) {
   const valid = ["buyer", "seller", "delivery", "provider", "admin"];
-  const role  = profileData?.role;
-  if (role && valid.includes(role)) {
-    console.log("ROLE FINAL:", role);
-    return role;
-  }
-  console.log("ROLE FINAL: seller (fallback)");
+  const role = profileData?.role;
+  if (role === "superadmin") return "admin";
+  if (role && valid.includes(role)) return role;
   return "buyer";
 }
 
@@ -206,7 +202,7 @@ function emailWrapper(title, bodyHtml) {
       </div>
       <div style="background:#0d1f14;padding:20px 32px;text-align:center;color:rgba(255,255,255,.6);font-size:12px">
         <p style="margin:0 0 8px"><strong style="color:#fff">Yorix CM</strong> — RC DOUALA/2026/B237</p>
-        <p style="margin:0">📱 +237 696 56 56 54 · ✉️ support@yorix.cm · 🌐 <a href="https://yorix.cm" style="color:#4fd17d">yorix.cm</a></p>
+        <p style="margin:0">📱 +237 696 56 56 54 · ✉️ support@yorix.cm · 🌐 <a href="https://www.yorix.cm" style="color:#4fd17d">yorix.cm</a></p>
         <p style="margin:12px 0 0;font-size:11px;opacity:.5">Vous recevez cet email car vous êtes utilisateur de Yorix CM.</p>
       </div>
     </div>
@@ -239,7 +235,7 @@ export function emailBienvenue(nom, role = "client") {
         <li>🔐 Bénéficier de la protection Escrow Yorix</li>
       </ul>
       <div style="text-align:center;margin:24px 0">
-        <a href="https://yorix.cm" style="display:inline-block;background:#1a6b3a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">🚀 Explorer Yorix</a>
+        <a href="https://www.yorix.cm" style="display:inline-block;background:#1a6b3a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">🚀 Explorer Yorix</a>
       </div>
       <p style="font-size:13px;color:#888;margin-top:24px">Des questions ? Répondez à cet email ou écrivez-nous sur WhatsApp au +237 696 56 56 54.</p>
     `
@@ -291,7 +287,7 @@ export function emailNouvelleCommandeVendeur(vendeurNom, clientNom, produits, to
       </div>
       <p style="font-size:14px;line-height:1.7">Merci de <strong>préparer la commande rapidement</strong> et de contacter le client pour la livraison.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="https://yorix.cm" style="display:inline-block;background:#1a6b3a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Voir la commande</a>
+        <a href="https://www.yorix.cm" style="display:inline-block;background:#1a6b3a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Voir la commande</a>
       </div>
     `
   );
@@ -307,7 +303,7 @@ export function emailLivraisonConfirmee(nom, numero) {
       <p style="font-size:15px;line-height:1.7">Nous espérons que tout est parfait ! 🌟</p>
       <div style="background:#f0faf4;padding:16px;border-radius:8px;margin:20px 0;text-align:center">
         <p style="margin:0 0 10px;font-size:14px;color:#0d1f14">Un moment pour laisser votre avis ?</p>
-        <a href="https://yorix.cm" style="display:inline-block;background:#1a6b3a;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px">⭐ Laisser un avis</a>
+        <a href="https://www.yorix.cm" style="display:inline-block;background:#1a6b3a;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px">⭐ Laisser un avis</a>
       </div>
       <p style="font-size:13px;color:#888;margin-top:20px">Un problème ? Contactez-nous immédiatement sur WhatsApp : <a href="https://wa.me/237696565654" style="color:#1a6b3a">+237 696 56 56 54</a></p>
     `

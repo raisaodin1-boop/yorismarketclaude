@@ -9,16 +9,17 @@ export function LevelBadge({ level, size = "normal" }) {
     platine: { label: "Platine", emoji: "💎", color: "#7C3AED", bg: "rgba(124,58,237,.15)" },
   };
   const l = levels[level] || levels.bronze;
+  const lg = size === "lg";
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      background: l.bg, color: l.color, border: `1px solid ${l.color}33`,
-      padding: size === "lg" ? "5px 12px" : "3px 9px",
-      borderRadius: 50,
-      fontSize: size === "lg" ? ".82rem" : ".68rem",
-      fontWeight: 800, fontFamily: "'Syne',sans-serif",
-    }}>
-      {l.emoji} {l.label}
+    <span
+      className={`yorix-level-badge${lg ? " yorix-level-badge--lg" : ""}`}
+      style={{
+        background: l.bg,
+        color: l.color,
+        border: lg ? `2px solid ${l.color}` : `1px solid ${l.color}55`,
+      }}
+    >
+      <span aria-hidden>{l.emoji}</span> {l.label}
     </span>
   );
 }

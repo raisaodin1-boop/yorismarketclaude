@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
-import { FicheProduit } from "./FicheProduit";
 import { ModalCommander } from "./ModalCommander";
+
+const LazyFicheProduit = lazy(() =>
+  import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
+);
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : GRILLE PRODUITS (avec images optimisées Cloudinary)
 // ─────────────────────────────────────────────────────────────
-export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpenProd }) {
+export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpenProd, onOpenProductUrl }) {
   const [ficheOpen, setFicheOpen] = useState(null);
   const [cmdOpen, setCmdOpen]     = useState(null);
 
@@ -41,7 +44,13 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
           return (
             <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}`}>
               {/* ── IMAGE OPTIMISÉE (lazy + WebP + compression auto) ── */}
-              <div className="prod-img-wrap" onClick={() => setFicheOpen(p)}>
+              <div
+                className="prod-img-wrap"
+                onClick={() => {
+                  if (onOpenProductUrl) onOpenProductUrl(p);
+                  else setFicheOpen(p);
+                }}
+              >
                 <OptimizedImage
                   src={safeImg}
                   alt={p.name_fr || "Produit Yorix"}
@@ -63,7 +72,13 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
               </div>
 
               {/* ── INFOS ── */}
-              <div className="prod-info" onClick={() => setFicheOpen(p)}>
+              <div
+                className="prod-info"
+                onClick={() => {
+                  if (onOpenProductUrl) onOpenProductUrl(p);
+                  else setFicheOpen(p);
+                }}
+              >
                 {vendBadges.length > 0 && (
                   <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
                     {vendBadges.map(b => (
@@ -145,13 +160,21 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
       </div>
 
       {ficheOpen && (
-        <FicheProduit
-          product={ficheOpen}
-          user={user}
-          userData={userData}
-          onClose={() => setFicheOpen(null)}
-          onAddToCart={onAddToCart}
-        />
+        <Suspense
+          fallback={
+            <div className="loading" style={{ justifyContent: "center", padding: 40 }}>
+              <div className="spinner" /> Chargement...
+            </div>
+          }
+        >
+          <LazyFicheProduit
+            product={ficheOpen}
+            user={user}
+            userData={userData}
+            onClose={() => setFicheOpen(null)}
+            onAddToCart={onAddToCart}
+          />
+        </Suspense>
       )}
       {cmdOpen && (
         <ModalCommander

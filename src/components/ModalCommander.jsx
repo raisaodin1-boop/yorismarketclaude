@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { COMMISSION_RATE } from "../lib/supabase";
-import { creerCommandeSupabase } from "../utils/helpers";
+import { createCheckoutIntent, confirmCheckout } from "../lib/checkoutApi";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL COMMANDER (Commande + WhatsApp)
@@ -11,6 +10,7 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState({});
   const [done, setDone]       = useState(false);
+  const [deliveryTracking, setDeliveryTracking] = useState([]);
 
   const validate = () => {
     const e = {};
@@ -24,18 +24,50 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
     if (!validate()) return;
     setLoading(true);
     try {
-      await creerCommandeSupabase({ product, clientNom: nom, telephone: tel, userId: user?.id || null });
+      const subtotal = Number(product?.prix || 0);
+      const intent = await createCheckoutIntent({
+        checkoutType: "product_only",
+        customer: {
+          id: user?.id || null,
+          nom,
+          telephone: tel,
+          email: user?.email || "",
+          ville: userData?.ville || "",
+        },
+        items: [
+          {
+            id: product.id,
+            kind: "product",
+            qty: 1,
+            price: subtotal,
+            fulfillmentMode: "delivery",
+            vendeur_id: product.vendeur_id ?? null,
+            vendeur_nom: product.vendeur_nom || "",
+            ville: product.ville || "",
+          },
+        ],
+        summary: { subtotal, delivery: 0, total: subtotal },
+      });
+      const confirmation = await confirmCheckout({
+        checkout_intent_id: intent.checkout_intent_id,
+        payment_method: "whatsapp_backup",
+        address: userData?.adresse || userData?.ville || "",
+      });
+      const codes = Array.isArray(confirmation?.delivery_tracking)
+        ? confirmation.delivery_tracking
+        : [];
+      setDeliveryTracking(codes);
       setDone(true);
-      setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
+      setTimeout(() => {
+        onSuccess?.();
+        onClose();
+      }, codes.length > 0 ? 5000 : 2000);
     } catch (err) {
       console.error("creerCommande:", err);
       alert("Erreur lors de la commande : " + err.message);
     }
     setLoading(false);
   };
-
-  const commission  = Math.round(product.prix * COMMISSION_RATE);
-  const netVendeur  = product.prix - commission;
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -45,7 +77,15 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
         <p className="modal-sub">{product.name_fr}</p>
 
         {done ? (
-          <div className="success-msg">✅ Commande créée avec succès ! Vous serez contacté(e) sous peu.</div>
+          <div className="success-msg">
+            <div>✅ Commande créée avec succès ! Vous serez contacté(e) sous peu.</div>
+            {deliveryTracking.length > 0 && (
+              <div style={{ marginTop: 10, fontSize: ".85rem" }}>
+                📦 Suivi :{" "}
+                <strong>{deliveryTracking.map((t) => t.code_suivi).join(", ")}</strong>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             {/* Résumé prix */}
@@ -54,14 +94,7 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
                 <span style={{ color:"var(--gray)" }}>Prix produit</span>
                 <strong>{product.prix?.toLocaleString()} FCFA</strong>
               </div>
-              <div className="commission-box" style={{ margin:0 }}>
-                <span>Commission Yorix ({Math.round(COMMISSION_RATE * 100)}%)</span>
-                <strong>−{commission.toLocaleString()} FCFA</strong>
-              </div>
-              <div style={{ display:"flex", justifyContent:"space-between", fontSize:".82rem", marginTop:4, fontWeight:700, color:"var(--green)" }}>
-                <span>Vendeur reçoit</span>
-                <span>{netVendeur.toLocaleString()} FCFA</span>
-              </div>
+              <div style={{ fontSize: ".75rem", color: "var(--gray)" }}>Paiement sécurisé, montant final confirmé au checkout.</div>
             </div>
 
             <div className="form-group">

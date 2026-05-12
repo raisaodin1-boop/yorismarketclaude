@@ -1,52 +1,70 @@
-// scripts/generate-sitemap.js
-// Génère sitemap.xml à chaque build Vercel
-// Exécuté via "prebuild" dans package.json
-
+// Génère sitemap.xml au prebuild — URLs alignées sur src/lib/seoRoutes.js
 import { createClient } from "@supabase/supabase-js";
+import { loadEnv } from "vite";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-
-const SUPABASE_URL = "https://msrymchhhxitdevthvdi.supabase.co";
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-const SITE_URL = "https://yorix.cm";
+import {
+  SITE_URL,
+  SEO_CITIES,
+  METIER_SLUG_TO_CATEGORY,
+  PAGE_PATH,
+  buildEntitySlug,
+  categoryToSlug,
+} from "../src/lib/seoRoutes.js";
+import { CATS } from "../src/lib/constants.js";
+import {
+  SUPABASE_PROJECT_URL,
+  SUPABASE_ANON_PUBLISHABLE_KEY,
+} from "../src/lib/supabaseDefaults.js";
 
 const today = new Date().toISOString().split("T")[0];
 
-// Pages statiques
-const staticPages = [
-  { loc: "/",                    priority: "1.0", changefreq: "daily" },
-  { loc: "/?page=produits",      priority: "0.9", changefreq: "daily" },
-  { loc: "/?page=livraison",     priority: "0.8", changefreq: "weekly" },
-  { loc: "/?page=escrow",        priority: "0.7", changefreq: "monthly" },
-  { loc: "/?page=prestataires",  priority: "0.8", changefreq: "weekly" },
-  { loc: "/?page=business",      priority: "0.7", changefreq: "monthly" },
-  { loc: "/?page=academy",       priority: "0.7", changefreq: "weekly" },
-  { loc: "/?page=blog",          priority: "0.7", changefreq: "weekly" },
-  { loc: "/?page=loyalty",       priority: "0.6", changefreq: "monthly" },
-  { loc: "/?page=contact",       priority: "0.5", changefreq: "monthly" },
-  { loc: "/?page=aide",          priority: "0.5", changefreq: "monthly" },
-  { loc: "/?page=cgv",           priority: "0.3", changefreq: "yearly" },
-  { loc: "/?page=mentions",      priority: "0.3", changefreq: "yearly" },
-  { loc: "/?page=confidentialite", priority: "0.3", changefreq: "yearly" },
-];
+/** Résout URL + clé pour Node : process.env > fichiers .env (Vite) > défauts projet (même source que le client). */
+function resolveSupabaseConfig() {
+  const cwd = process.cwd();
+  const fromProd = loadEnv("production", cwd, "");
+  const fromDev = loadEnv("development", cwd, "");
 
-async function fetchProducts() {
-  if (!SUPABASE_ANON_KEY) {
-    console.warn("⚠️ Pas de clé Supabase, sitemap sans produits");
-    return [];
+  const urlCandidates = [
+    process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_URL,
+    fromProd.VITE_SUPABASE_URL,
+    fromProd.SUPABASE_URL,
+    fromDev.VITE_SUPABASE_URL,
+    fromDev.SUPABASE_URL,
+    SUPABASE_PROJECT_URL,
+  ].filter(Boolean);
+
+  const url = urlCandidates[0] ?? SUPABASE_PROJECT_URL;
+  const explicitAnon =
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    fromProd.VITE_SUPABASE_ANON_KEY ||
+    fromProd.SUPABASE_ANON_KEY ||
+    fromDev.VITE_SUPABASE_ANON_KEY ||
+    fromDev.SUPABASE_ANON_KEY;
+
+  const anonKey = explicitAnon || SUPABASE_ANON_PUBLISHABLE_KEY;
+
+  /** D’où vient au moins la clé utilisée pour l’écriture du log */
+  let sourceHint;
+  if (explicitAnon) {
+    const fromProcess =
+      Boolean(process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY);
+    const fromDotenvFiles = Boolean(
+      fromProd.VITE_SUPABASE_ANON_KEY ||
+        fromProd.SUPABASE_ANON_KEY ||
+        fromDev.VITE_SUPABASE_ANON_KEY ||
+        fromDev.SUPABASE_ANON_KEY
+    );
+    if (fromProcess) sourceHint = "env CI/shell ou export manuel";
+    else if (fromDotenvFiles) sourceHint = "fichier .env / .env.local (loadEnv Vite)";
+    else sourceHint = "env ou .env";
+  } else {
+    sourceHint = "supabaseDefaults.js (identique au client SPA — aucune variable requise en local)";
   }
-  try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data } = await supabase
-      .from("products")
-      .select("id, name_fr, updated_at")
-      .or("actif.eq.true,actif.is.null")
-      .limit(1000);
-    return data || [];
-  } catch (err) {
-    console.warn("⚠️ Erreur produits:", err.message);
-    return [];
-  }
+
+  return { url, anonKey, sourceHint };
 }
 
 function urlEntry(loc, lastmod, priority, changefreq) {
@@ -58,17 +76,144 @@ function urlEntry(loc, lastmod, priority, changefreq) {
   </url>`;
 }
 
+const staticSeoPages = [
+  ["", "1.0", "daily"],
+  [PAGE_PATH.produits, "0.95", "daily"],
+  [PAGE_PATH.livraison, "0.9", "weekly"],
+  [PAGE_PATH.prestataires, "0.9", "weekly"],
+  [PAGE_PATH.escrow, "0.85", "weekly"],
+  [PAGE_PATH.business, "0.85", "monthly"],
+  [PAGE_PATH.academy, "0.8", "weekly"],
+  [PAGE_PATH.blog, "0.75", "weekly"],
+  [PAGE_PATH.loyalty, "0.65", "monthly"],
+  [PAGE_PATH.contact, "0.7", "monthly"],
+  [PAGE_PATH.aide, "0.75", "monthly"],
+  [PAGE_PATH.faq, "0.8", "weekly"],
+  [PAGE_PATH.cgv, "0.4", "yearly"],
+  [PAGE_PATH.mentions, "0.4", "yearly"],
+  [PAGE_PATH.confidentialite, "0.4", "yearly"],
+  [PAGE_PATH.inscription, "0.75", "monthly"],
+  [PAGE_PATH.devenirVendeur, "0.8", "monthly"],
+  [PAGE_PATH.devenirLivreur, "0.8", "monthly"],
+];
+
+async function fetchProducts(supabase) {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name_fr, created_at")
+      .or("actif.eq.true,actif.is.null")
+      .limit(2000);
+    if (error) {
+      console.warn(`⚠️ Sitemap — produits: ${error.message} (${error.code ?? "sans code"})`);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn("⚠️ Sitemap — produits (exception réseau):", err.message);
+    return [];
+  }
+}
+
+async function fetchServices(supabase) {
+  try {
+    const { data, error } = await supabase
+      .from("services")
+      .select("id, provider_nom, created_at")
+      .eq("actif", true)
+      .limit(1000);
+    if (error) {
+      console.warn(`⚠️ Sitemap — services: ${error.message} (${error.code ?? "sans code"})`);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn("⚠️ Sitemap — services (exception réseau):", err.message);
+    return [];
+  }
+}
+
+function cityUrls() {
+  const out = [];
+  for (const c of SEO_CITIES) {
+    out.push({ loc: `/${c.slug}`, pr: "0.88", ch: "weekly" });
+    out.push({ loc: `/acheter-a-${c.slug}`, pr: "0.87", ch: "weekly" });
+    out.push({ loc: `/livraison-a-${c.slug}`, pr: "0.87", ch: "weekly" });
+    out.push({ loc: `/prestataires-a-${c.slug}`, pr: "0.87", ch: "weekly" });
+    out.push({ loc: `/livraison/${c.slug}`, pr: "0.86", ch: "weekly" });
+  }
+  return out;
+}
+
+function categoryUrls() {
+  return CATS.filter(Boolean).map((cat) => [
+    `/categories/${categoryToSlug(cat)}`,
+    "0.82",
+    "weekly",
+  ]);
+}
+
+/** Combinaisons métier × ville (indexation locale scalable) */
+function metierVilleUrls() {
+  const out = [];
+  const villes = ["douala", "yaounde", "bafoussam", "bamenda", "garoua", "kribi"];
+  for (const m of Object.keys(METIER_SLUG_TO_CATEGORY)) {
+    for (const v of villes) {
+      out.push([`/prestataires/${m}/${v}`, "0.78", "weekly"]);
+    }
+  }
+  return out;
+}
+
 async function generate() {
-  const products = await fetchProducts();
-  const urls = [
-    ...staticPages.map(p => urlEntry(p.loc, today, p.priority, p.changefreq)),
-    ...products.map(p => urlEntry(
-      `/?page=produits&id=${p.id}`,
-      (p.updated_at || today).split("T")[0],
-      "0.7",
-      "weekly"
-    )),
-  ];
+  const { url, anonKey, sourceHint } = resolveSupabaseConfig();
+  console.log(`ℹ️ Sitemap — connexion Supabase (${sourceHint})`);
+
+  const supabase = createClient(url, anonKey);
+  const products = await fetchProducts(supabase);
+  const services = await fetchServices(supabase);
+
+  const urls = [];
+
+  for (const [path, pr, ch] of staticSeoPages) {
+    urls.push(urlEntry(path || "/", today, pr, ch));
+  }
+
+  for (const u of cityUrls()) {
+    urls.push(urlEntry(u.loc, today, u.pr, u.ch));
+  }
+
+  for (const row of categoryUrls()) {
+    urls.push(urlEntry(row[0], today, row[1], row[2]));
+  }
+
+  for (const m of metierVilleUrls()) {
+    urls.push(urlEntry(m[0], today, m[1], m[2]));
+  }
+
+  for (const p of products) {
+    const slug = buildEntitySlug(p.name_fr || "produit", p.id);
+    urls.push(
+      urlEntry(
+        `/produit/${slug}`,
+        (p.created_at || today).split("T")[0],
+        "0.72",
+        "weekly"
+      )
+    );
+  }
+
+  for (const s of services) {
+    const slug = buildEntitySlug(s.provider_nom || "prestataire", `real-${s.id}`);
+    urls.push(
+      urlEntry(
+        `/prestataire/${slug}`,
+        (s.created_at || today).split("T")[0],
+        "0.68",
+        "weekly"
+      )
+    );
+  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -79,10 +224,12 @@ ${urls.join("\n")}
   if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
   writeFileSync(join(publicDir, "sitemap.xml"), xml);
-  console.log(`✅ sitemap.xml généré avec ${urls.length} URLs`);
+  console.log(
+    `✅ sitemap.xml — ${urls.length} URLs (produits: ${products.length}, services: ${services.length})`
+  );
 }
 
-generate().catch(err => {
-  console.error("❌ Erreur génération sitemap:", err);
-  process.exit(0); // Ne bloque pas le build
+generate().catch((err) => {
+  console.error("❌ sitemap:", err);
+  process.exit(0);
 });
