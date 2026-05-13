@@ -89,7 +89,7 @@ create table if not exists public.wallet_transactions (
 
 create index if not exists idx_wallet_transactions_user on public.wallet_transactions(user_id, created_at desc);
 
--- IF EXISTS: safe when `orders` is created by 20260508_orders_baseline.sql (PG 15+).
+-- IF EXISTS: safe when `orders` is created by 20260508000100_orders_baseline.sql (PG 15+).
 alter table if exists public.orders add column if not exists order_group_id text;
 alter table if exists public.orders add column if not exists payment_method text;
 alter table if exists public.orders add column if not exists payment_status text default 'pending';

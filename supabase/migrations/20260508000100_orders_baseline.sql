@@ -1,5 +1,5 @@
 -- Baseline `public.orders` for projects where the legacy table was never created.
--- Must run before 20260510_hybrid_marketplace.sql (which ALTERs this table).
+-- Must run before 20260510000100_hybrid_marketplace.sql (which ALTERs this table).
 
 create extension if not exists pgcrypto;
 
