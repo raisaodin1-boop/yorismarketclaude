@@ -14,7 +14,7 @@
 //  ✅ Password input premium avec œil
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   parsePathname,
@@ -30,13 +30,9 @@ import {
   PAGE_PATH,
 } from "./lib/seoRoutes";
 import { SeoHead } from "./components/seo/SeoHead";
-import { SeoLocalIntro } from "./components/seo/SeoLocalIntro";
 import {
   supabase,
   YORIX_WA_NUMBER,
-  MOMO_NUMBER,
-  ORANGE_NUMBER,
-  PAYMENT_WA_NUMBER,
   CLOUD_NAME,
   UPLOAD_PRESET,
 } from "./lib/supabase";
@@ -53,11 +49,7 @@ import {
 
 import {
   uploadSingleImage,
-  getUserProfile,
-  getUserRole,
   filtrerMsg,
-  sendEmail,
-  emailBienvenue,
   updateLivraisonStatut,
   genererCodeSuivi,
 } from "./utils/helpers";
@@ -67,38 +59,6 @@ import { ModalCommander } from "./components/ModalCommander";
 import { LevelBadge } from "./components/LevelBadge";
 import { PointsAnimation } from "./components/PointsAnimation";
 import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
-import { ChatUsers } from "./components/ChatUsers";
-import {
-  RouteSuspenseFallback,
-  LazyHomePage,
-  LazyProductRouteSections,
-  LazyLivraisonPage,
-  LazySiteMarketingPages,
-  LazyFicheProduit,
-  LazyPrestPage,
-  LazyCheckoutPage,
-  LazyCartPage,
-  LazyAcademyDetail,
-  LazyAcademyContactForm,
-  LazyLoyaltyPage,
-  LazyPromotionsPage,
-  LazySellerDashboard,
-  LazyBuyerDashboard,
-  LazyDeliveryDashboard,
-  LazyProviderDashboard,
-  LazyAdminDashboard,
-  LazyNotificationsPage,
-} from "./lazyRoutes";
-import {
-  loadCart,
-  saveCart,
-  makeProductCartItem,
-  makeServiceCartItem,
-  upsertCartItem,
-  updateCartQty,
-  removeCartItem,
-  computeCartSummary,
-} from "./domain/cartDomain";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
 import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
@@ -106,9 +66,13 @@ import { OptimizedImage } from "./components/OptimizedImage";
 import { NotificationCenter } from "./components/NotificationCenter";
 import { PremiumSiteFooter } from "./components/layout/PremiumSiteFooter";
 import { OnboardingModal } from "./components/OnboardingModal";
-import { ContractAcceptance, CONTRACT_VERSION } from "./components/ContractAcceptance";
-import { PasswordInput } from "./components/PasswordInput";
+import { ContractAcceptance } from "./components/ContractAcceptance";
 import { RouteErrorBoundary } from "./components/errors/AppErrorBoundary.jsx";
+import { YorixAuthModal } from "./components/yorix/YorixAuthModal.jsx";
+import { YorixHeader } from "./components/yorix/YorixHeader.jsx";
+import { YorixPages } from "./components/yorix/YorixPages.jsx";
+import { useYorixAuth } from "./hooks/useYorixAuth.js";
+import { useYorixCart } from "./hooks/useYorixCart.js";
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE (logique métier + layout)
@@ -120,19 +84,10 @@ export default function YorixApp() {
   const route                     = useMemo(() => parsePathname(location.pathname), [location.pathname]);
   const page                      = route.page;
 
-  const [dark, setDark]           = useState(false);
-  const [user, setUser]           = useState(null);
-  const [userData, setUserData]   = useState(null);
-  const [userRole, setUserRole]   = useState(null);
-  const [loading, setLoading]     = useState(true);
+  const [dashTab, setDashTab] = useState("overview");
+  const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
 
-  // Auth
-  const [authOpen, setAuthOpen]         = useState(false);
-  const [authTab, setAuthTab]           = useState("login");
-  const [selectedRole, setSelectedRole] = useState("buyer");
-  const [authForm, setAuthForm]         = useState({ nom:"", email:"", tel:"", password:"" });
-  const [authError, setAuthError]       = useState("");
-  const [authLoading, setAuthLoading]   = useState(false);
+  const [dark, setDark]           = useState(false);
 
   // Produits
   const [produits, setProduits]                 = useState([]);
@@ -154,14 +109,6 @@ export default function YorixApp() {
 
   const [search, setSearch]                     = useState("");
   const [filterCat, setFilterCat]               = useState("");
-
-  // Panier
-  const [cartItems, setCartItems] = useState(() => loadCart());
-
-  // Sauvegarde automatique du panier à chaque modification
-  useEffect(() => {
-    saveCart(cartItems);
-  }, [cartItems]);
 
   // Notifs
   const [notifOpen, setNotifOpen] = useState(false);
@@ -237,6 +184,65 @@ export default function YorixApp() {
     else setNotifs(data || []);
   }, []);
 
+  const goPage = useCallback((p, opts = {}) => {
+    navigate(pathForPage(p, opts));
+    window.scrollTo(0, 0);
+    setNotifOpen(false);
+  }, [navigate]);
+
+  const authSession = useYorixAuth({
+    goPage,
+    setDashTab,
+    setDemandeLivraisonOpen,
+    setNotifs,
+    onProfileLoaded: loadNotifsForUser,
+  });
+
+  const {
+    user,
+    setUser,
+    userData,
+    setUserData,
+    userRole,
+    setUserRole,
+    loading,
+    authOpen,
+    setAuthOpen,
+    authTab,
+    setAuthTab,
+    selectedRole,
+    setSelectedRole,
+    authForm,
+    setAuthForm,
+    authError,
+    setAuthError,
+    authLoading,
+    setAuthLoading,
+    contractOpen,
+    setContractOpen,
+    contractAccepted,
+    setContractAccepted,
+    pendingAction,
+    setPendingAction,
+    doLogin,
+    doRegister,
+    doGoogle,
+    doLogout,
+    handleContractAccepted,
+    executePendingAction,
+  } = authSession;
+
+  const {
+    cartItems,
+    setCartItems,
+    addToCart,
+    addServiceToCart,
+    changeQty,
+    removeItem,
+    cartSummary,
+    totalQty,
+  } = useYorixCart(commerceDeliveryPolicy);
+
   useEffect(() => {
     if (!user?.id) {
       setNotifPrefs(loadNotificationPrefs());
@@ -251,9 +257,6 @@ export default function YorixApp() {
     };
   }, [user?.id]);
 
-  // Dashboard
-  const [dashTab, setDashTab] = useState("overview");
-
   // Divers
   const [waOpen, setWaOpen]                     = useState(false);
   const [nlEmail, setNlEmail]                   = useState("");
@@ -262,16 +265,9 @@ export default function YorixApp() {
   const [loyaltyPts, setLoyaltyPts]             = useState(320);
   const [blogFilter, setBlogFilter]             = useState("TOUT");
   const [selectedPrest, setSelectedPrest]       = useState(null);
-  const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
-
-  // ═══ CONTRACT ACCEPTANCE ═══
-  const [contractOpen, setContractOpen]               = useState(false);
-  const [contractAccepted, setContractAccepted]       = useState(false);
-  const [pendingRegistration, setPendingRegistration] = useState(null);
 
   // ═══ ONBOARDING ═══
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [pendingAction, setPendingAction]   = useState(null);
 
   // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
@@ -445,79 +441,13 @@ export default function YorixApp() {
     }
 
     executePendingAction(actionId);
-  }, [user]);
-
-  // ── EXÉCUTION de l'action après connexion réussie ──
-  const executePendingAction = useCallback((actionId) => {
-    const id = actionId || pendingAction;
-    if (!id) return;
-
-    if (id === "buy")        goPage("produits");
-    else if (id === "sell")  goPage("dashboard");
-    else if (id === "service") goPage("prestataires");
-    else if (id === "delivery") {
-      goPage("livraison");
-      setTimeout(() => setDemandeLivraisonOpen(true), 300);
-    }
-
-    setPendingAction(null);
-  }, [pendingAction]);
+  }, [user, executePendingAction]);
 
   // ── Marquer onboarding comme vu lors de la fermeture manuelle ──
   const handleCloseOnboarding = useCallback(() => {
     localStorage.setItem("yorix_onboarding_seen", "1");
     setOnboardingOpen(false);
   }, []);
-
-  // ── NAVIGATION (URLs indexables — source de vérité : React Router)
-  const goPage = useCallback((p, opts = {}) => {
-    navigate(pathForPage(p, opts));
-    window.scrollTo(0, 0);
-    setNotifOpen(false);
-  }, [navigate]);
-
-  // ── SUPABASE AUTH ──
-  useEffect(() => {
-    let cancelled = false;
-    supabase.auth
-      .getSession()
-      .then(({ data: { session }, error }) => {
-        if (cancelled) return;
-        if (error) console.warn("Auth getSession:", error.message);
-        if (session?.user) {
-          setUser(session.user);
-          chargerProfil(session.user.id);
-        }
-        setLoading(false);
-      })
-      .catch((e) => {
-        console.warn("Auth getSession:", e?.message || e);
-        if (!cancelled) setLoading(false);
-      });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        chargerProfil(session.user.id);
-      } else {
-        setUser(null);
-        setUserData(null);
-        setUserRole(null);
-        setNotifs([]);
-      }
-    });
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const chargerProfil = async (uid) => {
-    const profile = await getUserProfile(uid);
-    const role = getUserRole(profile);
-    setUserData(profile);
-    setUserRole(role);
-    await loadNotifsForUser(uid, 40);
-  };
 
   /* Temps réel : nouvelles lignes notifications (+ alerte bureau si autorisée) */
   useEffect(() => {
@@ -702,140 +632,6 @@ export default function YorixApp() {
       setSelectedPrest(null);
     }
   }, [route.page, route.prestSlug, allServices]);
-
-  // ── AUTH ──
-  const doLogin = async () => {
-    setAuthError(""); setAuthLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email:authForm.email, password:authForm.password });
-      if (error) throw error;
-      setUser(data.user);
-      await chargerProfil(data.user.id);
-      setAuthOpen(false);
-      if (pendingAction) {
-        setTimeout(() => executePendingAction(pendingAction), 300);
-      }
-      sendEmail({
-        to:      authForm.email,
-        subject: `Bienvenue sur Yorix, ${authForm.nom} ! 🎉`,
-        html:    emailBienvenue(authForm.nom, selectedRole),
-      }).catch(e => console.warn("Email bienvenue:", e));
-    } catch (err) { setAuthError("Email ou mot de passe incorrect."); }
-    setAuthLoading(false);
-  };
-
-  const doRegister = async () => {
-    setAuthError(""); setAuthLoading(true);
-    try {
-      if (!authForm.nom||!authForm.email||!authForm.password||!authForm.tel) throw new Error("Tous les champs sont obligatoires.");
-      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
-
-      // ═══ CONTRAT OBLIGATOIRE pour les rôles professionnels ═══
-      const PRO_ROLES = ["seller", "provider", "delivery"];
-      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
-        setPendingRegistration({
-          nom: authForm.nom,
-          email: authForm.email,
-          tel: authForm.tel,
-          password: authForm.password,
-          role: selectedRole,
-        });
-        setAuthLoading(false);
-        setContractOpen(true);
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email: authForm.email,
-        password: authForm.password,
-        options: {
-          data: {
-            display_name: authForm.nom,
-            nom: authForm.nom,
-            telephone: authForm.tel,
-            role: selectedRole
-          }
-        },
-      });
-      if (error) throw error;
-
-      const uid = data.user?.id;
-      if (!uid) throw new Error("Erreur création compte.");
-
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id:         uid,
-        nom:        authForm.nom,
-        email:      authForm.email,
-        telephone:  authForm.tel,
-        role:       selectedRole,
-        langue:     "fr",
-        actif:      true,
-        verifie:    false,
-        note:       0,
-        nombre_avis: 0,
-        total_commandes: 0,
-      });
-      if (profileError) console.error("Profile insert error:", profileError);
-
-      await supabase.from("wallets").insert({ user_id:uid, solde:0, total_gagne:0, devise:"FCFA" }).then(r => r.error && console.error(r.error));
-      await chargerProfil(uid);
-      setAuthOpen(false);
-      setAuthForm({ nom:"", email:"", tel:"", password:"" });
-      // Reset pour la prochaine inscription
-      setContractAccepted(false);
-      setPendingRegistration(null);
-      if (pendingAction) {
-        setTimeout(() => executePendingAction(pendingAction), 500);
-      }
-    } catch (err) {
-      console.error("Register error:", err);
-      setAuthError(err.message.includes("already") ? "Cet email est déjà utilisé." : err.message);
-    }
-    setAuthLoading(false);
-  };
-
-  const doGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider:"google", options:{ redirectTo:window.location.origin } });
-    if (error) setAuthError(error.message);
-  };
-
-  const doLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null); setUserData(null); setUserRole(null);
-    setDashTab("overview");
-    goPage("home");
-  };
-
-  // ═══ HANDLER : Contrat accepté → reprendre l'inscription ═══
-  const handleContractAccepted = async (acceptanceData) => {
-    setContractOpen(false);
-    setContractAccepted(true);
-    // Re-déclencher l'inscription maintenant que le contrat est accepté
-    setTimeout(() => {
-      doRegister();
-    }, 200);
-  };
-
-  // ── PANIER ──
-  const addToCart = useCallback((p) => {
-    const cartItem = makeProductCartItem(p);
-    if (!cartItem) return;
-    setCartItems((prev) => upsertCartItem(prev, cartItem));
-  }, []);
-
-  const addServiceToCart = useCallback((service) => {
-    const cartItem = makeServiceCartItem(service);
-    if (!cartItem) return;
-    setCartItems((prev) => upsertCartItem(prev, cartItem));
-  }, []);
-
-  const changeQty = (id, d, kind = null) => setCartItems((prev) => updateCartQty(prev, id, kind, d));
-  const removeItem = (id, kind = null) => setCartItems((prev) => removeCartItem(prev, id, kind));
-  const cartSummary = useMemo(
-    () => computeCartSummary(cartItems, commerceDeliveryPolicy),
-    [cartItems, commerceDeliveryPolicy],
-  );
-  const totalQty = cartSummary.qty;
 
   const persistCheckoutContact = useCallback(async (patch) => {
     if (!user?.id || !patch) return;
@@ -1318,6 +1114,90 @@ export default function YorixApp() {
     };
   }, [page, route.canonicalPath, route.citySlug, route.cityMode, location.pathname, detailProduct]);
 
+  const pagesCtx = {
+    page,
+    route,
+    user,
+    userData,
+    userRole,
+    dark,
+    goPage,
+    filterCat,
+    setFilterCat,
+    search,
+    setSearch,
+    produits,
+    produitsLoading,
+    wishlist,
+    addToCart,
+    toggleWish,
+    openProductUrl,
+    setOnboardingOpen,
+    allServices,
+    nlEmail,
+    setNlEmail,
+    nlSent,
+    setNlSent,
+    commerceDeliveryPolicy,
+    showSeoLocal,
+    detailProduct,
+    detailProductLoading,
+    needsProductListingChunk,
+    showProduits,
+    seoCityName,
+    produitsFiltres,
+    showLivraison,
+    showPrestataires,
+    selectedPrest,
+    setSelectedPrest,
+    prestSyncFilters,
+    addServiceToCart,
+    cartItems,
+    cartSummary,
+    changeQty,
+    removeItem,
+    setCartItems,
+    persistCheckoutContact,
+    setAuthTab,
+    setSelectedRole,
+    setAuthOpen,
+    setDemandeLivraisonOpen,
+    notifs,
+    marquerNotifLue,
+    marquerToutesLues,
+    supprimerNotif,
+    loadNotifsForUser,
+    setNotifPrefs,
+    isSiteMarketingPage,
+    inscriptionSent,
+    setInscriptionSent,
+    inscriptionForm,
+    setInscriptionForm,
+    inscriptionError,
+    inscriptionLoading,
+    soumettreCandidaturePrestataire,
+    academyCourses,
+    academyLoading,
+    goAcademyDetail,
+    blogFilter,
+    setBlogFilter,
+    selectedCourse,
+    goAcademyContact,
+    dashTab,
+    setDashTab,
+    getDashNav,
+    roleChipClass,
+    doLogout,
+    loyaltyPts,
+    setLoyaltyPts,
+    totalQty,
+    waOpen,
+    setWaOpen,
+    tabActive,
+    unread,
+  };
+
+
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
       <div style={{ width:40, height:40, border:"4px solid #e2ddd6", borderTopColor:"#1a6b3a", borderRadius:"50%", animation:"spin .7s linear infinite" }}/>
@@ -1374,357 +1254,53 @@ export default function YorixApp() {
         />
       )}
 
-      {/* ── AUTH MODAL ── */}
-      {authOpen && (
-        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setAuthOpen(false)}>
-          <div className="modal" style={{width:"100%",maxWidth:480,margin:"0 auto"}}>
-            <button className="modal-close" onClick={() => setAuthOpen(false)}>✕</button>
-            <div className="modal-title">{authTab==="login" ? "Bon retour ! 👋" : "Rejoindre Yorix 🇨🇲"}</div>
-            <p className="modal-sub">Votre marketplace camerounaise de confiance</p>
-            <div className="auth-tabs">
-              <button className={`auth-tab${authTab==="login"?" active":""}`} onClick={() => { setAuthTab("login"); setAuthError(""); }}>🔑 Connexion</button>
-              <button className={`auth-tab${authTab==="register"?" active":""}`} onClick={() => { setAuthTab("register"); setAuthError(""); }}>🚀 Inscription</button>
-            </div>
-            {authError && <div className="error-msg">⚠️ {authError}</div>}
-
-            {authTab === "register" && (
-              <>
-                <div style={{background:"var(--green-pale)",border:"1px solid var(--green-light)",borderRadius:9,padding:"10px 12px",marginBottom:12,fontSize:".78rem",color:"var(--green)",fontWeight:600}}>
-                  👇 Choisissez votre profil pour commencer
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-                  {[
-                    {id:"buyer",   icon:"🛍️", label:"Acheteur",    desc:"J'achète des produits"},
-                    {id:"seller",  icon:"🏪", label:"Vendeur",     desc:"Je vends mes produits"},
-                    {id:"delivery",icon:"🚚", label:"Livreur",     desc:"J'effectue des livraisons"},
-                    {id:"provider",icon:"👷", label:"Prestataire", desc:"Je propose des services"},
-                  ].map(r => (
-                    <div
-                      key={r.id}
-                      onClick={() => setSelectedRole(r.id)}
-                      style={{
-                        border:`2px solid ${selectedRole===r.id?"var(--green)":"var(--border)"}`,
-                        borderRadius:10,padding:"12px 10px",cursor:"pointer",
-                        background:selectedRole===r.id?"var(--green-pale)":"var(--surface)",
-                        textAlign:"center",transition:"all .2s",
-                      }}
-                    >
-                      <div style={{fontSize:"1.8rem",marginBottom:4}}>{r.icon}</div>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".82rem",color:"var(--ink)"}}>{r.label}</div>
-                      <div style={{fontSize:".67rem",color:"var(--gray)",marginTop:2}}>{r.desc}</div>
-                      {selectedRole===r.id && <div style={{marginTop:5,fontSize:".62rem",fontWeight:700,color:"var(--green)"}}>✅ Sélectionné</div>}
-                    </div>
-                  ))}
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Nom complet <span>*</span></label>
-                  <input className="form-input" placeholder="Ex: Amina Bello" value={authForm.nom} onChange={e => setAuthForm(f=>({...f,nom:e.target.value}))}/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Téléphone <span>*</span></label>
-                  <input className="form-input" type="tel" placeholder="+237 6XX XXX XXX" value={authForm.tel} onChange={e => setAuthForm(f=>({...f,tel:e.target.value}))}/>
-                </div>
-              </>
-            )}
-            <div className="form-group">
-              <label className="form-label">Email <span>*</span></label>
-              <input className="form-input" type="email" placeholder="votre@email.com" value={authForm.email} onChange={e => setAuthForm(f=>({...f,email:e.target.value}))}/>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Mot de passe <span>*</span></label>
-              <PasswordInput
-                value={authForm.password}
-                onChange={(val) => setAuthForm(f => ({ ...f, password: val }))}
-                placeholder={authTab === "login" ? "Entrez votre mot de passe" : "Choisissez un mot de passe"}
-                autoComplete={authTab === "login" ? "current-password" : "new-password"}
-                showStrength={authTab === "register"}
-                showRules={authTab === "register"}
-                ariaLabel="Mot de passe"
-                id="auth-password"
-              />
-              {authTab === "login" && (
-                <div style={{
-                  fontSize: ".7rem",
-                  color: "var(--gray)",
-                  marginTop: 5,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}>
-                  💡 Cliquez sur l'œil pour afficher ou masquer votre mot de passe
-                </div>
-              )}
-            </div>
-
-            <button className="form-submit" onClick={authTab==="login" ? doLogin : doRegister} disabled={authLoading} style={{fontSize:".9rem",padding:"13px"}}>
-              {authLoading
-                ? <><div className="spinner" style={{width:16,height:16,borderWidth:2}}/>Chargement...</>
-                : authTab==="login"
-                  ? "🔑 Se connecter"
-                  : `🚀 Créer mon compte ${selectedRole==="buyer"?"Acheteur":selectedRole==="seller"?"Vendeur":selectedRole==="delivery"?"Livreur":"Prestataire"}`
-              }
-            </button>
-            {authTab==="register" && (
-              <p style={{fontSize:".68rem",color:"var(--gray)",textAlign:"center",marginTop:8}}>
-                En vous inscrivant, vous acceptez nos conditions d'utilisation
-              </p>
-            )}
-            <div className="divider">ou</div>
-            <button className="social-btn" onClick={doGoogle}><span>🇬</span> Continuer avec Google</button>
-          </div>
-        </div>
-      )}
+      <YorixAuthModal
+        authOpen={authOpen}
+        setAuthOpen={setAuthOpen}
+        authTab={authTab}
+        setAuthTab={setAuthTab}
+        selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        authForm={authForm}
+        setAuthForm={setAuthForm}
+        authError={authError}
+        setAuthError={setAuthError}
+        authLoading={authLoading}
+        doLogin={doLogin}
+        doRegister={doRegister}
+        doGoogle={doGoogle}
+      />
 
       {/* ── EN-TÊTE STICKY (marketplace fluide desktop + mobile) ── */}
-      <div className={`header-sticky-stack${navCompact ? " header-sticky-stack--compact" : ""}`}>
-      <div className="topbar">
-        <div className="topbar-l">
-          <div className="flag-wrap">
-            <span className="flag"><span className="fg"/><span className="fr"/><span className="fy"/></span>
-            <span>Cameroun 🇨🇲</span>
-          </div>
-          <span>FR / EN</span>
-          <span>📞 +237 696 56 56 54</span>
-        </div>
-        <div className="topbar-r">
-          <span onClick={()=>goPage("aide")}>🆘 Aide</span>
-          <span onClick={()=>goPage("contact")}>📞 Contact</span>
-          {user
-            ? <span style={{color:"#b7e4c7"}}>👤 {userData?.nom || user.email?.split("@")[0]}</span>
-            : <span onClick={()=>{ setAuthTab("login"); setAuthOpen(true); }}>🔑 Se connecter</span>
-          }
-        </div>
-      </div>
-
-      <nav className="navbar">
-        <div className="logo-wrap" onClick={()=>goPage("home")}>
-          <div className="logo-txt">Yo<span>rix</span><sup>CM</sup></div>
-        </div>
-
-        <div className="nav-search-wrap">
-          <div className="nav-search">
-            <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} aria-label="Filtrer par catégorie">
-              <option value="">Tout</option>
-              {CATS.map(c=><option key={c}>{c}</option>)}
-            </select>
-            <input
-              placeholder="Produit, marque, mot-clé…"
-              value={search}
-              onChange={e=>setSearch(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&goPage("produits")}
-              autoComplete="off"
-              aria-label="Rechercher dans le catalogue"
-              aria-expanded={search.trim().length >= 2}
-              aria-haspopup="listbox"
-            />
-            {search.trim().length >= 2 && (
-              <div className="nav-search-dd" role="listbox" aria-label="Suggestions catalogue">
-                {produits
-                  .filter(p =>
-                    (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
-                    (p.description_fr || "").toLowerCase().includes(search.toLowerCase())
-                  )
-                  .slice(0, 8)
-                  .map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className="nav-search-dd-item"
-                      role="option"
-                      onClick={() => {
-                        setSearch("");
-                        goPage("produits");
-                      }}
-                    >
-                      {p.image ? (
-                        <img src={p.image} className="nav-search-dd-img" alt="" onError={(e)=>{ e.currentTarget.style.visibility="hidden"; }} />
-                      ) : (
-                        <span className="nav-search-dd-img nav-search-dd-ph" aria-hidden>📦</span>
-                      )}
-                      <div style={{minWidth:0}}>
-                        <div className="nav-search-dd-t">{p.name_fr}</div>
-                        <div className="nav-search-dd-p">{p.prix?.toLocaleString()} FCFA</div>
-                      </div>
-                    </button>
-                  ))}
-                {produits.filter(p =>
-                  (p.name_fr || "").toLowerCase().includes(search.toLowerCase())
-                ).length === 0 && (
-                  <div className="nav-search-dd-empty">
-                    Aucun résultat pour « {search} » — touche Entrée pour ouvrir le catalogue filtré.
-                  </div>
-                )}
-              </div>
-            )}
-            <button type="button" onClick={()=>goPage("produits")} aria-label="Lancer la recherche catalogue">🔍</button>
-          </div>
-        </div>
-
-        <div className="nav-actions">
-          <button
-            type="button"
-            className="nav-cta-onboard"
-            onClick={() => setOnboardingOpen(true)}
-            title="Que cherchez-vous ?"
-          >
-            🚀 Démarrer
-          </button>
-
-          <button
-            className="dark-toggle"
-            onClick={()=>setDark(d=>!d)}
-            title={dark?"Mode clair":"Mode sombre"}
-          >
-            {dark?"☀️":"🌙"}
-          </button>
-
-          {user && (
-            <button className="icon-btn" onClick={()=>setNotifOpen(o=>!o)} title="Notifications">
-              🔔{unread>0 && <span className="ibadge">{unread}</span>}
-            </button>
-          )}
-
-          <button className="icon-btn" onClick={()=>goPage("cart")} title="Mon panier">
-            🛒{totalQty>0 && <span className="ibadge">{totalQty}</span>}
-          </button>
-
-          {!user ? (
-            <>
-              <button
-                className="btn-ghost"
-                onClick={()=>{ setAuthTab("login"); setAuthOpen(true); }}
-              >
-                🔑 Connexion
-              </button>
-              <button
-                className="btn-green"
-                onClick={()=>{ setAuthTab("register"); setSelectedRole("buyer"); setAuthOpen(true); }}
-              >
-                🚀 S'inscrire
-              </button>
-            </>
-          ) : (
-            <>
-              <span className={`role-chip ${roleChipClass()}`}>
-                {ROLE_LABELS[userRole||"buyer"]}
-              </span>
-              <div
-                className="user-av"
-                onClick={()=>goPage("dashboard")}
-                title="Mon espace"
-              >
-                {(userData?.nom||user.email||"?")[0].toUpperCase()}
-              </div>
-              <button className="btn-red" onClick={doLogout} title="Déconnexion">
-                🚪 Déconnexion
-              </button>
-            </>
-          )}
-        </div>
-      </nav>
-
-      <div className="nav-tabs-row" ref={navQuickRef}>
-        <nav className="nav-tabs" aria-label="Rubriques Yorix">
-          {TABS.map((t) => (
-            <div key={t.p} className={`tab${tabActive(t.p) ? " active" : ""}`} onClick={() => { setNavQuickOpen(false); goPage(t.p); }} role="presentation">
-              {t.l}
-            </div>
-          ))}
-        </nav>
-        <div className="nav-quick-wrap">
-          <button
-            type="button"
-            className="nav-quick-btn"
-            aria-expanded={navQuickOpen}
-            onClick={() => setNavQuickOpen((o) => !o)}
-          >
-            ☰ Navigation
-          </button>
-          {navQuickOpen && (
-            <div className="nav-quick-panel" role="dialog" aria-label="Navigation Yorix">
-              <div className="nav-quick-mega-cols">
-                <div className="nav-quick-section">
-                  <h4>Marketplace</h4>
-                  <div className="nav-quick-links">
-                    {[
-                      { ic: "🏠", l: "Accueil", p: "home" },
-                      { ic: "🛍️", l: "Produits & catalogue", p: "produits" },
-                      { ic: "🛒", l: "Panier · paiement sécurisé", p: "cart" },
-                      { ic: "🏷️", l: "Bons plans du moment", p: "bonsPlans" },
-                      { ic: "🚚", l: "Livraison & suivi", p: "livraison" },
-                    ].map((x) => (
-                      <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>
-                        <span className="nav-quick-ico">{x.ic}</span>
-                        <span>{x.l}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="nav-quick-section">
-                  <h4>Confiance &amp; croissance</h4>
-                  <div className="nav-quick-links">
-                    {[
-                      { ic: "🔐", l: "Escrow acheteur", p: "escrow" },
-                      { ic: "🧑‍🔧", l: "Prestataires vérifiés", p: "prestataires" },
-                      { ic: "💼", l: "Yorix Business", p: "business" },
-                      { ic: "🎓", l: "Academy", p: "academy" },
-                      { ic: "📰", l: "Blog & tendances CM", p: "blog" },
-                      { ic: "⭐", l: "Programme fidélité", p: "loyalty" },
-                    ].map((x) => (
-                      <button key={x.l} type="button" onClick={() => { setNavQuickOpen(false); goPage(x.p); }}>
-                        <span className="nav-quick-ico">{x.ic}</span>
-                        <span>{x.l}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="nav-quick-section">
-                  <h4>Support Yorix</h4>
-                  <div className="nav-quick-links">
-                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("contact"); }}>
-                      <span className="nav-quick-ico">📞</span>
-                      <span>Contact relation client</span>
-                    </button>
-                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("aide"); }}>
-                      <span className="nav-quick-ico">🆘</span>
-                      <span>SOS · centre d&apos;aide</span>
-                    </button>
-                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("faq"); }}>
-                      <span className="nav-quick-ico">❓</span>
-                      <span>FAQ marketplace</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="pay-strip">
-        <b style={{color:"var(--ink)"}}>Paiement :</b>
-        <div className="pay-methods"><span className="pm mtn-b">📱 MTN MoMo</span><span className="pm ora-b">🔶 Orange Money</span><span className="pm">💳 Carte</span><span className="pm">💵 Cash</span></div>
-        <div className="strip-right">
-          <span>🚚 J+1 Douala & Yaoundé</span>
-          <span
-            role="link"
-            tabIndex={0}
-            onClick={() => goPage("bonsPlans")}
-            onKeyDown={(e) => e.key === "Enter" && goPage("bonsPlans")}
-            style={{
-              cursor: "pointer",
-              fontWeight: 700,
-              color: "var(--green)",
-              textDecoration: "underline",
-            }}
-          >
-            Livraison offerte dès {commerceDeliveryPolicy.freeShippingThresholdXaf.toLocaleString("fr-FR")} FCFA
-          </span>
-          <span>🔐 Escrow sécurisé</span>
-          {user && <span style={{ color: "var(--gold)" }}>👤 {userData?.nom || user.email}</span>}
-        </div>
-      </div>
-      </div>{/* /.header-sticky-stack */}
+      <YorixHeader
+        navCompact={navCompact}
+        dark={dark}
+        setDark={setDark}
+        user={user}
+        userData={userData}
+        userRole={userRole}
+        goPage={goPage}
+        filterCat={filterCat}
+        setFilterCat={setFilterCat}
+        search={search}
+        setSearch={setSearch}
+        produits={produits}
+        setOnboardingOpen={setOnboardingOpen}
+        setNotifOpen={setNotifOpen}
+        unread={unread}
+        totalQty={totalQty}
+        setAuthTab={setAuthTab}
+        setAuthOpen={setAuthOpen}
+        setSelectedRole={setSelectedRole}
+        doLogout={doLogout}
+        navQuickRef={navQuickRef}
+        navQuickOpen={navQuickOpen}
+        setNavQuickOpen={setNavQuickOpen}
+        TABS={TABS}
+        tabActive={tabActive}
+        commerceDeliveryPolicy={commerceDeliveryPolicy}
+        roleChipClass={roleChipClass}
+      />
 
       {/* ── NOTIFICATIONS (hors header sticky — z-index overlay) ── */}
       {notifOpen && user && (
@@ -1747,433 +1323,7 @@ export default function YorixApp() {
       )}
 
       <RouteErrorBoundary resetKeys={[page, location.pathname]}>
-      {/* ════════ PAGE : ACCUEIL ════════ */}
-      {page==="home"&&(
-        <Suspense fallback={<RouteSuspenseFallback minHeight={280} label="Chargement de l'accueil..." />}>
-          <LazyHomePage
-            filterCat={filterCat}
-            setFilterCat={setFilterCat}
-            search={search}
-            setSearch={setSearch}
-            produitsLoading={produitsLoading}
-            produits={produits}
-            user={user}
-            userData={userData}
-            wishlist={wishlist}
-            addToCart={addToCart}
-            toggleWish={toggleWish}
-            openProductUrl={openProductUrl}
-            setOnboardingOpen={setOnboardingOpen}
-            goPage={goPage}
-            allServices={allServices}
-            nlEmail={nlEmail}
-            setNlEmail={setNlEmail}
-            nlSent={nlSent}
-            setNlSent={setNlSent}
-            freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf}
-          />
-        </Suspense>
-      )}
-
-      {/* ════════ PAGE : PRODUITS ════════ */}
-      {showSeoLocal && page === "livraison" && route.citySlug && CITY_BY_SLUG[route.citySlug] && (
-        <SeoLocalIntro
-          city={CITY_BY_SLUG[route.citySlug]}
-          mode="livraison"
-          goPage={goPage}
-        />
-      )}
-      {showSeoLocal && page === "seoCity" && route.citySlug && CITY_BY_SLUG[route.citySlug] && (
-        <SeoLocalIntro
-          city={CITY_BY_SLUG[route.citySlug]}
-          mode={route.cityMode || "hub"}
-          goPage={goPage}
-        />
-      )}
-
-      {page === "productDetail" && (
-        <div className="anim">
-          {detailProductLoading ? (
-            <div className="loading" style={{ minHeight: 320, justifyContent: "center" }}>
-              <div className="spinner" /> Chargement du produit...
-            </div>
-          ) : detailProduct ? (
-            <Suspense fallback={<RouteSuspenseFallback minHeight={320} label="Chargement du produit..." />}>
-              <LazyFicheProduit
-                product={detailProduct}
-                user={user}
-                userData={userData}
-                onClose={() => goPage("produits")}
-                onAddToCart={addToCart}
-              />
-            </Suspense>
-          ) : (
-            <section className="sec anim">
-              <div className="empty-state">
-                <div className="empty-icon">🔍</div>
-                <p>Produit introuvable.</p>
-                <button className="form-submit" style={{ width: "auto", marginTop: 16 }} type="button" onClick={() => goPage("produits")}>
-                  ← Retour aux produits
-                </button>
-              </div>
-            </section>
-          )}
-        </div>
-      )}
-
-      {needsProductListingChunk && (
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement catalogue..." />}>
-          <LazyProductRouteSections
-            showProduits={showProduits}
-            page={page}
-            seoCityName={seoCityName}
-            produitsFiltres={produitsFiltres}
-            produitsLoading={produitsLoading}
-            produits={produits}
-            filterCat={filterCat}
-            setFilterCat={setFilterCat}
-            search={search}
-            user={user}
-            userData={userData}
-            wishlist={wishlist}
-            addToCart={addToCart}
-            toggleWish={toggleWish}
-            openProductUrl={openProductUrl}
-            dark={dark}
-            goPage={goPage}
-          />
-        </Suspense>
-      )}
-
-      {showLivraison && (
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement livraison..." />}>
-          <LazyLivraisonPage
-            route={route}
-            user={user}
-            userData={userData}
-            setDemandeLivraisonOpen={setDemandeLivraisonOpen}
-            setAuthTab={setAuthTab}
-            setSelectedRole={setSelectedRole}
-            setAuthOpen={setAuthOpen}
-          />
-        </Suspense>
-      )}
-
-      {/* ════════ PAGE : PRESTATAIRES ════════ */}
-      {showPrestataires&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement prestataires..." />}>
-          <LazyPrestPage
-            user={user}
-            userData={userData}
-            allServices={allServices}
-            goPage={goPage}
-            setSelectedPrest={setSelectedPrest}
-            selectedPrest={selectedPrest}
-            onOpenPrestDetail={(p) =>
-              goPage("prestDetail", { prestSlug: buildEntitySlug(p.name, p.id) })
-            }
-            onClosePrestDetail={() => {
-              if (route.metierSlug && route.villeSlug) {
-                goPage("prestataires", {
-                  metierSlug: route.metierSlug,
-                  villeSlug: route.villeSlug,
-                });
-              } else if (page === "seoCity" && route.cityMode === "prestataires" && route.citySlug) {
-                goPage("seoCity", { citySlug: route.citySlug, mode: "prestataires" });
-              } else {
-                goPage("prestataires");
-              }
-            }}
-            syncFilters={prestSyncFilters}
-            onAddServiceToCart={addServiceToCart}
-          />
-        </Suspense>
-      )}
-
-      {page==="cart"&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement panier..." />}>
-          <LazyCartPage
-            cartItems={cartItems}
-            cartSummary={cartSummary}
-            changeQty={changeQty}
-            removeItem={removeItem}
-            goPage={goPage}
-            addToCart={addToCart}
-            produits={produits}
-            wishlist={wishlist}
-            toggleWish={toggleWish}
-          />
-        </Suspense>
-      )}
-
-      {page==="checkout"&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement checkout..." />}>
-          <LazyCheckoutPage
-            user={user}
-            userData={userData}
-            cartItems={cartItems}
-            summary={cartSummary}
-            setCartItems={setCartItems}
-            goPage={goPage}
-            fallbackWhatsappNumber={PAYMENT_WA_NUMBER}
-            momoNumber={MOMO_NUMBER}
-            orangeNumber={ORANGE_NUMBER}
-            persistCheckoutContact={persistCheckoutContact}
-          />
-        </Suspense>
-      )}
-
-      {page==="notifications"&&!user&&(
-        <section className="sec anim" style={{ maxWidth: 480, margin: "0 auto", textAlign: "center", padding: "48px 20px" }}>
-          <h1 className="sec-title" style={{ fontSize: "1.25rem" }}>Vos notifications Yorix</h1>
-          <p style={{ color: "var(--gray)", marginBottom: 22, fontSize: ".9rem", lineHeight: 1.55 }}>
-            Connectez-vous pour suivre les messages, commandes, paiements et livraisons en temps réel.
-          </p>
-          <button
-            type="button"
-            className="form-submit"
-            style={{ width: "auto", padding: "12px 28px" }}
-            onClick={() => { setAuthTab("login"); setAuthOpen(true); }}
-          >
-            Se connecter
-          </button>
-        </section>
-      )}
-      {page==="notifications"&&user&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement notifications..." />}>
-          <LazyNotificationsPage
-            user={user}
-            notifs={notifs}
-            goPage={goPage}
-            onMarkRead={marquerNotifLue}
-            onMarkAllRead={marquerToutesLues}
-            onDismiss={supprimerNotif}
-            refreshNotificationsFull={() => loadNotifsForUser(user.id, 120)}
-            onPrefsUpdated={setNotifPrefs}
-          />
-        </Suspense>
-      )}
-
-      {isSiteMarketingPage && (
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement page..." />}>
-          <LazySiteMarketingPages
-            page={page}
-            goPage={goPage}
-            setAuthOpen={setAuthOpen}
-            setAuthTab={setAuthTab}
-            setSelectedRole={setSelectedRole}
-            inscriptionSent={inscriptionSent}
-            setInscriptionSent={setInscriptionSent}
-            inscriptionForm={inscriptionForm}
-            setInscriptionForm={setInscriptionForm}
-            inscriptionError={inscriptionError}
-            inscriptionLoading={inscriptionLoading}
-            submitInscriptionPrestataire={soumettreCandidaturePrestataire}
-            academyCourses={academyCourses}
-            academyLoading={academyLoading}
-            goAcademyDetail={goAcademyDetail}
-            blogFilter={blogFilter}
-            setBlogFilter={setBlogFilter}
-            nlEmail={nlEmail}
-            setNlEmail={setNlEmail}
-            nlSent={nlSent}
-            setNlSent={setNlSent}
-            user={user}
-            userData={userData}
-          />
-        </Suspense>
-      )}
-
-      {page==="academyDetail"&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement formation..." />}>
-          <LazyAcademyDetail
-            course={selectedCourse}
-            goPage={goPage}
-            goContact={goAcademyContact}
-          />
-        </Suspense>
-      )}
-
-      {page==="academyContact"&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement formulaire..." />}>
-          <LazyAcademyContactForm
-            course={selectedCourse}
-            user={user}
-            userData={userData}
-            goPage={goPage}
-          />
-        </Suspense>
-      )}
-
-      {/* ═══════════════ PAGE : BONS PLANS ═══════════════ */}
-      {page === "bonsPlans" && (
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement bons plans..." />}>
-          <LazyPromotionsPage goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
-        </Suspense>
-      )}
-
-      {/* ═══════════════ PAGE : FIDÉLITÉ ═══════════════ */}
-      {page==="loyalty"&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement fidélité..." />}>
-          <LazyLoyaltyPage
-            user={user}
-            userData={userData}
-            goPage={goPage}
-            setAuthOpen={setAuthOpen}
-            setAuthTab={setAuthTab}
-          />
-        </Suspense>
-      )}
-
-      {/* ════════ PAGE : DASHBOARD ════════ */}
-      {page==="dashboard"&&(
-        user?(
-          <div className="dash-layout anim">
-            <div className="dash-sidebar">
-              <div className="dash-avatar">{userData?.nom?.[0]||"U"}</div>
-              <div className="dash-name" title={userData?.nom || user.email}>
-                {userData?.nom || user.email?.split("@")[0] || "Utilisateur"}
-              </div>
-              <div className="dash-role-badge"><span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole||"buyer"]}</span></div>
-              <div className="dash-nav">
-                {getDashNav().map(item=>(
-                  <div key={item.id} className={`dash-nav-item${dashTab===item.id?" active":""}`} onClick={()=>setDashTab(item.id)}>{item.icon} {item.label}</div>
-                ))}
-                <div className="dash-nav-divider"/>
-                <div className={`dash-nav-item${dashTab==="messages"?" active":""}`} onClick={()=>setDashTab("messages")}>💬 Messages</div>
-                <div className="dash-nav-item" onClick={doLogout} style={{color:"var(--red)"}}>🚪 Déconnexion</div>
-              </div>
-            </div>
-
-            <div className="dash-content">
-              {dashTab==="messages"&&(
-                <>
-                  <div className="dash-page-title">💬 Messagerie Yorix</div>
-                  <div className="info-msg">🔐 Messagerie sécurisée entre acheteurs et vendeurs. Tes discussions sont privées et protégées.</div>
-                  <ChatUsers
-                    user={user}
-                    userData={userData}
-                  />
-                </>
-              )}
-              {dashTab!=="messages"&&userRole==="seller"&&(
-                <Suspense fallback={<RouteSuspenseFallback label="Chargement espace vendeur..." />}>
-                  <LazySellerDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>
-                </Suspense>
-              )}
-              {dashTab!=="messages"&&userRole==="delivery"&&(
-                <Suspense fallback={<RouteSuspenseFallback label="Chargement espace livreur..." />}>
-                  <LazyDeliveryDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>
-                </Suspense>
-              )}
-              {dashTab!=="messages"&&userRole==="provider"&&(
-                <Suspense fallback={<RouteSuspenseFallback label="Chargement espace prestataire..." />}>
-                  <LazyProviderDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab}/>
-                </Suspense>
-              )}
-              {dashTab!=="messages"&&(userRole==="buyer"||!userRole)&&(
-                <Suspense fallback={<RouteSuspenseFallback label="Chargement tableau de bord..." />}>
-                  <LazyBuyerDashboard user={user} userData={userData} wishlist={wishlist} totalQty={totalQty} loyaltyPts={loyaltyPts} setLoyaltyPts={setLoyaltyPts} dashTab={dashTab} goPage={goPage}/>
-                </Suspense>
-              )}
-            </div>
-          </div>
-        ):(
-          <div className="empty-state anim" style={{padding:"60px 0"}}>
-            <div className="empty-icon">🔐</div>
-            <p>Connectez-vous pour accéder à votre espace</p>
-            <button className="form-submit" style={{width:"auto",padding:"11px 28px",marginTop:16}} onClick={()=>setAuthOpen(true)}>Se connecter</button>
-          </div>
-        )
-      )}
-
-      {/* Newsletter hors home */}
-      {page!=="home"&&(
-        <div className="newsletter">
-          <div className="nl-title">📬 Restez informé(e)</div>
-          <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
-          {nlSent?<div style={{background:"rgba(255,255,255,.2)",borderRadius:8,padding:"9px 18px",color:"#fff",fontWeight:600}}>✅ Abonné(e) !</div>
-            :<div className="nl-form"><input className="nl-input" placeholder="Votre email..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}/><button className="nl-btn" onClick={async()=>{if(nlEmail){await supabase.from("newsletter").insert({email:nlEmail}).catch(e => console.warn(e?.message));setNlSent(true);}}}>S'abonner 🚀</button></div>}
-        </div>
-      )}
-
-      {/* WA FLOAT */}
-      <div className="yorix-fab-stack" aria-live="polite">
-        {user && (userData?.role === "admin" || userData?.role === "superadmin") && page !== "admin" && (
-          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title="Ouvrir l’administration">
-            ⚙️ Admin Yorix
-          </button>
-        )}
-        <div className="wa-float">
-          {waOpen && (
-            <div className="wa-card">
-              <div className="wa-card-title">💬 Contacter Yorix</div>
-              <div className="wa-card-sub">Support 7j/7 · Réponse rapide</div>
-              <a href={`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! J'ai besoin d'aide.")}`} target="_blank" rel="noreferrer" className="wa-link wa-link-green">📱 WhatsApp +237 696 56 56 54</a>
-              <a href="tel:+237696565654" className="wa-link wa-link-ghost">📞 Appeler</a>
-              <a href="mailto:support@yorix.cm" className="wa-link wa-link-ghost">✉️ support@yorix.cm</a>
-            </div>
-          )}
-          <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <div className="wa-pulse"/>
-            <button type="button" className="wa-btn" aria-expanded={waOpen} onClick={()=>setWaOpen(o=>!o)}>{waOpen?"✕":"💬"}</button>
-          </div>
-        </div>
-      </div>
-
-      {/* MOBILE NAV */}
-      <div className="mobile-nav">
-        <div className="mn-inner">
-          {[
-            {icon:"🏠",label:"Accueil",p:"home"},
-            {icon:"🛍️",label:"Produits",p:"produits"},
-            {icon:"🚚",label:"Livraison",p:"livraison"},
-            {icon:"📊",label:"Mon espace",p:"dashboard"},
-            {icon:"💬",label:"WhatsApp",p:"wa"},
-          ].map(item => (
-            <div
-              key={item.label}
-              className={`mn-item${tabActive(item.p)?" active":""}`}
-              onClick={() => {
-                if (item.p === "wa") {
-                  window.open(`https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! J'ai besoin d'aide.")}`, "_blank");
-                } else if (item.p === "dashboard" && !user) {
-                  setAuthTab("register");
-                  setAuthOpen(true);
-                } else {
-                  goPage(item.p);
-                }
-              }}
-            >
-              <div className="mn-icon">{item.icon}</div>
-              <div className="mn-label">{item.label}</div>
-              {item.p==="dashboard" && !user && (
-                <div style={{position:"absolute",top:0,right:2,background:"var(--green)",color:"#fff",fontSize:".45rem",fontWeight:700,padding:"1px 3px",borderRadius:3}}>S'inscrire</div>
-              )}
-              {item.p==="dashboard" && unread>0 && user && <div className="mn-badge">{unread}</div>}
-            </div>
-          ))}
-        </div>
-        {!user && (
-          <div style={{borderTop:"1px solid var(--border)",padding:"8px 16px",display:"flex",gap:8}}>
-            <button
-              onClick={() => { setAuthTab("login"); setAuthOpen(true); }}
-              style={{flex:1,padding:"9px",borderRadius:8,border:"1.5px solid var(--border)",background:"var(--surface)",fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:".78rem",cursor:"pointer",color:"var(--ink)"}}
-            >🔑 Connexion</button>
-            <button
-              onClick={() => { setAuthTab("register"); setSelectedRole("buyer"); setAuthOpen(true); }}
-              style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:"var(--green)",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:".78rem",cursor:"pointer",color:"#fff"}}
-            >🚀 S'inscrire gratuitement</button>
-          </div>
-        )}
-      </div>
-
-      {/* ════════ PAGE : ADMIN ════════ */}
-      {page==="admin"&&(
-        <Suspense fallback={<RouteSuspenseFallback label="Chargement admin..." />}>
-          <LazyAdminDashboard user={user} userData={userData} goPage={goPage}/>
-        </Suspense>
-      )}
+        <YorixPages ctx={pagesCtx} />
       </RouteErrorBoundary>
 
       <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
