@@ -48,6 +48,11 @@ export function AdminDashboard({ user, userData, goPage }) {
     avgBasketShippable: 0,
     estimatedLogisticsSubsidy: 0,
   });
+  const [notifStackStats, setNotifStackStats] = useState({
+    notifsWeek: 0,
+    pushDevices: 0,
+    deliveryLogsWeek: 0,
+  });
   const [commerceForm, setCommerceForm]         = useState({
     threshold: 50000,
     fee: 1500,
@@ -110,10 +115,32 @@ export function AdminDashboard({ user, userData, goPage }) {
           .order("created_at", { ascending: false })
           .limit(650),
         supabase.from("commerce_settings").select("*").eq("id", 1).maybeSingle(),
+        supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", weekAgo.toISOString()),
+        supabase.from("push_subscriptions").select("id", { count: "exact", head: true }),
+        supabase
+          .from("notification_delivery_log")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", weekAgo.toISOString()),
       ]);
 
-      const [usersR, profilesR, prodsR, ordersR, delivsR, prestsR, financeKpiR, paymentsR, intentsR, commerceSetR] =
-        results;
+      const [
+        usersR,
+        profilesR,
+        prodsR,
+        ordersR,
+        delivsR,
+        prestsR,
+        financeKpiR,
+        paymentsR,
+        intentsR,
+        commerceSetR,
+        notifsWeekR,
+        pushSubsR,
+        delivLogR,
+      ] = results;
 
       const rawUsers    = usersR.status    === "fulfilled" ? (usersR.value.data    || []) : [];
       const rawProfiles = profilesR.status === "fulfilled" ? (profilesR.value.data || []) : [];
@@ -126,6 +153,18 @@ export function AdminDashboard({ user, userData, goPage }) {
       const paymentsData = paymentsR.status === "fulfilled" ? (paymentsR.value.data || []) : [];
       const intentsData = intentsR.status === "fulfilled" ? (intentsR.value.data || []) : [];
       const commerceRow = commerceSetR.status === "fulfilled" ? commerceSetR.value.data : null;
+
+      const pickCount = (r) => {
+        if (r.status !== "fulfilled") return 0;
+        const v = r.value;
+        if (v?.error) return 0;
+        return typeof v.count === "number" ? v.count : 0;
+      };
+      setNotifStackStats({
+        notifsWeek: pickCount(notifsWeekR),
+        pushDevices: pickCount(pushSubsR),
+        deliveryLogsWeek: pickCount(delivLogR),
+      });
 
       let freeShip = 0;
       let paidShip = 0;
@@ -530,6 +569,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     { id: "prestataires", icon: "👷", label: "Prestataires", badge: prestPending || null },
     { id: "revenus",      icon: "💰", label: "Revenus" },
     { id: "commerce_promo", icon: "🎁", label: "Promo livraison" },
+    { id: "notif_center", icon: "📣", label: "Notifs réseau" },
     { id: "loyalty",      icon: "🌟", label: "Yorix Points" },
     { id: "alertes",      icon: "🔔", label: "Alertes",      badge: alertes.length || null },
   ];
@@ -1717,6 +1757,39 @@ export function AdminDashboard({ user, userData, goPage }) {
         {/* ════════ YORIX POINTS ════════ */}
         {adminTab === "loyalty" && (
           <LoyaltyAdminTab user={user} userData={userData} showToast={showToast} />
+        )}
+
+        {adminTab === "notif_center" && (
+          <>
+            <div className="admin-page-title">📣 Réseau notifications</div>
+            <p style={{ color: "var(--gray)", fontSize: ".85rem", marginBottom: 18, maxWidth: 720, lineHeight: 1.65 }}>
+              Agrégats Supabase (fenêtre 7 jours + appareils Web Push). Les envois critiques passent aussi par{" "}
+              <code style={{ fontSize: ".72rem" }}>dispatch_notification</code> → webhook{" "}
+              <code style={{ fontSize: ".72rem" }}>CRITICAL_NOTIFY_WEBHOOK_URL</code> (WhatsApp / email / n8n).
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
+              <div className="stat-card" style={{ padding: "18px 16px" }}>
+                <div className="stat-card-icon" style={{ background: "#e6fff0" }}><span>🔔</span></div>
+                <div className="stat-card-val">{notifStackStats.notifsWeek.toLocaleString("fr-FR")}</div>
+                <div className="stat-card-lbl">Notifications créées (7 j)</div>
+              </div>
+              <div className="stat-card" style={{ padding: "18px 16px" }}>
+                <div className="stat-card-icon" style={{ background: "#e0f2fe" }}><span>📱</span></div>
+                <div className="stat-card-val">{notifStackStats.pushDevices.toLocaleString("fr-FR")}</div>
+                <div className="stat-card-lbl">Appareils push enregistrés</div>
+              </div>
+              <div className="stat-card" style={{ padding: "18px 16px" }}>
+                <div className="stat-card-icon" style={{ background: "#fff9e6" }}><span>📡</span></div>
+                <div className="stat-card-val">{notifStackStats.deliveryLogsWeek.toLocaleString("fr-FR")}</div>
+                <div className="stat-card-lbl">Logs envois push (7 j)</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 22, padding: 16, background: "var(--surface2)", borderRadius: 12, border: "1px solid var(--border)", fontSize: ".78rem", color: "var(--gray)", lineHeight: 1.55 }}>
+              <strong style={{ color: "var(--ink)" }}>Production</strong> : configurer VAPID sur le projet, déployer{" "}
+              <code>dispatch_notification</code>, brancher webhooks critiques. Les inserts in-app depuis le checkout passent par{" "}
+              <code>confirm_checkout</code> (service role) puis dispatch automatique.
+            </div>
+          </>
         )}
 
         {/* ════════ ALERTES ════════ */}

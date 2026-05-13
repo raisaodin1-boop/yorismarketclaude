@@ -14,15 +14,17 @@ const FILTERS = [
   { key: NOTIF_CATEGORIES.orders, label: "Commandes" },
   { key: NOTIF_CATEGORIES.payments, label: "Paiements" },
   { key: NOTIF_CATEGORIES.delivery, label: "Livraison" },
+  { key: NOTIF_CATEGORIES.business, label: "Business" },
+  { key: NOTIF_CATEGORIES.admin, label: "Admin" },
   { key: NOTIF_CATEGORIES.security, label: "Sécurité" },
   { key: NOTIF_CATEGORIES.promotions, label: "Promos" },
   { key: NOTIF_CATEGORIES.system, label: "Système" },
 ];
 
 function priorityClass(p) {
-  if (p === NOTIF_PRIORITIES.critical) return "notif-card-priority-critical";
-  if (p === NOTIF_PRIORITIES.important) return "notif-card-priority-important";
-  if (p === NOTIF_PRIORITIES.promo) return "notif-card-priority-promo";
+  if (p === NOTIF_PRIORITIES.critical || p === "urgent") return "notif-card-priority-critical";
+  if (p === NOTIF_PRIORITIES.important || p === "high") return "notif-card-priority-important";
+  if (p === NOTIF_PRIORITIES.promo || p === "promo") return "notif-card-priority-promo";
   return "notif-card-priority-standard";
 }
 

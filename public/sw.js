@@ -1,10 +1,66 @@
-/* Yorix CM — Service worker (shell + push). Le build copie depuis public/. */
+/* Yorix CM — Service worker : shell cache + push + navigation fallback */
+const CACHE = "yorix-sw-v2";
+const OFFLINE = "/offline.html";
+const PRECACHE = ["/", OFFLINE, "/favicon.svg", "/manifest.json"];
+
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
+
+  /* Navigation document : réseau puis cache offline */
+  if (req.mode === "navigate" || req.headers.get("Accept")?.includes("text/html")) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then((hit) => hit || caches.match(OFFLINE) || caches.match("/")),
+        ),
+    );
+    return;
+  }
+
+  /* Assets : stale-while-revalidate léger */
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      const net = fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || net;
+    }),
+  );
+});
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "yorix-outbox") {
+    event.waitUntil(Promise.resolve());
+  }
 });
 
 self.addEventListener("push", (event) => {
@@ -26,6 +82,7 @@ self.addEventListener("push", (event) => {
   const body = payload.body || "Ouvrir pour voir votre activité.";
   const url = payload.url || "/";
   const tag = payload.tag || "yorix-generic";
+  const crit = payload.priority === "critical" || payload.priority === "urgent";
 
   event.waitUntil(
     self.registration.showNotification(title, {
@@ -35,7 +92,7 @@ self.addEventListener("push", (event) => {
       tag,
       vibrate: [100, 50, 100],
       renotify: true,
-      requireInteraction: payload.priority === "critical",
+      requireInteraction: crit,
       data: { url, tag },
     }),
   );

@@ -1,9 +1,10 @@
 {
   "name": "Yorix CM — Marketplace Cameroun",
-  "short_name": "Yorix CM",
+  "short_name": "Yorix",
   "description": "La marketplace #1 au Cameroun. Achetez, vendez, faites livrer. MTN MoMo & Orange Money.",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#0d1f14",
   "theme_color": "#1a6b3a",
@@ -44,10 +45,10 @@
       "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
-      "name": "Mon espace",
-      "short_name": "Dashboard",
-      "description": "Accéder à mon tableau de bord",
-      "url": "/dashboard",
+      "name": "Notifications",
+      "short_name": "Alertes",
+      "description": "Centre de notifications Yorix",
+      "url": "/notifications",
       "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ],

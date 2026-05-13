@@ -11,6 +11,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+import { publishInAppNotification } from "../services/notificationService";
 
 // ─── 1. CATALOGUE OFFICIEL DES STATUTS ──────────────────────────────────────
 export const DELIVERY_STATUTS = {
@@ -70,25 +71,21 @@ async function logAction({ delivery, acteurId, acteurRole, action, ancienStatut,
 // ─── 4. NOTIFICATIONS IN-APP ────────────────────────────────────────────────
 export async function pushNotification({ userId, type, title, message, link, payload }) {
   if (!userId) return { ok: false, reason: "no-user" };
-  try {
-    const { error } = await supabase.from("notifications").insert({
-      user_id: userId,
-      type:    type || "delivery",
-      title:   title || "Notification Yorix",
-      message: message || "",
-      link:    link || null,
-      lu:      false,
-      payload: payload || null,
-    });
-    if (error) {
-      console.warn("[deliveryWorkflow] notification skipped:", error.message);
-      return { ok: false, reason: error.message };
-    }
-    return { ok: true };
-  } catch (e) {
-    console.warn("[deliveryWorkflow] notification exception:", e?.message);
-    return { ok: false, reason: e?.message };
+  const r = await publishInAppNotification(supabase, {
+    userId,
+    type: type || "delivery",
+    title: title || "Notification Yorix",
+    message: message || "",
+    link: link || null,
+    priority: "important",
+    category: "delivery",
+    payload: payload || null,
+  });
+  if (!r.ok) {
+    console.warn("[deliveryWorkflow] notification skipped:", r.error);
+    return { ok: false, reason: r.error };
   }
+  return { ok: true };
 }
 
 // ─── 5. WHATSAPP HELPERS ────────────────────────────────────────────────────

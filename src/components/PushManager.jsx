@@ -123,6 +123,7 @@ export function PushManager({ user, compact = false }) {
             p256dh,
             auth,
             user_agent: navigator.userAgent.slice(0, 300),
+            updated_at: new Date().toISOString(),
           },
           { onConflict: "endpoint" }
         );

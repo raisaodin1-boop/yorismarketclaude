@@ -15,6 +15,20 @@ type PrefsRow = {
   category_security?: boolean | null;
   category_promotions?: boolean | null;
   category_system?: boolean | null;
+  category_business?: boolean | null;
+  category_admin?: boolean | null;
+};
+
+const CATEGORY_PREF_COL: Record<string, keyof PrefsRow> = {
+  messages: "category_messages",
+  orders: "category_orders",
+  payments: "category_payments",
+  delivery: "category_delivery",
+  security: "category_security",
+  promotions: "category_promotions",
+  system: "category_system",
+  business: "category_business",
+  admin: "category_admin",
 };
 
 function authorize(req: Request): boolean {
@@ -31,8 +45,10 @@ function authorize(req: Request): boolean {
 function inferNotificationCategory(row: Record<string, unknown>): string {
   const c = row.category;
   if (typeof c === "string" && c.length > 0) return c;
-  const blob = `${row.type || ""} ${row.titre || ""} ${row.message || ""}`;
-  if (/payment|paiement|checkout|cinetpay/i.test(blob)) return "payments";
+  const blob = `${row.type || ""} ${row.title || ""} ${row.titre || ""} ${row.message || ""}`;
+  if (/admin|superadmin|incident|réclamation|reclamation|staff yorix|paiement bloqué/i.test(blob)) return "admin";
+  if (/business|b2b|partenaire|pro corner|yorix business/i.test(blob)) return "business";
+  if (/payment|paiement|checkout|cinetpay|escrow/i.test(blob)) return "payments";
   if (/security|fraud|litige|connexion|login|suspicious/i.test(blob)) return "security";
   if (/deliver|livraison|livreur|shipping|colis/i.test(blob)) return "delivery";
   if (/order|commande|booking|réservation|prestation|service_booking/i.test(blob)) return "orders";
@@ -44,17 +60,50 @@ function inferNotificationCategory(row: Record<string, unknown>): string {
 function inferPriority(row: Record<string, unknown>, category: string): string {
   const p = row.priority;
   if (typeof p === "string" && p.length > 0) return p;
-  if (category === "payments" || category === "security") return "critical";
-  if (category === "delivery" || category === "orders" || category === "messages") return "important";
+  if (category === "payments" || category === "security" || category === "admin") return "critical";
+  if (category === "delivery" || category === "orders" || category === "messages" || category === "business") {
+    return "important";
+  }
   if (category === "promotions") return "promo";
   return "standard";
 }
 
 function categoryPushAllowed(prefs: PrefsRow | null, category: string): boolean {
   if (!prefs) return true;
-  const col = `category_${category}` as keyof PrefsRow;
-  if (col in prefs) return prefs[col] !== false;
+  const col = CATEGORY_PREF_COL[category];
+  if (col && col in prefs) return prefs[col] !== false;
   return prefs.category_system !== false;
+}
+
+function rowTitle(row: Record<string, unknown>): string {
+  const t = row.title ?? row.titre;
+  return typeof t === "string" ? t : "";
+}
+
+async function logDelivery(
+  supabase: ReturnType<typeof createClient>,
+  entry: {
+    notification_id?: string | null;
+    user_id: string;
+    channel: string;
+    status: string;
+    detail?: string | null;
+    meta?: Record<string, unknown>;
+  },
+) {
+  try {
+    const nid = entry.notification_id ? Number(entry.notification_id) : null;
+    await supabase.from("notification_delivery_log").insert({
+      notification_id: Number.isFinite(nid) ? nid : null,
+      user_id: entry.user_id,
+      channel: entry.channel,
+      status: entry.status,
+      detail: entry.detail ?? null,
+      meta: entry.meta ?? {},
+    });
+  } catch (e) {
+    console.error("[dispatch_notification] logDelivery", e);
+  }
 }
 
 function normalizeLinkUrl(raw: unknown): string {
@@ -129,7 +178,7 @@ Deno.serve(async (req) => {
   const body = extractReqBody(rawJson);
   let notificationId = typeof body.notification_id === "string" ? body.notification_id : "";
   let userId = typeof body.user_id === "string" ? body.user_id : "";
-  let title = typeof body.titre === "string" ? body.titre : "Yorix";
+  let title = String(body.titre || (body as { title?: string }).title || "Yorix");
   let bodyText = typeof body.message === "string" ? body.message : "";
   let linkUrl = normalizeLinkUrl(body.link);
   let priority = typeof body.priority === "string" ? body.priority : "standard";
@@ -142,7 +191,7 @@ Deno.serve(async (req) => {
     const r = body.record as Record<string, unknown>;
     notificationId = notificationId || String(r.id ?? "");
     userId = userId || String(r.user_id ?? "");
-    title = (r.titre as string) ?? title;
+    title = rowTitle(r) || title;
     bodyText = (r.message as string) ?? bodyText;
     linkUrl = normalizeLinkUrl(r.link ?? linkUrl);
     category = inferNotificationCategory(r);
@@ -158,7 +207,7 @@ Deno.serve(async (req) => {
     if (error) return ok({ error: error.message }, { status: 500 });
     if (!row) return ok({ error: "notification not found" }, { status: 404 });
     userId = row.user_id as string;
-    title = (row.titre as string) ?? title;
+    title = rowTitle(row as Record<string, unknown>) || title;
     bodyText = (row.message as string) ?? bodyText;
     linkUrl = normalizeLinkUrl(row.link ?? linkUrl);
     category = inferNotificationCategory(row as Record<string, unknown>);
@@ -181,7 +230,8 @@ Deno.serve(async (req) => {
   const isCritical =
     priority === "critical" ||
     category === "security" ||
-    category === "payments";
+    category === "payments" ||
+    category === "admin";
 
   const criticalPayload = {
     event: "critical_notification",
@@ -215,6 +265,14 @@ Deno.serve(async (req) => {
 
   if (!pushEnabled || !catOk) {
     results.skipped_push = !pushEnabled ? "push_or_desktop_disabled" : "category_muted";
+    await logDelivery(supabase, {
+      notification_id: notificationId || null,
+      user_id: userId,
+      channel: "push",
+      status: "skipped",
+      detail: String(results.skipped_push),
+      meta: { category, priority },
+    });
     return ok(results);
   }
 
@@ -226,6 +284,14 @@ Deno.serve(async (req) => {
   if (subErr) return ok({ error: subErr.message }, { status: 500 });
   if (!subs?.length) {
     results.no_subscriptions = true;
+    await logDelivery(supabase, {
+      notification_id: notificationId || null,
+      user_id: userId,
+      channel: "push",
+      status: "skipped",
+      detail: "no_subscriptions",
+      meta: { category, priority },
+    });
     return ok(results);
   }
 
@@ -260,6 +326,22 @@ Deno.serve(async (req) => {
       }
     }
   }
+
+  const sent = Number(results.push_sent);
+  const failed = Number(results.push_failed);
+  let st = "skipped";
+  if (sent > 0 && failed === 0) st = "sent";
+  else if (sent > 0 && failed > 0) st = "partial";
+  else if (sent === 0 && failed > 0) st = "failed";
+
+  await logDelivery(supabase, {
+    notification_id: notificationId || null,
+    user_id: userId,
+    channel: "push",
+    status: st,
+    detail: null,
+    meta: { ...results },
+  });
 
   return ok(results);
 });

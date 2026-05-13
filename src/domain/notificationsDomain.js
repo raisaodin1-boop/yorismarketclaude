@@ -7,9 +7,11 @@ export const NOTIF_CATEGORIES = /** @type {const} */ ({
   security: "security",
   promotions: "promotions",
   system: "system",
+  business: "business",
+  admin: "admin",
 });
 
-/** Niveaux de priorité affichage. */
+/** Niveaux de priorité affichage (stockage + alias métier). */
 export const NOTIF_PRIORITIES = /** @type {const} */ ({
   critical: "critical",
   important: "important",
@@ -18,7 +20,9 @@ export const NOTIF_PRIORITIES = /** @type {const} */ ({
 });
 
 const TYPE_RULES = [
-  { test: (t) => /payment|paiement|checkout|cinetpay/i.test(t || ""), category: NOTIF_CATEGORIES.payments, priority: NOTIF_PRIORITIES.critical },
+  { test: (t) => /admin|incident|réclamation|reclamation|staff yorix|paiement bloqué/i.test(t || ""), category: NOTIF_CATEGORIES.admin, priority: NOTIF_PRIORITIES.critical },
+  { test: (t) => /business|b2b|partenaire|yorix business/i.test(t || ""), category: NOTIF_CATEGORIES.business, priority: NOTIF_PRIORITIES.important },
+  { test: (t) => /payment|paiement|checkout|cinetpay|escrow/i.test(t || ""), category: NOTIF_CATEGORIES.payments, priority: NOTIF_PRIORITIES.critical },
   { test: (t) => /security|fraud|litige|connexion|login|suspicious/i.test(t || ""), category: NOTIF_CATEGORIES.security, priority: NOTIF_PRIORITIES.critical },
   { test: (t) => /deliver|livraison|livreur|shipping|colis/i.test(t || ""), category: NOTIF_CATEGORIES.delivery, priority: NOTIF_PRIORITIES.important },
   { test: (t) => /order|commande|booking|réservation|prestation|service_booking/i.test(t || ""), category: NOTIF_CATEGORIES.orders, priority: NOTIF_PRIORITIES.important },
@@ -34,7 +38,20 @@ const CATEGORY_ICONS = {
   [NOTIF_CATEGORIES.security]: "🛡️",
   [NOTIF_CATEGORIES.promotions]: "🏷️",
   [NOTIF_CATEGORIES.system]: "🔔",
+  [NOTIF_CATEGORIES.business]: "💼",
+  [NOTIF_CATEGORIES.admin]: "⚙️",
 };
+
+/** @param {unknown} p */
+export function normalizeNotificationPriority(p) {
+  if (p == null || p === "") return NOTIF_PRIORITIES.standard;
+  const s = String(p).toLowerCase();
+  if (s === "urgent" || s === "critical") return NOTIF_PRIORITIES.critical;
+  if (s === "high" || s === "important") return NOTIF_PRIORITIES.important;
+  if (s === "normal" || s === "standard") return NOTIF_PRIORITIES.standard;
+  if (s === "promo" || s === "promotion") return NOTIF_PRIORITIES.promo;
+  return NOTIF_PRIORITIES.standard;
+}
 
 function inferFromType(type, titre, message) {
   const blob = `${type || ""} ${titre || ""} ${message || ""}`;
@@ -64,19 +81,22 @@ export function formatNotificationBody(raw) {
  */
 export function enrichNotification(row) {
   const type = row.type || "";
-  const titre = row.titre || "";
-  const inferred = inferFromType(type, titre, row.message);
+  const displayTitle = String(row.titre || row.title || "");
+  const inferred = inferFromType(type, displayTitle, row.message);
   const category = row.category || inferred.category;
-  const priority = row.priority || inferred.priority;
+  const priority = normalizeNotificationPriority(row.priority || inferred.priority);
 
   return {
     ...row,
     _category: category,
     _priority: priority,
     _icon: row.icon || CATEGORY_ICONS[category] || "🔔",
-    _title: titre || "Notification Yorix",
+    _title: displayTitle || "Notification Yorix",
     _body: formatNotificationBody(row.message),
-    _image: row.image_url || row.metadata?.image_url || null,
+    _image:
+      row.image_url ||
+      (typeof row.metadata === "object" && row.metadata !== null && row.metadata.image_url) ||
+      null,
     _deeplink: typeof row.link === "string" ? row.link.trim() : "",
     _timeLabel: row.created_at
       ? new Date(row.created_at).toLocaleString("fr-FR", {
