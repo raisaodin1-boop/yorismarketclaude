@@ -154,10 +154,10 @@ export function getUserRole(profileData) {
 }
 
 const FORBIDDEN_PATTERNS = [
-  /(\+?237[\s\-]?[0-9]{8,9})/g,
-  /(\+?[0-9]{1,3}[\s\-]?[0-9]{9,10})/g,
+  /(\+?237[\s-]?[0-9]{8,9})/g,
+  /(\+?[0-9]{1,3}[\s-]?[0-9]{9,10})/g,
   /(whatsapp|wa\.me|t\.me|telegram)/gi,
-  /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g,
+  /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
   /(facebook\.com|instagram\.com)/gi,
 ];
 

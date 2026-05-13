@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLimits";
 import { CATS as PRODUCT_CATS } from "../lib/constants";
 import { uploadSingleImage } from "../utils/helpers";
 
@@ -45,8 +46,8 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     setLoadingData(true);
 
     const [prodsRes, cmdsRes, walRes] = await Promise.all([
-      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_PRODUCTS_LIMIT),
+      supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_ORDERS_LIMIT),
       supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
     ]);
 
@@ -60,7 +61,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     setLoadingData(false);
   };
 
-  useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [user?.id]);
+  useEffect(() => { loadAll(); }, [user?.id]);
 
   // ── AJOUT PRODUIT ──
   const handleFiles = (files) => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { DASHBOARD_ORDERS_LIMIT } from "../lib/queryLimits";
 import { DELIVERY_STATUSES, REWARDS_DATA } from "../lib/constants";
 import { OrderCardWithTracking } from "./OrderCardWithTracking";
 
@@ -15,6 +16,7 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
       .select("*")
       .eq("client_id", user.id)
       .order("created_at", { ascending: false })
+      .limit(DASHBOARD_ORDERS_LIMIT)
       .then(({ data }) => setMesCommandes(data || []));
   }, [user.id]);
 
