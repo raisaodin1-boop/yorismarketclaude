@@ -1,2 +1,8 @@
 node_modules
 /.git-commit-msg.txt
+
+# Secrets & env local (ne jamais committer les clés VAPID privées)
+.env
+.env.local
+.env.*.local
+supabase/.env
