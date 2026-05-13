@@ -92,9 +92,12 @@ async function logDelivery(
   },
 ) {
   try {
-    const nid = entry.notification_id ? Number(entry.notification_id) : null;
+    const nid =
+      typeof entry.notification_id === "string" && entry.notification_id.trim() !== ""
+        ? entry.notification_id.trim()
+        : null;
     await supabase.from("notification_delivery_log").insert({
-      notification_id: Number.isFinite(nid) ? nid : null,
+      notification_id: nid,
       user_id: entry.user_id,
       channel: entry.channel,
       status: entry.status,
