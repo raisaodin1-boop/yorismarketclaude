@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CITIES } from "../lib/constants";
+import { creerDemandeLivraison } from "../utils/deliveryWorkflow";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL DEMANDE DE LIVRAISON
@@ -38,24 +39,20 @@ export function ModalDemandeLivraison({ user, userData, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const random = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const timestamp = Date.now().toString(36).slice(-3).toUpperCase();
-      const code = "YX-" + random + timestamp;
-
-      const { data, error } = await supabase.from("deliveries").insert({
-        code_suivi:        code,
-        client_nom:        form.nom,
-        client_tel:        form.telephone,
-        adresse_collecte:  form.adresse_collecte,
-        adresse_livraison: form.adresse_livraison,
-        statut:            "commande_recue",
-        livreur_vehicule:  form.vehicule,
-        distance_km:       3.5,
-        temps_estime_min:  form.urgence === "urgent" ? 20 : form.urgence === "express" ? 15 : 40,
-        commande_at:       new Date().toISOString(),
-      }).select().single();
-
-      if (error) throw error;
+      const { delivery: created, code } = await creerDemandeLivraison({
+        clientId: user?.id || null,
+        form: {
+          nom:               form.nom,
+          telephone:         form.telephone,
+          adresse_collecte:  form.adresse_collecte,
+          adresse_livraison: form.adresse_livraison,
+          ville:             form.ville,
+          colis_description: form.colis_description,
+          vehicule:          form.vehicule,
+          urgence:           form.urgence,
+          budget:            form.budget,
+        },
+      });
 
       const urgenceLabel = {
         normal:  "🟢 Normal (30-60 min)",
@@ -92,15 +89,15 @@ export function ModalDemandeLivraison({ user, userData, onClose, onSuccess }) {
       ].join("\n");
 
       const waUrl = "https://wa.me/" + YORIX_WA_NUMBER + "?text=" + encodeURIComponent(msg);
-      window.open(waUrl, "_blank");
+      window.open(waUrl, "_blank", "noopener,noreferrer");
 
       setCodeGenere(code);
       setStep(2);
-      onSuccess?.(code);
+      onSuccess?.(code, created);
 
     } catch (err) {
       console.error("ModalDemandeLivraison:", err);
-      alert("Erreur : " + err.message);
+      alert("Erreur : " + (err?.message || "Impossible de créer la livraison"));
     }
     setLoading(false);
   };

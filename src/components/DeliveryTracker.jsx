@@ -12,11 +12,13 @@ export function DeliveryTracker() {
   const [elapsed, setElapsed]     = useState(0);
 
   const STEPS = [
-    { id: "commande_recue", label: "Commande reçue", icon: "📝", description: "Votre commande a été enregistrée" },
-    { id: "preparation",    label: "Préparation",    icon: "📦", description: "Le vendeur prépare votre colis" },
-    { id: "collecte",       label: "Colis collecté", icon: "🏪", description: "Le livreur a récupéré le colis" },
-    { id: "en_route",       label: "En route",       icon: "🏍️", description: "Le livreur se dirige vers vous" },
-    { id: "livre",          label: "Livré",          icon: "✅", description: "Colis remis avec succès" },
+    { id: "commande_recue",  label: "Commande reçue",     icon: "📝", description: "Votre demande a été enregistrée" },
+    { id: "livreur_assigne", label: "Livreur assigné",    icon: "🏍️", description: "Un livreur Yorix est en charge" },
+    { id: "accepte",         label: "Mission acceptée",   icon: "✅", description: "Le livreur est en route vers le point de collecte" },
+    { id: "preparation",     label: "Préparation",        icon: "📦", description: "Le colis est en cours de préparation" },
+    { id: "collecte",        label: "Colis collecté",     icon: "🏪", description: "Le livreur a récupéré votre colis" },
+    { id: "en_route",        label: "En route vers vous", icon: "🚀", description: "Le livreur se dirige vers vous" },
+    { id: "livre",           label: "Livré",              icon: "✅", description: "Colis remis avec succès" },
   ];
 
   const chercherLivraison = async (code) => {
@@ -150,7 +152,9 @@ export function DeliveryTracker() {
       {delivery && (
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden" }}>
           <div style={{
-            background: delivery.statut === "livre"
+            background: delivery.statut === "annule"
+              ? "linear-gradient(135deg, #b91c1c, #7f1d1d)"
+              : delivery.statut === "livre"
               ? "linear-gradient(135deg, #16a34a, #15803d)"
               : "linear-gradient(135deg, #1a3a24, var(--green))",
             padding: "20px 22px", color: "#fff",
@@ -168,6 +172,18 @@ export function DeliveryTracker() {
                 {delivery.statut === "livre" ? (
                   <span style={{ background: "rgba(255,255,255,.2)", padding: "6px 14px", borderRadius: 50, fontSize: ".78rem", fontWeight: 700, backdropFilter: "blur(10px)" }}>
                     ✅ LIVRÉ
+                  </span>
+                ) : delivery.statut === "annule" ? (
+                  <span style={{ background: "rgba(255,255,255,.2)", padding: "6px 14px", borderRadius: 50, fontSize: ".78rem", fontWeight: 700 }}>
+                    ❌ ANNULÉE
+                  </span>
+                ) : delivery.statut === "commande_recue" ? (
+                  <span style={{ background: "var(--yellow)", color: "#0d1f14", padding: "6px 14px", borderRadius: 50, fontSize: ".78rem", fontWeight: 800 }}>
+                    ⏳ EN ATTENTE LIVREUR
+                  </span>
+                ) : delivery.statut === "livreur_assigne" ? (
+                  <span style={{ background: "rgba(255,255,255,.25)", color: "#fff", padding: "6px 14px", borderRadius: 50, fontSize: ".78rem", fontWeight: 800 }}>
+                    🏍️ LIVREUR ASSIGNÉ
                   </span>
                 ) : (
                   <div style={{ background: "var(--yellow)", color: "#0d1f14", padding: "8px 16px", borderRadius: 10, fontFamily: "'Syne',sans-serif", fontWeight: 800, textAlign: "center", minWidth: 120 }}>
@@ -227,8 +243,16 @@ export function DeliveryTracker() {
                 const isDone = idx < currentStepIdx;
                 const isCurrent = idx === currentStepIdx;
                 const isLast = idx === STEPS.length - 1;
-                const tsField = step.id === "commande_recue" ? "commande" : step.id === "livre" ? "livre" : step.id;
-                const timestamp = delivery[`${tsField}_at`];
+                const tsMap = {
+                  commande_recue:  "commande_at",
+                  livreur_assigne: "assigne_at",
+                  accepte:         "accepte_at",
+                  preparation:     "preparation_at",
+                  collecte:        "collecte_at",
+                  en_route:        "en_route_at",
+                  livre:           "livre_at",
+                };
+                const timestamp = delivery[tsMap[step.id]];
 
                 return (
                   <div key={step.id} style={{ display: "flex", gap: 14, marginBottom: isLast ? 0 : 14, position: "relative" }}>

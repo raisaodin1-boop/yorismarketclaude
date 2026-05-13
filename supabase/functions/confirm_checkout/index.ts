@@ -3,9 +3,29 @@ import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
+import { dispatchNotificationById } from "../_shared/internal_dispatch.ts";
 
 function uuidish(v: string) {
   return /^[0-9a-fA-F-]{16,}$/.test(v);
+}
+
+async function insertNotificationAndDispatch(
+  supabase: ReturnType<typeof createClient>,
+  row: Record<string, unknown>,
+) {
+  const { data, error } = await supabase.from("notifications").insert(row).select("id").maybeSingle();
+  if (error) {
+    console.error("[confirm_checkout] notification insert:", error.message);
+    return;
+  }
+  const id = data && typeof (data as { id?: unknown }).id !== "undefined"
+    ? String((data as { id: string | number }).id)
+    : "";
+  if (!id) return;
+  const r = await dispatchNotificationById(id);
+  if (!r.ok) {
+    console.error("[confirm_checkout] dispatch_notification", r.status, r.body);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -156,6 +176,21 @@ Deno.serve(async (req) => {
         .single();
       if (orderError) throw orderError;
 
+      if (vendeurId) {
+        await insertNotificationAndDispatch(supabase, {
+          user_id: vendeurId,
+          type: "seller_new_order",
+          title: "Nouvelle commande Yorix",
+          message:
+            `${clientNom} · groupe ${orderGroupId} · ligne ${gross.toLocaleString("fr-FR")} FCFA (commission ${commission.toLocaleString("fr-FR")} F)`,
+          link: "/dashboard",
+          lu: false,
+          priority: "important",
+          category: "orders",
+          payload: { order_id: order.id, checkout_intent_id: checkoutIntentId },
+        });
+      }
+
       const { error: itemError } = await supabase.from("order_items").insert({
         order_id: order.id,
         item_kind: "product",
@@ -195,6 +230,22 @@ Deno.serve(async (req) => {
     }
 
     await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
+
+    const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
+    if (buyerId) {
+      await insertNotificationAndDispatch(supabase, {
+        user_id: buyerId,
+        type: "buyer_order_confirmed",
+        title: "Commande confirmée",
+        message:
+          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(totals.total)).toLocaleString("fr-FR")} FCFA.`,
+        link: "/dashboard",
+        lu: false,
+        priority: "important",
+        category: "orders",
+        payload: { checkout_intent_id: checkoutIntentId, order_group_id: orderGroupId },
+      });
+    }
 
     const { data: intentAfter } = await supabase
       .from("checkout_intents")

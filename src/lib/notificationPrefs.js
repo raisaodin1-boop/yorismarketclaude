@@ -16,6 +16,8 @@ const defaultPrefs = () => ({
     [NOTIF_CATEGORIES.security]: true,
     [NOTIF_CATEGORIES.promotions]: true,
     [NOTIF_CATEGORIES.system]: true,
+    [NOTIF_CATEGORIES.business]: true,
+    [NOTIF_CATEGORIES.admin]: true,
   },
 });
 
@@ -68,9 +70,11 @@ export function dbRowToPrefs(row) {
       [NOTIF_CATEGORIES.payments]: row.category_payments !== false,
       [NOTIF_CATEGORIES.delivery]: row.category_delivery !== false,
       [NOTIF_CATEGORIES.security]: row.category_security !== false,
-      [NOTIF_CATEGORIES.promotions]: row.category_promotions !== false,
-      [NOTIF_CATEGORIES.system]: row.category_system !== false,
-    },
+    [NOTIF_CATEGORIES.promotions]: row.category_promotions !== false,
+    [NOTIF_CATEGORIES.system]: row.category_system !== false,
+    [NOTIF_CATEGORIES.business]: row.category_business !== false,
+    [NOTIF_CATEGORIES.admin]: row.category_admin !== false,
+  },
   };
 }
 
@@ -95,6 +99,8 @@ export function prefsToDbRow(userId, prefs) {
     category_security: c[NOTIF_CATEGORIES.security] !== false,
     category_promotions: c[NOTIF_CATEGORIES.promotions] !== false,
     category_system: c[NOTIF_CATEGORIES.system] !== false,
+    category_business: c[NOTIF_CATEGORIES.business] !== false,
+    category_admin: c[NOTIF_CATEGORIES.admin] !== false,
     updated_at: new Date().toISOString(),
   };
 }
