@@ -89,12 +89,13 @@ create table if not exists public.wallet_transactions (
 
 create index if not exists idx_wallet_transactions_user on public.wallet_transactions(user_id, created_at desc);
 
-alter table public.orders add column if not exists order_group_id text;
-alter table public.orders add column if not exists payment_method text;
-alter table public.orders add column if not exists payment_status text default 'pending';
-alter table public.orders add column if not exists payment_provider text;
-alter table public.orders add column if not exists provider_tx_ref text;
-alter table public.orders add column if not exists payout_status text default 'locked';
+-- IF EXISTS: safe when `orders` is created by 20260508_orders_baseline.sql (PG 15+).
+alter table if exists public.orders add column if not exists order_group_id text;
+alter table if exists public.orders add column if not exists payment_method text;
+alter table if exists public.orders add column if not exists payment_status text default 'pending';
+alter table if exists public.orders add column if not exists payment_provider text;
+alter table if exists public.orders add column if not exists provider_tx_ref text;
+alter table if exists public.orders add column if not exists payout_status text default 'locked';
 
 create or replace view public.admin_finance_kpis as
 select
