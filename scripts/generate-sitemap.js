@@ -4,7 +4,6 @@ import { loadEnv } from "vite";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import {
-  SITE_URL,
   SEO_CITIES,
   METIER_SLUG_TO_CATEGORY,
   PAGE_PATH,
@@ -67,9 +66,25 @@ function resolveSupabaseConfig() {
   return { url, anonKey, sourceHint };
 }
 
-function urlEntry(loc, lastmod, priority, changefreq) {
+const DEFAULT_PUBLIC_SITE = "https://www.yorix.cm";
+
+/** Base URL absolue pour les `<loc>` du sitemap (aligné sur VITE_PUBLIC_SITE_URL côté front). */
+function resolvePublicSiteUrl() {
+  const cwd = process.cwd();
+  const fromProd = loadEnv("production", cwd, "");
+  const fromDev = loadEnv("development", cwd, "");
+  const u =
+    process.env.VITE_PUBLIC_SITE_URL ||
+    fromProd.VITE_PUBLIC_SITE_URL ||
+    fromDev.VITE_PUBLIC_SITE_URL ||
+    "";
+  const s = String(u).trim().replace(/\/$/, "");
+  return s || DEFAULT_PUBLIC_SITE;
+}
+
+function urlEntry(siteBase, loc, lastmod, priority, changefreq) {
   return `  <url>
-    <loc>${SITE_URL}${loc}</loc>
+    <loc>${siteBase}${loc}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
@@ -167,6 +182,7 @@ function metierVilleUrls() {
 
 async function generate() {
   const { url, anonKey, sourceHint } = resolveSupabaseConfig();
+  const siteBase = resolvePublicSiteUrl();
   console.log(`ℹ️ Sitemap — connexion Supabase (${sourceHint})`);
 
   const supabase = createClient(url, anonKey);
@@ -176,25 +192,26 @@ async function generate() {
   const urls = [];
 
   for (const [path, pr, ch] of staticSeoPages) {
-    urls.push(urlEntry(path || "/", today, pr, ch));
+    urls.push(urlEntry(siteBase, path || "/", today, pr, ch));
   }
 
   for (const u of cityUrls()) {
-    urls.push(urlEntry(u.loc, today, u.pr, u.ch));
+    urls.push(urlEntry(siteBase, u.loc, today, u.pr, u.ch));
   }
 
   for (const row of categoryUrls()) {
-    urls.push(urlEntry(row[0], today, row[1], row[2]));
+    urls.push(urlEntry(siteBase, row[0], today, row[1], row[2]));
   }
 
   for (const m of metierVilleUrls()) {
-    urls.push(urlEntry(m[0], today, m[1], m[2]));
+    urls.push(urlEntry(siteBase, m[0], today, m[1], m[2]));
   }
 
   for (const p of products) {
     const slug = buildEntitySlug(p.name_fr || "produit", p.id);
     urls.push(
       urlEntry(
+        siteBase,
         `/produit/${slug}`,
         (p.created_at || today).split("T")[0],
         "0.72",
@@ -207,6 +224,7 @@ async function generate() {
     const slug = buildEntitySlug(s.provider_nom || "prestataire", `real-${s.id}`);
     urls.push(
       urlEntry(
+        siteBase,
         `/prestataire/${slug}`,
         (s.created_at || today).split("T")[0],
         "0.68",

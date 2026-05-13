@@ -3,7 +3,19 @@
  * Commentaire : une seule source de vérité pour les paths marketing / Google.
  */
 
-export const SITE_URL = "https://www.yorix.cm";
+const DEFAULT_SITE_URL = "https://www.yorix.cm";
+
+/** URL publique du site (canonical, OG, liens). Surcharge : `VITE_PUBLIC_SITE_URL`. */
+export const SITE_URL = (() => {
+  try {
+    const raw =
+      typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_PUBLIC_SITE_URL;
+    const s = String(raw || "").trim().replace(/\/$/, "");
+    return s || DEFAULT_SITE_URL;
+  } catch {
+    return DEFAULT_SITE_URL;
+  }
+})();
 
 /** Villes Cameroun — slug ASCII → libellé affiché (SEO local scalable) */
 export const SEO_CITIES = [
