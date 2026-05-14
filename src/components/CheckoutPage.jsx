@@ -9,6 +9,7 @@ import {
   saveCheckoutDraft,
   validateCheckoutAddressStep,
 } from "../domain/checkoutForm";
+import { normalizeCinetpayStatus } from "../domain/cinetpayStatus";
 import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrchestrator";
 import {
   checkoutReturnStatus,
@@ -221,7 +222,25 @@ export function CheckoutPage({
       if (cancelled) return;
 
       const deliveryTracking = Array.isArray(data.delivery_tracking) ? data.delivery_tracking : [];
-      const pay = String(data.payment_status || "");
+      const pay = normalizeCinetpayStatus(data.payment_status);
+
+      if (pay !== "paid") {
+        setStep(3);
+        setCheckoutError(
+          pay === "failed"
+            ? "Paiement CinetPay échoué ou annulé. Votre panier est conservé pour réessayer ou choisir WhatsApp."
+            : "Paiement CinetPay encore en attente. Votre panier est conservé pendant la finalisation.",
+        );
+        setCinetpayReturnBanner(
+          pay === "failed"
+            ? "Paiement CinetPay échoué ou annulé — aucun panier supprimé."
+            : "Paiement CinetPay en attente — le webhook peut encore confirmer sous quelques minutes.",
+        );
+        processedCinetpayReturnRef.current.add(txRef);
+        if (pay === "failed") clearStoredTx();
+        navigate(PAGE_PATH.checkout, { replace: true });
+        return;
+      }
 
       setCartItems([]);
       setCheckoutError("");

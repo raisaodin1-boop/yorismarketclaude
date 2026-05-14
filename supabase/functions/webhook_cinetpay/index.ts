@@ -1,6 +1,22 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 
+function normalizeCinetPayCheckStatus(status: unknown): "paid" | "failed" | "pending" {
+  const raw = String(status ?? "").trim().toUpperCase();
+  if (raw === "ACCEPTED") return "paid";
+  if (["REFUSED", "CANCELLED", "CANCELED", "DECLINED", "EXPIRED", "FAILED"].includes(raw)) {
+    return "failed";
+  }
+  return "pending";
+}
+
+function mergePaymentStatus(currentStatus: unknown, checkedStatus: "paid" | "failed" | "pending") {
+  const current = String(currentStatus || "pending").toLowerCase();
+  if (current === "paid") return "paid";
+  if (checkedStatus === "pending" && (current === "failed" || current === "paid")) return current;
+  return checkedStatus;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
@@ -27,7 +43,8 @@ Deno.serve(async (req) => {
     // Optional verification step with CinetPay check endpoint.
     const CINETPAY_API_KEY = Deno.env.get("CINETPAY_API_KEY");
     const CINETPAY_SITE_ID = Deno.env.get("CINETPAY_SITE_ID");
-    let finalStatus = "failed";
+    let finalStatus = String(tx.status || "pending").toLowerCase();
+    let verifyPayload: unknown = null;
     if (CINETPAY_API_KEY && CINETPAY_SITE_ID) {
       const verifyResp = await fetch("https://api-checkout.cinetpay.com/v2/payment/check", {
         method: "POST",
@@ -38,14 +55,21 @@ Deno.serve(async (req) => {
           transaction_id: txRef,
         }),
       });
-      const verify = await verifyResp.json();
-      const paymentStatus = String(verify?.data?.status || "").toUpperCase();
-      finalStatus = paymentStatus === "ACCEPTED" ? "paid" : "failed";
+      const verify = await verifyResp.json().catch(() => ({}));
+      verifyPayload = verify;
+      finalStatus = mergePaymentStatus(
+        tx.status,
+        verifyResp.ok ? normalizeCinetPayCheckStatus(verify?.data?.status) : "pending",
+      );
     }
 
     await supabase
       .from("payment_transactions")
-      .update({ status: finalStatus, payload: body, updated_at: new Date().toISOString() })
+      .update({
+        status: finalStatus,
+        payload: { webhook: body, verify: verifyPayload },
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", tx.id);
 
     if (finalStatus === "paid" && tx.order_group_id) {
