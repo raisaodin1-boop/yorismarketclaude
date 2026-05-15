@@ -1,6 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 
+function normalizeCinetPayCheckStatus(status: unknown): "paid" | "failed" | "pending" {
+  const raw = String(status ?? "").trim().toUpperCase();
+  if (raw === "ACCEPTED") return "paid";
+  if (["REFUSED", "CANCELLED", "CANCELED", "DECLINED", "EXPIRED", "FAILED"].includes(raw)) {
+    return "failed";
+  }
+  return "pending";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
@@ -86,11 +95,10 @@ Deno.serve(async (req) => {
           transaction_id: transactionRef,
         }),
       });
-      const verifyJson = await verifyResp.json();
-      const paymentStatus = String(
-        verifyJson?.data?.status ?? "",
-      ).toUpperCase();
-      const finalStatus = paymentStatus === "ACCEPTED" ? "paid" : "failed";
+      const verifyJson = await verifyResp.json().catch(() => ({}));
+      const finalStatus = verifyResp.ok
+        ? normalizeCinetPayCheckStatus(verifyJson?.data?.status)
+        : "pending";
 
       await supabase
         .from("payment_transactions")
