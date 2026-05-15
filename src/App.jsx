@@ -557,6 +557,10 @@ export default function Yorix() {
     const onMsg = (event) => {
       if (event.data?.type !== "NOTIF_NAV") return;
       const url = typeof event.data.url === "string" ? event.data.url : "/";
+      if (/^https?:\/\//i.test(url)) {
+        window.open(url, "_blank", "noopener,noreferrer");
+        return;
+      }
       navigate(url.startsWith("/") ? url : `/${url}`);
     };
     navigator.serviceWorker.addEventListener("message", onMsg);

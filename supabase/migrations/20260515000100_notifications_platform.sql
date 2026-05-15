@@ -45,7 +45,7 @@ CREATE POLICY push_subscriptions_delete_own
 -- ─── 2) Journal des envois (analytics admin / debug prod) ────────────────────
 CREATE TABLE IF NOT EXISTS public.notification_delivery_log (
   id bigserial PRIMARY KEY,
-  notification_id uuid REFERENCES public.notifications (id) ON DELETE SET NULL,
+  notification_id bigint REFERENCES public.notifications (id) ON DELETE SET NULL,
   user_id uuid REFERENCES auth.users (id) ON DELETE SET NULL,
   channel text NOT NULL,
   status text NOT NULL,

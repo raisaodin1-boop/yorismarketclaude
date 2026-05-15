@@ -27,9 +27,7 @@ export function DeliveryTracker() {
     setLoading(true); setError("");
     try {
       const { data, error: err } = await supabase
-        .from("deliveries")
-        .select("*")
-        .eq("code_suivi", searchCode)
+        .rpc("get_delivery_tracking", { p_code_suivi: searchCode })
         .maybeSingle();
       if (err) throw err;
       if (!data) {

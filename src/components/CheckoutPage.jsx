@@ -473,6 +473,7 @@ export function CheckoutPage({
           window.location.href = payment.payment_url;
           return;
         }
+        throw new Error(payment?.error || "Lien de paiement CinetPay indisponible.");
       }
 
       if (!confirmation?.order_group_id) {

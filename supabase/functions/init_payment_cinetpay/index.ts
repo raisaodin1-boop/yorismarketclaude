@@ -25,6 +25,29 @@ Deno.serve(async (req) => {
       return ok({ error: "Missing SUPABASE_URL for webhook URL" }, { status: 500 });
     }
 
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    );
+
+    const expectedOrderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
+    if (orderGroupId !== expectedOrderGroupId) {
+      return ok({ error: "order_group_id does not match checkout_intent_id" }, { status: 400 });
+    }
+
+    const { data: intent, error: intentErr } = await supabase
+      .from("checkout_intents")
+      .select("total")
+      .eq("id", checkoutIntentId)
+      .maybeSingle();
+    if (intentErr) throw intentErr;
+    if (!intent || Math.round(Number(intent.total ?? 0)) !== Math.round(amount)) {
+      return ok(
+        { error: "Amount does not match checkout total — reload and try again." },
+        { status: 400 },
+      );
+    }
+
     const txRef = `YRXPAY-${orderGroupId}-${Date.now()}`;
     const payload = {
       apikey: CINETPAY_API_KEY,
@@ -56,22 +79,8 @@ Deno.serve(async (req) => {
     }
 
     const paymentUrl = result?.data?.payment_url || null;
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-    );
-
-    const { data: intent, error: intentErr } = await supabase
-      .from("checkout_intents")
-      .select("total")
-      .eq("id", checkoutIntentId)
-      .maybeSingle();
-    if (intentErr) throw intentErr;
-    if (!intent || Math.round(Number(intent.total ?? 0)) !== Math.round(amount)) {
-      return ok(
-        { error: "Amount does not match checkout total — reload and try again." },
-        { status: 400 },
-      );
+    if (!paymentUrl) {
+      return ok({ error: "CinetPay did not return a payment URL", details: result }, { status: 502 });
     }
 
     await supabase.from("payment_transactions").insert({

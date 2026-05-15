@@ -64,37 +64,39 @@ self.addEventListener("sync", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "Yorix", body: "Nouvelle alerte sur votre marketplace.", url: "/", tag: "yorix" };
-  try {
-    if (event.data) {
-      if (typeof event.data.json === "function") {
-        Object.assign(payload, event.data.json());
-      } else if (typeof event.data.text === "function") {
-        const txt = event.data.text();
-        if (txt) Object.assign(payload, JSON.parse(txt));
-      }
-    }
-  } catch {
-    /* garder défaut */
-  }
-
-  const title = payload.title || "Yorix CM";
-  const body = payload.body || "Ouvrir pour voir votre activité.";
-  const url = payload.url || "/";
-  const tag = payload.tag || "yorix-generic";
-  const crit = payload.priority === "critical" || payload.priority === "urgent";
-
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: String(body).slice(0, 240),
-      icon: payload.icon || "/favicon.svg",
-      badge: payload.badge || "/favicon.svg",
-      tag,
-      vibrate: [100, 50, 100],
-      renotify: true,
-      requireInteraction: crit,
-      data: { url, tag },
-    }),
+    (async () => {
+      const payload = { title: "Yorix", body: "Nouvelle alerte sur votre marketplace.", url: "/", tag: "yorix" };
+      try {
+        if (event.data) {
+          if (typeof event.data.json === "function") {
+            Object.assign(payload, await event.data.json());
+          } else if (typeof event.data.text === "function") {
+            const txt = await event.data.text();
+            if (txt) Object.assign(payload, JSON.parse(txt));
+          }
+        }
+      } catch {
+        /* garder défaut */
+      }
+
+      const title = payload.title || "Yorix CM";
+      const body = payload.body || "Ouvrir pour voir votre activité.";
+      const url = payload.url || "/";
+      const tag = payload.tag || "yorix-generic";
+      const crit = payload.priority === "critical" || payload.priority === "urgent";
+
+      await self.registration.showNotification(title, {
+        body: String(body).slice(0, 240),
+        icon: payload.icon || "/favicon.svg",
+        badge: payload.badge || "/favicon.svg",
+        tag,
+        vibrate: [100, 50, 100],
+        renotify: true,
+        requireInteraction: crit,
+        data: { url, tag },
+      });
+    })(),
   );
 });
 
