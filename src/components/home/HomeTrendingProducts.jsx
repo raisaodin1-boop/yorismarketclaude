@@ -22,7 +22,8 @@ export function HomeTrendingProducts({
   onSeeAll,
 }) {
   const trending = useMemo(() => {
-    return [...produits]
+    const safeProduits = Array.isArray(produits) ? produits : [];
+    return [...safeProduits]
       .sort((a, b) => trendingScore(b) - trendingScore(a))
       .slice(0, 8);
   }, [produits]);

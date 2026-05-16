@@ -136,23 +136,14 @@ export function HomePage({
   produits = [],
   user,
   userData,
-  wishlist,
-  addToCart,
-  toggleWish,
-  openProductUrl,
-  setOnboardingOpen,
-  goPage,
-  categoryTree = [],
-  goToCategory,
-  allServices,
-  nlEmail,
-  setNlEmail,
   wishlist = [],
   addToCart = () => {},
   toggleWish = () => {},
   openProductUrl = () => {},
   setOnboardingOpen = () => {},
   goPage = () => {},
+  categoryTree = [],
+  goToCategory = () => {},
   allServices = [],
   nlEmail = "",
   setNlEmail = () => {},
@@ -390,11 +381,10 @@ export function HomePage({
           onSell={() => goPage("devenirVendeur")}
         />
 
-        <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
         <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
 
         <HomeTrendingProducts
-          produits={produits}
+          produits={safeProduits}
           locale={siteLocale}
           loading={produitsLoading}
           user={user}
