@@ -62,6 +62,12 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [commerceForm, setCommerceForm]         = useState({
     threshold: 50000,
     fee: 1500,
+    stockOutGraceDays: 30,
+    stockLowThreshold: 5,
+    stockAutoArchive: true,
+    stockHardDelete: false,
+    stockReminderDaysCsv: "1,15,25",
+    stockPremiumSellerExempt: true,
   });
 
   // ═══════════ FILTRES ═══════════
@@ -196,6 +202,12 @@ export function AdminDashboard({ user, userData, goPage }) {
         setCommerceForm({
           threshold: Number(commerceRow.free_shipping_threshold_xaf) || 50000,
           fee: Number(commerceRow.standard_delivery_fee_xaf) || 1500,
+          stockOutGraceDays: Number(commerceRow.stock_out_grace_days) || 30,
+          stockLowThreshold: Number(commerceRow.stock_low_threshold) || 5,
+          stockAutoArchive: commerceRow.stock_auto_archive !== false,
+          stockHardDelete: commerceRow.stock_hard_delete === true,
+          stockReminderDaysCsv: commerceRow.stock_reminder_days_csv || "1,15,25",
+          stockPremiumSellerExempt: commerceRow.stock_premium_seller_exempt !== false,
         });
       }
 
@@ -566,8 +578,23 @@ export function AdminDashboard({ user, userData, goPage }) {
     try {
       const thr = Number(commerceForm.threshold);
       const fee = Number(commerceForm.fee);
+      const graceDays = Number(commerceForm.stockOutGraceDays);
+      const lowThreshold = Number(commerceForm.stockLowThreshold);
       if (!(thr >= 0) || !(fee >= 0)) {
         showToast("Seuil et frais doivent être des nombres positifs.", "error");
+        return;
+      }
+      if (!(graceDays >= 1 && graceDays <= 365)) {
+        showToast("Délai d'archivage : 1 à 365 jours.", "error");
+        return;
+      }
+      if (!(lowThreshold >= 0 && lowThreshold <= 1000)) {
+        showToast("Seuil stock bas : 0 à 1000.", "error");
+        return;
+      }
+      const reminderCsv = String(commerceForm.stockReminderDaysCsv || "1,15,25").trim();
+      if (!/^\d+(\s*,\s*\d+)*$/.test(reminderCsv)) {
+        showToast("Rappels stock : liste d'entiers séparés par virgules (ex. 1,15,25).", "error");
         return;
       }
       const { error } = await supabase
@@ -575,11 +602,17 @@ export function AdminDashboard({ user, userData, goPage }) {
         .update({
           free_shipping_threshold_xaf: thr,
           standard_delivery_fee_xaf: fee,
+          stock_out_grace_days: graceDays,
+          stock_low_threshold: lowThreshold,
+          stock_auto_archive: !!commerceForm.stockAutoArchive,
+          stock_hard_delete: !!commerceForm.stockHardDelete,
+          stock_reminder_days_csv: reminderCsv,
+          stock_premium_seller_exempt: !!commerceForm.stockPremiumSellerExempt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", 1);
       if (error) throw error;
-      showToast("Paramètres promo livraison enregistrés.");
+      showToast("Paramètres marketplace enregistrés.");
       setRefreshKey((k) => k + 1);
     } catch (e) {
       showToast("Erreur : " + (e?.message || e), "error");
@@ -1808,6 +1841,87 @@ export function AdminDashboard({ user, userData, goPage }) {
                 Les fonctions Edge <code style={{ fontSize: ".68rem" }}>create_checkout_intent</code> et{" "}
                 <code style={{ fontSize: ".68rem" }}>confirm_checkout</code> relisent automatiquement cette table.
                 Fallback env : FREE_SHIPPING_THRESHOLD_XAF · STANDARD_DELIVERY_FEE_XAF.
+              </p>
+            </div>
+
+            <div className="admin-section">
+              <div className="admin-section-title">Politique catalogue — gestion automatique des ruptures</div>
+              <p style={{ fontSize: ".75rem", color: "var(--gray)", marginBottom: 14, lineHeight: 1.55 }}>
+                Quand un produit tombe à stock = 0, le vendeur est notifié, relancé puis le produit est archivé ou supprimé après le délai configuré.
+                L'Edge Function <code style={{ fontSize: ".68rem" }}>stock_lifecycle</code> doit être planifiée en cron quotidien.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: ".75rem", fontWeight: 700 }}>
+                  Délai d'archivage (jours)
+                  <input
+                    className="form-input"
+                    type="number"
+                    min={1}
+                    max={365}
+                    step={1}
+                    value={commerceForm.stockOutGraceDays}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, stockOutGraceDays: e.target.value }))}
+                    style={{ maxWidth: 130 }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: ".75rem", fontWeight: 700 }}>
+                  Seuil stock bas (badge ⚠️)
+                  <input
+                    className="form-input"
+                    type="number"
+                    min={0}
+                    max={1000}
+                    step={1}
+                    value={commerceForm.stockLowThreshold}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, stockLowThreshold: e.target.value }))}
+                    style={{ maxWidth: 130 }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: ".75rem", fontWeight: 700 }}>
+                  Rappels (j séparés par virgules)
+                  <input
+                    className="form-input"
+                    type="text"
+                    value={commerceForm.stockReminderDaysCsv}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, stockReminderDaysCsv: e.target.value }))}
+                    placeholder="1,15,25"
+                    style={{ maxWidth: 180 }}
+                  />
+                </label>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 14, alignItems: "center" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".78rem", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    checked={commerceForm.stockAutoArchive}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, stockAutoArchive: e.target.checked }))}
+                  />
+                  Archiver automatiquement (soft delete) après le délai
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".78rem", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    checked={commerceForm.stockPremiumSellerExempt}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, stockPremiumSellerExempt: e.target.checked }))}
+                  />
+                  Exempter les vendeurs premium
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".78rem", fontWeight: 600, color: commerceForm.stockHardDelete ? "#ce1126" : "var(--ink)" }}>
+                  <input
+                    type="checkbox"
+                    checked={commerceForm.stockHardDelete}
+                    onChange={(e) => setCommerceForm((f) => ({ ...f, stockHardDelete: e.target.checked }))}
+                  />
+                  Suppression définitive (après 2× le délai) — DANGER
+                </label>
+                <button type="button" className="admin-action-btn" style={{ background: "var(--green)", color: "#fff" }} onClick={persistCommercePromo}>
+                  Enregistrer
+                </button>
+              </div>
+              <p style={{ marginTop: 12, fontSize: ".7rem", color: "var(--gray)", lineHeight: 1.45 }}>
+                Audit complet dans la table <code style={{ fontSize: ".68rem" }}>stock_lifecycle_log</code> (réservée aux admins).
+                Les notifications passent par <code style={{ fontSize: ".68rem" }}>notifications</code> +{" "}
+                <code style={{ fontSize: ".68rem" }}>dispatch_notification</code>.
               </p>
             </div>
           </>

@@ -561,7 +561,15 @@ export default function YorixApp() {
   useEffect(() => {
     setProduitsLoading(true);
     const load = async () => {
-      let q = supabase.from("products").select("*").or("actif.eq.true,actif.is.null").order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
+      let q = supabase
+        .from("products")
+        .select("*")
+        .or("actif.eq.true,actif.is.null")
+        .or("is_archived.is.null,is_archived.eq.false")
+        .or("hidden_from_marketplace.is.null,hidden_from_marketplace.eq.false")
+        .order("sponsorise", { ascending:false })
+        .order("created_at", { ascending:false })
+        .limit(60);
       if (filterCat) q = q.eq("categorie", filterCat);
       const { data, error } = await q;
       if (error) console.warn("Produits:", error.message);

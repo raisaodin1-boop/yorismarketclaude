@@ -9,6 +9,7 @@ import { optimizeCloudinaryUrl } from "../utils/helpers";
 import { TrustStrip } from "./conversion/TrustStrip";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
+import { isPurchasable } from "../lib/stockStatus";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL
@@ -57,6 +58,33 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     user?.id && 
     product.vendeur_id && 
     user.id !== product.vendeur_id;
+
+  const buyable = isPurchasable(product);
+  const [restockState, setRestockState] = useState("idle"); // 'idle' | 'pending' | 'done' | 'error'
+  const [restockError, setRestockError] = useState(null);
+
+  const handleNotifyWhenAvailable = async () => {
+    if (!user?.id) {
+      setRestockError("Connectez-vous pour être notifié quand le produit revient en stock.");
+      setRestockState("error");
+      return;
+    }
+    setRestockState("pending");
+    setRestockError(null);
+    try {
+      const { error } = await supabase
+        .from("product_restock_subscriptions")
+        .upsert(
+          { product_id: product.id, user_id: user.id, email: user.email || null },
+          { onConflict: "product_id,user_id" },
+        );
+      if (error) throw error;
+      setRestockState("done");
+    } catch (e) {
+      setRestockError(e?.message || "Erreur inconnue");
+      setRestockState("error");
+    }
+  };
 
   const handleContactClick = () => {
     if (!user) {
@@ -200,24 +228,67 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <button
                 className="btn-cmd-sm"
-                style={{ flex: 2, padding: "11px", borderRadius: 9 }}
-                onClick={() => setShowCmdModal(true)}
+                disabled={!buyable}
+                aria-disabled={!buyable}
+                style={{
+                  flex: 2, padding: "11px", borderRadius: 9,
+                  opacity: buyable ? 1 : 0.55,
+                  cursor: buyable ? "pointer" : "not-allowed",
+                }}
+                onClick={() => { if (buyable) setShowCmdModal(true); }}
               >
-                ✅ Commander
+                {buyable ? "✅ Commander" : "❌ Produit indisponible"}
               </button>
               {onAddToCart && (
                 <button
-                  onClick={() => { onAddToCart(product); onClose(); }}
+                  disabled={!buyable}
+                  aria-disabled={!buyable}
+                  onClick={() => { if (buyable) { onAddToCart(product); onClose(); } }}
                   style={{
-                    background: "var(--green)", color: "#fff", border: "none",
+                    background: buyable ? "var(--green)" : "var(--surface2)",
+                    color: buyable ? "#fff" : "var(--gray)",
+                    border: buyable ? "none" : "1px solid var(--border)",
                     borderRadius: 9, padding: "11px 16px",
-                    cursor: "pointer", fontSize: ".85rem", fontWeight: 700,
+                    cursor: buyable ? "pointer" : "not-allowed",
+                    fontSize: ".85rem", fontWeight: 700,
+                    opacity: buyable ? 1 : 0.7,
                   }}
                 >
                   🛒
                 </button>
               )}
             </div>
+
+            {!buyable && (
+              <div style={{ marginBottom: 12 }}>
+                <button
+                  type="button"
+                  onClick={handleNotifyWhenAvailable}
+                  disabled={restockState === "pending" || restockState === "done"}
+                  style={{
+                    width: "100%",
+                    background: restockState === "done" ? "var(--green-pale)" : "transparent",
+                    color: restockState === "done" ? "var(--green)" : "var(--ink)",
+                    border: `1.5px dashed ${restockState === "done" ? "var(--green)" : "var(--border)"}`,
+                    borderRadius: 9,
+                    padding: "10px 12px",
+                    fontFamily: "'Syne',sans-serif",
+                    fontWeight: 700,
+                    fontSize: ".8rem",
+                    cursor: restockState === "done" ? "default" : "pointer",
+                  }}
+                >
+                  {restockState === "done"
+                    ? "✅ Vous serez prévenu(e) dès le retour en stock"
+                    : restockState === "pending"
+                      ? "Enregistrement..."
+                      : "🔔 Me notifier quand disponible"}
+                </button>
+                {restockState === "error" && restockError && (
+                  <p style={{ marginTop: 6, fontSize: ".72rem", color: "#ce1126" }}>{restockError}</p>
+                )}
+              </div>
+            )}
 
             <div style={{ marginBottom: 10 }}>
               <ShareWhatsAppButton product={product} locale={siteLocale} variant="ghost" className="share-wa-btn--block" />

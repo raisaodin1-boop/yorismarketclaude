@@ -6,6 +6,7 @@ import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
+import { isPurchasable } from "../lib/stockStatus";
 
 const LazyFicheProduit = lazy(() =>
   import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
@@ -55,6 +56,7 @@ export function ProdGrid({
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
           const vendBadges = getVendeurBadges(p);
           const prixPromo  = p.promo_pct ? Math.round(p.prix * (1 - p.promo_pct / 100)) : null;
+          const buyable    = isPurchasable(p);
 
           return (
             <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}`}>
@@ -78,6 +80,19 @@ export function ProdGrid({
                 {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
                 {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
                 {p.escrow                            && <span className="escrow-badge">🔐</span>}
+                {!buyable && (
+                  <span
+                    style={{
+                      position: "absolute", top: 8, left: 8, zIndex: 3,
+                      background: "rgba(206,17,38,.92)", color: "#fff",
+                      padding: "3px 9px", borderRadius: 999, fontSize: ".62rem",
+                      fontFamily: "'Syne',sans-serif", fontWeight: 800, letterSpacing: ".02em",
+                      boxShadow: "0 4px 12px rgba(206,17,38,.35)",
+                    }}
+                  >
+                    ❌ Rupture de stock
+                  </span>
+                )}
                 <button
                   className="wish-btn"
                   onClick={e => { e.stopPropagation(); onWish(p.id); }}
@@ -148,7 +163,11 @@ export function ProdGrid({
                   </div>
                   <button
                     className="add-btn"
-                    onClick={e => { e.stopPropagation(); onAddToCart(p); }}
+                    disabled={!buyable}
+                    aria-disabled={!buyable}
+                    title={buyable ? "Ajouter au panier" : "Produit indisponible"}
+                    style={!buyable ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
+                    onClick={e => { e.stopPropagation(); if (buyable) onAddToCart(p); }}
                   >
                     +
                   </button>
@@ -159,15 +178,21 @@ export function ProdGrid({
               <div className="prod-actions" style={{ padding: "0 11px 11px", display: "flex", flexDirection: "column", gap: 6 }}>
                 <button
                   className="add-btn"
+                  disabled={!buyable}
+                  aria-disabled={!buyable}
                   style={{
                     width: "100%", padding: "8px", borderRadius: 8, fontSize: ".78rem",
                     fontFamily: "'Syne',sans-serif", fontWeight: 700,
-                    background: "var(--green)", color: "#fff", border: "none",
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                    background: buyable ? "var(--green)" : "var(--surface2)",
+                    color: buyable ? "#fff" : "var(--gray)",
+                    border: buyable ? "none" : "1px solid var(--border)",
+                    cursor: buyable ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                    opacity: buyable ? 1 : 0.75,
                   }}
-                  onClick={e => { e.stopPropagation(); onAddToCart(p); }}
+                  onClick={e => { e.stopPropagation(); if (buyable) onAddToCart(p); }}
                 >
-                  🛒 Ajouter au panier
+                  {buyable ? "🛒 Ajouter au panier" : "❌ Produit indisponible"}
                 </button>
                 {showShare && (
                   <button

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLimits";
@@ -7,6 +7,12 @@ import { buildMadeInCameroonPayload } from "../lib/madeInCameroon";
 import { buildProductCategoryPayload } from "../lib/marketplaceCategories";
 import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
 import { CategoryPicker } from "./categories/CategoryPicker";
+import {
+  computeStockStatus,
+  daysUntilAutoRemoval,
+  daysSinceOutOfStock,
+  STOCK_STATUS,
+} from "../lib/stockStatus";
 import "./categories/categoryUi.css";
 
 // ─────────────────────────────────────────────────────────────
@@ -18,9 +24,11 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const [mesProduits, setMesProduits]     = useState([]);
   const [mesCommandes, setMesCommandes]   = useState([]);
   const [wallet, setWallet]               = useState({ solde: 0, total_gagne: 0 });
+  const [stockSettings, setStockSettings] = useState({ stock_low_threshold: 5, stock_out_grace_days: 30 });
   const [loadingData, setLoadingData]     = useState(true);
   const [loadingAction, setLoadingAction] = useState(false);
   const [saveMsg, setSaveMsg]             = useState(null);
+  const [quickRestock, setQuickRestock]   = useState({}); // { [productId]: stockValue }
 
   // ── Formulaire ajout produit ──
   const [form, setForm]         = useState({
@@ -64,10 +72,11 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     if (!user?.id) return;
     setLoadingData(true);
 
-    const [prodsRes, cmdsRes, walRes] = await Promise.all([
+    const [prodsRes, cmdsRes, walRes, settingsRes] = await Promise.all([
       supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_PRODUCTS_LIMIT),
       supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_ORDERS_LIMIT),
       supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("commerce_settings").select("stock_low_threshold,stock_out_grace_days").eq("id", 1).maybeSingle(),
     ]);
 
     if (prodsRes.error) console.error("products:", prodsRes.error);
@@ -77,7 +86,66 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     setMesProduits(prodsRes.data || []);
     setMesCommandes(cmdsRes.data || []);
     if (walRes.data) setWallet(walRes.data);
+    if (settingsRes?.data) setStockSettings(settingsRes.data);
     setLoadingData(false);
+  };
+
+  // ── RUPTURE STOCK : helpers ──
+  const ruptureProducts = useMemo(() => {
+    return mesProduits
+      .filter((p) => {
+        const status = computeStockStatus(p, stockSettings);
+        return status === STOCK_STATUS.OUT_OF_STOCK || status === STOCK_STATUS.ARCHIVED;
+      })
+      .map((p) => ({
+        ...p,
+        _daysOut: daysSinceOutOfStock(p) ?? 0,
+        _daysLeft: daysUntilAutoRemoval(p, stockSettings),
+        _isArchived: computeStockStatus(p, stockSettings) === STOCK_STATUS.ARCHIVED,
+      }))
+      .sort((a, b) => (a._daysLeft ?? 999) - (b._daysLeft ?? 999));
+  }, [mesProduits, stockSettings]);
+
+  const quickRestockProduct = async (productId) => {
+    const raw = quickRestock[productId];
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) {
+      alert("Saisissez un stock supérieur à 0 pour réapprovisionner.");
+      return;
+    }
+    setLoadingAction(true);
+    const { error } = await supabase
+      .from("products")
+      .update({ stock: value, actif: true })
+      .eq("id", productId)
+      .eq("vendeur_id", user.id);
+    setLoadingAction(false);
+    if (error) {
+      alert("Erreur réapprovisionnement : " + error.message);
+      return;
+    }
+    setQuickRestock((q) => ({ ...q, [productId]: "" }));
+    loadAll();
+  };
+
+  const reactivateArchivedProduct = async (productId, currentStock) => {
+    const restock = Number(quickRestock[productId]);
+    const newStock = Number.isFinite(restock) && restock > 0
+      ? restock
+      : (Number(currentStock) > 0 ? Number(currentStock) : 1);
+    setLoadingAction(true);
+    const { error } = await supabase
+      .from("products")
+      .update({ stock: newStock, actif: true, is_archived: false, hidden_from_marketplace: false })
+      .eq("id", productId)
+      .eq("vendeur_id", user.id);
+    setLoadingAction(false);
+    if (error) {
+      alert("Erreur réactivation : " + error.message);
+      return;
+    }
+    setQuickRestock((q) => ({ ...q, [productId]: "" }));
+    loadAll();
   };
 
   useEffect(() => { loadAll(); }, [user?.id]);
@@ -336,6 +404,79 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
               </div>
             ))}
           </div>
+
+          {ruptureProducts.length > 0 && (
+            <div style={{ ...S.card, border: "1.5px solid #ce1126", background: "linear-gradient(180deg,#fff5f5 0%,var(--surface) 60%)" }}>
+              <div style={S.row}>
+                <div style={S.secTitle}>⚠️ Produits en rupture ({ruptureProducts.length})</div>
+                <span style={{ fontSize: ".7rem", color: "var(--gray)" }}>
+                  Archivage auto après {stockSettings.stock_out_grace_days || 30}j sans stock
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {ruptureProducts.slice(0, 6).map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "10px 12px", background: "var(--surface)",
+                      borderRadius: 10, border: "1px solid var(--border)",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {p.image ? (
+                      <img src={p.image} alt="" style={{ width: 46, height: 46, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <div style={{ width: 46, height: 46, borderRadius: 8, background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", flexShrink: 0 }}>📦</div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 160 }}>
+                      <div style={{ fontWeight: 700, fontSize: ".82rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name_fr}</div>
+                      <div style={{ fontSize: ".68rem", color: "var(--gray)", marginTop: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <span>📅 En rupture depuis {p._daysOut}j</span>
+                        {p._isArchived ? (
+                          <span style={{ color: "#888" }}>🗄️ Archivé</span>
+                        ) : p._daysLeft != null ? (
+                          <span style={{ color: p._daysLeft <= 5 ? "#ce1126" : p._daysLeft <= 15 ? "#d97706" : "var(--gray)" }}>
+                            ⏳ {Math.max(0, p._daysLeft)}j avant retrait auto
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Stock"
+                      value={quickRestock[p.id] || ""}
+                      onChange={(e) => setQuickRestock((q) => ({ ...q, [p.id]: e.target.value }))}
+                      style={{ ...S.input, width: 80, padding: "6px 9px", fontSize: ".75rem" }}
+                    />
+                    {p._isArchived ? (
+                      <button
+                        style={{ ...S.btnGreen, fontSize: ".72rem", padding: "6px 11px" }}
+                        disabled={loadingAction}
+                        onClick={() => reactivateArchivedProduct(p.id, p.stock)}
+                      >
+                        ♻️ Réactiver
+                      </button>
+                    ) : (
+                      <button
+                        style={{ ...S.btnGreen, fontSize: ".72rem", padding: "6px 11px" }}
+                        disabled={loadingAction}
+                        onClick={() => quickRestockProduct(p.id)}
+                      >
+                        ➕ Réapprovisionner
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {ruptureProducts.length > 6 && (
+                <button style={{ ...S.btnGhost, marginTop: 10 }} onClick={() => setDashTab("mesProduits")}>
+                  Voir les {ruptureProducts.length - 6} autres produits en rupture →
+                </button>
+              )}
+            </div>
+          )}
 
           <div style={S.card}>
             <div style={S.row}>
