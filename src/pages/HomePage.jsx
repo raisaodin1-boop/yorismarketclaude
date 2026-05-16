@@ -100,6 +100,28 @@ const TRUST_BADGES = [
   { i: "🇨🇲", t: "100% Cameroun" },
 ];
 
+const SEO_CITY_LINKS = [
+  { city: "Douala", slug: "douala", desc: "Marketplace Douala, livraison Akwa, Bonapriso, Bonamoussadi" },
+  { city: "Yaoundé", slug: "yaounde", desc: "Achat en ligne Yaoundé, livraison Bastos, Mvan, Nlongkak" },
+  { city: "Bafoussam", slug: "bafoussam", desc: "Produits, services et livraison dans l'Ouest Cameroun" },
+  { city: "Kribi", slug: "kribi", desc: "Prestataires, colis et shopping local au Sud Cameroun" },
+];
+
+const SEO_FAQS = [
+  {
+    q: "Quel site utiliser pour acheter en ligne au Cameroun ?",
+    a: "Yorix.cm centralise produits, vendeurs, prestataires et livraison avec paiement MTN MoMo, Orange Money, cash ou carte selon les options disponibles.",
+  },
+  {
+    q: "Comment commander rapidement sur Yorix.cm ?",
+    a: "Recherchez un produit ou une ville, ajoutez au panier ou contactez le support WhatsApp express. L'objectif est de finaliser l'achat ou la demande en moins d'une minute.",
+  },
+  {
+    q: "Comment vendre en ligne au Cameroun avec Yorix ?",
+    a: "Créez un compte vendeur, publiez vos fiches avec photos, prix en FCFA et ville, puis suivez commandes, messages et paiements dans votre tableau de bord.",
+  },
+];
+
 export function HomePage({
   siteLocale = "fr",
   filterCat = "",
@@ -186,24 +208,37 @@ export function HomePage({
                 </span>
 
                 <h1 className="yhm3-h1">
-                  Le marché numérique
+                  Marketplace Cameroun
                   <br />
-                  qui <em>accélère</em>
+                  pour <em>acheter</em>, vendre
                   <br />
-                  votre business
+                  et livrer vite
                 </h1>
 
                 <p className="yhm3-sub">
-                  Produits, freelances, livraison et formation — <strong>un seul écosystème premium</strong>.
-                  Conçu pour la confiance, pensé pour la conversion, ancré au Cameroun.
+                  Achat en ligne au Cameroun, livraison Douala & Yaoundé, prestataires locaux et paiement
+                  <strong> MTN MoMo / Orange Money</strong> — un parcours rapide, mobile et rassurant.
                 </p>
 
                 <div className="yhm3-hero-ctas">
                   <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => setOnboardingOpen(true)}>
-                    🚀 Démarrer · 30 s
+                    🚀 Acheter ou vendre · 30 s
                   </button>
                   <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("produits")}>
-                    Parcourir le catalogue
+                    Voir les produits
+                  </button>
+                  <button
+                    type="button"
+                    className="yhm3-btn yhm3-btn--sec"
+                    onClick={() =>
+                      window.open(
+                        `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux commander rapidement.")}`,
+                        "_blank",
+                        "noopener,noreferrer",
+                      )
+                    }
+                  >
+                    Commander WhatsApp
                   </button>
                 </div>
 
@@ -351,6 +386,35 @@ export function HomePage({
                 <div className="yhm3-cat-icon">{l.icon}</div>
                 <div className="yhm3-cat-label">{l.label}</div>
                 <div className="yhm3-cat-desc">{l.desc}</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="yhm3-section--tinted" aria-labelledby="seo-local-title">
+          <div className="yhm3-section-head yhm3-section-head--center">
+            <span className="yhm3-eyebrow-light">SEO local · Cameroun</span>
+            <h2 id="seo-local-title" className="yhm3-h2 yhm3-h2--center">
+              Achat en ligne, services et <em>livraison par ville</em>
+            </h2>
+            <p className="yhm3-lead yhm3-lead--center">
+              Yorix.cm cible les recherches locales à forte intention : marketplace Douala, livraison Yaoundé,
+              prestataires Bafoussam et achat en ligne partout au Cameroun.
+            </p>
+          </div>
+
+          <div className="yhm3-cats-grid">
+            {SEO_CITY_LINKS.map((item) => (
+              <button
+                key={item.slug}
+                type="button"
+                className="yhm3-cat-card"
+                style={{ "--cat-color": "#1a6b3a" }}
+                onClick={() => goPage("seoCity", { citySlug: item.slug, mode: "acheter" })}
+              >
+                <div className="yhm3-cat-icon">📍</div>
+                <div className="yhm3-cat-label">Marketplace {item.city}</div>
+                <div className="yhm3-cat-desc">{item.desc}</div>
               </button>
             ))}
           </div>
@@ -519,6 +583,35 @@ export function HomePage({
                 <h3>{w.title}</h3>
                 <p>{w.desc}</p>
               </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="yhm3-section--tinted" aria-labelledby="seo-faq-title">
+          <div className="yhm3-section-head yhm3-section-head--center">
+            <span className="yhm3-eyebrow-light">Questions fréquentes</span>
+            <h2 id="seo-faq-title" className="yhm3-h2 yhm3-h2--center">
+              Réponses rapides avant de <em>commander</em>
+            </h2>
+            <p className="yhm3-lead yhm3-lead--center">
+              Des réponses courtes pour rassurer les visiteurs venus de Google et accélérer la conversion.
+            </p>
+          </div>
+
+          <div style={{ maxWidth: 860, margin: "0 auto", display: "grid", gap: 12 }}>
+            {SEO_FAQS.map((item) => (
+              <details
+                key={item.q}
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                }}
+              >
+                <summary style={{ cursor: "pointer", fontWeight: 800, color: "var(--ink)" }}>{item.q}</summary>
+                <p style={{ color: "var(--gray)", fontSize: ".9rem", lineHeight: 1.7, marginTop: 10 }}>{item.a}</p>
+              </details>
             ))}
           </div>
         </section>

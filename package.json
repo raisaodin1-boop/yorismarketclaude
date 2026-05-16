@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "node scripts/generate-sitemap.js",
     "build": "vite build",
+    "postbuild": "node scripts/generate-seo-html.js",
     "lint": "eslint src scripts",
     "test": "vitest run",
     "test:watch": "vitest",

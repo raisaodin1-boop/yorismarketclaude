@@ -1075,14 +1075,44 @@ export default function YorixApp() {
     }
 
     if (page === "home") {
+      const homeFaqLd = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "Quel site utiliser pour acheter en ligne au Cameroun ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Yorix.cm centralise produits, vendeurs, prestataires et livraison avec paiement MTN MoMo, Orange Money, cash ou carte selon les options disponibles.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Comment commander rapidement sur Yorix.cm ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Recherchez un produit ou une ville, ajoutez au panier ou contactez le support WhatsApp express pour finaliser l'achat ou la demande rapidement.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Comment vendre en ligne au Cameroun avec Yorix ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Créez un compte vendeur, publiez vos fiches avec photos, prix en FCFA et ville, puis suivez commandes, messages et paiements dans votre tableau de bord.",
+            },
+          },
+        ],
+      };
       return {
-        title: "Yorix.cm | Marketplace Cameroun – Achat, Vente, Livraison & Services",
+        title: "Marketplace Cameroun | Achat en ligne, livraison & services | Yorix.cm",
         description:
-          "Achetez, vendez et trouvez des services partout au Cameroun avec Yorix.cm : marketplace locale, e-commerce, petites annonces, livraison rapide à Douala, Yaoundé et plus encore. MTN MoMo, Orange Money, escrow.",
+          "Yorix.cm : marketplace camerounaise pour acheter, vendre, se faire livrer et trouver des prestataires. Paiement MTN MoMo, Orange Money, escrow et support WhatsApp.",
         canonicalPath: canon,
         keywords:
-          "marketplace Cameroun, e-commerce Cameroun, achat en ligne Cameroun, vente en ligne Cameroun, livraison Cameroun, petites annonces Cameroun, marketplace Douala, marketplace Yaoundé, escrow",
-        jsonLd: [orgLd, webLd, marketplaceLd],
+          "marketplace Cameroun, achat en ligne Cameroun, e-commerce Cameroun, livraison Douala, livraison Yaoundé, vendre en ligne Cameroun, MTN MoMo, Orange Money, prestataires Cameroun",
+        jsonLd: [orgLd, webLd, marketplaceLd, homeFaqLd],
       };
     }
 

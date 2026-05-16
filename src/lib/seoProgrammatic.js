@@ -184,6 +184,90 @@ export const SEO_URL_ALIASES = {
       "Marketplace Yaoundé : produits et services avec livraison, marketplace camerounaise Yorix.cm et paiements sécurisés.",
     keywords: "marketplace Yaoundé, achat en ligne Yaoundé, ecommerce Yaoundé, livraison Yaoundé",
   },
+  "marketplace-douala": {
+    lang: "fr",
+    page: "seoCity",
+    citySlug: "douala",
+    cityMode: "hub",
+    pathBare: "/marketplace-douala",
+    title: "Marketplace Douala | Achat en ligne, livraison & services | Yorix.cm",
+    description:
+      "Yorix.cm à Douala : achetez en ligne, trouvez des prestataires, vendez vos produits et organisez vos livraisons avec paiement Mobile Money.",
+    keywords: "marketplace Douala, achat en ligne Douala, livraison Douala, prestataires Douala, Yorix Douala",
+  },
+  "marketplace-yaounde": {
+    lang: "fr",
+    page: "seoCity",
+    citySlug: "yaounde",
+    cityMode: "hub",
+    pathBare: "/marketplace-yaounde",
+    title: "Marketplace Yaoundé | Produits, services & livraison | Yorix.cm",
+    description:
+      "Yorix.cm à Yaoundé : catalogue produits, prestataires locaux, livraison, paiement MTN MoMo/Orange Money et support WhatsApp.",
+    keywords: "marketplace Yaoundé, achat en ligne Yaoundé, livraison Yaoundé, prestataires Yaoundé",
+  },
+  "livraison-douala": {
+    lang: "fr",
+    page: "seoCity",
+    citySlug: "douala",
+    cityMode: "livraison",
+    pathBare: "/livraison-douala",
+    title: "Livraison Douala | Colis, courses & marketplace | Yorix Ride",
+    description:
+      "Service de livraison à Douala avec Yorix Ride : colis, courses, commandes marketplace, suivi et support WhatsApp.",
+    keywords: "livraison Douala, livreur Douala, colis Douala, livraison Akwa, livraison Bonamoussadi",
+  },
+  "livraison-yaounde": {
+    lang: "fr",
+    page: "seoCity",
+    citySlug: "yaounde",
+    cityMode: "livraison",
+    pathBare: "/livraison-yaounde",
+    title: "Livraison Yaoundé | Colis, courses & Yorix Ride",
+    description:
+      "Livraison à Yaoundé avec Yorix Ride : colis, courses, commandes e-commerce, suivi et support WhatsApp.",
+    keywords: "livraison Yaoundé, livreur Yaoundé, colis Yaoundé, livraison Bastos, livraison Mvan",
+  },
+  "prestataires-douala": {
+    lang: "fr",
+    page: "seoCity",
+    citySlug: "douala",
+    cityMode: "prestataires",
+    pathBare: "/prestataires-douala",
+    title: "Prestataires Douala | Services à domicile vérifiés | Yorix.cm",
+    description:
+      "Trouvez des prestataires à Douala : beauté, plomberie, électricité, nettoyage, IT, BTP et services à domicile via Yorix.cm.",
+    keywords: "prestataires Douala, services à domicile Douala, plombier Douala, coiffeuse Douala",
+  },
+  "prestataires-yaounde": {
+    lang: "fr",
+    page: "seoCity",
+    citySlug: "yaounde",
+    cityMode: "prestataires",
+    pathBare: "/prestataires-yaounde",
+    title: "Prestataires Yaoundé | Services locaux & à domicile | Yorix.cm",
+    description:
+      "Réservez des prestataires à Yaoundé : beauté, réparation, informatique, nettoyage, BTP et services à domicile sur Yorix.cm.",
+    keywords: "prestataires Yaoundé, services à domicile Yaoundé, plombier Yaoundé, coiffeuse Yaoundé",
+  },
+  "paiement-mobile-money-cameroun": {
+    lang: "fr",
+    page: "escrow",
+    pathBare: "/paiement-mobile-money-cameroun",
+    title: "Paiement Mobile Money Cameroun | MTN MoMo, Orange Money & escrow | Yorix.cm",
+    description:
+      "Yorix.cm facilite les achats au Cameroun avec MTN MoMo, Orange Money, cash, carte et protection escrow pour sécuriser les transactions.",
+    keywords: "paiement Mobile Money Cameroun, MTN MoMo Cameroun, Orange Money Cameroun, escrow Cameroun",
+  },
+  "acheter-telephone-cameroun": {
+    lang: "fr",
+    page: "produits",
+    pathBare: "/acheter-telephone-cameroun",
+    title: "Acheter téléphone au Cameroun | Smartphones & high-tech | Yorix.cm",
+    description:
+      "Achetez téléphones, smartphones et accessoires high-tech au Cameroun sur Yorix.cm avec vendeurs locaux, paiement Mobile Money et livraison.",
+    keywords: "acheter téléphone Cameroun, smartphone Cameroun, high-tech Cameroun, téléphone Douala, téléphone Yaoundé",
+  },
 };
 
 /** Chemins complets hubs programmatics pour sitemap (préfixes /fr /en appliqués côté script) */
