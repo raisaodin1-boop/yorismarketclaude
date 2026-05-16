@@ -41,7 +41,9 @@ import { filterProductsByMerchHub, getMerchHub } from "./lib/merchHubs.js";
 import {
   resolveCategoryFilter,
   productMatchesCategoryFilter,
+  categoryIdsForProductQuery,
 } from "./lib/marketplaceCategories.js";
+import { CATALOG_PRODUCTS_LIMIT } from "./lib/queryLimits";
 import { useCategoryTaxonomy } from "./hooks/useCategoryTaxonomy.js";
 import { SeoHead } from "./components/seo/SeoHead";
 import i18n from "./i18n/index.js";
@@ -561,21 +563,55 @@ export default function YorixApp() {
   useEffect(() => {
     setProduitsLoading(true);
     const load = async () => {
-      let q = supabase.from("products").select("*").or("actif.eq.true,actif.is.null").order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
-      if (filterCat) q = q.eq("categorie", filterCat);
-      const { data, error } = await q;
-      if (error) console.warn("Produits:", error.message);
-      setProduits(data || []);
+      const baseProductsQuery = () =>
+        supabase
+          .from("products")
+          .select("*")
+          .or("actif.eq.true,actif.is.null")
+          .order("sponsorise", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(CATALOG_PRODUCTS_LIMIT);
+
+      const categoryIds = categoryIdsForProductQuery(categoryFilter);
+      const queries = [];
+      if (categoryIds.length) {
+        queries.push(baseProductsQuery().in("category_id", categoryIds));
+        if (filterCat) queries.push(baseProductsQuery().eq("categorie", filterCat));
+      } else {
+        let q = baseProductsQuery();
+        if (filterCat) q = q.eq("categorie", filterCat);
+        queries.push(q);
+      }
+
+      const results = await Promise.all(queries);
+      const rows = [];
+      const seen = new Set();
+      for (const { data, error } of results) {
+        if (error) {
+          console.warn("Produits:", error.message);
+          continue;
+        }
+        for (const product of data || []) {
+          const key = product?.id != null ? String(product.id) : JSON.stringify(product);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          rows.push(product);
+        }
+      }
+      rows.sort(
+        (a, b) =>
+          Number(Boolean(b?.sponsorise)) - Number(Boolean(a?.sponsorise)) ||
+          new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime(),
+      );
+      setProduits(rows);
       setProduitsLoading(false);
     };
     load();
     const channel = supabase.channel("prod_rt").on("postgres_changes", { event:"*", schema:"public", table:"products" }, load).subscribe();
     return () => supabase.removeChannel(channel);
-  }, [filterCat]);
+  }, [filterCat, categoryFilter]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [chatMessages]);
-
-  const routePath = location.pathname;
 
   // ── SEO / Router : synchroniser filtres et fiches depuis l’URL indexable
   useEffect(() => {
@@ -588,11 +624,11 @@ export default function YorixApp() {
       setFilterCat(resolved.filterLabel || categoryNameFromTaxonomySlug(route.categorySlug) || "");
     } else if (route.categorySlug) {
       setFilterCat(categoryNameFromTaxonomySlug(route.subCategorySlug || route.categorySlug) || "");
-    } else if (route.page === "produits" && routePath === "/produits") {
+    } else if (route.page === "produits" && route.canonicalPathBare === "/produits") {
       setFilterCat("");
       setCategoryFilter(null);
     }
-  }, [route.categorySlug, route.subCategorySlug, route.page, routePath, categoryFlat]);
+  }, [route.categorySlug, route.subCategorySlug, route.page, route.canonicalPathBare, categoryFlat]);
 
   const seoCityName = useMemo(
     () => (route.citySlug ? CITY_BY_SLUG[route.citySlug]?.name : null),
@@ -609,11 +645,11 @@ export default function YorixApp() {
     if (route.page === "seoCity" && route.cityMode === "prestataires" && seoCityName) {
       return { cat: "", ville: seoCityName };
     }
-    if (route.page === "prestataires" && routePath === "/prestataires") {
+    if (route.page === "prestataires" && route.canonicalPathBare === "/prestataires") {
       return { cat: "", ville: "" };
     }
     return null;
-  }, [route.page, route.metierSlug, route.villeSlug, route.cityMode, seoCityName, routePath]);
+  }, [route.page, route.metierSlug, route.villeSlug, route.cityMode, seoCityName, route.canonicalPathBare]);
 
   useEffect(() => {
     if (route.page !== "academyDetail" && route.page !== "academyContact") return;

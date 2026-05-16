@@ -160,3 +160,14 @@ export function productMatchesCategoryFilter(product, filter) {
 
   return false;
 }
+
+export function categoryIdsForProductQuery(filter) {
+  const rawIds = filter?.categoryIds?.length ? filter.categoryIds : [filter?.categoryId];
+  return Array.from(
+    new Set(
+      rawIds
+        .map((id) => String(id || "").trim())
+        .filter((id) => id && !id.startsWith("tax-")),
+    ),
+  );
+}
