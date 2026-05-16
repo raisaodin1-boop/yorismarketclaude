@@ -896,7 +896,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .footer-premium-accent{height:3px;background:linear-gradient(90deg,var(--green),var(--yellow),var(--green-mid));opacity:.85;}
 .footer-trust-strip{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;align-items:center;padding:14px 0 18px;border-bottom:1px solid rgba(255,255,255,.08);}
 .fts-item{font-size:.66rem;font-weight:600;color:rgba(255,255,255,.38);letter-spacing:.02em;}
-.footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:minmax(200px,2.2fr) minmax(120px,1fr) minmax(120px,1fr) minmax(120px,1fr);gap:clamp(18px,3vw,36px);margin-bottom:26px;padding-top:22px;}
+.footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:minmax(200px,2fr) repeat(5,minmax(100px,1fr));gap:clamp(16px,2.5vw,28px);margin-bottom:26px;padding-top:22px;}
 .footer-brand-col{min-width:0;}
 .footer-logo{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;color:#e8f6ec;margin-bottom:9px;letter-spacing:-1px;}
 .footer-logo span{color:#ff6b6b;}
@@ -910,6 +910,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .footer-col ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;}
 .footer-col li button{font-size:.72rem;margin:0;color:rgba(255,255,255,.48);transition:color .2s;text-align:left;width:100%;border:none;background:none;padding:4px 0;cursor:pointer;font-family:'DM Sans',sans-serif;line-height:1.45;border-radius:6px;}
 .footer-col li button:hover{color:#b7e4c7;}
+.footer-col li .footer-seo-link{display:block;font-size:.72rem;margin:0;color:rgba(255,255,255,.48);transition:color .2s;text-align:left;width:100%;padding:4px 0;text-decoration:none;font-family:'DM Sans',sans-serif;line-height:1.45;border-radius:6px;}
+.footer-col li .footer-seo-link:hover{color:#b7e4c7;}
 .footer-bottom{max-width:1200px;margin:0 auto;padding-top:18px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-size:.65rem;align-items:center;flex-wrap:wrap;gap:10px;color:rgba(255,255,255,.35);}
 .footer-copy{max-width:100%;}
 .fb-badges{display:flex;gap:6px;flex-wrap:wrap;}

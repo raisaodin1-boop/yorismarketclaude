@@ -3,6 +3,8 @@
  * Commentaire : une seule source de vérité pour les paths marketing / Google.
  */
 
+import { resolveSeoLandingFromPath } from "./seoProgrammatic.js";
+
 const DEFAULT_SITE_URL = "https://www.yorix.cm";
 
 /** URL publique du site (canonical, OG, liens). Surcharge : `VITE_PUBLIC_SITE_URL`. */
@@ -119,6 +121,9 @@ export const PAGE_PATH = {
 };
 
 export function pathForPage(page, opts = {}) {
+  if (page === "blog" && opts.blogSlug && /^[a-z0-9-]{1,80}$/.test(opts.blogSlug)) {
+    return `/blog/${opts.blogSlug}`;
+  }
   if (page === "productDetail" && opts.productSlug) {
     return `/produit/${opts.productSlug}`;
   }
@@ -171,6 +176,41 @@ export function parsePathname(pathname) {
 
   const parts = raw.split("/").filter(Boolean);
   const [a, b, c] = parts;
+
+  if (a === "blog") {
+    if (b && /^[a-z0-9-]{1,80}$/.test(b)) {
+      return { page: "blog", blogSlug: b, canonicalPath: raw };
+    }
+    return { page: "blog", canonicalPath: "/blog" };
+  }
+
+  if (parts.length === 1) {
+    const landing = resolveSeoLandingFromPath(a);
+    if (landing) {
+      if (landing.page === "seoCity" && landing.citySlug && CITY_BY_SLUG[landing.citySlug]) {
+        return {
+          page: "seoCity",
+          citySlug: landing.citySlug,
+          cityMode: landing.cityMode || "acheter",
+          canonicalPath: landing.canonicalPath,
+          seoAliasKey: a,
+        };
+      }
+      if (landing.page === "home") {
+        return { page: "home", canonicalPath: landing.canonicalPath, seoAliasKey: a };
+      }
+      if (landing.page === "produits") {
+        return { page: "produits", canonicalPath: landing.canonicalPath, seoAliasKey: a };
+      }
+      if (landing.page === "livraison") {
+        return { page: "livraison", canonicalPath: landing.canonicalPath, seoAliasKey: a };
+      }
+      const pg = landing.page;
+      if (PAGE_PATH[pg]) {
+        return { page: pg, canonicalPath: landing.canonicalPath, seoAliasKey: a };
+      }
+    }
+  }
 
   if (a === "produit" && b) {
     return { page: "productDetail", productSlug: b, canonicalPath: raw };

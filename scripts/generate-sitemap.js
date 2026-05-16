@@ -12,6 +12,10 @@ import {
 } from "../src/lib/seoRoutes.js";
 import { CATS } from "../src/lib/constants.js";
 import {
+  PROGRAMMATIC_SITEMAP_PATHS,
+  getBlogGuidePaths,
+} from "../src/lib/seoProgrammatic.js";
+import {
   SUPABASE_PROJECT_URL,
   SUPABASE_ANON_PUBLISHABLE_KEY,
 } from "../src/lib/supabaseDefaults.js";
@@ -193,6 +197,13 @@ async function generate() {
 
   for (const [path, pr, ch] of staticSeoPages) {
     urls.push(urlEntry(siteBase, path || "/", today, pr, ch));
+  }
+
+  for (const seoPath of PROGRAMMATIC_SITEMAP_PATHS) {
+    urls.push(urlEntry(siteBase, seoPath, today, "0.92", "weekly"));
+  }
+  for (const guidePath of getBlogGuidePaths()) {
+    urls.push(urlEntry(siteBase, guidePath, today, "0.82", "monthly"));
   }
 
   for (const u of cityUrls()) {

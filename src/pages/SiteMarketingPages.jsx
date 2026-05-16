@@ -2,6 +2,7 @@ import { PagesLegales } from "../components/PagesLegales";
 import { MarketingBreadcrumb } from "../components/layout/MarketingBreadcrumb";
 import { CITIES } from "../lib/constants";
 import { BlogPage } from "./BlogPage";
+import { BlogSeoArticle } from "../components/seo/BlogSeoArticle";
 import { HelpCentrePage } from "./HelpCentrePage";
 import { AcademyPage } from "./AcademyPage";
 import { BusinessPage } from "./BusinessPage";
@@ -24,6 +25,7 @@ export function SiteMarketingPages({
   goAcademyDetail,
   blogFilter,
   setBlogFilter,
+  blogSlug,
   nlEmail,
   setNlEmail,
   nlSent,
@@ -168,6 +170,9 @@ export function SiteMarketingPages({
       );
 
     case "blog":
+      if (blogSlug) {
+        return <BlogSeoArticle slug={blogSlug} goPage={goPage} />;
+      }
       return (
         <BlogPage
           blogFilter={blogFilter}

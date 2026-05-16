@@ -4,6 +4,13 @@
 User-agent: *
 Allow: /
 
+# Hubs SEO marketplace (crawl explicite)
+Allow: /marketplace-cameroun
+Allow: /ecommerce-cameroun
+Allow: /livraison-cameroun
+Allow: /vendre-en-ligne-cameroun
+Allow: /blog/
+
 # Sections privées / techniques (non indexables)
 Disallow: /admin
 Disallow: /admin/

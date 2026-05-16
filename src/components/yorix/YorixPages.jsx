@@ -340,6 +340,7 @@ export function YorixPages({ ctx }) {
             goAcademyDetail={goAcademyDetail}
             blogFilter={blogFilter}
             setBlogFilter={setBlogFilter}
+            blogSlug={route.blogSlug}
             nlEmail={nlEmail}
             setNlEmail={setNlEmail}
             nlSent={nlSent}

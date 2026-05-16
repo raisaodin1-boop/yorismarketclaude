@@ -12,7 +12,7 @@ export function SeoHead({
   robots = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
   keywords,
   ogType = "website",
-  ogImage = "https://www.yorix.cm/og-image.svg",
+  ogImage = `${SITE_URL.replace(/\/$/, "")}/og-image.svg`,
   ogImageAlt,
   ogImageType,
   jsonLd = [],

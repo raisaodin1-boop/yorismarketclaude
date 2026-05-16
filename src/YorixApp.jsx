@@ -29,6 +29,7 @@ import {
   getSearchActionUrl,
   PAGE_PATH,
 } from "./lib/seoRoutes";
+import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
 import { SeoHead } from "./components/seo/SeoHead";
 import {
   supabase,
@@ -109,6 +110,12 @@ export default function YorixApp() {
 
   const [search, setSearch]                     = useState("");
   const [filterCat, setFilterCat]               = useState("");
+
+  useEffect(() => {
+    if (page !== "produits") return;
+    const q = new URLSearchParams(location.search).get("q");
+    if (q != null && q !== "") setSearch((prev) => (prev === q.trim() ? prev : q.trim()));
+  }, [page, location.search]);
 
   // Notifs
   const [notifOpen, setNotifOpen] = useState(false);
@@ -888,6 +895,69 @@ export default function YorixApp() {
       },
     };
 
+    if (page === "blog" && route.blogSlug) {
+      const art = getBlogArticle(route.blogSlug);
+      if (art) {
+        const articleLd = {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: art.headline,
+          datePublished: art.datePublished,
+          author: { "@type": "Organization", name: "Yorix CM" },
+          publisher: {
+            "@type": "Organization",
+            name: "Yorix CM",
+            logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.svg` },
+          },
+        };
+        const faqLd =
+          art.faq?.length > 0
+            ? {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: art.faq.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }
+            : null;
+        const blogCrumb = buildBreadcrumbLd([
+          { name: "Accueil", path: "/" },
+          { name: "Blog", path: "/blog" },
+          { name: art.headline.slice(0, 90), path: canon },
+        ]);
+        return {
+          title: art.title,
+          description: art.description,
+          canonicalPath: canon,
+          keywords: art.keywords,
+          jsonLd: [articleLd, faqLd, blogCrumb, orgLd].filter(Boolean),
+        };
+      }
+    }
+
+    if (
+      route.seoAliasKey &&
+      SEO_URL_ALIASES[route.seoAliasKey] &&
+      SEO_URL_ALIASES[route.seoAliasKey].canonicalPath === canon
+    ) {
+      const a = SEO_URL_ALIASES[route.seoAliasKey];
+      const crumb = buildBreadcrumbLd([
+        { name: "Accueil", path: "/" },
+        { name: (a.title && a.title.split("|")[0]?.trim()) || "Yorix.cm", path: canon },
+      ]);
+      const pieces = [crumb, orgLd];
+      if (page === "home" || page === "produits") pieces.push(webLd);
+      return {
+        title: a.title,
+        description: a.description,
+        keywords: a.keywords,
+        canonicalPath: canon,
+        jsonLd: pieces.filter(Boolean),
+      };
+    }
+
     if (page === "dashboard" || page === "admin") {
       return {
         title: "Espace membre — Yorix CM",
@@ -900,12 +970,12 @@ export default function YorixApp() {
 
     if (page === "home") {
       return {
-        title: "Yorix.cm — Marketplace Cameroun | Achat en ligne, livraison, escrow, prestataires",
+        title: "Yorix.cm | Marketplace Cameroun – Achat, Vente, Livraison & Services",
         description:
-          "Yorix est une marketplace camerounaise : achat en ligne, vendre en ligne, livreur & livraison Douala, Yaoundé, Bafoussam, escrow MTN MoMo & Orange Money, prestataires vérifiés.",
-        canonicalPath: "/",
+          "Achetez, vendez et trouvez des services partout au Cameroun avec Yorix.cm : marketplace locale, e-commerce, petites annonces, livraison rapide à Douala, Yaoundé et plus encore. MTN MoMo, Orange Money, escrow.",
+        canonicalPath: canon === "/" ? "/" : canon,
         keywords:
-          "marketplace Cameroun, achat en ligne Cameroun, vendre en ligne Cameroun, livraison Cameroun, livreur Cameroun, escrow Cameroun, prestataires Cameroun, Douala, Yaoundé, Bafoussam",
+          "marketplace Cameroun, e-commerce Cameroun, achat en ligne Cameroun, vente en ligne Cameroun, livraison Cameroun, petites annonces Cameroun, marketplace Douala, marketplace Yaoundé, escrow",
         jsonLd: [orgLd, webLd],
       };
     }
@@ -1044,7 +1114,35 @@ export default function YorixApp() {
         title: m.title,
         description: m.desc,
         canonicalPath: canon,
+        keywords: `Yorix ${cn}, marketplace ${cn}, livraison ${cn}, e-commerce Cameroun`,
         jsonLd: [localLd, cityCrumb, orgLd],
+      };
+    }
+
+    if (page === "produits" && route.categorySlug) {
+      const catLabel = slugToCategoryName(route.categorySlug, CATS) || route.categorySlug.replace(/-/g, " ");
+      const catCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: "/" },
+        { name: "Produits", path: "/produits" },
+        { name: catLabel, path: canon },
+      ]);
+      return {
+        title: `${catLabel} — achat en ligne Cameroun | Yorix.cm marketplace`,
+        description: `Catégorie ${catLabel} sur Yorix.cm : e-commerce & marketplace Cameroun, livraison Douala, Yaoundé, paiement MTN MoMo & Orange Money.`,
+        canonicalPath: canon,
+        keywords: `${catLabel}, produits Cameroun, achat en ligne, marketplace Cameroun, e-commerce Cameroun`,
+        jsonLd: [catCrumb, orgLd, webLd],
+      };
+    }
+
+    if (page === "blog" && route.blogSlug && !getBlogArticle(route.blogSlug)) {
+      return {
+        title: "Article — Blog Yorix Cameroun",
+        description:
+          "Guides marketplace, livraison & e-commerce au Cameroun. Retrouvez les articles officiels sur le blog Yorix.cm.",
+        canonicalPath: canon,
+        noindex: true,
+        jsonLd: [orgLd],
       };
     }
 
@@ -1054,7 +1152,7 @@ export default function YorixApp() {
       escrow: "Escrow Cameroun — paiement sécurisé marketplace | Yorix.cm",
       prestataires: "Prestataires Cameroun — services à domicile vérifiés | Yorix.cm",
       business: "Yorix Business — solutions B2B marketplace Cameroun",
-      blog: "Blog Yorix — actualités marketplace Cameroun",
+      blog: "Blog Yorix — guides marketplace & e-commerce Cameroun",
       academy: "Yorix Academy — formations e-commerce Cameroun",
       loyalty: "Fidélité Yorix — points & récompenses",
       contact: "Contact Yorix — support marketplace Cameroun",
@@ -1100,7 +1198,8 @@ export default function YorixApp() {
         title: ft,
         description:
           "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
-        canonicalPath: PAGE_PATH[page] || canon,
+        canonicalPath:
+          page === "blog" && route.blogSlug ? canon : PAGE_PATH[page] || canon,
         jsonLd: [pageBc, orgLd].filter(Boolean),
       };
     }
@@ -1112,7 +1211,17 @@ export default function YorixApp() {
       canonicalPath: canon,
       jsonLd: [orgLd],
     };
-  }, [page, route.canonicalPath, route.citySlug, route.cityMode, location.pathname, detailProduct]);
+  }, [
+    page,
+    route.canonicalPath,
+    route.citySlug,
+    route.cityMode,
+    route.blogSlug,
+    route.seoAliasKey,
+    route.categorySlug,
+    location.pathname,
+    detailProduct,
+  ]);
 
   const pagesCtx = {
     page,
