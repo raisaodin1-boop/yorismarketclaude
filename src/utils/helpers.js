@@ -172,11 +172,11 @@ export function filtrerMsg(texte) {
 
 /** URL complète de l’Edge Function, ou dérivée de VITE_SUPABASE_URL / défaut projet. */
 export function resolveSendEmailFunctionUrl() {
-  const explicit = import.meta.env?.VITE_SEND_EMAIL_URL;
+  const explicit = import.meta.env.VITE_SEND_EMAIL_URL;
   if (explicit && String(explicit).trim()) {
     return String(explicit).trim().replace(/\/$/, "");
   }
-  const base = String(import.meta.env?.VITE_SUPABASE_URL || SUPABASE_PROJECT_URL || "")
+  const base = String(import.meta.env.VITE_SUPABASE_URL || SUPABASE_PROJECT_URL || "")
     .trim()
     .replace(/\/$/, "");
   if (!base) return "";

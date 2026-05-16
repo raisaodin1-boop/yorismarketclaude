@@ -104,14 +104,36 @@ const TRUST_BADGES = [
   { i: "🇨🇲", t: "100% Cameroun" },
 ];
 
+const SEO_CITY_LINKS = [
+  { city: "Douala", slug: "douala", desc: "Marketplace Douala, livraison Akwa, Bonapriso, Bonamoussadi" },
+  { city: "Yaoundé", slug: "yaounde", desc: "Achat en ligne Yaoundé, livraison Bastos, Mvan, Nlongkak" },
+  { city: "Bafoussam", slug: "bafoussam", desc: "Produits, services et livraison dans l'Ouest Cameroun" },
+  { city: "Kribi", slug: "kribi", desc: "Prestataires, colis et shopping local au Sud Cameroun" },
+];
+
+const SEO_FAQS = [
+  {
+    q: "Quel site utiliser pour acheter en ligne au Cameroun ?",
+    a: "Yorix.cm centralise produits, vendeurs, prestataires et livraison avec paiement MTN MoMo, Orange Money, cash ou carte selon les options disponibles.",
+  },
+  {
+    q: "Comment commander rapidement sur Yorix.cm ?",
+    a: "Recherchez un produit ou une ville, ajoutez au panier ou contactez le support WhatsApp express. L'objectif est de finaliser l'achat ou la demande en moins d'une minute.",
+  },
+  {
+    q: "Comment vendre en ligne au Cameroun avec Yorix ?",
+    a: "Créez un compte vendeur, publiez vos fiches avec photos, prix en FCFA et ville, puis suivez commandes, messages et paiements dans votre tableau de bord.",
+  },
+];
+
 export function HomePage({
   siteLocale = "fr",
-  filterCat,
-  setFilterCat,
-  search,
-  setSearch,
+  filterCat = "",
+  setFilterCat = () => {},
+  search = "",
+  setSearch = () => {},
   produitsLoading,
-  produits,
+  produits = [],
   user,
   userData,
   wishlist,
@@ -125,11 +147,22 @@ export function HomePage({
   allServices,
   nlEmail,
   setNlEmail,
+  wishlist = [],
+  addToCart = () => {},
+  toggleWish = () => {},
+  openProductUrl = () => {},
+  setOnboardingOpen = () => {},
+  goPage = () => {},
+  allServices = [],
+  nlEmail = "",
+  setNlEmail = () => {},
   nlSent,
-  setNlSent,
+  setNlSent = () => {},
   freeShippingThresholdXaf = 50000,
 }) {
   const [quickCity, setQuickCity] = useState("");
+  const safeProduits = Array.isArray(produits) ? produits : [];
+  const safeServices = Array.isArray(allServices) ? allServices : [];
 
   const handleHeroSearch = useCallback(() => {
     const cityEntry = SEO_CITIES.find((c) => c.name === quickCity);
@@ -190,24 +223,37 @@ export function HomePage({
                 </span>
 
                 <h1 className="yhm3-h1">
-                  Le marché numérique
+                  Marketplace Cameroun
                   <br />
-                  qui <em>accélère</em>
+                  pour <em>acheter</em>, vendre
                   <br />
-                  votre business
+                  et livrer vite
                 </h1>
 
                 <p className="yhm3-sub">
-                  Produits, freelances, livraison et formation — <strong>un seul écosystème premium</strong>.
-                  Conçu pour la confiance, pensé pour la conversion, ancré au Cameroun.
+                  Achat en ligne au Cameroun, livraison Douala & Yaoundé, prestataires locaux et paiement
+                  <strong> MTN MoMo / Orange Money</strong> — un parcours rapide, mobile et rassurant.
                 </p>
 
                 <div className="yhm3-hero-ctas">
                   <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => setOnboardingOpen(true)}>
-                    🚀 Démarrer · 30 s
+                    🚀 Acheter ou vendre · 30 s
                   </button>
                   <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("produits")}>
-                    Parcourir le catalogue
+                    Voir les produits
+                  </button>
+                  <button
+                    type="button"
+                    className="yhm3-btn yhm3-btn--sec"
+                    onClick={() =>
+                      window.open(
+                        `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent("Bonjour Yorix ! Je veux commander rapidement.")}`,
+                        "_blank",
+                        "noopener,noreferrer",
+                      )
+                    }
+                  >
+                    Commander WhatsApp
                   </button>
                 </div>
 
@@ -345,6 +391,7 @@ export function HomePage({
         />
 
         <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
+        <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
 
         <HomeTrendingProducts
           produits={produits}
@@ -382,6 +429,35 @@ export function HomePage({
                 <div className="yhm3-cat-icon">{l.icon}</div>
                 <div className="yhm3-cat-label">{l.label}</div>
                 <div className="yhm3-cat-desc">{l.desc}</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="yhm3-section--tinted" aria-labelledby="seo-local-title">
+          <div className="yhm3-section-head yhm3-section-head--center">
+            <span className="yhm3-eyebrow-light">SEO local · Cameroun</span>
+            <h2 id="seo-local-title" className="yhm3-h2 yhm3-h2--center">
+              Achat en ligne, services et <em>livraison par ville</em>
+            </h2>
+            <p className="yhm3-lead yhm3-lead--center">
+              Yorix.cm cible les recherches locales à forte intention : marketplace Douala, livraison Yaoundé,
+              prestataires Bafoussam et achat en ligne partout au Cameroun.
+            </p>
+          </div>
+
+          <div className="yhm3-cats-grid">
+            {SEO_CITY_LINKS.map((item) => (
+              <button
+                key={item.slug}
+                type="button"
+                className="yhm3-cat-card"
+                style={{ "--cat-color": "#1a6b3a" }}
+                onClick={() => goPage("seoCity", { citySlug: item.slug, mode: "acheter" })}
+              >
+                <div className="yhm3-cat-icon">📍</div>
+                <div className="yhm3-cat-label">Marketplace {item.city}</div>
+                <div className="yhm3-cat-desc">{item.desc}</div>
               </button>
             ))}
           </div>
@@ -440,9 +516,9 @@ export function HomePage({
             </button>
           </div>
 
-          {!produitsLoading && produits.length > 0 && (
+          {!produitsLoading && safeProduits.length > 0 && (
             <ProdGrid
-              prods={produits.slice(0, 4).map((p, i) => ({
+              prods={safeProduits.slice(0, 4).map((p, i) => ({
                 ...p,
                 flash: i < 2,
                 promo: i >= 2 && i < 4,
@@ -477,14 +553,14 @@ export function HomePage({
               <div className="yhm3-spinner" />
               Chargement du marché…
             </div>
-          ) : produits.length === 0 ? (
+          ) : safeProduits.length === 0 ? (
             <div className="yhm3-empty">
               <div className="yhm3-empty-ico">🛍️</div>
               <p>Le catalogue se remplit — revenez très vite.</p>
             </div>
           ) : (
             <ProdGrid
-              prods={produits.slice(0, 10)}
+              prods={safeProduits.slice(0, 10)}
               user={user}
               userData={userData}
               onAddToCart={addToCart}
@@ -554,6 +630,35 @@ export function HomePage({
           </div>
         </section>
 
+        <section className="yhm3-section--tinted" aria-labelledby="seo-faq-title">
+          <div className="yhm3-section-head yhm3-section-head--center">
+            <span className="yhm3-eyebrow-light">Questions fréquentes</span>
+            <h2 id="seo-faq-title" className="yhm3-h2 yhm3-h2--center">
+              Réponses rapides avant de <em>commander</em>
+            </h2>
+            <p className="yhm3-lead yhm3-lead--center">
+              Des réponses courtes pour rassurer les visiteurs venus de Google et accélérer la conversion.
+            </p>
+          </div>
+
+          <div style={{ maxWidth: 860, margin: "0 auto", display: "grid", gap: 12 }}>
+            {SEO_FAQS.map((item) => (
+              <details
+                key={item.q}
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                }}
+              >
+                <summary style={{ cursor: "pointer", fontWeight: 800, color: "var(--ink)" }}>{item.q}</summary>
+                <p style={{ color: "var(--gray)", fontSize: ".9rem", lineHeight: 1.7, marginTop: 10 }}>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         <section className="yhm3-section">
           <div className="yhm3-section-head yhm3-section-head--center">
             <span className="yhm3-eyebrow-light">Témoignages</span>
@@ -596,13 +701,13 @@ export function HomePage({
           </div>
 
           <div className="yhm3-prest-grid">
-            {allServices.length === 0 ? (
+            {safeServices.length === 0 ? (
               <div className="yhm3-empty" style={{ gridColumn: "1/-1" }}>
                 <div className="yhm3-empty-ico">🛠️</div>
                 <p>Les talents arrivent — explorez bientôt la vitrine services.</p>
               </div>
             ) : (
-              allServices.slice(0, 3).map((s) => (
+              safeServices.slice(0, 3).map((s) => (
                 <article key={s.id} className="yhm3-prest-card">
                   <div className="yhm3-prest-top">
                     <div className="yhm3-prest-av">🧑‍💼</div>
