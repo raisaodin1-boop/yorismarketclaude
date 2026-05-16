@@ -1199,7 +1199,9 @@ export default function YorixApp() {
         description:
           page === "contact"
             ? "Contact Yorix.cm : WhatsApp (+237 696 56 56 54), téléphone, email support@yorix.cm — aide commande, remboursement, escrow, livraison Douala & Yaoundé."
-            : "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
+            : page === "aide"
+              ? "Centre d'aide Yorix.cm : acheter, vendre, livraison Yorix Ride, fidélité points, escrow MoMo & Orange Money — guides et FAQ marketplace Cameroun."
+              : "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
         canonicalPath:
           page === "blog" && route.blogSlug ? canon : PAGE_PATH[page] || canon,
         jsonLd: [pageBc, orgLd].filter(Boolean),

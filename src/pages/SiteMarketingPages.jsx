@@ -193,7 +193,11 @@ export function SiteMarketingPages({
       );
 
     case "aide":
-      return <HelpCentrePage goPage={goPage} />;
+      return (
+        <section className="sec anim yorix-pro-page">
+          <HelpCentrePage goPage={goPage} />
+        </section>
+      );
 
     case "cgv":
       return <PagesLegales type="cgv" goPage={goPage} />;
