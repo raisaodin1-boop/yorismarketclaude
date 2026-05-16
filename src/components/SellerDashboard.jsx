@@ -76,7 +76,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       supabase.from("products").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_PRODUCTS_LIMIT),
       supabase.from("orders").select("*").eq("vendeur_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_ORDERS_LIMIT),
       supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase.from("commerce_settings").select("stock_low_threshold,stock_out_grace_days").eq("id", 1).maybeSingle(),
+      supabase.from("commerce_settings").select("*").eq("id", 1).maybeSingle(),
     ]);
 
     if (prodsRes.error) console.error("products:", prodsRes.error);
