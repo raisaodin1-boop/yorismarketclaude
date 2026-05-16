@@ -1,0 +1,1 @@
+import{j as a,N as n}from"./index-CzvrAFS9.js";import{r as e}from"./react-DtOhX2xw.js";import"./supabase-BedW8mzU.js";function m({user:t,refreshNotificationsFull:i,...o}){return e.useEffect(()=>{t?.id&&typeof i=="function"&&i()},[t?.id,i]),a.jsx("section",{className:"sec anim notif-page-wrap",children:a.jsx(n,{variant:"page",user:t,...o})})}export{m as NotificationsPage};
