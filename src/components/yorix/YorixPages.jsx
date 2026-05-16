@@ -18,6 +18,7 @@ import {
   LazyAcademyContactForm,
   LazyLoyaltyPage,
   LazyPromotionsPage,
+  LazyMerchHubPage,
   LazySellerDashboard,
   LazyBuyerDashboard,
   LazyDeliveryDashboard,
@@ -116,9 +117,28 @@ export function YorixPages({ ctx }) {
 
   return (
     <>
+      {page === "merchHub" && route.merchHub && (
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement sélection..." />}>
+          <LazyMerchHubPage
+            merchHub={route.merchHub}
+            locale={route.locale || "fr"}
+            produits={produitsFiltres}
+            produitsLoading={produitsLoading}
+            user={user}
+            userData={userData}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
+            goPage={goPage}
+          />
+        </Suspense>
+      )}
+
       {page === "home" && (
         <Suspense fallback={<RouteSuspenseFallback minHeight={280} label="Chargement de l'accueil..." />}>
           <LazyHomePage
+            siteLocale={route.locale || "fr"}
             filterCat={filterCat}
             setFilterCat={setFilterCat}
             search={search}

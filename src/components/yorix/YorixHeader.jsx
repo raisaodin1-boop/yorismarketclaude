@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { CATS } from "../../lib/constants";
 import { roleLabel } from "../../i18n/index.js";
+import { EMOTIONAL_NAV } from "../../lib/merchHubs";
 
 export function YorixHeader({
   navCompact,
@@ -354,6 +355,22 @@ export function YorixHeader({
           )}
         </div>
       </div>
+
+      <nav className="yorix-emotional-nav" aria-label={siteLocale === "en" ? "Shop highlights" : "Sélections marketplace"}>
+        {EMOTIONAL_NAV.map((item) => {
+          const label = siteLocale === "en" ? item.labelEn : item.labelFr;
+          const onClick = () => {
+            if (item.hub) goPage("merchHub", { merchHub: item.hub });
+            else if (item.page === "seoAlias" && item.alias) goPage("business");
+            else goPage(item.page);
+          };
+          return (
+            <button key={item.hub || item.page || item.alias} type="button" className="yorix-emotional-nav-btn" onClick={onClick}>
+              <span aria-hidden>{item.icon}</span> {label}
+            </button>
+          );
+        })}
+      </nav>
 
       <div className="pay-strip">
         <b style={{ color: "var(--ink)" }}>{t("payStrip.payment")}</b>

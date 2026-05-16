@@ -36,6 +36,7 @@ import {
   parseLocaleSegments,
 } from "./lib/seoRoutes";
 import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
+import { filterProductsByMerchHub, getMerchHub } from "./lib/merchHubs.js";
 import { SeoHead } from "./components/seo/SeoHead";
 import i18n from "./i18n/index.js";
 import {
@@ -787,8 +788,14 @@ export default function YorixApp() {
         return !v || v.includes(sl) || sl.includes(v);
       });
     }
+    if (page === "merchHub" && route.merchHub) {
+      const hub = getMerchHub(route.merchHub);
+      if (hub?.filter) {
+        list = filterProductsByMerchHub(list, hub.filter, { citySlug: route.citySlug });
+      }
+    }
     return list;
-  }, [produits, search, page, route.cityMode, seoCityName]);
+  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName]);
 
   const showSeoLocal =
     page === "seoCity" || (page === "livraison" && !!route.citySlug);
@@ -1196,6 +1203,28 @@ export default function YorixApp() {
         canonicalPath: canon,
         keywords: `Yorix ${cn}, marketplace ${cn}, livraison ${cn}, e-commerce Cameroun`,
         jsonLd: [localLd, cityCrumb, orgLd],
+      };
+    }
+
+    if (page === "merchHub" && route.merchHub) {
+      const hub = getMerchHub(route.merchHub);
+      const title = hub
+        ? route.locale === "en"
+          ? hub.titleEn
+          : hub.titleFr
+        : "Yorix.cm";
+      const desc = hub ? (route.locale === "en" ? hub.descEn : hub.descFr) : "";
+      const kw = hub?.keywordsFr || "marketplace Cameroun";
+      const hubCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: L("/") },
+        { name: title.split("—")[0].trim(), path: canon },
+      ]);
+      return {
+        title: `${title} | Yorix.cm`,
+        description: desc,
+        canonicalPath: canon,
+        keywords: kw,
+        jsonLd: [hubCrumb, orgLd, webLd],
       };
     }
 

@@ -92,3 +92,7 @@ export const LazyNotificationsPage = lazy(() =>
 export const LazyPromotionsPage = lazy(() =>
   import("./pages/PromotionsPage").then((m) => ({ default: m.PromotionsPage }))
 );
+
+export const LazyMerchHubPage = lazy(() =>
+  import("./pages/MerchHubPage").then((m) => ({ default: m.MerchHubPage }))
+);

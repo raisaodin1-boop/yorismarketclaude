@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLimits";
 import { CATS as PRODUCT_CATS } from "../lib/constants";
 import { uploadSingleImage } from "../utils/helpers";
+import { buildMadeInCameroonPayload } from "../lib/madeInCameroon";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
@@ -18,7 +19,19 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const [saveMsg, setSaveMsg]             = useState(null);
 
   // ── Formulaire ajout produit ──
-  const [form, setForm]         = useState({ name_fr: "", name_en: "", description_fr: "", prix: "", stock: "", categorie: "", ville: "", escrow: true });
+  const [form, setForm]         = useState({
+    name_fr: "",
+    name_en: "",
+    description_fr: "",
+    prix: "",
+    stock: "",
+    categorie: "",
+    ville: "",
+    escrow: true,
+    madeInChoice: "yes",
+    localBrandName: "",
+    countryOfOrigin: "CM",
+  });
   const [images, setImages]     = useState([]);
   const [previews, setPreviews] = useState([]);
   const [progress, setProgress] = useState(0);
@@ -79,7 +92,19 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   };
 
   const resetForm = () => {
-    setForm({ name_fr: "", name_en: "", description_fr: "", prix: "", stock: "", categorie: "", ville: "", escrow: true });
+    setForm({
+      name_fr: "",
+      name_en: "",
+      description_fr: "",
+      prix: "",
+      stock: "",
+      categorie: "",
+      ville: "",
+      escrow: true,
+      madeInChoice: "yes",
+      localBrandName: "",
+      countryOfOrigin: "CM",
+    });
     setImages([]); setPreviews([]); setProgress(0);
   };
 
@@ -104,6 +129,16 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       }
       setProgress(80);
 
+      const micPayload = buildMadeInCameroonPayload(
+        {
+          madeInChoice: form.madeInChoice,
+          localBrandName: form.localBrandName,
+          countryOfOrigin: form.countryOfOrigin,
+        },
+        { ville: form.ville, categorie: form.categorie, name_fr: form.name_fr },
+        userData,
+      );
+
       const { error } = await supabase.from("products").insert({
         name_fr:        form.name_fr,
         name_en:        form.name_en || form.name_fr,
@@ -118,7 +153,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
         vendeur_nom:    userData?.nom || "",
         actif:          true,
         escrow:         form.escrow,
-        local:          true,
+        ...micPayload,
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;

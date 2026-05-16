@@ -12,6 +12,7 @@ import {
   localePath,
 } from "../src/lib/seoRoutes.js";
 import { CATS } from "../src/lib/constants.js";
+import { MERCH_HUB_SLUGS } from "../src/lib/merchHubs.js";
 import {
   PROGRAMMATIC_SITEMAP_PATHS,
   getBlogGuidePaths,
@@ -175,6 +176,10 @@ function categoryUrls() {
   ]);
 }
 
+function merchHubUrls() {
+  return MERCH_HUB_SLUGS.map((slug) => [`/${slug}`, "0.9", "daily"]);
+}
+
 /** Combinaisons métier × ville (indexation locale scalable) */
 function metierVilleUrls() {
   const out = [];
@@ -222,6 +227,12 @@ async function generate() {
 
   for (const lang of SITEMAP_LANGS) {
     for (const row of categoryUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, row[0]), today, row[1], row[2]));
+    }
+  }
+
+  for (const lang of SITEMAP_LANGS) {
+    for (const row of merchHubUrls()) {
       urls.push(urlEntry(siteBase, localePath(lang, row[0]), today, row[1], row[2]));
     }
   }

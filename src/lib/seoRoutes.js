@@ -4,6 +4,7 @@
  */
 
 import { resolveSeoLandingFromPath, SEO_URL_ALIASES, slugHreflangTwin } from "./seoProgrammatic.js";
+import { MERCH_HUB_SLUGS, MERCH_HUBS } from "./merchHubs.js";
 
 const DEFAULT_SITE_URL = "https://www.yorix.cm";
 
@@ -178,6 +179,9 @@ export function pathForPageBare(page, opts = {}) {
   if (page === "prestDetail" && opts.prestSlug) {
     return `/prestataire/${opts.prestSlug}`;
   }
+  if (page === "merchHub" && opts.merchHub && MERCH_HUBS[opts.merchHub]) {
+    return `/${opts.merchHub}`;
+  }
   if (page === "produits" && opts.categorySlug) {
     return `/categories/${opts.categorySlug}`;
   }
@@ -241,6 +245,16 @@ export function parsePathnameBare(rawIn) {
       return { page: "blog", blogSlug: b, canonicalPathBare: raw, seoAliasKey: null };
     }
     return { page: "blog", canonicalPathBare: "/blog", seoAliasKey: null };
+  }
+
+  if (parts.length === 1 && MERCH_HUB_SLUGS.includes(a)) {
+    return {
+      page: "merchHub",
+      merchHub: a,
+      categorySlug: MERCH_HUBS[a]?.categorySlug || a,
+      canonicalPathBare: raw,
+      seoAliasKey: null,
+    };
   }
 
   if (parts.length === 1) {

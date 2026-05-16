@@ -431,6 +431,28 @@ export function AdminDashboard({ user, userData, goPage }) {
     showToast(actif ? "Produit désactivé" : "Produit activé");
   };
 
+  const setMadeInCameroonStatus = async (id, status) => {
+    const payload = {
+      made_in_cameroon_status: status,
+      is_made_in_cameroon: status === "verified" || status === "declared" || status === "auto",
+      local: status === "verified" || status === "declared" || status === "auto",
+      made_in_cameroon_verified_at: status === "verified" ? new Date().toISOString() : null,
+    };
+    const { error } = await supabase.from("products").update(payload).eq("id", id);
+    if (error) {
+      showToast("Erreur MIC : " + error.message, "error");
+      return;
+    }
+    setProduits((p) => p.map((x) => (x.id === id ? { ...x, ...payload } : x)));
+    showToast(
+      status === "verified"
+        ? "🇨🇲✔ Made in Cameroun vérifié"
+        : status === "rejected"
+          ? "Badge Made in Cameroun refusé"
+          : "Statut Made in Cameroun mis à jour",
+    );
+  };
+
   // ═══════════ ACTIONS UTILISATEURS ═══════════
   const changerRole = async (uid, newRole) => {
     const [r1, r2] = await Promise.all([
@@ -1305,7 +1327,7 @@ export function AdminDashboard({ user, userData, goPage }) {
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
-                  <tr><th>Produit</th><th>Prix</th><th>Vendeur</th><th>Cat.</th><th>Ville</th><th>Stock</th><th>Statut</th><th>Actions</th></tr>
+                  <tr><th>Produit</th><th>Prix</th><th>Vendeur</th><th>Cat.</th><th>Ville</th><th>🇨🇲</th><th>Stock</th><th>Statut</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                   {produitsFiltres.map(p => (
@@ -1322,6 +1344,15 @@ export function AdminDashboard({ user, userData, goPage }) {
                       <td style={{ fontSize: ".75rem" }}>{p.vendeur_nom || "—"}</td>
                       <td><span className="admin-badge admin-badge-gray">{p.categorie || "—"}</span></td>
                       <td style={{ fontSize: ".72rem" }}>{p.ville || "—"}</td>
+                      <td style={{ fontSize: ".65rem" }}>
+                        {p.made_in_cameroon_status === "verified" ? (
+                          <span title="Vérifié admin">🇨🇲✔</span>
+                        ) : p.is_made_in_cameroon || p.local ? (
+                          <span title={p.made_in_cameroon_status || "local"}>🇨🇲</span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td>
                         <span className={`admin-badge admin-badge-${(p.stock || 0) === 0 ? "red" : (p.stock || 0) <= 5 ? "yellow" : "green"}`}>
                           {p.stock || 0}
@@ -1330,6 +1361,8 @@ export function AdminDashboard({ user, userData, goPage }) {
                       <td><span className={`admin-badge admin-badge-${p.actif ? "green" : "gray"}`}>{p.actif ? "Actif" : "Inactif"}</span></td>
                       <td>
                         <div style={{ display: "flex", gap: 3 }}>
+                          <button className="admin-action-btn" title="Vérifier Made in CM" style={{ background: "#e8f8f0", color: "#007a5e" }} onClick={() => setMadeInCameroonStatus(p.id, "verified")}>🇨🇲✔</button>
+                          <button className="admin-action-btn" title="Refuser badge" style={{ background: "#f3f4f6", color: "#666" }} onClick={() => setMadeInCameroonStatus(p.id, "rejected")}>✖</button>
                           <button className="admin-action-btn" style={{ background: p.actif ? "#fff9e6" : "#e6fff0", color: p.actif ? "#b8860b" : "#1a6b3a" }} onClick={() => toggleActifProduit(p.id, p.actif)}>
                             {p.actif ? "⛔" : "✅"}
                           </button>
@@ -1339,7 +1372,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                     </tr>
                   ))}
                   {produitsFiltres.length === 0 && (
-                    <tr><td colSpan={8} style={{ textAlign: "center", padding: 28, color: "var(--gray)" }}>Aucun produit trouvé</td></tr>
+                    <tr><td colSpan={9} style={{ textAlign: "center", padding: 28, color: "var(--gray)" }}>Aucun produit trouvé</td></tr>
                   )}
                 </tbody>
               </table>

@@ -84,6 +84,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .header-sticky-stack--compact .pay-strip{padding-block:5px;font-size:.65rem!important;}
 }
 
+.yorix-emotional-nav{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;background:linear-gradient(90deg,#007a5e 0%,#1a6b3a 55%,#ce1126 100%);overflow-x:auto;scrollbar-width:none;}
+.yorix-emotional-nav::-webkit-scrollbar{display:none;}
+.yorix-emotional-nav-btn{flex-shrink:0;border:none;background:rgba(255,255,255,.14);color:#fff;padding:6px 12px;border-radius:999px;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;border:1px solid rgba(255,255,255,.2);}
+.yorix-emotional-nav-btn:hover{background:rgba(255,255,255,.28);}
+
 /* TABS PREMIUM + menu rapide */
 .nav-tabs-row{display:flex;align-items:center;gap:10px;background:var(--green);padding:0 16px 0 24px;flex-wrap:nowrap;}
 .nav-tabs{flex:1;min-width:0;display:flex;padding:0;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;}
