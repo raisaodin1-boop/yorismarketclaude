@@ -1,4 +1,5 @@
 import { computeCartDeliverySummary } from "./deliveryPolicy";
+import { effectiveProductPrice } from "../lib/productPricing.js";
 
 const STORAGE_KEY = "yorix_cart";
 
@@ -56,16 +57,19 @@ export function makeProductCartItem(product) {
     kind: "product",
     name: product.name_fr || product.name || "Produit",
     image,
-    prix: Number(product.prix || 0),
+    prix: effectiveProductPrice(product),
     qty: 1,
     vendeur_id: product.vendeur_id || null,
     vendeur_nom: product.vendeur_nom || "",
     categorie: product.categorie || "",
     ville: product.ville || "",
     stock: product.stock ?? null,
+    promo: product.promo,
+    promo_pct: product.promo_pct,
     fulfillmentMode: "delivery",
     pricingSnapshot: {
       base: Number(product.prix || 0),
+      sale: effectiveProductPrice(product),
       currency: "XAF",
     },
   });

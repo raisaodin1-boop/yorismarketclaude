@@ -7,6 +7,7 @@ import { ModalCommander } from "./ModalCommander";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
 import { isPurchasable } from "../lib/stockStatus";
+import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 
 const LazyFicheProduit = lazy(() =>
   import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
@@ -42,7 +43,7 @@ export function ProdGrid({
     const badges = [];
     if (p.sponsorise)                   badges.push({ label: "⭐ Top Vendeur",   cls: "badge-top" });
     if (p.verifie || p.vendeur_verifie) badges.push({ label: "✅ Vérifié",        cls: "badge-verif" });
-    if (p.promo)                        badges.push({ label: "🔥 Promo du jour", cls: "badge-promo" });
+    if (isPromoActive(p))               badges.push({ label: "🔥 Promo du jour", cls: "badge-promo" });
     if (p.flash)                        badges.push({ label: "⚡ Offre flash",   cls: "badge-flash" });
     if (p.vente_total > 50)             badges.push({ label: "🏆 Best seller",   cls: "badge-best" });
     return badges;
@@ -55,7 +56,8 @@ export function ProdGrid({
           const safeImg    = getSafeImg(p);
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
           const vendBadges = getVendeurBadges(p);
-          const prixPromo  = p.promo_pct ? Math.round(p.prix * (1 - p.promo_pct / 100)) : null;
+          const prixPromo  = isPromoActive(p) ? effectiveProductPrice(p) : null;
+          const prixBarre  = productPromoListPrice(p);
           const buyable    = isPurchasable(p);
 
           return (
@@ -76,7 +78,7 @@ export function ProdGrid({
                   style={{ width: "100%", height: "100%" }}
                 />
                 {p.flash                             && <span className="pbadge-flash">⚡ Flash</span>}
-                {!p.flash && p.promo                 && <span className="pbadge-promo">-{p.promo_pct || 20}%</span>}
+                {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
                 {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
                 {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
                 {p.escrow                            && <span className="escrow-badge">🔐</span>}

@@ -10,6 +10,7 @@ import { TrustStrip } from "./conversion/TrustStrip";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";
+import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL
@@ -214,8 +215,25 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
             )}
 
             <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800, color: "var(--green)", marginBottom: 14 }}>
-              {product.prix?.toLocaleString()}{" "}
-              <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+              {isPromoActive(product) ? (
+                <>
+                  {effectiveProductPrice(product).toLocaleString()}{" "}
+                  <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+                  {productPromoListPrice(product) != null && (
+                    <span style={{ marginLeft: 8, fontSize: ".85rem", color: "var(--gray)", textDecoration: "line-through", fontWeight: 500 }}>
+                      {productPromoListPrice(product).toLocaleString()} FCFA
+                    </span>
+                  )}
+                  <span style={{ display: "block", marginTop: 4, fontSize: ".72rem", fontWeight: 700, color: "#d4520a" }}>
+                    🔥 -{product.promo_pct || 15}% · Alimentation
+                  </span>
+                </>
+              ) : (
+                <>
+                  {product.prix?.toLocaleString()}{" "}
+                  <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+                </>
+              )}
             </div>
 
             {product.escrow && (

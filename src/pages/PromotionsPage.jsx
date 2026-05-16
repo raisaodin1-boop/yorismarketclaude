@@ -1,10 +1,18 @@
 /**
  * Landing promotions saisonnières + rappel livraison offerte (pilier conversion).
  */
-export function PromotionsPage({ goPage, freeShippingThresholdXaf = 50000 }) {
+export function PromotionsPage({ goPage, goToCategory, freeShippingThresholdXaf = 50000 }) {
   const th = Number(freeShippingThresholdXaf) || 50000;
 
   const cards = [
+    {
+      emoji: "🍽️",
+      title: "−15 % sur l'alimentation cette semaine",
+      body:
+        "Jusqu'au dimanche 17 mai 2026 (23h59) : épicerie, boissons, frais et snacks éligibles affichent −15 % sur le prix catalogue. Le montant réduit est appliqué au panier et au paiement.",
+      cta: "Voir l'alimentation",
+      categorySlug: "alimentation",
+    },
     {
       emoji: "🚚",
       title: `Livraison offerte dès ${th.toLocaleString("fr-FR")} FCFA`,
@@ -59,7 +67,15 @@ export function PromotionsPage({ goPage, freeShippingThresholdXaf = 50000 }) {
               {c.title}
             </h2>
             <p style={{ fontSize: ".82rem", color: "var(--gray)", lineHeight: 1.55, marginBottom: 12 }}>{c.body}</p>
-            <button type="button" className="form-submit" style={{ width: "100%" }} onClick={() => goPage(c.page)}>
+            <button
+              type="button"
+              className="form-submit"
+              style={{ width: "100%" }}
+              onClick={() => {
+                if (c.categorySlug && goToCategory) goToCategory({ parentSlug: c.categorySlug });
+                else if (c.page) goPage(c.page);
+              }}
+            >
               {c.cta}
             </button>
           </article>
