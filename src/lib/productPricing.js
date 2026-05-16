@@ -8,13 +8,13 @@ export function isPromoActive(product, now = new Date()) {
   if (!product.promo && pct <= 0) return false;
 
   const t = now instanceof Date ? now.getTime() : new Date(now).getTime();
-  if (product.promo_starts_at) {
+  if (product.promo_starts_at != null && product.promo_starts_at !== "") {
     const start = new Date(product.promo_starts_at).getTime();
-    if (t < start) return false;
+    if (!Number.isNaN(start) && t < start) return false;
   }
-  if (product.promo_ends_at) {
+  if (product.promo_ends_at != null && product.promo_ends_at !== "") {
     const end = new Date(product.promo_ends_at).getTime();
-    if (t > end) return false;
+    if (!Number.isNaN(end) && t > end) return false;
   }
   return product.promo === true || pct > 0;
 }

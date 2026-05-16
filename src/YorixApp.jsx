@@ -563,20 +563,29 @@ export default function YorixApp() {
   }, [navigate, route.locale]);
 
   // ── PRODUITS TEMPS RÉEL ──
+  // Ne pas filtrer par filterCat côté API : ce libellé UI/URL est appliqué dans produitsFiltres.
+  // Un filtre serveur trop strict (ex. « Téléphones & HighTech ») vidait tout le catalogue y compris l'accueil.
   useEffect(() => {
     setProduitsLoading(true);
     const load = async () => {
-      let q = supabase.from("products").select("*").or("actif.eq.true,actif.is.null").order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
-      if (filterCat) q = q.eq("categorie", filterCat);
-      const { data, error } = await q;
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .or("actif.eq.true,actif.is.null")
+        .order("sponsorise", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (error) console.warn("Produits:", error.message);
       setProduits(data || []);
       setProduitsLoading(false);
     };
     load();
-    const channel = supabase.channel("prod_rt").on("postgres_changes", { event:"*", schema:"public", table:"products" }, load).subscribe();
+    const channel = supabase
+      .channel("prod_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, load)
+      .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [filterCat]);
+  }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [chatMessages]);
 
@@ -594,6 +603,9 @@ export default function YorixApp() {
     } else if (route.categorySlug) {
       setFilterCat(categoryNameFromTaxonomySlug(route.subCategorySlug || route.categorySlug) || "");
     } else if (route.page === "produits" && routePath === "/produits") {
+      setFilterCat("");
+      setCategoryFilter(null);
+    } else if (route.page === "home") {
       setFilterCat("");
       setCategoryFilter(null);
     }
