@@ -381,11 +381,10 @@ export function HomePage({
           onSell={() => goPage("devenirVendeur")}
         />
 
-        <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
         <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
 
         <HomeTrendingProducts
-          produits={produits}
+          produits={safeProduits}
           locale={siteLocale}
           loading={produitsLoading}
           user={user}
