@@ -1,0 +1,60 @@
+.mhub-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mhub-hero {
+  border-radius: 16px;
+  padding: 1.5rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+}
+
+.mhub-hero--cameroon-green {
+  background: linear-gradient(135deg, #e8f8f0 0%, #fff 60%);
+  border-color: rgba(0, 122, 94, 0.25);
+}
+
+.mhub-hero--gold {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff 70%);
+}
+
+.mhub-hero--fire {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff 70%);
+}
+
+.mhub-hero-emoji {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.mhub-hero-title {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.2rem, 3vw, 1.55rem);
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+}
+
+.mhub-hero-desc {
+  margin: 0;
+  color: var(--gray);
+  line-height: 1.55;
+  font-size: 0.9rem;
+  max-width: 40rem;
+}
+
+.mhub-hero-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  color: #007a5e;
+  font-weight: 600;
+}
+
+.mhub-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--green);
+}

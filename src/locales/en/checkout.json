@@ -1,0 +1,99 @@
+{
+  "steps": {
+    "cart": "Cart",
+    "address": "Address",
+    "payment": "Payment",
+    "confirm": "Done",
+    "aria": "Checkout steps",
+    "backTo": "Back: {{step}}"
+  },
+  "title": {
+    "done": "Order recorded",
+    "active": "Complete your order"
+  },
+  "lead": {
+    "done": "Thank you for your trust. Keep your reference for tracking.",
+    "active": "Secure flow: address • delivery • payment ({{type}}).",
+    "typeMixed": "mixed cart",
+    "typeServices": "services",
+    "typeProducts": "products"
+  },
+  "confirm": {
+    "whatsapp": "Finish on WhatsApp",
+    "cinetpay": "CinetPay payment",
+    "summary": "Summary",
+    "whatsappBody": "A WhatsApp conversation was opened with your order details. Our team will confirm payment (MoMo, Orange or other) with you.",
+    "cinetpayBody": "Status updated from our server. If still pending, the webhook may finalize within a few minutes.",
+    "standardBody": "Your order was recorded. Track progress from your account.",
+    "paymentStatus": "Payment status",
+    "paid": "Paid",
+    "failed": "Failed",
+    "pending": "Pending",
+    "amountRecorded": "Amount recorded",
+    "txRef": "Transaction ref.",
+    "orderGroup": "Order group",
+    "checkoutRef": "Checkout ref.",
+    "trackingCodes": "Delivery tracking codes",
+    "trackingHint": "Track progress on the Delivery page with this code.",
+    "myAccount": "My account",
+    "continueShopping": "Continue shopping"
+  },
+  "empty": {
+    "cart": "Your cart is empty.",
+    "browse": "Browse catalog"
+  },
+  "step1": {
+    "heading": "Address & contact",
+    "lead": "Phone used for delivery and MoMo / Orange validation. Data is also saved on this device for your next visit.",
+    "fullName": "Full name",
+    "fullNamePh": "e.g. Mari Kamga",
+    "mobile": "Mobile",
+    "mobilePh": "6XX XXX XXX or +237 6XX XXX XXX",
+    "address": "Street address",
+    "addressPh": "e.g. Kennedy Ave, blue building, 2nd floor",
+    "district": "District",
+    "districtPh": "e.g. Bastos, Akwa…",
+    "city": "City",
+    "cityChoose": "— Choose a city —",
+    "landmark": "Landmark (optional)",
+    "landmarkPh": "e.g. near Total station, green gate…",
+    "trustSecure": "Secure payment",
+    "trustBuyer": "Buyer protection",
+    "trustTrack": "Order tracking",
+    "continueDelivery": "Continue to delivery",
+    "backCart": "← Back to cart"
+  },
+  "step2": {
+    "heading": "Delivery & pickup",
+    "mainMode": "Main mode",
+    "homeBoth": "At home (parcel or service)",
+    "homeProducts": "Home delivery",
+    "homeServices": "Home / on-site service",
+    "shopProducts": "Pickup / relay point",
+    "shopServices": "On-site — workshop / store",
+    "online": "100% online (video, files, phone)",
+    "backAddress": "← Edit address",
+    "continuePayment": "Continue to payment"
+  },
+  "step3": {
+    "heading": "Payment",
+    "method": "Payment method",
+    "cinetpay": "CinetPay (MoMo, Orange, card)",
+    "whatsapp": "WhatsApp (manual confirmation)",
+    "placeOrder": "Confirm and pay",
+    "processing": "Processing…",
+    "backDelivery": "← Edit delivery"
+  },
+  "location": {
+    "online": "Video / phone / digital deliverables per provider.",
+    "shop": "Exact coordinates sent after confirmation.",
+    "shopProducts": "Bring ID if the seller requires verification at pickup.",
+    "yorix": "Yorix Delivery — confirm {{city}} is covered. Final fees at payment if catalog amount changes.",
+    "standard": "Standard delivery coordinated by seller and partner couriers."
+  },
+  "errors": {
+    "loginRequired": "Sign in required to complete checkout.",
+    "addressIncomplete": "Complete address and phone on the previous step.",
+    "checkoutFailed": "Could not complete checkout. Try again or contact Yorix on WhatsApp (+237 696 56 56 54)."
+  }
+}

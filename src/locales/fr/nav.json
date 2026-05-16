@@ -1,0 +1,97 @@
+{
+  "topbar": {
+    "help": "Aide",
+    "contact": "Contact",
+    "login": "Se connecter",
+    "cameroon": "Cameroun"
+  },
+  "search": {
+    "allCategories": "Tout",
+    "placeholder": "Produit, marque, mot-clé…",
+    "ariaCategory": "Filtrer par catégorie",
+    "ariaSearch": "Rechercher dans le catalogue",
+    "ariaSuggestions": "Suggestions catalogue",
+    "ariaSubmit": "Lancer la recherche catalogue",
+    "noResults": "Aucun résultat pour « {{query}} » — touche Entrée pour ouvrir le catalogue filtré."
+  },
+  "actions": {
+    "getStarted": "Démarrer",
+    "getStartedTitle": "Que cherchez-vous ?",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "notifications": "Notifications",
+    "cart": "Mon panier",
+    "loginShort": "Connexion",
+    "register": "S'inscrire",
+    "mySpace": "Mon espace",
+    "logout": "Déconnexion",
+    "navigation": "Navigation",
+    "navDialog": "Navigation Yorix"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "products": "Produits",
+    "deals": "Bons plans",
+    "delivery": "Livraison",
+    "escrow": "Escrow",
+    "providers": "Prestataires",
+    "business": "Business",
+    "academy": "Academy",
+    "blog": "Blog",
+    "loyalty": "Fidélité",
+    "contact": "Contact",
+    "help": "Aide",
+    "admin": "Admin"
+  },
+  "quickNav": {
+    "marketplace": "Marketplace",
+    "trust": "Confiance & croissance",
+    "support": "Support Yorix",
+    "home": "Accueil",
+    "catalog": "Produits & catalogue",
+    "cartSecure": "Panier · paiement sécurisé",
+    "dealsNow": "Bons plans du moment",
+    "deliveryTrack": "Livraison & suivi",
+    "escrowBuyer": "Escrow acheteur",
+    "providersVerified": "Prestataires vérifiés",
+    "blogTrends": "Blog & tendances CM",
+    "loyaltyProgram": "Programme fidélité",
+    "contactSupport": "Contact relation client",
+    "helpSos": "SOS · centre d'aide",
+    "faqMarketplace": "FAQ marketplace"
+  },
+  "payStrip": {
+    "payment": "Paiement :",
+    "momo": "MTN MoMo",
+    "orange": "Orange Money",
+    "card": "Carte",
+    "cash": "Cash",
+    "deliveryJ1": "J+1 Douala & Yaoundé",
+    "freeShippingFrom": "Livraison offerte dès {{amount}} FCFA",
+    "escrowSecure": "Escrow sécurisé"
+  },
+  "roles": {
+    "buyer": "Acheteur",
+    "seller": "Vendeur",
+    "delivery": "Livreur",
+    "provider": "Prestataire",
+    "admin": "Administrateur"
+  },
+  "dashNav": {
+    "overview": "Vue d'ensemble",
+    "myProducts": "Mes produits",
+    "addProduct": "Ajouter produit",
+    "orders": "Commandes",
+    "wallet": "Wallet",
+    "available": "Disponibles",
+    "inProgress": "En cours",
+    "history": "Historique",
+    "earnings": "Gains",
+    "requests": "Demandes",
+    "myServices": "Mes services",
+    "addService": "Ajouter service",
+    "myOrders": "Mes commandes",
+    "favorites": "Favoris",
+    "loyalty": "Fidélité"
+  }
+}

@@ -1,7 +1,9 @@
 /**
- * Projet Supabase Yorix (clé anon « publishable », exposée aussi dans le bundle client).
- * Source unique pour le front (supabase.js) et le script Node generate-sitemap.js.
- * Surcharge : variables d’environnement VITE_* / SUPABASE_* (voir scripts/generate-sitemap.js).
+ * Valeurs par défaut du projet Supabase (clé « publishable », exposée côté client avec RLS).
+ * Pour la prod ou après rotation de clé : définir `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`
+ * dans `.env.local` / secrets CI — ne pas committer de clés sensibles hors publishable.
+ *
+ * Source unique pour le front (`supabase.js`) et le script Node `generate-sitemap.js`.
  */
 export const SUPABASE_PROJECT_URL = "https://msrymchhhxitdevthvdi.supabase.co";
 

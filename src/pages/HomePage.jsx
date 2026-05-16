@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 import { FlashCountdown } from "../components/FlashCountdown";
 import { ProdGrid } from "../components/ProdGrid";
 import { CATS, CITIES } from "../lib/constants";
+import { HomePremiumMerch } from "../components/home/HomePremiumMerch";
 import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
 import homePremiumCss from "./homePageV3Premium.css?raw";
@@ -100,6 +101,7 @@ const TRUST_BADGES = [
 ];
 
 export function HomePage({
+  siteLocale = "fr",
   filterCat,
   setFilterCat,
   search,
@@ -321,6 +323,8 @@ export function HomePage({
             </div>
           </div>
         </header>
+
+        <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
 
         <section className="yhm3-section">
           <div className="yhm3-section-head yhm3-section-head--center">

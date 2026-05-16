@@ -3,7 +3,9 @@ import { SITE_URL } from "../../lib/seoRoutes";
 
 /**
  * Métadonnées par route : title/description/canonical/OG/Twitter/hreflang + JSON-LD optionnel.
- * Centralise toute la couche SEO côté SPA pour rester cohérent avec l'index.html racine.
+ * @param {object} props
+ * @param {"fr"|"en"} [props.locale] — défaut fr
+ * @param {{ hrefLang: string, href: string }[]} [props.hrefLangAlternates]
  */
 export function SeoHead({
   title,
@@ -12,11 +14,13 @@ export function SeoHead({
   robots = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
   keywords,
   ogType = "website",
-  ogImage = "https://www.yorix.cm/og-image.svg",
+  ogImage = `${SITE_URL.replace(/\/$/, "")}/og-image.svg`,
   ogImageAlt,
   ogImageType,
   jsonLd = [],
   noindex = false,
+  locale = "fr",
+  hrefLangAlternates,
 }) {
   const canonical = `${SITE_URL}${canonicalPath?.startsWith("/") ? canonicalPath : `/${canonicalPath || ""}`}`.replace(
     /([^:]\/)\/+/g,
@@ -36,9 +40,22 @@ export function SeoHead({
           ? "image/webp"
           : "image/jpeg");
 
+  const htmlLang = locale === "en" ? "en-CM" : "fr-CM";
+  const ogPrimary = locale === "en" ? "en_US" : "fr_CM";
+  const ogAlt1 = locale === "en" ? "fr_CM" : "en_US";
+
+  const alternateLinks =
+    Array.isArray(hrefLangAlternates) && hrefLangAlternates.length > 0
+      ? hrefLangAlternates.map((alt) => <link key={alt.hrefLang} rel="alternate" hrefLang={alt.hrefLang} href={alt.href} />)
+      : [
+          <link key="fr-CM" rel="alternate" hrefLang="fr-CM" href={canonical} />,
+          <link key="fr" rel="alternate" hrefLang="fr" href={canonical} />,
+          <link key="xd" rel="alternate" hrefLang="x-default" href={canonical} />,
+        ];
+
   return (
     <Helmet>
-      <html lang="fr-CM" />
+      <html lang={htmlLang} />
       <title>{title}</title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
@@ -46,9 +63,7 @@ export function SeoHead({
       <meta name="googlebot" content={robotsFinal} />
       <link rel="canonical" href={canonical} />
 
-      <link rel="alternate" hrefLang="fr-CM" href={canonical} />
-      <link rel="alternate" hrefLang="fr" href={canonical} />
-      <link rel="alternate" hrefLang="x-default" href={canonical} />
+      {alternateLinks}
 
       {/* Open Graph */}
       <meta property="og:type" content={ogType} />
@@ -61,9 +76,8 @@ export function SeoHead({
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content={imgAlt} />
-      <meta property="og:locale" content="fr_CM" />
-      <meta property="og:locale:alternate" content="fr_FR" />
-      <meta property="og:locale:alternate" content="en_US" />
+      <meta property="og:locale" content={ogPrimary} />
+      <meta property="og:locale:alternate" content={ogAlt1} />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

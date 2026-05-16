@@ -1,0 +1,64 @@
+{
+  "loading": "Chargement...",
+  "greeting": "Bonjour {{name}} 👋",
+  "stats": {
+    "published": "Produits publiés",
+    "activeOrders": "Commandes actives",
+    "delivered": "Livrées",
+    "netRevenue": "Revenus nets"
+  },
+  "products": {
+    "title": "Mes produits",
+    "titleCount": "Mes produits ({{count}})",
+    "recent": "Mes derniers produits",
+    "seeAll": "Voir tout →",
+    "empty": "Aucun produit publié",
+    "addFirst": "+ Ajouter mon premier produit",
+    "add": "+ Ajouter",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "addTitle": "Ajouter un produit",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer ce produit ?",
+    "deleteBody": "« {{name}} » sera définitivement supprimé de la plateforme.",
+    "deleting": "Suppression...",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "saveErrorNamePrice": "Nom et prix sont obligatoires.",
+    "saved": "Produit enregistré ✓",
+    "updated": "Produit mis à jour ✓",
+    "deleted": "Produit supprimé"
+  },
+  "orders": {
+    "title": "Mes commandes",
+    "titleCount": "Mes commandes ({{count}})",
+    "recent": "Commandes récentes",
+    "empty": "Aucune commande pour le moment",
+    "status": {
+      "pending": "En attente",
+      "paid": "Payée",
+      "shipped": "Expédiée",
+      "delivered": "Livrée",
+      "cancelled": "Annulée"
+    }
+  },
+  "wallet": {
+    "title": "Mon wallet",
+    "balance": "Solde disponible",
+    "totalEarned": "Total gagné"
+  },
+  "form": {
+    "nameFr": "Nom (FR)",
+    "nameEn": "Nom (EN)",
+    "description": "Description",
+    "price": "Prix (FCFA)",
+    "stock": "Stock",
+    "category": "Catégorie",
+    "city": "Ville",
+    "escrow": "Activer l'escrow Yorix",
+    "photos": "Photos produit",
+    "publish": "Publier le produit",
+    "publishing": "Publication…"
+  }
+}

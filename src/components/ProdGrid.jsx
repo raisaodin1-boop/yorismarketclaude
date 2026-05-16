@@ -1,5 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { OptimizedImage } from "./OptimizedImage";
+import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
+import { resolveMadeInCameroon } from "../lib/madeInCameroon";
 import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
 
@@ -61,7 +63,11 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
                 {p.flash                             && <span className="pbadge-flash">⚡ Flash</span>}
                 {!p.flash && p.promo                 && <span className="pbadge-promo">-{p.promo_pct || 20}%</span>}
                 {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
-                {p.local                             && <span className="pbadge-y">🇨🇲</span>}
+                {resolveMadeInCameroon(p).show ? (
+                  <MadeInCameroonBadge product={p} size="sm" />
+                ) : (
+                  p.local && <span className="pbadge-y">🇨🇲</span>
+                )}
                 {p.escrow                            && <span className="escrow-badge">🔐</span>}
                 <button
                   className="wish-btn"

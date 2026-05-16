@@ -1,0 +1,99 @@
+{
+  "steps": {
+    "cart": "Panier",
+    "address": "Adresse",
+    "payment": "Paiement",
+    "confirm": "Confirmation",
+    "aria": "Étapes de commande",
+    "backTo": "Retour : {{step}}"
+  },
+  "title": {
+    "done": "Commande enregistrée",
+    "active": "Finaliser la commande"
+  },
+  "lead": {
+    "done": "Merci pour votre confiance. Conservez votre référence pour le suivi.",
+    "active": "Tunnel sécurisé : adresse • livraison • paiement ({{type}}).",
+    "typeMixed": "panier mixte",
+    "typeServices": "prestations",
+    "typeProducts": "produits"
+  },
+  "confirm": {
+    "whatsapp": "Finalisez sur WhatsApp",
+    "cinetpay": "Paiement CinetPay",
+    "summary": "Récapitulatif",
+    "whatsappBody": "Une conversation WhatsApp a été ouverte avec le détail de votre commande. Notre équipe confirme le paiement (MoMo, Orange ou autre) avec vous.",
+    "cinetpayBody": "Statut mis à jour depuis notre serveur. En cas de « en attente », le webhook peut encore finaliser sous quelques minutes.",
+    "standardBody": "Votre commande a été enregistrée. Suivez l'avancement depuis votre espace client.",
+    "paymentStatus": "État paiement",
+    "paid": "Payé",
+    "failed": "Échoué",
+    "pending": "En attente",
+    "amountRecorded": "Montant enregistré",
+    "txRef": "Réf. transaction",
+    "orderGroup": "Groupe commande",
+    "checkoutRef": "Réf. checkout",
+    "trackingCodes": "Codes de suivi livraison",
+    "trackingHint": "Suivez l'avancement sur la page Livraison avec ce code.",
+    "myAccount": "Voir mon espace",
+    "continueShopping": "Continuer mes achats"
+  },
+  "empty": {
+    "cart": "Votre panier est vide.",
+    "browse": "Voir le catalogue"
+  },
+  "step1": {
+    "heading": "Adresse & contact",
+    "lead": "Téléphone utilisé pour la livraison et les validations MoMo / Orange. Les données sont aussi enregistrées sur cet appareil pour votre prochain passage.",
+    "fullName": "Nom complet",
+    "fullNamePh": "Ex. Mari Kamga",
+    "mobile": "Mobile",
+    "mobilePh": "6XX XXX XXX ou +237 6XX XXX XXX",
+    "address": "Adresse / rue & numéro",
+    "addressPh": "Ex. Avenue Kennedy, immeuble bleu, 2e étage",
+    "district": "Quartier",
+    "districtPh": "Ex. Bastos, Akwa…",
+    "city": "Ville",
+    "cityChoose": "— Choisir une ville —",
+    "landmark": "Point de repère (optionnel)",
+    "landmarkPh": "Ex. près de la station Total, portail vert…",
+    "trustSecure": "Paiement sécurisé",
+    "trustBuyer": "Protection acheteur",
+    "trustTrack": "Suivi commande",
+    "continueDelivery": "Continuer vers la livraison",
+    "backCart": "← Retour au panier"
+  },
+  "step2": {
+    "heading": "Livraison & réception",
+    "mainMode": "Mode principal",
+    "homeBoth": "À domicile (livraison colis ou prestation)",
+    "homeProducts": "Livraison à domicile",
+    "homeServices": "Prestation à domicile / visite",
+    "shopProducts": "Retrait colis / point relais",
+    "shopServices": "Sur place — atelier / boutique",
+    "online": "100 % en ligne (visio, fichier, téléphone)",
+    "backAddress": "← Modifier l'adresse",
+    "continuePayment": "Continuer vers le paiement"
+  },
+  "step3": {
+    "heading": "Paiement",
+    "method": "Moyen de paiement",
+    "cinetpay": "CinetPay (MoMo, Orange, carte)",
+    "whatsapp": "WhatsApp (confirmation manuelle)",
+    "placeOrder": "Confirmer et payer",
+    "processing": "Traitement…",
+    "backDelivery": "← Modifier la livraison"
+  },
+  "location": {
+    "online": "Visio / téléphone / livrables numériques selon prestataire.",
+    "shop": "Coordonnées exactes envoyées après confirmation.",
+    "shopProducts": "Préparez une pièce d'identité si le vendeur exige une vérification au retrait.",
+    "yorix": "Yorix Delivery — vérifiez que {{city}} est bien desservie. Frais définitifs au paiement si le montant catalogue évolue.",
+    "standard": "Livraison standard coordonnée par le vendeur et nos livreurs partenaires."
+  },
+  "errors": {
+    "loginRequired": "Connexion requise pour finaliser la commande.",
+    "addressIncomplete": "Complétez l'adresse et le téléphone à l'étape précédente.",
+    "checkoutFailed": "Impossible de finaliser le checkout. Réessayez ou contactez Yorix sur WhatsApp (+237 696 56 56 54)."
+  }
+}

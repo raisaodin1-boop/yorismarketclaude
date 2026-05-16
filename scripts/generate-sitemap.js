@@ -4,14 +4,19 @@ import { loadEnv } from "vite";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import {
-  SITE_URL,
   SEO_CITIES,
   METIER_SLUG_TO_CATEGORY,
   PAGE_PATH,
   buildEntitySlug,
   categoryToSlug,
+  localePath,
 } from "../src/lib/seoRoutes.js";
 import { CATS } from "../src/lib/constants.js";
+import { MERCH_HUB_SLUGS } from "../src/lib/merchHubs.js";
+import {
+  PROGRAMMATIC_SITEMAP_PATHS,
+  getBlogGuidePaths,
+} from "../src/lib/seoProgrammatic.js";
 import {
   SUPABASE_PROJECT_URL,
   SUPABASE_ANON_PUBLISHABLE_KEY,
@@ -67,9 +72,25 @@ function resolveSupabaseConfig() {
   return { url, anonKey, sourceHint };
 }
 
-function urlEntry(loc, lastmod, priority, changefreq) {
+const DEFAULT_PUBLIC_SITE = "https://www.yorix.cm";
+
+/** Base URL absolue pour les `<loc>` du sitemap (aligné sur VITE_PUBLIC_SITE_URL côté front). */
+function resolvePublicSiteUrl() {
+  const cwd = process.cwd();
+  const fromProd = loadEnv("production", cwd, "");
+  const fromDev = loadEnv("development", cwd, "");
+  const u =
+    process.env.VITE_PUBLIC_SITE_URL ||
+    fromProd.VITE_PUBLIC_SITE_URL ||
+    fromDev.VITE_PUBLIC_SITE_URL ||
+    "";
+  const s = String(u).trim().replace(/\/$/, "");
+  return s || DEFAULT_PUBLIC_SITE;
+}
+
+function urlEntry(siteBase, loc, lastmod, priority, changefreq) {
   return `  <url>
-    <loc>${SITE_URL}${loc}</loc>
+    <loc>${siteBase}${loc}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
@@ -96,6 +117,8 @@ const staticSeoPages = [
   [PAGE_PATH.devenirVendeur, "0.8", "monthly"],
   [PAGE_PATH.devenirLivreur, "0.8", "monthly"],
 ];
+
+const SITEMAP_LANGS = ["fr", "en"];
 
 async function fetchProducts(supabase) {
   try {
@@ -153,6 +176,10 @@ function categoryUrls() {
   ]);
 }
 
+function merchHubUrls() {
+  return MERCH_HUB_SLUGS.map((slug) => [`/${slug}`, "0.9", "daily"]);
+}
+
 /** Combinaisons métier × ville (indexation locale scalable) */
 function metierVilleUrls() {
   const out = [];
@@ -167,6 +194,7 @@ function metierVilleUrls() {
 
 async function generate() {
   const { url, anonKey, sourceHint } = resolveSupabaseConfig();
+  const siteBase = resolvePublicSiteUrl();
   console.log(`ℹ️ Sitemap — connexion Supabase (${sourceHint})`);
 
   const supabase = createClient(url, anonKey);
@@ -175,44 +203,74 @@ async function generate() {
 
   const urls = [];
 
-  for (const [path, pr, ch] of staticSeoPages) {
-    urls.push(urlEntry(path || "/", today, pr, ch));
+  for (const lang of SITEMAP_LANGS) {
+    for (const [pathBare, pr, ch] of staticSeoPages) {
+      const loc = !pathBare || pathBare === "" ? localePath(lang, "/") : localePath(lang, pathBare);
+      urls.push(urlEntry(siteBase, loc, today, pr, ch));
+    }
   }
 
-  for (const u of cityUrls()) {
-    urls.push(urlEntry(u.loc, today, u.pr, u.ch));
+  for (const seoPath of PROGRAMMATIC_SITEMAP_PATHS) {
+    urls.push(urlEntry(siteBase, seoPath, today, "0.92", "weekly"));
+  }
+  for (const lang of SITEMAP_LANGS) {
+    for (const guidePath of getBlogGuidePaths()) {
+      urls.push(urlEntry(siteBase, localePath(lang, guidePath), today, "0.82", "monthly"));
+    }
   }
 
-  for (const row of categoryUrls()) {
-    urls.push(urlEntry(row[0], today, row[1], row[2]));
+  for (const lang of SITEMAP_LANGS) {
+    for (const u of cityUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, u.loc), today, u.pr, u.ch));
+    }
   }
 
-  for (const m of metierVilleUrls()) {
-    urls.push(urlEntry(m[0], today, m[1], m[2]));
+  for (const lang of SITEMAP_LANGS) {
+    for (const row of categoryUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, row[0]), today, row[1], row[2]));
+    }
   }
 
-  for (const p of products) {
-    const slug = buildEntitySlug(p.name_fr || "produit", p.id);
-    urls.push(
-      urlEntry(
-        `/produit/${slug}`,
-        (p.created_at || today).split("T")[0],
-        "0.72",
-        "weekly"
-      )
-    );
+  for (const lang of SITEMAP_LANGS) {
+    for (const row of merchHubUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, row[0]), today, row[1], row[2]));
+    }
   }
 
-  for (const s of services) {
-    const slug = buildEntitySlug(s.provider_nom || "prestataire", `real-${s.id}`);
-    urls.push(
-      urlEntry(
-        `/prestataire/${slug}`,
-        (s.created_at || today).split("T")[0],
-        "0.68",
-        "weekly"
-      )
-    );
+  for (const lang of SITEMAP_LANGS) {
+    for (const m of metierVilleUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, m[0]), today, m[1], m[2]));
+    }
+  }
+
+  for (const lang of SITEMAP_LANGS) {
+    for (const p of products) {
+      const slug = buildEntitySlug(p.name_fr || "produit", p.id);
+      urls.push(
+        urlEntry(
+          siteBase,
+          localePath(lang, `/produit/${slug}`),
+          (p.created_at || today).split("T")[0],
+          "0.72",
+          "weekly"
+        )
+      );
+    }
+  }
+
+  for (const lang of SITEMAP_LANGS) {
+    for (const s of services) {
+      const slug = buildEntitySlug(s.provider_nom || "prestataire", `real-${s.id}`);
+      urls.push(
+        urlEntry(
+          siteBase,
+          localePath(lang, `/prestataire/${slug}`),
+          (s.created_at || today).split("T")[0],
+          "0.68",
+          "weekly"
+        )
+      );
+    }
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

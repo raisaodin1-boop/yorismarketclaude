@@ -1,4 +1,6 @@
 /** Pied de page partagé — liens métier préservés, ton marketplace premium */
+import { Link } from "react-router-dom";
+
 export function PremiumSiteFooter({ goPage, freeShippingThresholdXaf = 25000 }) {
   return (
     <footer className="footer footer--premium">
@@ -36,6 +38,63 @@ export function PremiumSiteFooter({ goPage, freeShippingThresholdXaf = 25000 }) 
             </button>
           </div>
         </div>
+
+        <nav className="footer-col" aria-label="Entrées SEO Cameroun">
+          <h4>Visibilité locale</h4>
+          <ul>
+            <li>
+              <Link to="/marketplace-cameroun" className="footer-seo-link">
+                Marketplace Cameroun
+              </Link>
+            </li>
+            <li>
+              <Link to="/ecommerce-cameroun" className="footer-seo-link">
+                E-commerce Cameroun
+              </Link>
+            </li>
+            <li>
+              <Link to="/livraison-cameroun" className="footer-seo-link">
+                Livraison Cameroun
+              </Link>
+            </li>
+            <li>
+              <Link to="/vendre-en-ligne-cameroun" className="footer-seo-link">
+                Vendre en ligne
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
+        <nav className="footer-col" aria-label="Guides journal Yorix">
+          <h4>Guides</h4>
+          <ul>
+            <li>
+              <Link to="/blog/top-sites-ecommerce-cameroun" className="footer-seo-link">
+                Top e-commerce CM
+              </Link>
+            </li>
+            <li>
+              <Link to="/blog/comment-vendre-en-ligne-cameroun" className="footer-seo-link">
+                Vendre en ligne
+              </Link>
+            </li>
+            <li>
+              <Link to="/blog/livraison-douala-guide" className="footer-seo-link">
+                Livraison Douala
+              </Link>
+            </li>
+            <li>
+              <Link to="/achat-en-ligne-douala" className="footer-seo-link">
+                Achat en ligne Douala
+              </Link>
+            </li>
+            <li>
+              <Link to="/achat-en-ligne-yaounde" className="footer-seo-link">
+                Achat en ligne Yaoundé
+              </Link>
+            </li>
+          </ul>
+        </nav>
 
         <nav className="footer-col" aria-label="Marketplace">
           <h4>Marketplace</h4>

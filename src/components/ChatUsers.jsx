@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { filtrerMsg } from "../utils/helpers";
+import { CHAT_CONVERSATIONS_LIMIT, CHAT_MESSAGES_LIMIT } from "../lib/queryLimits";
 
 export function ChatUsers({ user, userData, initialProduct = null, onClose, isModal = false }) {
   const [conversations, setConversations] = useState([]);
@@ -42,7 +43,8 @@ export function ChatUsers({ user, userData, initialProduct = null, onClose, isMo
         .from("conversations")
         .select("*")
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order("last_message_at", { ascending: false });
+        .order("last_message_at", { ascending: false })
+        .limit(CHAT_CONVERSATIONS_LIMIT);
       if (error) throw error;
       setConversations(data || []);
     } catch (err) {
@@ -104,9 +106,10 @@ export function ChatUsers({ user, userData, initialProduct = null, onClose, isMo
         .from("messages")
         .select("*")
         .eq("conversation_id", activeConvId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .limit(CHAT_MESSAGES_LIMIT);
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data || []).slice().reverse());
     } catch (err) {
       console.warn("Chargement messages:", err.message);
     }

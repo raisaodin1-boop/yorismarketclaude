@@ -1,0 +1,1559 @@
+// ══════════════════════════════════════════════════════════════
+//  YORIX CM — VERSION PROFESSIONNELLE COMPLÈTE
+//  ✅ WhatsApp Commander
+//  ✅ Upload multiple Cloudinary
+//  ✅ Commandes Supabase (orders)
+//  ✅ Avis / Étoiles / Commentaires
+//  ✅ Commission automatique 5%
+//  ✅ Livraison avec statuts
+//  ✅ Escrow simulé
+//  ✅ Dashboard vendeur complet
+//  ✅ Notifications temps réel
+//  ✅ 4 rôles : buyer / seller / delivery / provider
+//  ✅ Contrat d'acceptation obligatoire pour pros
+//  ✅ Password input premium avec œil
+// ═══════════════════════════════════════════════════════════════
+
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  parsePathname,
+  pathForPage,
+  buildEntitySlug,
+  parseEntitySlug,
+  slugToCategoryName,
+  CITY_BY_SLUG,
+  METIER_SLUG_TO_CATEGORY,
+  SEO_CITIES,
+  SITE_URL,
+  getSearchActionUrl,
+  PAGE_PATH,
+  localePath,
+  canonicalFromSeoAlias,
+  buildHrefLangAlternates,
+  ensureLocalePath,
+  parseLocaleSegments,
+} from "./lib/seoRoutes";
+import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
+import { filterProductsByMerchHub, getMerchHub } from "./lib/merchHubs.js";
+import { SeoHead } from "./components/seo/SeoHead";
+import i18n from "./i18n/index.js";
+import {
+  supabase,
+  YORIX_WA_NUMBER,
+  CLOUD_NAME,
+  UPLOAD_PRESET,
+} from "./lib/supabase";
+
+import {
+  CATS,
+  ROLE_LABELS,
+  DELIVERY_STATUSES,
+  ESCROW_STATUSES,
+  PREST_DATA,
+  COURSES_DATA,
+  REWARDS_DATA,
+} from "./lib/constants";
+
+import {
+  uploadSingleImage,
+  filtrerMsg,
+  updateLivraisonStatut,
+  genererCodeSuivi,
+} from "./utils/helpers";
+import { makeCSS } from "./utils/styles";
+import { Stars } from "./components/Stars";
+import { ModalCommander } from "./components/ModalCommander";
+import { LevelBadge } from "./components/LevelBadge";
+import { PointsAnimation } from "./components/PointsAnimation";
+import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
+import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
+import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
+import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
+import { OptimizedImage } from "./components/OptimizedImage";
+import { NotificationCenter } from "./components/NotificationCenter";
+import { PremiumSiteFooter } from "./components/layout/PremiumSiteFooter";
+import { OnboardingModal } from "./components/OnboardingModal";
+import { ContractAcceptance } from "./components/ContractAcceptance";
+import { RouteErrorBoundary } from "./components/errors/AppErrorBoundary.jsx";
+import { YorixAuthModal } from "./components/yorix/YorixAuthModal.jsx";
+import { YorixHeader } from "./components/yorix/YorixHeader.jsx";
+import { YorixPages } from "./components/yorix/YorixPages.jsx";
+import { useYorixAuth } from "./hooks/useYorixAuth.js";
+import { useYorixCart } from "./hooks/useYorixCart.js";
+
+// ═══════════════════════════════════════════════════════════════
+// APP PRINCIPALE (logique métier + layout)
+// ═══════════════════════════════════════════════════════════════
+
+export default function YorixApp() {
+  const navigate                  = useNavigate();
+  const location                  = useLocation();
+  const route                     = useMemo(() => parsePathname(location.pathname), [location.pathname]);
+  const page                      = route.page;
+
+  useLayoutEffect(() => {
+    if (route.localeRewriteTo && location.pathname !== route.localeRewriteTo) {
+      navigate(
+        route.localeRewriteTo + (location.search || "") + (location.hash || ""),
+        { replace: true },
+      );
+    }
+  }, [route.localeRewriteTo, location.pathname, location.search, location.hash, navigate]);
+
+  useEffect(() => {
+    void i18n.changeLanguage(route.locale === "en" ? "en" : "fr");
+  }, [route.locale]);
+
+  const hrefLangAlternates = useMemo(
+    () => buildHrefLangAlternates(location.pathname),
+    [location.pathname],
+  );
+
+  const switchLocale = useCallback(
+    (lng) => {
+      const { barePath } = parseLocaleSegments(location.pathname);
+      const path =
+        lng === "en" || lng === "fr" ? localePath(lng, barePath) : localePath("fr", barePath);
+      navigate(path + (location.search || "") + (location.hash || ""));
+    },
+    [navigate, location.pathname, location.search, location.hash],
+  );
+
+  const [dashTab, setDashTab] = useState("overview");
+  const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
+
+  const [dark, setDark]           = useState(false);
+
+  // Produits
+  const [produits, setProduits]                 = useState([]);
+  const [produitsLoading, setProduitsLoading]   = useState(true);
+  const [allServices, setAllServices]           = useState([]);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("actif", true)
+        .eq("disponible", true)
+        .order("created_at", { ascending: false });
+      if (!error) setAllServices(data || []);
+    };
+    loadServices();
+  }, []);
+
+  const [search, setSearch]                     = useState("");
+  const [filterCat, setFilterCat]               = useState("");
+
+  useEffect(() => {
+    if (page !== "produits") return;
+    const q = new URLSearchParams(location.search).get("q");
+    if (q != null && q !== "") setSearch((prev) => (prev === q.trim() ? prev : q.trim()));
+  }, [page, location.search]);
+
+  // Notifs
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs]       = useState([]);
+  const [notifPrefs, setNotifPrefs] = useState(() => loadNotificationPrefs());
+  const notifPrefsRef = useRef(notifPrefs);
+  notifPrefsRef.current = notifPrefs;
+
+  const [navCompact, setNavCompact] = useState(false);
+  const [navQuickOpen, setNavQuickOpen] = useState(false);
+  const navQuickRef = useRef(null);
+
+  const [commerceDeliveryPolicy, setCommerceDeliveryPolicy] = useState(() => getDefaultPolicyFromEnv());
+
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        setNavCompact(window.scrollY > 16);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!navQuickOpen) return undefined;
+    const close = (e) => {
+      if (navQuickRef.current && !navQuickRef.current.contains(e.target)) setNavQuickOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [navQuickOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("commerce_settings")
+          .select("free_shipping_threshold_xaf, standard_delivery_fee_xaf")
+          .eq("id", 1)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        setCommerceDeliveryPolicy(
+          normalizeDeliveryPolicy({
+            freeShippingThresholdXaf: Number(data.free_shipping_threshold_xaf),
+            standardDeliveryFeeXaf: Number(data.standard_delivery_fee_xaf),
+          }),
+        );
+      } catch {
+        /* pré-migration : valeurs env / défaut */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const loadNotifsForUser = useCallback(async (uid, limit = 40) => {
+    if (!uid) return;
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) console.warn("Notifications:", error.message);
+    else setNotifs(data || []);
+  }, []);
+
+  const goPage = useCallback((p, opts = {}) => {
+    navigate(pathForPage(p, { ...opts, locale: opts.locale ?? route.locale }));
+    window.scrollTo(0, 0);
+    setNotifOpen(false);
+  }, [navigate, route.locale]);
+
+  const authSession = useYorixAuth({
+    goPage,
+    setDashTab,
+    setDemandeLivraisonOpen,
+    setNotifs,
+    onProfileLoaded: loadNotifsForUser,
+  });
+
+  const {
+    user,
+    setUser,
+    userData,
+    setUserData,
+    userRole,
+    setUserRole,
+    loading,
+    authOpen,
+    setAuthOpen,
+    authTab,
+    setAuthTab,
+    selectedRole,
+    setSelectedRole,
+    authForm,
+    setAuthForm,
+    authError,
+    setAuthError,
+    authLoading,
+    setAuthLoading,
+    contractOpen,
+    setContractOpen,
+    contractAccepted,
+    setContractAccepted,
+    pendingAction,
+    setPendingAction,
+    doLogin,
+    doRegister,
+    doGoogle,
+    doLogout,
+    handleContractAccepted,
+    executePendingAction,
+  } = authSession;
+
+  const {
+    cartItems,
+    setCartItems,
+    addToCart,
+    addServiceToCart,
+    changeQty,
+    removeItem,
+    cartSummary,
+    totalQty,
+  } = useYorixCart(commerceDeliveryPolicy);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setNotifPrefs(loadNotificationPrefs());
+      return undefined;
+    }
+    let cancelled = false;
+    ensureNotificationPrefsSynced(supabase, user.id).then((p) => {
+      if (!cancelled) setNotifPrefs(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // Divers
+  const [waOpen, setWaOpen]                     = useState(false);
+  const [nlEmail, setNlEmail]                   = useState("");
+  const [nlSent, setNlSent]                     = useState(false);
+  const [wishlist, setWishlist]                 = useState(new Set());
+  const [loyaltyPts, setLoyaltyPts]             = useState(320);
+  const [blogFilter, setBlogFilter]             = useState("TOUT");
+  const [selectedPrest, setSelectedPrest]       = useState(null);
+
+  // ═══ ONBOARDING ═══
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+
+  // Academy
+  const [academyCourses, setAcademyCourses] = useState([]);
+  const [academyLoading, setAcademyLoading] = useState(true);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+
+  const [detailProduct, setDetailProduct] = useState(null);
+  const [detailProductLoading, setDetailProductLoading] = useState(false);
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      setAcademyLoading(true);
+      const { data, error } = await supabase
+        .from("academy_courses")
+        .select("*")
+        .eq("actif", true)
+        .order("prix", { ascending: true });
+      if (!error) setAcademyCourses(data || []);
+      setAcademyLoading(false);
+    };
+    loadCourses();
+  }, []);
+
+  const goAcademyDetail = useCallback((course) => {
+    if (!course?.id) return;
+    setSelectedCourse(course);
+    navigate(pathForPage("academyDetail", { courseId: course.id, locale: route.locale }));
+  }, [navigate, route.locale]);
+  const goAcademyContact = useCallback((course) => {
+    if (!course?.id) return;
+    setSelectedCourse(course);
+    navigate(pathForPage("academyContact", { courseId: course.id, locale: route.locale }));
+  }, [navigate, route.locale]);
+
+  const [inscriptionSent, setInscriptionSent]       = useState(false);
+  const [inscriptionLoading, setInscriptionLoading] = useState(false);
+  const [inscriptionError, setInscriptionError]     = useState("");
+  const [inscriptionForm, setInscriptionForm] = useState({ nom:"",prenom:"",tel:"",email:"",metier:"",ville:"",experience:"",tarif:"",bio:"" });
+
+  // ─────────────────────────────────────────────────────────────
+  // SOUMETTRE CANDIDATURE PRESTATAIRE (avec Supabase + email + WA)
+  // ─────────────────────────────────────────────────────────────
+  const soumettreCandidaturePrestataire = async () => {
+    setInscriptionError("");
+
+    if (!inscriptionForm.nom.trim()) { setInscriptionError("Le nom est obligatoire"); return; }
+    if (!inscriptionForm.tel.trim()) { setInscriptionError("Le téléphone est obligatoire"); return; }
+    if (!inscriptionForm.metier)     { setInscriptionError("Veuillez choisir un métier"); return; }
+    if (inscriptionForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inscriptionForm.email)) {
+      setInscriptionError("Email invalide"); return;
+    }
+
+    setInscriptionLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("prestataires")
+        .insert({
+          nom:        inscriptionForm.nom,
+          prenom:     inscriptionForm.prenom || null,
+          telephone:  inscriptionForm.tel,
+          email:      inscriptionForm.email || null,
+          metier:     inscriptionForm.metier,
+          ville:      inscriptionForm.ville || null,
+          experience: inscriptionForm.experience || null,
+          tarif:      inscriptionForm.tarif || null,
+          bio:        inscriptionForm.bio || null,
+          status:     "pending",
+          user_id:    user?.id || null,
+        })
+        .select()
+        .single();
+
+      if (error) console.warn("Table prestataires Supabase:", error.message);
+
+      const wamsg = [
+        "👷 *NOUVELLE CANDIDATURE PRESTATAIRE YORIX*",
+        "",
+        "👤 *Informations*",
+        `Nom : ${inscriptionForm.nom}${inscriptionForm.prenom ? " " + inscriptionForm.prenom : ""}`,
+        `Téléphone : ${inscriptionForm.tel}`,
+        inscriptionForm.email ? `Email : ${inscriptionForm.email}` : "",
+        "",
+        "💼 *Profil professionnel*",
+        `Métier : ${inscriptionForm.metier}`,
+        inscriptionForm.ville ? `Ville : ${inscriptionForm.ville}` : "",
+        inscriptionForm.experience ? `Expérience : ${inscriptionForm.experience}` : "",
+        inscriptionForm.tarif ? `Tarif : ${inscriptionForm.tarif}` : "",
+        "",
+        inscriptionForm.bio ? `📝 *Présentation*\n${inscriptionForm.bio}` : "",
+        "",
+        "✅ *Actions à faire*",
+        "1. Contacter le candidat sous 24h",
+        "2. Vérifier les qualifications",
+        "3. Valider ou refuser le profil",
+        "",
+        "Yorix CM 🇨🇲",
+      ].filter(Boolean).join("\n");
+
+      const waUrl = `https://wa.me/${YORIX_WA_NUMBER}?text=${encodeURIComponent(wamsg)}`;
+      window.open(waUrl, "_blank");
+
+      const sujet = `Nouvelle candidature prestataire — ${inscriptionForm.nom} (${inscriptionForm.metier})`;
+      const corps = [
+        "Bonjour,",
+        "",
+        "Nouvelle candidature prestataire sur Yorix CM :",
+        "",
+        `👤 Nom : ${inscriptionForm.nom}${inscriptionForm.prenom ? " " + inscriptionForm.prenom : ""}`,
+        `📞 Téléphone : ${inscriptionForm.tel}`,
+        inscriptionForm.email ? `📧 Email : ${inscriptionForm.email}` : "",
+        `💼 Métier : ${inscriptionForm.metier}`,
+        inscriptionForm.ville ? `📍 Ville : ${inscriptionForm.ville}` : "",
+        inscriptionForm.experience ? `⏱ Expérience : ${inscriptionForm.experience}` : "",
+        inscriptionForm.tarif ? `💰 Tarif : ${inscriptionForm.tarif}` : "",
+        "",
+        inscriptionForm.bio ? `📝 Présentation :\n${inscriptionForm.bio}` : "",
+        "",
+        "---",
+        "Envoyé depuis yorix.cm",
+      ].filter(Boolean).join("\n");
+
+      const mailtoUrl = `mailto:raisaodin1@gmail.com?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+      setTimeout(() => window.open(mailtoUrl, "_blank"), 500);
+
+      setInscriptionSent(true);
+
+    } catch (err) {
+      console.error("soumettreCandidaturePrestataire:", err);
+      setInscriptionError("Erreur : " + (err.message || "Impossible d'envoyer la candidature. Réessayez."));
+    }
+
+    setInscriptionLoading(false);
+  };
+
+  const [chatMessages, setChatMessages] = useState([{ text:"Bonjour ! Comment puis-je vous aider ?", me:false, time:"10:02" }]);
+  const [chatMsg, setChatMsg]           = useState("");
+  const [chatBlocked, setChatBlocked]   = useState(false);
+  const chatEndRef = useRef(null);
+
+  // ── ONBOARDING : afficher au 1er chargement si jamais vu ──
+  useEffect(() => {
+    const seen = localStorage.getItem("yorix_onboarding_seen");
+    if (!seen) {
+      const t = setTimeout(() => setOnboardingOpen(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  // ── HANDLER : choix d'une action onboarding ──
+  const handleOnboardingAction = useCallback((actionId) => {
+    localStorage.setItem("yorix_onboarding_seen", "1");
+    setOnboardingOpen(false);
+
+    const routes = {
+      buy:      { needAuth: false, page: "produits" },
+      sell:     { needAuth: true,  role: "seller",   page: "dashboard" },
+      service:  { needAuth: false, page: "prestataires" },
+      delivery: { needAuth: true,  role: "buyer",    action: "openDelivery" },
+    };
+
+    const target = routes[actionId];
+    if (!target) return;
+
+    if (target.needAuth && !user) {
+      setPendingAction(actionId);
+      setSelectedRole(target.role || "buyer");
+      setAuthTab("register");
+      setAuthOpen(true);
+      return;
+    }
+
+    executePendingAction(actionId);
+  }, [user, executePendingAction]);
+
+  // ── Marquer onboarding comme vu lors de la fermeture manuelle ──
+  const handleCloseOnboarding = useCallback(() => {
+    localStorage.setItem("yorix_onboarding_seen", "1");
+    setOnboardingOpen(false);
+  }, []);
+
+  /* Temps réel : nouvelles lignes notifications (+ alerte bureau si autorisée) */
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    const channel = supabase
+      .channel(`notifications_rt_${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const row = payload.new;
+          setNotifs((prev) => {
+            if (prev.some((x) => x.id === row.id)) return prev;
+            return [row, ...prev].slice(0, 120);
+          });
+          try {
+            showBrowserNotificationIfPossible(enrichNotification(row), notifPrefsRef.current);
+          } catch {
+            /* ignore */
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  /* Deep link depuis une notification push (service worker) */
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return undefined;
+    const onMsg = (event) => {
+      if (event.data?.type !== "NOTIF_NAV") return;
+      const url = typeof event.data.url === "string" ? event.data.url : "/";
+      const path = url.startsWith("/") ? url : `/${url}`;
+      navigate(ensureLocalePath(path, route.locale));
+    };
+    navigator.serviceWorker.addEventListener("message", onMsg);
+    return () => navigator.serviceWorker.removeEventListener("message", onMsg);
+  }, [navigate, route.locale]);
+
+  // ── PRODUITS TEMPS RÉEL ──
+  useEffect(() => {
+    setProduitsLoading(true);
+    const load = async () => {
+      let q = supabase.from("products").select("*").or("actif.eq.true,actif.is.null").order("sponsorise", { ascending:false }).order("created_at", { ascending:false }).limit(60);
+      if (filterCat) q = q.eq("categorie", filterCat);
+      const { data, error } = await q;
+      if (error) console.warn("Produits:", error.message);
+      setProduits(data || []);
+      setProduitsLoading(false);
+    };
+    load();
+    const channel = supabase.channel("prod_rt").on("postgres_changes", { event:"*", schema:"public", table:"products" }, load).subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [filterCat]);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [chatMessages]);
+
+  const routePath = location.pathname;
+
+  // ── SEO / Router : synchroniser filtres et fiches depuis l’URL indexable
+  useEffect(() => {
+    if (route.categorySlug) {
+      const name = slugToCategoryName(route.categorySlug, CATS);
+      setFilterCat(name || "");
+    } else if (route.page === "produits" && routePath === "/produits") {
+      setFilterCat("");
+    }
+  }, [route.categorySlug, route.page, routePath]);
+
+  const seoCityName = useMemo(
+    () => (route.citySlug ? CITY_BY_SLUG[route.citySlug]?.name : null),
+    [route.citySlug]
+  );
+
+  const prestSyncFilters = useMemo(() => {
+    if (route.page === "prestataires" && route.metierSlug && route.villeSlug) {
+      return {
+        cat: METIER_SLUG_TO_CATEGORY[route.metierSlug] || "",
+        ville: CITY_BY_SLUG[route.villeSlug]?.name || "",
+      };
+    }
+    if (route.page === "seoCity" && route.cityMode === "prestataires" && seoCityName) {
+      return { cat: "", ville: seoCityName };
+    }
+    if (route.page === "prestataires" && routePath === "/prestataires") {
+      return { cat: "", ville: "" };
+    }
+    return null;
+  }, [route.page, route.metierSlug, route.villeSlug, route.cityMode, seoCityName, routePath]);
+
+  useEffect(() => {
+    if (route.page !== "academyDetail" && route.page !== "academyContact") return;
+    const id = route.courseId;
+    if (!id || !academyCourses.length) return;
+    const c = academyCourses.find((x) => String(x.id) === String(id));
+    if (c) setSelectedCourse(c);
+  }, [route.page, route.courseId, academyCourses]);
+
+  useEffect(() => {
+    if (route.page !== "productDetail" || !route.productSlug) {
+      setDetailProduct(null);
+      setDetailProductLoading(false);
+      return;
+    }
+    const { id } = parseEntitySlug(route.productSlug);
+    if (!id) {
+      setDetailProduct(null);
+      setDetailProductLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDetailProductLoading(true);
+    supabase
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn("Détail produit:", error.message);
+        setDetailProduct(data || null);
+        setDetailProductLoading(false);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          console.warn("Détail produit:", e?.message || e);
+          setDetailProduct(null);
+          setDetailProductLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [route.page, route.productSlug]);
+
+  useEffect(() => {
+    if (route.page !== "prestDetail" || !route.prestSlug) {
+      if (route.page !== "prestDetail") setSelectedPrest(null);
+      return;
+    }
+    const { id } = parseEntitySlug(route.prestSlug);
+    if (!id) {
+      setSelectedPrest(null);
+      return;
+    }
+    const demo = PREST_DATA.find((p) => p.id === id);
+    if (demo) {
+      setSelectedPrest(demo);
+      return;
+    }
+    const matchReal = allServices.find((s) => `real-${s.id}` === id || String(s.id) === id);
+    if (matchReal) {
+      setSelectedPrest({
+        id: `real-${matchReal.id}`,
+        name: matchReal.provider_nom || "Prestataire Yorix",
+        metier: matchReal.nom || "Service",
+        categorie: matchReal.categorie || "Autre",
+        ville: matchReal.ville || "Cameroun",
+        quartier: "",
+        emoji: "🛠️",
+        photo: null,
+        color_bg: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
+        tags: [matchReal.categorie || "Service"].filter(Boolean),
+        note: matchReal.note || 5,
+        avis: matchReal.nombre_avis || 0,
+        prix: matchReal.prix ? `${Number(matchReal.prix).toLocaleString("fr-FR")} FCFA` : "",
+        verifie: true,
+        dispo: matchReal.disponible !== false,
+        bio: matchReal.description || "",
+        telephone: "",
+        realisations: 0,
+        isReal: true,
+      });
+    } else {
+      setSelectedPrest(null);
+    }
+  }, [route.page, route.prestSlug, allServices]);
+
+  const persistCheckoutContact = useCallback(async (patch) => {
+    if (!user?.id || !patch) return;
+    const payload = {};
+    if (patch.telephone != null && String(patch.telephone).trim() !== "") {
+      payload.telephone = String(patch.telephone).trim();
+    }
+    if (patch.adresse != null) payload.adresse = String(patch.adresse).trim();
+    if (patch.ville != null) payload.ville = String(patch.ville).trim();
+    if (patch.nom != null) payload.nom = String(patch.nom).trim();
+    if (!Object.keys(payload).length) return;
+    const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+    if (error) {
+      console.warn("Profil checkout non sauvegardé:", error.message || error);
+      return;
+    }
+    setUserData((prev) => (prev ? { ...prev, ...payload } : prev));
+  }, [user?.id]);
+
+  // ── CHAT ──
+  const sendChat = async () => {
+    if (!chatMsg.trim()) return;
+    const filtre = filtrerMsg(chatMsg);
+    const now = new Date();
+    const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,"0")}`;
+    if (filtre.bloque) {
+      setChatBlocked(true); setTimeout(() => setChatBlocked(false), 4000);
+      if (user) await supabase.from("fraud_logs").insert({ type:"tentative_contournement", user_id:user.id, message:chatMsg }).catch(e => console.warn(e?.message));
+      setChatMsg(""); return;
+    }
+    if (user) await supabase.from("messages").insert({ expediteur_id:user.id, destinataire_id:"support", texte:chatMsg, conversation_id:`${user.id}_support`, lu:false }).catch(e => console.warn(e?.message));
+    setChatMessages(prev => [...prev, { text:chatMsg, me:true, time }]);
+    setChatMsg("");
+    setTimeout(() => setChatMessages(prev => [...prev, { text:"Merci ! Un conseiller Yorix vous répond dans quelques minutes. ⚡", me:false, time }]), 1200);
+  };
+
+  const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
+
+  const marquerNotifLue = async (notif, opts = { navigate: true, closeDrawer: true }) => {
+    const id = typeof notif === "object" ? notif.id : notif;
+    const notification = typeof notif === "object" ? notif : notifs.find((n) => n.id === id);
+
+    try {
+      const { error } = await supabase.from("notifications").update({ lu: true }).eq("id", id);
+      if (error) console.warn("marquerNotifLue:", error.message);
+    } catch (e) {
+      console.warn("marquerNotifLue exception:", e?.message);
+    }
+
+    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
+    if (opts.closeDrawer) setNotifOpen(false);
+
+    if (!opts.navigate || !notification) return;
+
+    const link = String(notification.link || "").trim();
+    if (link.startsWith("http")) {
+      window.open(link, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (link.startsWith("/")) {
+      navigate(ensureLocalePath(link, route.locale));
+      return;
+    }
+    if (notification.type === "new_product" || link.includes("/products/")) {
+      goPage("produits");
+    } else if (notification.type === "new_message") {
+      goPage("dashboard");
+      setDashTab("messages");
+    }
+  };
+
+  const supprimerNotif = async (id) => {
+    if (!id) return;
+    try {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) console.warn("supprimerNotif:", error.message);
+    } catch (e) {
+      console.warn("supprimerNotif:", e?.message);
+    }
+    setNotifs((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const marquerToutesLues = async () => {
+    const ids = notifs.filter(n => !n.lu).map(n => n.id);
+    if (ids.length === 0) return;
+
+    try {
+      const { error } = await supabase.from("notifications").update({ lu: true }).in("id", ids);
+      if (error) console.warn("marquerToutesLues:", error.message);
+    } catch (e) {
+      console.warn("marquerToutesLues exception:", e?.message);
+    }
+
+    setNotifs(prev => prev.map(n => ({ ...n, lu: true })));
+  };
+
+  const unread = notifs.filter(n => !n.lu).length;
+
+  const produitsFiltres = useMemo(() => {
+    let list = produits.filter(
+      (p) =>
+        !search ||
+        p.name_fr?.toLowerCase().includes(search.toLowerCase()) ||
+        p.description_fr?.toLowerCase().includes(search.toLowerCase())
+    );
+    if (page === "seoCity" && route.cityMode === "acheter" && seoCityName) {
+      const sl = seoCityName.toLowerCase();
+      list = list.filter((p) => {
+        const v = (p.ville || "").toLowerCase();
+        return !v || v.includes(sl) || sl.includes(v);
+      });
+    }
+    if (page === "merchHub" && route.merchHub) {
+      const hub = getMerchHub(route.merchHub);
+      if (hub?.filter) {
+        list = filterProductsByMerchHub(list, hub.filter, { citySlug: route.citySlug });
+      }
+    }
+    return list;
+  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName]);
+
+  const showSeoLocal =
+    page === "seoCity" || (page === "livraison" && !!route.citySlug);
+  const showProduits = page === "produits" || (page === "seoCity" && route.cityMode === "acheter");
+  const showLivraison =
+    page === "livraison" || (page === "seoCity" && route.cityMode === "livraison");
+  const showPrestataires =
+    page === "prestataires" ||
+    page === "prestDetail" ||
+    (page === "seoCity" && route.cityMode === "prestataires");
+
+  const needsProductListingChunk = showProduits || page === "escrow";
+  const isSiteMarketingPage = useMemo(
+    () =>
+      [
+        "faq",
+        "devenirVendeur",
+        "devenirLivreur",
+        "inscription",
+        "business",
+        "academy",
+        "blog",
+        "contact",
+        "aide",
+        "cgv",
+        "mentions",
+        "confidentialite",
+      ].includes(page),
+    [page]
+  );
+
+  const tabActive = useCallback(
+    (tabPage) => {
+      if (tabPage === "produits") {
+        return page === "produits" || (page === "seoCity" && route.cityMode === "acheter");
+      }
+      if (tabPage === "livraison") {
+        return page === "livraison" || (page === "seoCity" && route.cityMode === "livraison");
+      }
+      if (tabPage === "prestataires") {
+        return (
+          page === "prestataires" ||
+          page === "prestDetail" ||
+          (page === "seoCity" && route.cityMode === "prestataires")
+        );
+      }
+      return page === tabPage;
+    },
+    [page, route.cityMode]
+  );
+
+  const openProductUrl = useCallback(
+    (p) => {
+      goPage("productDetail", {
+        productSlug: buildEntitySlug(p.name_fr || p.name, p.id),
+      });
+    },
+    [goPage]
+  );
+
+  const roleChipClass = () =>
+    ({ buyer:"chip-buyer", seller:"chip-seller", delivery:"chip-delivery", provider:"chip-provider", admin:"chip-admin" }[userRole] || "chip-buyer");
+
+  const { t: tNav } = useTranslation("nav");
+
+  const getDashNav = useCallback(() => {
+    const dn = (icon, id, key) => ({ icon, id, label: tNav(`dashNav.${key}`) });
+    if (userRole === "seller") {
+      return [
+        dn("📊", "overview", "overview"),
+        dn("🏪", "mesProduits", "myProducts"),
+        dn("➕", "ajouterProduit", "addProduct"),
+        dn("📦", "commandes", "orders"),
+        dn("💰", "wallet", "wallet"),
+      ];
+    }
+    if (userRole === "delivery") {
+      return [
+        dn("📊", "overview", "overview"),
+        dn("🟡", "disponibles", "available"),
+        dn("🚚", "enCours", "inProgress"),
+        dn("✅", "historique", "history"),
+        dn("💰", "wallet", "earnings"),
+      ];
+    }
+    if (userRole === "provider") {
+      return [
+        dn("📊", "overview", "overview"),
+        dn("📋", "demandes", "requests"),
+        dn("🛠️", "mesServices", "myServices"),
+        dn("+", "ajouterService", "addService"),
+      ];
+    }
+    return [
+      dn("📊", "overview", "overview"),
+      dn("📦", "commandes", "myOrders"),
+      dn("❤️", "favoris", "favorites"),
+      dn("🌟", "loyalty", "loyalty"),
+    ];
+  }, [userRole, tNav]);
+
+  const TABS = useMemo(() => {
+    const tab = (icon, key, p) => ({ l: `${icon} ${tNav(`tabs.${key}`)}`, p });
+    const base = [
+      tab("🏠", "home", "home"),
+      tab("🛍️", "products", "produits"),
+      tab("🎁", "deals", "bonsPlans"),
+      tab("🚚", "delivery", "livraison"),
+      tab("🔐", "escrow", "escrow"),
+      tab("👷", "providers", "prestataires"),
+      tab("💼", "business", "business"),
+      tab("🎓", "academy", "academy"),
+      tab("📰", "blog", "blog"),
+      tab("🌟", "loyalty", "loyalty"),
+      tab("📞", "contact", "contact"),
+      tab("🆘", "help", "aide"),
+    ];
+    if (user && (userData?.role === "admin" || userData?.role === "superadmin")) {
+      base.push(tab("⚙️", "admin", "admin"));
+    }
+    return base;
+  }, [tNav, user, userData?.role]);
+
+  const seoBundle = useMemo(() => {
+    const canon = route.canonicalPath || location.pathname;
+    const L = (bare) => localePath(route.locale, bare);
+    const orgLd = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Yorix CM",
+      alternateName: "Yorix Cameroun",
+      url: SITE_URL,
+      logo: `${SITE_URL}/favicon.svg`,
+      image: `${SITE_URL}/og-image.svg`,
+      email: "support@yorix.cm",
+      telephone: "+237696565654",
+      foundingDate: "2025",
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: "CM",
+        addressLocality: "Douala",
+        addressRegion: "Littoral",
+      },
+      areaServed: { "@type": "Country", name: "Cameroun" },
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          telephone: "+237696565654",
+          contactType: "customer service",
+          areaServed: "CM",
+          availableLanguage: ["French", "English"],
+        },
+      ],
+      sameAs: [
+        "https://www.facebook.com/yorixcm",
+        "https://www.instagram.com/yorixcm",
+        "https://wa.me/237696565654",
+      ],
+    };
+
+    // BreadcrumbList helper — Google rich snippet pour pages détail / sections
+    const buildBreadcrumbLd = (segments) => {
+      if (!segments?.length) return null;
+      return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: segments.map((s, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: s.name,
+          item: s.path?.startsWith("http") ? s.path : `${SITE_URL}${s.path || "/"}`,
+        })),
+      };
+    };
+    const webLd = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Yorix CM",
+      url: SITE_URL,
+        potentialAction: {
+        "@type": "SearchAction",
+        target: `${getSearchActionUrl(route.locale)}?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    };
+
+    if (page === "blog" && route.blogSlug) {
+      const art = getBlogArticle(route.blogSlug);
+      if (art) {
+        const articleLd = {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: art.headline,
+          datePublished: art.datePublished,
+          author: { "@type": "Organization", name: "Yorix CM" },
+          publisher: {
+            "@type": "Organization",
+            name: "Yorix CM",
+            logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.svg` },
+          },
+        };
+        const faqLd =
+          art.faq?.length > 0
+            ? {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: art.faq.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }
+            : null;
+        const blogCrumb = buildBreadcrumbLd([
+          { name: "Accueil", path: L("/") },
+          { name: "Blog", path: L("/blog") },
+          { name: art.headline.slice(0, 90), path: canon },
+        ]);
+        return {
+          title: art.title,
+          description: art.description,
+          canonicalPath: canon,
+          keywords: art.keywords,
+          jsonLd: [articleLd, faqLd, blogCrumb, orgLd].filter(Boolean),
+        };
+      }
+    }
+
+    if (
+      route.seoAliasKey &&
+      SEO_URL_ALIASES[route.seoAliasKey] &&
+      canonicalFromSeoAlias(SEO_URL_ALIASES[route.seoAliasKey]) === canon
+    ) {
+      const a = SEO_URL_ALIASES[route.seoAliasKey];
+      const crumb = buildBreadcrumbLd([
+        { name: "Accueil", path: L("/") },
+        { name: (a.title && a.title.split("|")[0]?.trim()) || "Yorix.cm", path: canon },
+      ]);
+      const pieces = [crumb, orgLd];
+      if (page === "home" || page === "produits") pieces.push(webLd);
+      return {
+        title: a.title,
+        description: a.description,
+        keywords: a.keywords,
+        canonicalPath: canon,
+        jsonLd: pieces.filter(Boolean),
+      };
+    }
+
+    if (page === "dashboard" || page === "admin") {
+      return {
+        title: "Espace membre — Yorix CM",
+        description: "Tableau de bord Yorix.",
+        canonicalPath: canon,
+        noindex: true,
+        jsonLd: [],
+      };
+    }
+
+    if (page === "home") {
+      return {
+        title: "Yorix.cm | Marketplace Cameroun – Achat, Vente, Livraison & Services",
+        description:
+          "Achetez, vendez et trouvez des services partout au Cameroun avec Yorix.cm : marketplace locale, e-commerce, petites annonces, livraison rapide à Douala, Yaoundé et plus encore. MTN MoMo, Orange Money, escrow.",
+        canonicalPath: canon,
+        keywords:
+          "marketplace Cameroun, e-commerce Cameroun, achat en ligne Cameroun, vente en ligne Cameroun, livraison Cameroun, petites annonces Cameroun, marketplace Douala, marketplace Yaoundé, escrow",
+        jsonLd: [orgLd, webLd],
+      };
+    }
+
+    if (page === "productDetail" && detailProduct) {
+      const p = detailProduct;
+      const img =
+        p.image && String(p.image).startsWith("http")
+          ? p.image
+          : Array.isArray(p.image_urls) && p.image_urls[0]
+            ? p.image_urls[0]
+            : `${SITE_URL}/og-image.svg`;
+      const desc =
+        (p.description_fr && String(p.description_fr).slice(0, 158)) ||
+        `Acheter ${p.name_fr || "ce produit"} sur Yorix — marketplace & livraison Cameroun.`;
+      const productLd = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: p.name_fr || "Produit Yorix",
+        image: img,
+        description: desc,
+        brand: { "@type": "Brand", name: "Yorix CM" },
+        offers: {
+          "@type": "Offer",
+          url: `${SITE_URL}${canon}`,
+          priceCurrency: "XAF",
+          price: p.prix,
+          availability: "https://schema.org/InStock",
+        },
+      };
+      const productCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: L("/") },
+        { name: "Produits", path: L("/produits") },
+        { name: p.name_fr || "Produit", path: canon },
+      ]);
+      return {
+        title: `${p.name_fr || "Produit"} — achat en ligne Cameroun | Yorix.cm`,
+        description: desc,
+        canonicalPath: canon,
+        ogType: "product",
+        ogImage: img.startsWith("http") ? img : `${SITE_URL}/og-image.svg`,
+        jsonLd: [productLd, productCrumb, orgLd],
+      };
+    }
+
+    if (page === "notifications") {
+      return {
+        title: "Notifications — alertes commandes & messages | Yorix.cm",
+        description:
+          "Historique de vos alertes Yorix : commandes, paiements, livraisons, prestations et messages.",
+        canonicalPath: L("/notifications"),
+        noindex: true,
+        jsonLd: [orgLd],
+      };
+    }
+
+    if (page === "faq") {
+      const faqLd = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "Comment acheter sur Yorix au Cameroun ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Parcourez les produits, ajoutez au panier et finalisez via WhatsApp ou paiement mobile (MTN MoMo, Orange Money).",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "La livraison couvre quelles villes ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Douala, Yaoundé, Bafoussam, Bamenda, Kribi et un réseau national en expansion. Délais J+1 sur les grandes villes.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Comment fonctionne l’escrow Yorix ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Les fonds sont sécurisés jusqu’à confirmation de réception par l’acheteur, puis libérés au vendeur.",
+            },
+          },
+        ],
+      };
+      return {
+        title: "FAQ Yorix — marketplace, livraison, escrow Cameroun",
+        description:
+          "Réponses sur l’achat en ligne, la livraison, les prestataires, MTN MoMo, Orange Money et l’escrow sur Yorix.cm.",
+        canonicalPath: L("/faq"),
+        jsonLd: [faqLd, orgLd],
+      };
+    }
+
+    if (page === "seoCity" && route.citySlug && CITY_BY_SLUG[route.citySlug]) {
+      const cn = CITY_BY_SLUG[route.citySlug].name;
+      const modes = {
+        hub: {
+          title: `Yorix ${cn} — marketplace, livraison & prestataires | Cameroun`,
+          desc: `Marketplace à ${cn} : acheter en ligne, livraison, services et escrow. MTN MoMo, Orange Money — Yorix.cm.`,
+        },
+        acheter: {
+          title: `Acheter en ligne à ${cn} — marketplace Yorix Cameroun`,
+          desc: `Achat en ligne à ${cn} : produits vérifiés, paiement mobile, livraison. La marketplace camerounaise Yorix.`,
+        },
+        livraison: {
+          title: `Livraison à ${cn} — livreur & colis | Yorix Ride Cameroun`,
+          desc: `Service de livraison rapide à ${cn} et partout au Cameroun. Suivi, tarifs clairs — Yorix Ride.`,
+        },
+        prestataires: {
+          title: `Prestataires à ${cn} — services à domicile | Yorix.cm`,
+          desc: `Trouvez des prestataires vérifiés à ${cn} : plomberie, électricité, ménage, beauté, informatique…`,
+        },
+      };
+      const m = modes[route.cityMode] || modes.hub;
+      const localLd = {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        name: `Yorix — ${cn}`,
+        url: `${SITE_URL}${canon}`,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: cn,
+          addressCountry: "CM",
+        },
+        areaServed: { "@type": "City", name: cn },
+        parentOrganization: { "@type": "Organization", name: "Yorix CM" },
+      };
+      const cityCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: L("/") },
+        { name: cn, path: canon },
+      ]);
+      return {
+        title: m.title,
+        description: m.desc,
+        canonicalPath: canon,
+        keywords: `Yorix ${cn}, marketplace ${cn}, livraison ${cn}, e-commerce Cameroun`,
+        jsonLd: [localLd, cityCrumb, orgLd],
+      };
+    }
+
+    if (page === "merchHub" && route.merchHub) {
+      const hub = getMerchHub(route.merchHub);
+      const title = hub
+        ? route.locale === "en"
+          ? hub.titleEn
+          : hub.titleFr
+        : "Yorix.cm";
+      const desc = hub ? (route.locale === "en" ? hub.descEn : hub.descFr) : "";
+      const kw = hub?.keywordsFr || "marketplace Cameroun";
+      const hubCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: L("/") },
+        { name: title.split("—")[0].trim(), path: canon },
+      ]);
+      return {
+        title: `${title} | Yorix.cm`,
+        description: desc,
+        canonicalPath: canon,
+        keywords: kw,
+        jsonLd: [hubCrumb, orgLd, webLd],
+      };
+    }
+
+    if (page === "produits" && route.categorySlug) {
+      const catLabel = slugToCategoryName(route.categorySlug, CATS) || route.categorySlug.replace(/-/g, " ");
+      const catCrumb = buildBreadcrumbLd([
+        { name: "Accueil", path: L("/") },
+        { name: "Produits", path: L("/produits") },
+        { name: catLabel, path: canon },
+      ]);
+      return {
+        title: `${catLabel} — achat en ligne Cameroun | Yorix.cm marketplace`,
+        description: `Catégorie ${catLabel} sur Yorix.cm : e-commerce & marketplace Cameroun, livraison Douala, Yaoundé, paiement MTN MoMo & Orange Money.`,
+        canonicalPath: canon,
+        keywords: `${catLabel}, produits Cameroun, achat en ligne, marketplace Cameroun, e-commerce Cameroun`,
+        jsonLd: [catCrumb, orgLd, webLd],
+      };
+    }
+
+    if (page === "blog" && route.blogSlug && !getBlogArticle(route.blogSlug)) {
+      return {
+        title: "Article — Blog Yorix Cameroun",
+        description:
+          "Guides marketplace, livraison & e-commerce au Cameroun. Retrouvez les articles officiels sur le blog Yorix.cm.",
+        canonicalPath: canon,
+        noindex: true,
+        jsonLd: [orgLd],
+      };
+    }
+
+    const fallbackTitle = {
+      produits: "Produits — marketplace en ligne Cameroun | Yorix.cm",
+      livraison: "Livraison Cameroun — livreurs Yorix Ride | Douala, Yaoundé",
+      escrow: "Escrow Cameroun — paiement sécurisé marketplace | Yorix.cm",
+      prestataires: "Prestataires Cameroun — services à domicile vérifiés | Yorix.cm",
+      business: "Yorix Business — solutions B2B marketplace Cameroun",
+      blog: "Blog Yorix — guides marketplace & e-commerce Cameroun",
+      academy: "Yorix Academy — formations e-commerce Cameroun",
+      loyalty: "Fidélité Yorix — points & récompenses",
+      contact: "Contact Yorix — support marketplace Cameroun",
+      aide: "Centre d'aide Yorix — marketplace & livraison Cameroun",
+      faq: "FAQ Yorix — achat, livraison, escrow, vendeurs | Cameroun",
+      cgv: "CGV Yorix.cm — conditions générales de vente",
+      confidentialite: "Politique de confidentialité — Yorix.cm",
+      mentions: "Mentions légales — Yorix.cm",
+      devenirVendeur: "Devenir vendeur sur Yorix — marketplace Cameroun",
+      devenirLivreur: "Devenir livreur Yorix Ride — livraison Cameroun",
+      inscription: "Devenir prestataire Yorix — services Cameroun",
+    };
+    const fallbackCrumbLabel = {
+      produits: "Produits",
+      livraison: "Livraison",
+      escrow: "Escrow & sécurité",
+      prestataires: "Prestataires",
+      business: "Business",
+      blog: "Blog",
+      academy: "Academy",
+      loyalty: "Fidélité",
+      contact: "Contact",
+      aide: "Centre d'aide",
+      faq: "FAQ",
+      cgv: "CGV",
+      confidentialite: "Confidentialité",
+      mentions: "Mentions légales",
+      devenirVendeur: "Devenir vendeur",
+      devenirLivreur: "Devenir livreur",
+      inscription: "Devenir prestataire",
+      bonsPlans: "Bons plans",
+    };
+    const ft = fallbackTitle[page];
+    if (ft) {
+      const crumbLabel = fallbackCrumbLabel[page];
+      const pageBc = crumbLabel
+        ? buildBreadcrumbLd([
+            { name: "Accueil", path: L("/") },
+            { name: crumbLabel, path: PAGE_PATH[page] ? L(PAGE_PATH[page]) : canon },
+          ])
+        : null;
+      return {
+        title: ft,
+        description:
+          page === "contact"
+            ? "Contact Yorix.cm : WhatsApp (+237 696 56 56 54), téléphone, email support@yorix.cm — aide commande, remboursement, escrow, livraison Douala & Yaoundé."
+            : page === "aide"
+              ? "Centre d'aide Yorix.cm : acheter, vendre, livraison Yorix Ride, fidélité points, escrow MoMo & Orange Money — guides et FAQ marketplace Cameroun."
+              : "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
+        canonicalPath:
+          page === "blog" && route.blogSlug ? canon : PAGE_PATH[page] ? L(PAGE_PATH[page]) : canon,
+        jsonLd: [pageBc, orgLd].filter(Boolean),
+      };
+    }
+
+    return {
+      title: "Yorix CM — Marketplace #1 au Cameroun",
+      description:
+        "Marketplace camerounaise : produits, livraison, prestataires, escrow MTN MoMo & Orange Money.",
+      canonicalPath: canon,
+      jsonLd: [orgLd],
+    };
+  }, [
+    page,
+    route.canonicalPath,
+    route.citySlug,
+    route.cityMode,
+    route.blogSlug,
+    route.seoAliasKey,
+    route.categorySlug,
+    route.locale,
+    location.pathname,
+    detailProduct,
+  ]);
+
+  const pagesCtx = {
+    page,
+    route,
+    user,
+    userData,
+    userRole,
+    dark,
+    goPage,
+    filterCat,
+    setFilterCat,
+    search,
+    setSearch,
+    produits,
+    produitsLoading,
+    wishlist,
+    addToCart,
+    toggleWish,
+    openProductUrl,
+    setOnboardingOpen,
+    allServices,
+    nlEmail,
+    setNlEmail,
+    nlSent,
+    setNlSent,
+    commerceDeliveryPolicy,
+    showSeoLocal,
+    detailProduct,
+    detailProductLoading,
+    needsProductListingChunk,
+    showProduits,
+    seoCityName,
+    produitsFiltres,
+    showLivraison,
+    showPrestataires,
+    selectedPrest,
+    setSelectedPrest,
+    prestSyncFilters,
+    addServiceToCart,
+    cartItems,
+    cartSummary,
+    changeQty,
+    removeItem,
+    setCartItems,
+    persistCheckoutContact,
+    setAuthTab,
+    setSelectedRole,
+    setAuthOpen,
+    setDemandeLivraisonOpen,
+    notifs,
+    marquerNotifLue,
+    marquerToutesLues,
+    supprimerNotif,
+    loadNotifsForUser,
+    setNotifPrefs,
+    isSiteMarketingPage,
+    inscriptionSent,
+    setInscriptionSent,
+    inscriptionForm,
+    setInscriptionForm,
+    inscriptionError,
+    inscriptionLoading,
+    soumettreCandidaturePrestataire,
+    academyCourses,
+    academyLoading,
+    goAcademyDetail,
+    blogFilter,
+    setBlogFilter,
+    selectedCourse,
+    goAcademyContact,
+    dashTab,
+    setDashTab,
+    getDashNav,
+    roleChipClass,
+    doLogout,
+    loyaltyPts,
+    setLoyaltyPts,
+    totalQty,
+    waOpen,
+    setWaOpen,
+    tabActive,
+    unread,
+  };
+
+
+  if (loading) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
+      <div style={{ width:40, height:40, border:"4px solid #e2ddd6", borderTopColor:"#1a6b3a", borderRadius:"50%", animation:"spin .7s linear infinite" }}/>
+      Chargement de Yorix...
+      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+    </div>
+  );
+
+  return (
+    <>
+      <style>{makeCSS(dark)}</style>
+      <SeoHead
+        title={seoBundle.title}
+        description={seoBundle.description}
+        canonicalPath={seoBundle.canonicalPath}
+        keywords={seoBundle.keywords}
+        ogType={seoBundle.ogType || "website"}
+        jsonLd={seoBundle.jsonLd}
+        noindex={seoBundle.noindex}
+        locale={route.locale}
+        hrefLangAlternates={hrefLangAlternates}
+      />
+
+      {/* ── CONTRACT ACCEPTANCE MODAL ── */}
+      <ContractAcceptance
+        open={contractOpen}
+        onClose={() => {
+          setContractOpen(false);
+          setAuthLoading(false);
+          setAuthError("Vous devez accepter le contrat pour finaliser votre inscription.");
+        }}
+        onAccepted={handleContractAccepted}
+        user={user}
+        userData={userData}
+        role={selectedRole}
+        authForm={authForm}
+      />
+
+      {/* ── ONBOARDING MODAL ── */}
+      <OnboardingModal
+        open={onboardingOpen}
+        onClose={handleCloseOnboarding}
+        onSelectAction={handleOnboardingAction}
+        user={user}
+      />
+
+      {/* ── MODAL DEMANDE LIVRAISON ── */}
+      {demandeLivraisonOpen && (
+        <ModalDemandeLivraison
+          user={user}
+          userData={userData}
+          onClose={() => setDemandeLivraisonOpen(false)}
+          onSuccess={(code) => {
+            console.log("Livraison créée avec code:", code);
+          }}
+        />
+      )}
+
+      <YorixAuthModal
+        authOpen={authOpen}
+        setAuthOpen={setAuthOpen}
+        authTab={authTab}
+        setAuthTab={setAuthTab}
+        selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        authForm={authForm}
+        setAuthForm={setAuthForm}
+        authError={authError}
+        setAuthError={setAuthError}
+        authLoading={authLoading}
+        doLogin={doLogin}
+        doRegister={doRegister}
+        doGoogle={doGoogle}
+      />
+
+      {/* ── EN-TÊTE STICKY (marketplace fluide desktop + mobile) ── */}
+      <YorixHeader
+        navCompact={navCompact}
+        dark={dark}
+        setDark={setDark}
+        user={user}
+        userData={userData}
+        userRole={userRole}
+        goPage={goPage}
+        siteLocale={route.locale}
+        switchLocale={switchLocale}
+        filterCat={filterCat}
+        setFilterCat={setFilterCat}
+        search={search}
+        setSearch={setSearch}
+        produits={produits}
+        setOnboardingOpen={setOnboardingOpen}
+        setNotifOpen={setNotifOpen}
+        unread={unread}
+        totalQty={totalQty}
+        setAuthTab={setAuthTab}
+        setAuthOpen={setAuthOpen}
+        setSelectedRole={setSelectedRole}
+        doLogout={doLogout}
+        navQuickRef={navQuickRef}
+        navQuickOpen={navQuickOpen}
+        setNavQuickOpen={setNavQuickOpen}
+        TABS={TABS}
+        tabActive={tabActive}
+        commerceDeliveryPolicy={commerceDeliveryPolicy}
+        roleChipClass={roleChipClass}
+      />
+
+      {/* ── NOTIFICATIONS (hors header sticky — z-index overlay) ── */}
+      {notifOpen && user && (
+        <>
+          <div className="notif-backdrop" role="presentation" onClick={() => setNotifOpen(false)} />
+          <div className="notif-drawer notif-drawer--premium">
+            <NotificationCenter
+              variant="dropdown"
+              user={user}
+              notifs={notifs}
+              goPage={goPage}
+              onMarkRead={marquerNotifLue}
+              onMarkAllRead={marquerToutesLues}
+              onDismiss={supprimerNotif}
+              onClose={() => setNotifOpen(false)}
+              onPrefsUpdated={setNotifPrefs}
+            />
+          </div>
+        </>
+      )}
+
+      <RouteErrorBoundary resetKeys={[page, location.pathname]}>
+        <YorixPages ctx={pagesCtx} />
+      </RouteErrorBoundary>
+
+      <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+    </>
+  );
+}

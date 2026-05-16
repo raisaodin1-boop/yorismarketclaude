@@ -1,10 +1,11 @@
 import { PagesLegales } from "../components/PagesLegales";
-import { MarketingBreadcrumb } from "../components/layout/MarketingBreadcrumb";
 import { CITIES } from "../lib/constants";
 import { BlogPage } from "./BlogPage";
+import { BlogSeoArticle } from "../components/seo/BlogSeoArticle";
 import { HelpCentrePage } from "./HelpCentrePage";
 import { AcademyPage } from "./AcademyPage";
 import { BusinessPage } from "./BusinessPage";
+import { ContactPage } from "./ContactPage";
 
 export function SiteMarketingPages({
   page,
@@ -24,6 +25,7 @@ export function SiteMarketingPages({
   goAcademyDetail,
   blogFilter,
   setBlogFilter,
+  blogSlug,
   nlEmail,
   setNlEmail,
   nlSent,
@@ -168,6 +170,9 @@ export function SiteMarketingPages({
       );
 
     case "blog":
+      if (blogSlug) {
+        return <BlogSeoArticle slug={blogSlug} goPage={goPage} />;
+      }
       return (
         <BlogPage
           blogFilter={blogFilter}
@@ -183,105 +188,16 @@ export function SiteMarketingPages({
     case "contact":
       return (
         <section className="sec anim yorix-pro-page">
-          <div className="yorix-contact-shell">
-            <div className="yorix-bc-row">
-              <MarketingBreadcrumb items={[{ label: "Accueil", onClick: () => goPage("home") }, { label: "Contact" }]} />
-            </div>
-            <div className="yorix-contact-intro">
-              <h1 className="yorix-contact-h1">📞 Relation client premium</h1>
-              <p className="yorix-contact-lead">
-                Priorité WhatsApp sous ~120&nbsp;minutes · téléphone vocal · email pièces jointes — équipes Douala&nbsp;&amp;&nbsp;Yaoundé.
-              </p>
-            </div>
-            <div className="yorix-contact-chips">
-              {[
-                { icon: "📱", label: "WhatsApp", val: "+237 696 56 56 54", action: () => window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix !")}`) },
-                { icon: "📞", label: "Téléphone", val: "+237 696 56 56 54", action: () => window.open("tel:+237696565654") },
-                { icon: "✉️", label: "Email", val: "support@yorix.cm", action: () => window.open("mailto:support@yorix.cm") },
-              ].map((c) => (
-                <div
-                  key={c.label}
-                  role="button"
-                  tabIndex={0}
-                  className="yorix-contact-chip"
-                  onClick={c.action}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      c.action();
-                    }
-                  }}
-                >
-                  <span className="yorix-contact-chip-ico">{c.icon}</span>
-                  <span className="yorix-contact-chip-lbl">{c.label}</span>
-                  <span className="yorix-contact-chip-val">{c.val}</span>
-                </div>
-              ))}
-            </div>
-            <div className="yorix-contact-form-card">
-              <div className="yorix-contact-form-title">💬 Envoyer un message</div>
-              <div className="form-row">
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Nom <span>*</span></label>
-                  <input className="form-input" placeholder="Votre nom" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Email <span>*</span></label>
-                  <input className="form-input" type="email" placeholder="email@exemple.cm" />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Sujet <span>*</span></label>
-                <select className="form-select">
-                  <option value="">Choisir un sujet...</option>
-                  {["Problème avec une commande", "Signaler un vendeur", "Remboursement", "Problème de paiement", "Devenir vendeur", "Devenir livreur", "Autre"].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Message <span>*</span></label>
-                <textarea className="form-textarea" style={{ minHeight: 90 }} placeholder="Décrivez votre demande..." />
-              </div>
-              <button
-                type="button"
-                className="form-submit"
-                onClick={() => window.open(`https://wa.me/237696565654?text=${encodeURIComponent("Bonjour Yorix ! Je vous contacte pour : ")}`)}
-              >
-                📱 Continuer via WhatsApp
-              </button>
-            </div>
-            <div className="yorix-contact-info-strip">
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem", color: "var(--green)", marginBottom: 6 }}>⏰ Horaires</div>
-                {[
-                  ["Lun – Ven", "8h – 20h"],
-                  ["Samedi", "9h – 18h"],
-                  ["Dimanche", "10h – 16h"],
-                ].map(([j, h]) => (
-                  <div key={j} style={{ display: "flex", justifyContent: "space-between", fontSize: ".75rem", padding: "3px 0", borderBottom: "1px solid var(--border)" }}>
-                    <span style={{ color: "var(--gray)" }}>{j}</span>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{h}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem", color: "var(--green)", marginBottom: 6 }}>📍 Bureaux</div>
-                <div style={{ fontSize: ".75rem", color: "var(--gray)", lineHeight: 1.7 }}>
-                  Douala — Akwa
-                  <br />
-                  Yaoundé — Bastos
-                  <br />
-                  📞 +237 696 56 56 54
-                </div>
-              </div>
-            </div>
-          </div>
+          <ContactPage goPage={goPage} />
         </section>
       );
 
     case "aide":
-      return <HelpCentrePage goPage={goPage} />;
+      return (
+        <section className="sec anim yorix-pro-page">
+          <HelpCentrePage goPage={goPage} />
+        </section>
+      );
 
     case "cgv":
       return <PagesLegales type="cgv" goPage={goPage} />;

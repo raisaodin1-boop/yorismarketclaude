@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabase";
+import { LOYALTY_CATALOG_LIMIT } from "../lib/queryLimits";
 import { LevelBadge } from "./LevelBadge";
 import { LoyaltyPackModal } from "./LoyaltyPackModal";
 import { LoyaltyRedeemModal } from "./LoyaltyRedeemModal";
@@ -131,8 +132,8 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
   const loadAll = async () => {
     setLoading(true);
     const queries = [
-      supabase.from("loyalty_packs").select("*").eq("actif", true).order("ordre"),
-      supabase.from("loyalty_rewards").select("*").eq("actif", true).order("ordre"),
+      supabase.from("loyalty_packs").select("*").eq("actif", true).order("ordre").limit(LOYALTY_CATALOG_LIMIT),
+      supabase.from("loyalty_rewards").select("*").eq("actif", true).order("ordre").limit(LOYALTY_CATALOG_LIMIT),
     ];
 
     if (user?.id) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { CITIES } from "../lib/constants";
+import { DASHBOARD_SERVICES_LIMIT } from "../lib/queryLimits";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : DASHBOARD PROVIDER (PRESTATAIRE)
@@ -16,7 +17,7 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
     const loadMesServices = async () => {
       const [{ data: servicesData, error: serviceErr }, { data: bookingData, error: bookingErr }] =
         await Promise.all([
-          supabase.from("services").select("*").eq("provider_id", user.id).order("created_at", { ascending: false }),
+          supabase.from("services").select("*").eq("provider_id", user.id).order("created_at", { ascending: false }).limit(DASHBOARD_SERVICES_LIMIT),
           supabase
             .from("service_bookings")
             .select("*")
@@ -50,9 +51,9 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
       .from("services")
       .select("*")
       .eq("provider_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(DASHBOARD_SERVICES_LIMIT);
     if (refreshed) setMesServices(refreshed);
-    setMesServices(prev => prev.filter(s => s.id !== id));
   };
 
   const toggleDispo = async (id, current) => {

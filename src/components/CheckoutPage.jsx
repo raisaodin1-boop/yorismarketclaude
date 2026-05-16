@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CITIES } from "../lib/constants";
 import {
@@ -16,7 +17,7 @@ import {
   createCheckoutIntent,
   initPaymentCinetPay,
 } from "../lib/checkoutApi";
-import { PAGE_PATH } from "../lib/seoRoutes";
+import { PAGE_PATH, parseLocaleSegments, localePath } from "../lib/seoRoutes";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
@@ -64,6 +65,12 @@ export function CheckoutPage({
   const navigate = useNavigate();
   const location = useLocation();
   const processedCinetpayReturnRef = useRef(new Set());
+
+  const { t } = useTranslation("checkout");
+  const checkoutLocaleSeg = parseLocaleSegments(location.pathname);
+  const checkoutLocale =
+    checkoutLocaleSeg.locale === "fr" || checkoutLocaleSeg.locale === "en" ? checkoutLocaleSeg.locale : "fr";
+  const localizedCheckoutPath = localePath(checkoutLocale, PAGE_PATH.checkout);
 
   const [step, setStep] = useState(1);
 
@@ -239,7 +246,7 @@ export function CheckoutPage({
       processedCinetpayReturnRef.current.add(txRef);
       setCinetpayReturnBanner("");
       clearStoredTx();
-      navigate(PAGE_PATH.checkout, { replace: true });
+      navigate(localizedCheckoutPath, { replace: true });
     }
 
     const params = new URLSearchParams(location.search || "");
@@ -265,7 +272,7 @@ export function CheckoutPage({
     const hasReturnHint =
       st === "return" ||
       (rawTx && rawTx.startsWith("YRXPAY-")) ||
-      (expectReturn && Boolean(storedTx.startsWith("YRXPAY-")) && location.pathname === PAGE_PATH.checkout);
+        (expectReturn && Boolean(storedTx.startsWith("YRXPAY-")) && checkoutLocaleSeg.barePath === PAGE_PATH.checkout);
     if (!hasReturnHint) return undefined;
 
     const cand = [];
@@ -369,11 +376,11 @@ export function CheckoutPage({
   const handlePlaceOrder = async () => {
     if (!hasItems) return;
     if (!user) {
-      setCheckoutError("Connexion requise pour finaliser la commande.");
+      setCheckoutError(t("errors.loginRequired"));
       return;
     }
     if (!canContinueStep1) {
-      setCheckoutError("Complétez l’adresse et le téléphone à l’étape précédente.");
+      setCheckoutError(t("errors.addressIncomplete"));
       return;
     }
     setCheckoutError("");
@@ -494,7 +501,7 @@ export function CheckoutPage({
       });
     } catch (e) {
       console.warn("Checkout:", e?.message || e);
-      setCheckoutError("Impossible de finaliser le checkout. Réessayez ou contactez Yorix sur WhatsApp (+237 696 56 56 54).");
+      setCheckoutError(t("errors.checkoutFailed"));
     } finally {
       setLoading(false);
     }
@@ -509,12 +516,18 @@ export function CheckoutPage({
     setCheckoutError("");
   };
 
+  const checkoutTypeLabel = useMemo(() => {
+    if (checkoutType === "mixed") return t("lead.typeMixed");
+    if (checkoutType === "service_only") return t("lead.typeServices");
+    return t("lead.typeProducts");
+  }, [checkoutType, t]);
+
   const locationBody = useMemo(() => {
-    if (locationType === "online") return "Visio / téléphone / livrables numériques selon prestataire.";
-    if (locationType === "shop") return hasProducts ? "Préparez une pièce d’identité si le vendeur exige une vérification au retrait." : "Coordonnées exactes envoyées après confirmation.";
-    if (carrier === "yorix") return `Yorix Delivery — vérifiez que ${ville || "la ville"} est bien desservie. Frais définitifs au paiement si le montant catalogue évolue.`;
-    return "Livraison standard coordonnée par le vendeur et nos livreurs partenaires.";
-  }, [locationType, carrier, ville, hasProducts]);
+    if (locationType === "online") return t("location.online");
+    if (locationType === "shop") return hasProducts ? t("location.shopProducts") : t("location.shop");
+    if (carrier === "yorix") return t("location.yorix", { city: ville || "—" });
+    return t("location.standard");
+  }, [locationType, carrier, ville, hasProducts, t]);
 
   const deliveryHintText = deliveryEstimateHint(ville, locationType, carrier);
 
@@ -529,14 +542,10 @@ export function CheckoutPage({
       {!orderDone && hasItems && <FreeShippingProgress summary={summary} variant={step >= 2 ? "compact" : "cart"} />}
 
       <h1 className="sec-title yorix-ds-tight">
-        {orderDone ? "Commande enregistrée" : "Finaliser la commande"}
+        {orderDone ? t("title.done") : t("title.active")}
       </h1>
       <p className="yorix-ds-lead">
-        {orderDone
-          ? "Merci pour votre confiance. Conservez votre référence pour le suivi."
-          : `Tunnel sécurisé : adresse • livraison • paiement (${
-              checkoutType === "mixed" ? "panier mixte" : checkoutType === "service_only" ? "prestations" : "produits"
-            }).`}
+        {orderDone ? t("lead.done") : t("lead.active", { type: checkoutTypeLabel })}
       </p>
 
       {cinetpayReturnBanner && !orderDone && (
@@ -552,29 +561,29 @@ export function CheckoutPage({
           </div>
           <h2 className="h2" style={{ fontSize: "1.05rem", marginBottom: 8 }}>
             {orderDone.mode === "whatsapp"
-              ? "Finalisez sur WhatsApp"
+              ? t("confirm.whatsapp")
               : orderDone.mode === "cinetpay_return"
-                ? "Paiement CinetPay"
-                : "Récapitulatif"}
+                ? t("confirm.cinetpay")
+                : t("confirm.summary")}
           </h2>
           <p style={{ color: "var(--gray)", marginBottom: 12, lineHeight: 1.45 }}>
             {orderDone.mode === "whatsapp"
-              ? "Une conversation WhatsApp a été ouverte avec le détail de votre commande. Notre équipe confirme le paiement (MoMo, Orange ou autre) avec vous."
+              ? t("confirm.whatsappBody")
               : orderDone.mode === "cinetpay_return"
-                ? "Statut mis à jour depuis notre serveur. En cas de « en attente », le webhook peut encore finaliser sous quelques minutes."
-                : "Votre commande a été enregistrée. Suivez l’avancement depuis votre espace client."}
+                ? t("confirm.cinetpayBody")
+                : t("confirm.standardBody")}
           </p>
             <div className="yorix-ds-inset-panel">
             {orderDone.mode === "cinetpay_return" && orderDone.paymentStatus && (
               <div className="yorix-ds-kvrow">
-                <span>État paiement</span>
+                <span>{t("confirm.paymentStatus")}</span>
                 <strong>
                   {orderDone.paymentStatus === "paid"
-                    ? "Payé"
+                    ? t("confirm.paid")
                     : orderDone.paymentStatus === "failed"
-                      ? "Échoué"
+                      ? t("confirm.failed")
                       : orderDone.paymentStatus === "pending"
-                        ? "En attente"
+                        ? t("confirm.pending")
                         : orderDone.paymentStatus}
                 </strong>
               </div>
@@ -583,7 +592,7 @@ export function CheckoutPage({
               orderDone.amountReturned != null &&
               Number.isFinite(Number(orderDone.amountReturned)) && (
                 <div className="yorix-ds-kvrow">
-                  <span>Montant enregistré</span>
+                  <span>{t("confirm.amountRecorded")}</span>
                   <strong>
                     {Number(orderDone.amountReturned).toLocaleString()} {orderDone.currencyReturned || "XAF"}
                   </strong>
@@ -591,23 +600,23 @@ export function CheckoutPage({
               )}
             {orderDone.providerRef && orderDone.mode === "cinetpay_return" && (
               <div className="yorix-ds-kvrow" style={{ marginBottom: orderDone.orderGroupId ? 6 : 0 }}>
-                <span>Réf. transaction</span>
+                <span>{t("confirm.txRef")}</span>
                 <strong style={{ wordBreak: "break-all" }}>{orderDone.providerRef}</strong>
               </div>
             )}
             {orderDone.orderGroupId && (
               <div className="yorix-ds-kvrow" style={{ marginBottom: 6 }}>
-                <span>Groupe commande</span>
+                <span>{t("confirm.orderGroup")}</span>
                 <strong style={{ wordBreak: "break-all" }}>{orderDone.orderGroupId}</strong>
               </div>
             )}
             <div className="yorix-ds-kvrow">
-              <span>Réf. checkout</span>
+              <span>{t("confirm.checkoutRef")}</span>
               <strong style={{ wordBreak: "break-all" }}>{orderDone.intentId}</strong>
             </div>
             {Array.isArray(orderDone.deliveryTracking) && orderDone.deliveryTracking.length > 0 && (
               <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border-subtle, #e5e5e5)" }}>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>Codes de suivi livraison</div>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>{t("confirm.trackingCodes")}</div>
                 <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.5 }}>
                   {orderDone.deliveryTracking.map((row) => (
                     <li key={row.order_id}>
@@ -616,17 +625,17 @@ export function CheckoutPage({
                   ))}
                 </ul>
                 <p style={{ margin: "8px 0 0", fontSize: ".78rem", color: "var(--gray)" }}>
-                  Suivez l’avancement sur la page Livraison avec ce code.
+                  {t("confirm.trackingHint")}
                 </p>
               </div>
             )}
           </div>
           <div className="yorix-ds-stack">
             <button type="button" className="form-submit" style={{ width: "auto", minWidth: 200 }} onClick={() => goPage("dashboard")}>
-              Voir mon espace
+              {t("confirm.myAccount")}
             </button>
             <button type="button" className="btn-ghost" onClick={() => goPage("produits")}>
-              Continuer mes achats
+              {t("confirm.continueShopping")}
             </button>
           </div>
         </div>
@@ -635,9 +644,9 @@ export function CheckoutPage({
       {!hasItems && !orderDone && (
         <div className="empty-state">
           <div className="empty-icon">🛒</div>
-          <p>Votre panier est vide.</p>
+          <p>{t("empty.cart")}</p>
           <button className="form-submit" style={{ width: "auto" }} onClick={() => goPage("produits")}>
-            Voir le catalogue
+            {t("empty.browse")}
           </button>
         </div>
       )}
@@ -647,20 +656,17 @@ export function CheckoutPage({
           <div className="card checkout-form-card">
             {step === 1 && (
               <div className="checkout-step-grid">
-                <div className="checkout-step-heading">
-                  Adresse & contact
-                </div>
+                <div className="checkout-step-heading">{t("step1.heading")}</div>
                 <p className="checkout-step-lead">
-                  Téléphone utilisé pour la livraison et les validations MoMo / Orange. Les données sont aussi enregistrées sur cet appareil pour votre prochain passage.
+                  {t("step1.lead")}
                 </p>
 
                 <label className="checkout-field">
-                  <span className="form-label">Nom complet</span>
-                  <input className="form-input" value={nomLocal} onChange={(e) => setNomLocal(e.target.value)} placeholder="Ex. Mari Kamga" />
+                  <span className="form-label">{t("step1.fullName")}</span>
+                  <input className="form-input" value={nomLocal} onChange={(e) => setNomLocal(e.target.value)} placeholder={t("step1.fullNamePh")} />
                 </label>
                 <label className="checkout-field">
-                  <span className="form-label">
-                    Mobile <strong style={{ color: "var(--red)" }}>*</strong>
+                  <span className="form-label">{t("step1.mobile")} <strong style={{ color: "var(--red)" }}>*</strong>
                   </span>
                   <input
                     className={`form-input ${attemptedAdvance && addressErrors.phone ? "checkout-input-invalid" : ""}`}
@@ -668,38 +674,37 @@ export function CheckoutPage({
                     autoComplete="tel"
                     value={phoneLocal}
                     onChange={(e) => setPhoneLocal(e.target.value)}
-                    placeholder="6XX XXX XXX ou +237 6XX XXX XXX"
+                    placeholder={t("step1.mobilePh")}
                   />
                   {attemptedAdvance && addressErrors.phone && <span className="checkout-field-error">{addressErrors.phone}</span>}
                 </label>
 
                 <label className="checkout-field checkout-field-wide">
                   <span className="form-label">
-                    Adresse / rue & numéro <strong style={{ color: "var(--red)" }}>*</strong>
+                    {t("step1.address")} <strong style={{ color: "var(--red)" }}>*</strong>
                   </span>
                   <input
                     className={`form-input ${attemptedAdvance && addressErrors.line1 ? "checkout-input-invalid" : ""}`}
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
-                    placeholder="Ex. Avenue Kennedy, immeuble bleu, 2e étage"
+                    placeholder={t("step1.addressPh")}
                   />
                   {attemptedAdvance && addressErrors.line1 && <span className="checkout-field-error">{addressErrors.line1}</span>}
                 </label>
 
                 <label className="checkout-field">
-                  <span className="form-label">Quartier</span>
-                  <input className="form-input" value={quartier} onChange={(e) => setQuartier(e.target.value)} placeholder="Ex. Bastos, Akwa…" />
+                  <span className="form-label">{t("step1.district")}</span>
+                  <input className="form-input" value={quartier} onChange={(e) => setQuartier(e.target.value)} placeholder={t("step1.districtPh")} />
                 </label>
                 <label className="checkout-field">
-                  <span className="form-label">
-                    Ville <strong style={{ color: "var(--red)" }}>*</strong>
+                  <span className="form-label">{t("step1.city")} <strong style={{ color: "var(--red)" }}>*</strong>
                   </span>
                   <select
                     className={`form-input ${attemptedAdvance && addressErrors.ville ? "checkout-input-invalid" : ""}`}
                     value={ville}
                     onChange={(e) => setVille(e.target.value)}
                   >
-                    <option value="">— Choisir une ville —</option>
+                    <option value="">{t("step1.cityChoose")}</option>
                     {CITY_OPTIONS.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -710,26 +715,26 @@ export function CheckoutPage({
                 </label>
 
                 <label className="checkout-field checkout-field-wide">
-                  <span className="form-label">Point de repère (optionnel)</span>
+                  <span className="form-label">{t("step1.landmark")}</span>
                   <input
                     className="form-input"
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
-                    placeholder="Ex. près de la station Total, portail vert…"
+                    placeholder={t("step1.landmarkPh")}
                   />
                 </label>
 
                 <div className="checkout-trust-row" style={{ gridColumn: "1 / -1" }}>
-                  <span>🔒 Paiement sécurisé</span>
-                  <span>🛡️ Protection acheteur</span>
-                  <span>📦 Suivi commande</span>
+                  <span>🔒 {t("step1.trustSecure")}</span>
+                  <span>🛡️ {t("step1.trustBuyer")}</span>
+                  <span>📦 {t("step1.trustTrack")}</span>
                 </div>
 
                 <button type="button" className="form-submit" style={{ width: "100%", gridColumn: "1 / -1" }} onClick={tryAdvanceFromStep1}>
-                  Continuer vers la livraison
+                  {t("step1.continueDelivery")}
                 </button>
                 <button type="button" className="btn-ghost" style={{ width: "100%", gridColumn: "1 / -1" }} onClick={() => goPage("cart")}>
-                  ← Retour au panier
+                  {t("step1.backCart")}
                 </button>
               </div>
             )}
@@ -737,25 +742,25 @@ export function CheckoutPage({
             {step === 2 && (
               <div style={{ display: "grid", gap: 12 }}>
                 <div className="checkout-step-heading" style={{ gridColumn: "1 / -1" }}>
-                  Livraison & réception
+                  {t("step2.heading")}
                 </div>
                 <p className="checkout-step-lead" style={{ marginTop: "-6px" }}>{locationBody}</p>
 
-                <label className="form-label">Mode principal</label>
+                <label className="form-label">{t("step2.mainMode")}</label>
                 <select className="form-input" value={locationType} onChange={(e) => setLocationType(e.target.value)}>
                   {(hasProducts || hasServices) && (
                     <option value="home">
                       {hasProducts && hasServices
-                        ? "À domicile (livraison colis ou prestation)"
+                        ? t("step2.homeBoth")
                         : hasProducts
-                          ? "Livraison à domicile"
+                          ? t("step2.homeProducts")
                           : "Prestation à domicile / visite"}
                     </option>
                   )}
                   {(hasProducts || hasServices) && (
-                    <option value="shop">{hasProducts ? "Retrait colis / point relais" : "Sur place — atelier / boutique"}</option>
+                    <option value="shop">{hasProducts ? t("step2.shopProducts") : t("step2.shopServices")}</option>
                   )}
-                  {hasServices && <option value="online">100 % en ligne (visio, fichier, téléphone)</option>}
+                  {hasServices && <option value="online">{t("step2.online")}</option>}
                 </select>
 
                 {locationType === "home" && hasProducts && (
@@ -791,18 +796,18 @@ export function CheckoutPage({
                 </div>
 
                 <button type="button" className="form-submit" style={{ width: "100%" }} onClick={() => setStep(3)}>
-                  Continuer vers le paiement
+                  {t("step2.continuePayment")}
                 </button>
                 <button type="button" className="btn-ghost" style={{ width: "100%" }} onClick={() => setStep(1)}>
-                  ← Retour à l&apos;adresse
+                  {t("step2.backAddress")}
                 </button>
               </div>
             )}
 
             {step === 3 && (
               <div style={{ display: "grid", gap: 10 }}>
-                <div className="checkout-step-heading">Paiement</div>
-                <label className="form-label">Mode de paiement</label>
+                <div className="checkout-step-heading">{t("step3.heading")}</div>
+                <label className="form-label">{t("step3.method")}</label>
                 <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option value="cinetpay">CinetPay — MTN MoMo, Orange Money ou carte</option>
                   <option value="cod">Espèces — paiement à la livraison</option>
@@ -842,10 +847,10 @@ export function CheckoutPage({
                 </p>
                 {checkoutError && <div className="info-msg checkout-error-banner">{checkoutError}</div>}
                 <button className="form-submit" type="button" onClick={handlePlaceOrder} disabled={loading}>
-                  {loading ? "Traitement..." : "Confirmer la commande"}
+                  {loading ? t("step3.processing") : t("step3.placeOrder")}
                 </button>
                 <button type="button" className="btn-ghost" style={{ width: "100%" }} onClick={() => setStep(2)} disabled={loading}>
-                  ← Retour à la livraison
+                  {t("step3.backDelivery")}
                 </button>
               </div>
             )}

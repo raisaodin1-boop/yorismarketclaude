@@ -1,4 +1,12 @@
-import { supabase, COMMISSION_RATE, CLOUD_NAME, UPLOAD_PRESET, YORIX_WA_NUMBER, SUPABASE_ANON_KEY } from "../lib/supabase";
+import {
+  supabase,
+  COMMISSION_RATE,
+  CLOUD_NAME,
+  UPLOAD_PRESET,
+  YORIX_WA_NUMBER,
+  SUPABASE_ANON_KEY,
+} from "../lib/supabase";
+import { SUPABASE_PROJECT_URL } from "../lib/supabaseDefaults.js";
 // ═══════════════════════════════════════════════════════════════
 // 🚀 OPTIMISATION CLOUDINARY — Auto-compression + WebP + Lazy
 // ═══════════════════════════════════════════════════════════════
@@ -146,10 +154,10 @@ export function getUserRole(profileData) {
 }
 
 const FORBIDDEN_PATTERNS = [
-  /(\+?237[\s\-]?[0-9]{8,9})/g,
-  /(\+?[0-9]{1,3}[\s\-]?[0-9]{9,10})/g,
+  /(\+?237[\s-]?[0-9]{8,9})/g,
+  /(\+?[0-9]{1,3}[\s-]?[0-9]{9,10})/g,
   /(whatsapp|wa\.me|t\.me|telegram)/gi,
-  /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g,
+  /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
   /(facebook\.com|instagram\.com)/gi,
 ];
 
@@ -162,24 +170,63 @@ export function filtrerMsg(texte) {
 // ✅ EMAILS AUTOMATIQUES — Resend via Supabase Edge Function
 // ═══════════════════════════════════════════════════════════════
 
-const EMAIL_FUNCTION_URL = "https://msrymchhhxitdevthvdi.supabase.co/functions/v1/send-email";
+/** URL complète de l’Edge Function, ou dérivée de VITE_SUPABASE_URL / défaut projet. */
+export function resolveSendEmailFunctionUrl() {
+  const explicit = import.meta.env?.VITE_SEND_EMAIL_URL;
+  if (explicit && String(explicit).trim()) {
+    return String(explicit).trim().replace(/\/$/, "");
+  }
+  const base = String(import.meta.env?.VITE_SUPABASE_URL || SUPABASE_PROJECT_URL || "")
+    .trim()
+    .replace(/\/$/, "");
+  if (!base) return "";
+  return `${base}/functions/v1/send-email`;
+}
+
+const EMAIL_LOCAL_PART = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Envoie un email via l'Edge Function send-email.
- * @param {Object} opts - { to, subject, html, from }
+ * Envoie un email via l'Edge Function send-email (JWT utilisateur obligatoire).
+ * @param {Object} opts - { to, subject, html, from } (from ignoré côté serveur — expéditeur RESEND_FROM)
  * @returns {Promise<{success: boolean, id?: string, error?: string}>}
  */
 export async function sendEmail({ to, subject, html, from }) {
+  const url = resolveSendEmailFunctionUrl();
+  if (!url || !/^https:\/\//i.test(url)) {
+    console.error("sendEmail: URL Edge invalide (VITE_SUPABASE_URL / VITE_SEND_EMAIL_URL)");
+    return { success: false, error: "Configuration email manquante" };
+  }
+  if (!to || typeof to !== "string" || !EMAIL_LOCAL_PART.test(to.trim())) {
+    return { success: false, error: "Destinataire invalide" };
+  }
+  if (!subject || typeof subject !== "string" || !html || typeof html !== "string") {
+    return { success: false, error: "Sujet ou contenu manquant" };
+  }
+
+  const {
+    data: { session },
+    error: sessionErr,
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (sessionErr || !token) {
+    console.warn("sendEmail: session requise", sessionErr?.message);
+    return { success: false, error: "Authentification requise pour envoyer un e-mail." };
+  }
+
   try {
-    const res = await fetch(EMAIL_FUNCTION_URL, {
+    const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to, subject, html, from }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ to: to.trim(), subject, html, from }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       console.error("sendEmail error:", data);
-      return { success: false, error: data.error };
+      return { success: false, error: data.error || data.message || `HTTP ${res.status}` };
     }
     return { success: true, id: data.id };
   } catch (err) {
