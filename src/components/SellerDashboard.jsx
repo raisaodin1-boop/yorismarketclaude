@@ -2,15 +2,19 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLimits";
-import { CATS as PRODUCT_CATS } from "../lib/constants";
 import { uploadSingleImage } from "../utils/helpers";
 import { buildMadeInCameroonPayload } from "../lib/madeInCameroon";
+import { buildProductCategoryPayload } from "../lib/marketplaceCategories";
+import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
+import { CategoryPicker } from "./categories/CategoryPicker";
+import "./categories/categoryUi.css";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
 // ─────────────────────────────────────────────────────────────
 export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const { t } = useTranslation("seller");
+  const { tree: categoryTree, flat: categoryFlat } = useCategoryTaxonomy();
   const [mesProduits, setMesProduits]     = useState([]);
   const [mesCommandes, setMesCommandes]   = useState([]);
   const [wallet, setWallet]               = useState({ solde: 0, total_gagne: 0 });
@@ -26,9 +30,11 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     prix: "",
     stock: "",
     categorie: "",
+    parentSlug: "",
+    subSlug: "",
     ville: "",
     escrow: true,
-    madeInChoice: "yes",
+    madeInChoice: "no",
     localBrandName: "",
     countryOfOrigin: "CM",
   });
@@ -48,8 +54,6 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   // ── Confirmation action commande ──
   const [pendingConfirm, setPendingConfirm] = useState(null);
 
-  // Listes locales utilisées par le formulaire
-  const CATS = [...PRODUCT_CATS, "Autre"];
   const VILLES = ["Yaoundé", "Douala", "Bafoussam", "Bamenda", "Garoua", "Maroua", "Ngaoundéré", "Bertoua", "Ebolowa", "Kribi"];
 
   const statusLabel = (s) => t(`orders.status.${s}`, { defaultValue: s });
@@ -101,7 +105,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       categorie: "",
       ville: "",
       escrow: true,
-      madeInChoice: "yes",
+      madeInChoice: "no",
       localBrandName: "",
       countryOfOrigin: "CM",
     });
@@ -111,6 +115,11 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const saveNewProduct = async () => {
     if (!form.name_fr.trim() || !form.prix || isNaN(Number(form.prix))) {
       setSaveMsg({ type: "error", text: t("products.saveErrorNamePrice") });
+      setTimeout(() => setSaveMsg(null), 3000);
+      return;
+    }
+    if (!form.parentSlug && !form.categorie?.trim()) {
+      setSaveMsg({ type: "error", text: "Choisissez une catégorie principale et une sous-catégorie." });
       setTimeout(() => setSaveMsg(null), 3000);
       return;
     }
@@ -129,13 +138,19 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       }
       setProgress(80);
 
+      const catPayload = buildProductCategoryPayload(categoryFlat, {
+        parentSlug: form.parentSlug,
+        subSlug: form.subSlug,
+        legacyLabel: form.categorie,
+      });
+
       const micPayload = buildMadeInCameroonPayload(
         {
           madeInChoice: form.madeInChoice,
           localBrandName: form.localBrandName,
           countryOfOrigin: form.countryOfOrigin,
         },
-        { ville: form.ville, categorie: form.categorie, name_fr: form.name_fr },
+        { ville: form.ville, categorie: catPayload.categorie, name_fr: form.name_fr },
         userData,
       );
 
@@ -145,7 +160,8 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
         description_fr: form.description_fr,
         prix:           Number(form.prix),
         stock:          Number(form.stock || 0),
-        categorie:      form.categorie || "Autre",
+        categorie:      catPayload.categorie || "Autre",
+        category_id:    catPayload.category_id,
         ville:          form.ville || "Douala",
         image:          imageUrls[0] || null,
         image_urls:     imageUrls,
@@ -418,7 +434,9 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                         <label style={S.label}>Catégorie</label>
                         <select style={S.input} value={editForm.categorie} onChange={e => setEditForm(f => ({ ...f, categorie: e.target.value }))}>
                           <option value="">Choisir...</option>
-                          {CATS.map(c => <option key={c}>{c}</option>)}
+                          {categoryFlat.filter((r) => r.parent_id).map((c) => (
+                            <option key={c.id || c.slug} value={c.name_fr}>{c.name_fr}</option>
+                          ))}
                         </select>
                       </div>
                       <div>
@@ -522,12 +540,22 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
               <label className="form-label">Stock disponible</label>
               <input className="form-input" type="number" min="0" placeholder="Ex: 10" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
             </div>
-            <div className="form-group">
-              <label className="form-label">Catégorie</label>
-              <select className="form-select" value={form.categorie} onChange={e => setForm(f => ({ ...f, categorie: e.target.value }))}>
-                <option value="">Choisir...</option>
-                {CATS.map(c => <option key={c}>{c}</option>)}
-              </select>
+            <div className="form-group full">
+              <label className="form-label">Catégorie <span>*</span></label>
+              <CategoryPicker
+                tree={categoryTree}
+                locale="fr"
+                required
+                value={{ parentSlug: form.parentSlug, subSlug: form.subSlug, label: form.categorie }}
+                onChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    parentSlug: v.parentSlug,
+                    subSlug: v.subSlug || "",
+                    categorie: v.label,
+                  }))
+                }
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Ville</label>

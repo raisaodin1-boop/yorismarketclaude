@@ -6,8 +6,12 @@
 import { useCallback, useState } from "react";
 import { FlashCountdown } from "../components/FlashCountdown";
 import { ProdGrid } from "../components/ProdGrid";
-import { CATS, CITIES } from "../lib/constants";
+import { CITIES } from "../lib/constants";
 import { HomePremiumMerch } from "../components/home/HomePremiumMerch";
+import { HomeCategoryGrid } from "../components/categories/HomeCategoryGrid";
+import { HomeTrendingProducts } from "../components/home/HomeTrendingProducts";
+import { HomeBuyerSellerCta } from "../components/home/HomeBuyerSellerCta";
+import { categoryLabel } from "../lib/marketplaceCategories";
 import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
 import homePremiumCss from "./homePageV3Premium.css?raw";
@@ -132,6 +136,17 @@ export function HomePage({
   produits = [],
   user,
   userData,
+  wishlist,
+  addToCart,
+  toggleWish,
+  openProductUrl,
+  setOnboardingOpen,
+  goPage,
+  categoryTree = [],
+  goToCategory,
+  allServices,
+  nlEmail,
+  setNlEmail,
   wishlist = [],
   addToCart = () => {},
   toggleWish = () => {},
@@ -288,9 +303,9 @@ export function HomePage({
                     aria-label="Catégorie"
                   >
                     <option value="">Toutes catégories</option>
-                    {CATS.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                    {categoryTree.map((r) => (
+                      <option key={r.id || r.slug} value={categoryLabel(r, siteLocale)}>
+                        {categoryLabel(r, siteLocale)}
                       </option>
                     ))}
                   </select>
@@ -361,7 +376,35 @@ export function HomePage({
           </div>
         </header>
 
+        {categoryTree.length > 0 && (
+          <HomeCategoryGrid
+            tree={categoryTree}
+            locale={siteLocale}
+            onCategoryClick={(v) => goToCategory?.(v)}
+          />
+        )}
+
+        <HomeBuyerSellerCta
+          locale={siteLocale}
+          onBrowse={() => goPage("produits")}
+          onSell={() => goPage("devenirVendeur")}
+        />
+
+        <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
         <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
+
+        <HomeTrendingProducts
+          produits={produits}
+          locale={siteLocale}
+          loading={produitsLoading}
+          user={user}
+          userData={userData}
+          addToCart={addToCart}
+          toggleWish={toggleWish}
+          wishlist={wishlist}
+          openProductUrl={openProductUrl}
+          onSeeAll={() => goPage("produits")}
+        />
 
         <section className="yhm3-section">
           <div className="yhm3-section-head yhm3-section-head--center">

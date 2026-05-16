@@ -42,6 +42,9 @@ export function YorixPages({ ctx }) {
     goPage,
     filterCat,
     setFilterCat,
+    categoryTree,
+    categoryFilter,
+    goToCategory,
     search,
     setSearch,
     produits,
@@ -153,6 +156,8 @@ export function YorixPages({ ctx }) {
             openProductUrl={openProductUrl}
             setOnboardingOpen={setOnboardingOpen}
             goPage={goPage}
+            categoryTree={categoryTree}
+            goToCategory={goToCategory}
             allServices={allServices}
             nlEmail={nlEmail}
             setNlEmail={setNlEmail}
@@ -184,6 +189,7 @@ export function YorixPages({ ctx }) {
                 userData={userData}
                 onClose={() => goPage("produits")}
                 onAddToCart={addToCart}
+                siteLocale={route.locale || "fr"}
               />
             </Suspense>
           ) : (
@@ -216,6 +222,10 @@ export function YorixPages({ ctx }) {
             produits={produits}
             filterCat={filterCat}
             setFilterCat={setFilterCat}
+            categoryTree={categoryTree}
+            categoryFilter={categoryFilter}
+            goToCategory={goToCategory}
+            siteLocale={route.locale || "fr"}
             search={search}
             user={user}
             userData={userData}
@@ -367,6 +377,7 @@ export function YorixPages({ ctx }) {
             setNlSent={setNlSent}
             user={user}
             userData={userData}
+            siteLocale={route.locale || "fr"}
           />
         </Suspense>
       )}

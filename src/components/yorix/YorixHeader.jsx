@@ -1,7 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { CATS } from "../../lib/constants";
 import { roleLabel } from "../../i18n/index.js";
 import { EMOTIONAL_NAV } from "../../lib/merchHubs";
+import { categoryLabel } from "../../lib/marketplaceCategories";
+import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
+import { CategoryMobileNav } from "../categories/CategoryMobileNav";
+import "../categories/categoryUi.css";
 
 export function YorixHeader({
   navCompact,
@@ -15,6 +18,8 @@ export function YorixHeader({
   switchLocale,
   filterCat,
   setFilterCat,
+  categoryTree = [],
+  goToCategory,
   search,
   setSearch,
   produits,
@@ -113,12 +118,28 @@ export function YorixHeader({
           </div>
         </div>
 
+        {categoryTree.length > 0 && (
+          <CategoryMegaMenu tree={categoryTree} locale={siteLocale} onNavigate={(v) => goToCategory?.(v)} />
+        )}
+
         <div className="nav-search-wrap">
           <div className="nav-search">
-            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} aria-label={t("search.ariaCategory")}>
+            <select
+              value={filterCat}
+              onChange={(e) => {
+                const v = e.target.value;
+                setFilterCat(v);
+                const root = categoryTree.find((r) => categoryLabel(r, siteLocale) === v);
+                if (root) goToCategory?.({ parentSlug: root.slug });
+                else if (!v) goPage("produits");
+              }}
+              aria-label={t("search.ariaCategory")}
+            >
               <option value="">{t("search.allCategories")}</option>
-              {CATS.map((c) => (
-                <option key={c}>{c}</option>
+              {categoryTree.map((r) => (
+                <option key={r.id || r.slug} value={categoryLabel(r, siteLocale)}>
+                  {categoryLabel(r, siteLocale)}
+                </option>
               ))}
             </select>
             <input
@@ -266,6 +287,18 @@ export function YorixHeader({
           {navQuickOpen && (
             <div className="nav-quick-panel" role="dialog" aria-label={t("actions.navDialog")}>
               <div className="nav-quick-mega-cols">
+                {categoryTree.length > 0 && (
+                  <div className="nav-quick-section" style={{ gridColumn: "1 / -1" }}>
+                    <CategoryMobileNav
+                      tree={categoryTree}
+                      locale={siteLocale}
+                      onNavigate={(v) => {
+                        setNavQuickOpen(false);
+                        goToCategory?.(v);
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="nav-quick-section">
                   <h4>{t("quickNav.marketplace")}</h4>
                   <div className="nav-quick-links">

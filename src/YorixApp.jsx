@@ -23,6 +23,7 @@ import {
   buildEntitySlug,
   parseEntitySlug,
   slugToCategoryName,
+  categoryNameFromTaxonomySlug,
   CITY_BY_SLUG,
   METIER_SLUG_TO_CATEGORY,
   SEO_CITIES,
@@ -37,6 +38,11 @@ import {
 } from "./lib/seoRoutes";
 import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
 import { filterProductsByMerchHub, getMerchHub } from "./lib/merchHubs.js";
+import {
+  resolveCategoryFilter,
+  productMatchesCategoryFilter,
+} from "./lib/marketplaceCategories.js";
+import { useCategoryTaxonomy } from "./hooks/useCategoryTaxonomy.js";
 import { SeoHead } from "./components/seo/SeoHead";
 import i18n from "./i18n/index.js";
 import {
@@ -146,6 +152,8 @@ export default function YorixApp() {
 
   const [search, setSearch]                     = useState("");
   const [filterCat, setFilterCat]               = useState("");
+  const [categoryFilter, setCategoryFilter]     = useState(null);
+  const { flat: categoryFlat, tree: categoryTree } = useCategoryTaxonomy({ locale: route.locale });
 
   useEffect(() => {
     if (page !== "produits") return;
@@ -232,6 +240,17 @@ export default function YorixApp() {
     window.scrollTo(0, 0);
     setNotifOpen(false);
   }, [navigate, route.locale]);
+
+  const goToCategory = useCallback(
+    ({ parentSlug, subSlug }) => {
+      if (!parentSlug) {
+        goPage("produits");
+        return;
+      }
+      goPage("produits", { categorySlug: parentSlug, subCategorySlug: subSlug || undefined });
+    },
+    [goPage],
+  );
 
   const authSession = useYorixAuth({
     goPage,
@@ -560,13 +579,20 @@ export default function YorixApp() {
 
   // ── SEO / Router : synchroniser filtres et fiches depuis l’URL indexable
   useEffect(() => {
-    if (route.categorySlug) {
-      const name = slugToCategoryName(route.categorySlug, CATS);
-      setFilterCat(name || "");
+    if (route.categorySlug && categoryFlat.length) {
+      const resolved = resolveCategoryFilter(categoryFlat, {
+        categorySlug: route.categorySlug,
+        subCategorySlug: route.subCategorySlug,
+      });
+      setCategoryFilter(resolved);
+      setFilterCat(resolved.filterLabel || categoryNameFromTaxonomySlug(route.categorySlug) || "");
+    } else if (route.categorySlug) {
+      setFilterCat(categoryNameFromTaxonomySlug(route.subCategorySlug || route.categorySlug) || "");
     } else if (route.page === "produits" && routePath === "/produits") {
       setFilterCat("");
+      setCategoryFilter(null);
     }
-  }, [route.categorySlug, route.page, routePath]);
+  }, [route.categorySlug, route.subCategorySlug, route.page, routePath, categoryFlat]);
 
   const seoCityName = useMemo(
     () => (route.citySlug ? CITY_BY_SLUG[route.citySlug]?.name : null),
@@ -794,8 +820,14 @@ export default function YorixApp() {
         list = filterProductsByMerchHub(list, hub.filter, { citySlug: route.citySlug });
       }
     }
+    if (categoryFilter?.filterLabel || categoryFilter?.categoryId) {
+      list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter));
+    } else if (filterCat) {
+      const fc = filterCat.toLowerCase();
+      list = list.filter((p) => (p.categorie || "").toLowerCase() === fc);
+    }
     return list;
-  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName]);
+  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName, categoryFilter, filterCat]);
 
   const showSeoLocal =
     page === "seoCity" || (page === "livraison" && !!route.citySlug);
@@ -1278,7 +1310,10 @@ export default function YorixApp() {
     }
 
     if (page === "produits" && route.categorySlug) {
-      const catLabel = slugToCategoryName(route.categorySlug, CATS) || route.categorySlug.replace(/-/g, " ");
+      const catLabel =
+        categoryFilter?.filterLabel ||
+        slugToCategoryName(route.categorySlug, CATS) ||
+        route.categorySlug.replace(/-/g, " ");
       const catCrumb = buildBreadcrumbLd([
         { name: "Accueil", path: L("/") },
         { name: "Produits", path: L("/produits") },
@@ -1429,6 +1464,11 @@ export default function YorixApp() {
     goPage,
     filterCat,
     setFilterCat,
+    categoryFilter,
+    setCategoryFilter,
+    categoryTree,
+    categoryFlat,
+    goToCategory,
     search,
     setSearch,
     produits,
@@ -1591,6 +1631,8 @@ export default function YorixApp() {
         switchLocale={switchLocale}
         filterCat={filterCat}
         setFilterCat={setFilterCat}
+        categoryTree={categoryTree}
+        goToCategory={goToCategory}
         search={search}
         setSearch={setSearch}
         produits={produits}

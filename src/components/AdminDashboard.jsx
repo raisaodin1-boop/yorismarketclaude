@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 import { ROLE_LABELS, CATS } from "../lib/constants";
 import { LoyaltyAdminTab } from "./LoyaltyAdminTab";
 import { ModalEditDelivery } from "./ModalEditDelivery";
+import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
+import { AdminCategoryManager } from "./admin/AdminCategoryManager";
 import {
   getStatutConfig,
   adminAssignerLivreur,
@@ -19,6 +21,8 @@ import {
 // ─────────────────────────────────────────────────────────────
 export function AdminDashboard({ user, userData, goPage }) {
   const { t } = useTranslation("admin");
+  const { flat: categoryFlat, tree: categoryTree, loading: catLoading } = useCategoryTaxonomy();
+  const [catReload, setCatReload] = useState(0);
   // ═══════════ ÉTATS PRINCIPAUX ═══════════
   const [adminTab, setAdminTab]     = useState("overview");
   const [loading, setLoading]       = useState(true);
@@ -586,6 +590,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     () => [
       { id: "overview", icon: "📊", label: t("nav.overview") },
       { id: "deliveries", icon: "🚚", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
+      { id: "categories", icon: "🏷️", label: "Catégories" },
       { id: "produits", icon: "📦", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
       { id: "commandes", icon: "🛍️", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
       { id: "utilisateurs", icon: "👥", label: t("nav.users") },
@@ -1296,6 +1301,22 @@ export function AdminDashboard({ user, userData, goPage }) {
           </>
         )}
 
+        {adminTab === "categories" && (
+          <>
+            <div className="admin-page-title">🏷️ Catégories marketplace</div>
+            {catLoading ? (
+              <div className="loading"><div className="spinner" /> Chargement taxonomie...</div>
+            ) : (
+              <AdminCategoryManager
+                key={catReload}
+                tree={categoryTree}
+                flat={categoryFlat}
+                onReload={() => setCatReload((k) => k + 1)}
+              />
+            )}
+          </>
+        )}
+
         {/* ════════ PRODUITS ════════ */}
         {adminTab === "produits" && (
           <>
@@ -1347,8 +1368,8 @@ export function AdminDashboard({ user, userData, goPage }) {
                       <td style={{ fontSize: ".65rem" }}>
                         {p.made_in_cameroon_status === "verified" ? (
                           <span title="Vérifié admin">🇨🇲✔</span>
-                        ) : p.is_made_in_cameroon || p.local ? (
-                          <span title={p.made_in_cameroon_status || "local"}>🇨🇲</span>
+                        ) : p.is_made_in_cameroon && ["declared", "auto"].includes(p.made_in_cameroon_status) ? (
+                          <span title={p.made_in_cameroon_status || "declared"}>🇨🇲</span>
                         ) : (
                           "—"
                         )}

@@ -1,4 +1,7 @@
-export const CATS = ["Téléphones & HighTech","Mode & Accessoires","Alimentation","Maison & Decoration","Agricole","Beauté & Soins","BTP","Automobile","Éducation","Services"];
+import { getRootCategoryLabels } from "../data/categoryTaxonomy.js";
+
+/** @deprecated Préférer fetchMarketplaceCategories / useCategoryTaxonomy — conservé pour compatibilité. */
+export const CATS = getRootCategoryLabels("fr");
 
 export const CITIES = ["Toutes les villes","Douala","Yaoundé","Bafoussam","Bamenda","Garoua","Kribi","Ngaoundéré","Maroua","Ebolowa","Buea","Bertoua"];
 

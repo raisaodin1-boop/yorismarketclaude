@@ -6,13 +6,16 @@ import { FormulaireAvis } from "./FormulaireAvis";
 import { ModalCommander } from "./ModalCommander";
 import { ChatUsers } from "./ChatUsers";
 import { optimizeCloudinaryUrl } from "../utils/helpers";
+import { TrustStrip } from "./conversion/TrustStrip";
+import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
+import { SocialProofLine } from "./conversion/SocialProofLine";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL
 // ✅ Bouton "Contacter le vendeur" intégré (ouvre un modal chat)
 // ✅ Pas besoin de modifier App.jsx
 // ─────────────────────────────────────────────────────────────
-export function FicheProduit({ product, user, userData, onClose, onAddToCart }) {
+export function FicheProduit({ product, user, userData, onClose, onAddToCart, siteLocale = "fr" }) {
   const [activeImg, setActiveImg]           = useState(0);
   const [avis, setAvis]                     = useState([]);
   const [showCmdModal, setShowCmdModal]     = useState(false);
@@ -152,7 +155,9 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart }) 
 
           {/* COLONNE DROITE : INFOS */}
           <div>
+            <TrustStrip compact />
             <div className="modal-title">{product.name_fr}</div>
+            <SocialProofLine product={product} locale={siteLocale} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
               <Stars value={Math.round(avgNote)} />
               <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>
@@ -212,6 +217,10 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart }) 
                   🛒
                 </button>
               )}
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <ShareWhatsAppButton product={product} locale={siteLocale} variant="ghost" className="share-wa-btn--block" />
             </div>
 
             {/* ═══ BOUTON CONTACTER LE VENDEUR ═══ */}
