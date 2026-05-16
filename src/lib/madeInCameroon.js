@@ -112,15 +112,14 @@ export function buildMadeInCameroonPayload(input, productDraft) {
     };
   }
 
-  // « Non » : jamais de badge auto côté catalogue ; suggestion seulement si signal fort
-  const suggestAuto = detectMadeInCameroonAuto(productDraft);
+  // « Non » : jamais de badge auto côté catalogue ; on ne persiste que des colonnes réelles.
+  // La suggestion éventuelle est calculée à la volée via `detectMadeInCameroonAuto`.
   return {
     is_made_in_cameroon: false,
     made_in_cameroon_status: MIC_STATUS.IMPORTED,
     country_of_origin: input.countryOfOrigin || "CM",
     local: false,
     local_brand_name: input.localBrandName?.trim() || null,
-    _suggestMadeInCameroon: suggestAuto,
   };
 }
 
