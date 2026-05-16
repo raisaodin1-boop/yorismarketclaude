@@ -2,12 +2,14 @@
 //  YORIX CM — Service Worker PWA + PUSH NOTIFICATIONS
 //  Version : 3.0 — Cache stratégique + offline + push
 // ═══════════════════════════════════════════════════════════
-const CACHE_NAME = 'yorix-v3';
+const CACHE_NAME = 'yorix-v4';
 const OFFLINE_URL = '/';
 
-// Fichiers à mettre en cache immédiatement
+// Fichiers à mettre en cache immédiatement.
+// IMPORTANT : on ne pré-cache PAS '/' (index.html) pour eviter que d'anciennes
+// references aux bundles JS/CSS survivent a un deploiement. L'index est toujours
+// resservi en network-only ci-dessous.
 const PRECACHE = [
-  '/',
   '/manifest.json',
   '/favicon.ico',
   '/favicon-32.png',
@@ -62,10 +64,26 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('embed.tawk.to')
   ) return;
 
+  // Pour la coquille HTML (navigation ou index/HTML brut), on force du
+  // network-only avec fallback offline simple : on ne met JAMAIS l'index
+  // en cache, sinon il fige les noms des bundles JS/CSS apres un deploy.
+  const isHtmlShell =
+    event.request.mode === 'navigate' ||
+    (event.request.destination === 'document') ||
+    (url.origin === self.location.origin && (url.pathname === '/' || url.pathname.endsWith('.html')));
+
+  if (isHtmlShell) {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match(event.request).then((cached) => cached || caches.match(OFFLINE_URL))
+      )
+    );
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Mettre en cache la réponse fraîche
         if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
@@ -73,10 +91,8 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Hors-ligne : servir depuis le cache
         return caches.match(event.request).then((cached) => {
           if (cached) return cached;
-          // Page de fallback pour navigation
           if (event.request.mode === 'navigate') {
             return caches.match(OFFLINE_URL);
           }
