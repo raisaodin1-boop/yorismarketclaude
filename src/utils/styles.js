@@ -2059,14 +2059,16 @@ button.yorix-chip.wa:hover{background:rgba(37,211,102,.14);border-color:var(--wa
 @media(prefers-reduced-motion:reduce){.hp-newsletter::after{animation:none;}}
 
 /* ─── PROMO BANNER haut de page (animée + countdown) ───────────────────── */
-.yx-promo-banner{position:relative;display:flex;align-items:center;justify-content:center;gap:14px;padding:11px 24px;background:linear-gradient(92deg,#0d1f14 0%,#1a6b3a 50%,#0d1f14 100%);background-size:240% 100%;animation:yx-aurora-shift 14s ease-in-out infinite;color:#fff;font-size:.78rem;font-weight:600;flex-wrap:wrap;text-align:center;border-bottom:1px solid rgba(252,209,22,.25);overflow:hidden;}
-.yx-promo-banner::before{content:"";position:absolute;top:0;left:-50%;width:30%;height:100%;background:linear-gradient(120deg,transparent,rgba(252,209,22,.18),transparent);animation:yx-marquee 7s linear infinite;}
-.yx-promo-banner .yx-promo-icon{font-size:1rem;animation:yx-bounce-soft 1.8s ease-in-out infinite;}
+.yx-promo-banner{position:relative;display:flex;align-items:center;justify-content:center;gap:14px;padding:11px 24px;background:linear-gradient(92deg,#0d1f14 0%,#1a6b3a 50%,#0d1f14 100%);background-size:240% 100%;animation:yx-aurora-shift 14s ease-in-out infinite;color:#fff;font-size:.78rem;font-weight:600;flex-wrap:nowrap;text-align:center;border-bottom:1px solid rgba(252,209,22,.25);overflow:hidden;line-height:1.25;}
+.yx-promo-banner::before{content:"";position:absolute;top:0;left:-50%;width:30%;height:100%;background:linear-gradient(120deg,transparent,rgba(252,209,22,.18),transparent);animation:yx-marquee 7s linear infinite;pointer-events:none;}
+.yx-promo-banner>*{position:relative;z-index:1;}
+.yx-promo-banner .yx-promo-icon{font-size:1rem;animation:yx-bounce-soft 1.8s ease-in-out infinite;flex:0 0 auto;}
+.yx-promo-banner .yx-promo-text{min-width:0;}
 .yx-promo-banner strong{color:var(--yellow);font-family:'Syne',sans-serif;font-weight:800;letter-spacing:.02em;}
-.yx-promo-banner .yx-promo-cta{background:var(--yellow);color:#0d1f14;padding:5px 13px;border-radius:999px;font-family:'Syne',sans-serif;font-weight:800;font-size:.72rem;text-decoration:none;border:none;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;}
+.yx-promo-banner .yx-promo-cta{background:var(--yellow);color:#0d1f14;padding:5px 13px;border-radius:999px;font-family:'Syne',sans-serif;font-weight:800;font-size:.72rem;text-decoration:none;border:none;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;flex:0 0 auto;white-space:nowrap;}
 .yx-promo-banner .yx-promo-cta:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(252,209,22,.5);}
 @media(prefers-reduced-motion:reduce){.yx-promo-banner,.yx-promo-banner::before{animation:none;}}
-@media(max-width:560px){.yx-promo-banner{font-size:.72rem;padding:9px 14px;gap:8px;}}
+@media(max-width:560px){.yx-promo-banner{font-size:.72rem;padding:9px 14px;gap:8px;flex-wrap:wrap;}.yx-promo-banner .yx-promo-text{flex:1 1 100%;order:2;}.yx-promo-banner .yx-promo-icon{order:1;}.yx-promo-banner .yx-promo-cta{order:3;}}
 
 /* ─── SOCIAL PROOF strip (avis + chiffres) ─────────────────────────────── */
 .yx-social-proof{max-width:1200px;margin:0 auto;padding:36px 24px 24px;display:grid;grid-template-columns:1.2fr 2fr;gap:24px;align-items:center;}

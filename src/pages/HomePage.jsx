@@ -186,7 +186,7 @@ export function HomePage({
         <span className="yx-promo-icon" aria-hidden>
           🎁
         </span>
-        <span>
+        <span className="yx-promo-text">
           Livraison <strong>OFFERTE</strong> dès {th.toLocaleString("fr-FR")} FCFA · stocks limités
         </span>
         <button type="button" className="yx-promo-cta" onClick={() => goPage("bonsPlans")}>
