@@ -28,9 +28,67 @@ async function insertNotificationAndDispatch(
   }
 }
 
+async function readExistingConfirmation(
+  supabase: ReturnType<typeof createClient>,
+  checkoutIntentId: string,
+  orderGroupId: string,
+  fallbackTotals: { subtotal: number; deliveryFee: number; total: number },
+) {
+  const { data: orderRows, error: ordersError } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("order_group_id", orderGroupId);
+  if (ordersError) throw ordersError;
+
+  const orders = Array.isArray(orderRows) ? orderRows : [];
+  const orderIds = orders
+    .map((row) => String((row as { id?: string }).id || ""))
+    .filter(Boolean);
+
+  let deliveryTracking: { order_id: string; code_suivi: string }[] = [];
+  if (orderIds.length) {
+    const { data: deliveries, error: deliveriesError } = await supabase
+      .from("deliveries")
+      .select("order_id,code_suivi")
+      .in("order_id", orderIds);
+    if (deliveriesError) throw deliveriesError;
+    deliveryTracking = (deliveries || [])
+      .map((row) => {
+        const delivery = row as { order_id?: string | number; code_suivi?: string };
+        return {
+          order_id: String(delivery.order_id || ""),
+          code_suivi: String(delivery.code_suivi || ""),
+        };
+      })
+      .filter((row) => row.order_id && row.code_suivi);
+  }
+
+  const { data: intentAfter, error: intentAfterError } = await supabase
+    .from("checkout_intents")
+    .select("total, delivery_fee, subtotal")
+    .eq("id", checkoutIntentId)
+    .maybeSingle();
+  if (intentAfterError) throw intentAfterError;
+
+  return {
+    checkout_intent_id: checkoutIntentId,
+    order_group_id: orderGroupId,
+    created: orders.map((row) => ({ type: "order", id: (row as { id?: string }).id })),
+    delivery_tracking: deliveryTracking,
+    total: intentAfter?.total ?? fallbackTotals.total,
+    delivery_fee: intentAfter?.delivery_fee ?? fallbackTotals.deliveryFee,
+    subtotal: intentAfter?.subtotal ?? fallbackTotals.subtotal,
+    already_confirmed: true,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
+
+  let supabase: ReturnType<typeof createClient> | null = null;
+  let claimedCheckoutIntentId = "";
+  let createdRecordCount = 0;
 
   try {
     const body = await req.json();
@@ -40,7 +98,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentMethod = String(body?.payment_method || "cinetpay");
-    const supabase = createClient(
+    supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
@@ -55,11 +113,27 @@ Deno.serve(async (req) => {
 
     const payload = intent.payload || {};
     const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
+    const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
+    const intentStatus = String(intent.status || "");
+    const intentTotals = {
+      subtotal: Math.round(Number(intent.subtotal ?? 0)),
+      deliveryFee: Math.round(Number(intent.delivery_fee ?? 0)),
+      total: Math.round(Number(intent.total ?? 0)),
+    };
+    if (intentStatus === "confirmed") {
+      return ok(await readExistingConfirmation(supabase, checkoutIntentId, orderGroupId, intentTotals));
+    }
+    if (intentStatus !== "ready") {
+      return ok(
+        { error: "Checkout intent is already being confirmed.", status: intentStatus || "unknown" },
+        { status: 409 },
+      );
+    }
+
     const priceRes = await applyCatalogPricing(supabase, itemsRaw);
     if (priceRes.error) return ok({ error: priceRes.error }, { status: 400 });
     const items = priceRes.lines;
     const customer = payload.customer || {};
-    const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
 
     const policy = await resolveDeliveryPolicy(supabase);
     const totals = computeCheckoutTotals(items, policy);
@@ -84,6 +158,37 @@ Deno.serve(async (req) => {
         .eq("id", checkoutIntentId);
       if (patchErr) throw patchErr;
     }
+
+    const { data: claimedIntent, error: claimError } = await supabase
+      .from("checkout_intents")
+      .update({ status: "confirming", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId)
+      .eq("status", "ready")
+      .select("id")
+      .maybeSingle();
+    if (claimError) throw claimError;
+    if (!claimedIntent) {
+      const { data: currentIntent, error: currentIntentError } = await supabase
+        .from("checkout_intents")
+        .select("status,total,delivery_fee,subtotal")
+        .eq("id", checkoutIntentId)
+        .maybeSingle();
+      if (currentIntentError) throw currentIntentError;
+
+      const currentStatus = String(currentIntent?.status || "");
+      if (currentStatus === "confirmed") {
+        return ok(await readExistingConfirmation(supabase, checkoutIntentId, orderGroupId, {
+          subtotal: totals.subtotalFull,
+          deliveryFee: totals.deliveryFee,
+          total: totals.total,
+        }));
+      }
+      return ok(
+        { error: "Checkout intent is already being confirmed.", status: currentStatus || "unknown" },
+        { status: 409 },
+      );
+    }
+    claimedCheckoutIntentId = checkoutIntentId;
 
     const productIds = [...new Set(
       items
@@ -134,6 +239,7 @@ Deno.serve(async (req) => {
           .select("id")
           .single();
         if (bookingError) throw bookingError;
+        createdRecordCount += 1;
         ordersCreated.push({ type: "service_booking", id: booking.id });
         continue;
       }
@@ -175,6 +281,7 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (orderError) throw orderError;
+      createdRecordCount += 1;
 
       if (vendeurId) {
         await insertNotificationAndDispatch(supabase, {
@@ -229,7 +336,12 @@ Deno.serve(async (req) => {
       ordersCreated.push({ type: "order", id: order.id });
     }
 
-    await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
+    const { error: confirmStatusError } = await supabase
+      .from("checkout_intents")
+      .update({ status: "confirmed", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId)
+      .eq("status", "confirming");
+    if (confirmStatusError) throw confirmStatusError;
 
     const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
     if (buyerId) {
@@ -263,6 +375,20 @@ Deno.serve(async (req) => {
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
     });
   } catch (e) {
+    if (supabase && claimedCheckoutIntentId && createdRecordCount === 0) {
+      try {
+        await supabase
+          .from("checkout_intents")
+          .update({ status: "ready", updated_at: new Date().toISOString() })
+          .eq("id", claimedCheckoutIntentId)
+          .eq("status", "confirming");
+      } catch (resetError) {
+        console.error(
+          "[confirm_checkout] failed to release unprocessed intent:",
+          resetError instanceof Error ? resetError.message : resetError,
+        );
+      }
+    }
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
   }
 });

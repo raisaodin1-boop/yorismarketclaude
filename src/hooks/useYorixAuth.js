@@ -122,38 +122,43 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
     setAuthLoading(false);
   };
 
-  const doRegister = async () => {
-    setAuthError("");
-    setAuthLoading(true);
-    try {
-      if (!authForm.nom || !authForm.email || !authForm.password || !authForm.tel) {
-        throw new Error("Tous les champs sont obligatoires.");
-      }
-      if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
-
-      const PRO_ROLES = ["seller", "provider", "delivery"];
-      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
-        setPendingRegistration({
+  const doRegister = async (options = {}) => {
+    const skipContractCheck = Boolean(options?.skipContractCheck);
+    const registration = skipContractCheck && pendingRegistration
+      ? pendingRegistration
+      : {
           nom: authForm.nom,
           email: authForm.email,
           tel: authForm.tel,
           password: authForm.password,
           role: selectedRole,
-        });
+        };
+
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      if (!registration.nom || !registration.email || !registration.password || !registration.tel) {
+        throw new Error("Tous les champs sont obligatoires.");
+      }
+      if (!registration.role) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
+
+      const PRO_ROLES = ["seller", "provider", "delivery"];
+      if (PRO_ROLES.includes(registration.role) && !skipContractCheck && !contractAccepted) {
+        setPendingRegistration(registration);
         setAuthLoading(false);
         setContractOpen(true);
         return;
       }
 
       const { data, error } = await supabase.auth.signUp({
-        email: authForm.email,
-        password: authForm.password,
+        email: registration.email,
+        password: registration.password,
         options: {
           data: {
-            display_name: authForm.nom,
-            nom: authForm.nom,
-            telephone: authForm.tel,
-            role: selectedRole,
+            display_name: registration.nom,
+            nom: registration.nom,
+            telephone: registration.tel,
+            role: registration.role,
           },
         },
       });
@@ -164,10 +169,10 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
 
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: uid,
-        nom: authForm.nom,
-        email: authForm.email,
-        telephone: authForm.tel,
-        role: selectedRole,
+        nom: registration.nom,
+        email: registration.email,
+        telephone: registration.tel,
+        role: registration.role,
         langue: "fr",
         actif: true,
         verifie: false,
@@ -218,9 +223,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
   const handleContractAccepted = async (_acceptanceData) => {
     setContractOpen(false);
     setContractAccepted(true);
-    setTimeout(() => {
-      doRegister();
-    }, 200);
+    await doRegister({ skipContractCheck: true });
   };
 
   return {
