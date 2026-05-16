@@ -9,6 +9,8 @@ import { ProdGrid } from "../components/ProdGrid";
 import { CITIES } from "../lib/constants";
 import { HomePremiumMerch } from "../components/home/HomePremiumMerch";
 import { HomeCategoryGrid } from "../components/categories/HomeCategoryGrid";
+import { HomeTrendingProducts } from "../components/home/HomeTrendingProducts";
+import { HomeBuyerSellerCta } from "../components/home/HomeBuyerSellerCta";
 import { categoryLabel } from "../lib/marketplaceCategories";
 import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
@@ -336,7 +338,26 @@ export function HomePage({
           />
         )}
 
+        <HomeBuyerSellerCta
+          locale={siteLocale}
+          onBrowse={() => goPage("produits")}
+          onSell={() => goPage("devenirVendeur")}
+        />
+
         <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
+
+        <HomeTrendingProducts
+          produits={produits}
+          locale={siteLocale}
+          loading={produitsLoading}
+          user={user}
+          userData={userData}
+          addToCart={addToCart}
+          toggleWish={toggleWish}
+          wishlist={wishlist}
+          openProductUrl={openProductUrl}
+          onSeeAll={() => goPage("produits")}
+        />
 
         <section className="yhm3-section">
           <div className="yhm3-section-head yhm3-section-head--center">

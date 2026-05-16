@@ -6,6 +6,7 @@ import { HelpCentrePage } from "./HelpCentrePage";
 import { AcademyPage } from "./AcademyPage";
 import { BusinessPage } from "./BusinessPage";
 import { ContactPage } from "./ContactPage";
+import { SellerLanding } from "../components/conversion/SellerLanding";
 
 export function SiteMarketingPages({
   page,
@@ -32,6 +33,7 @@ export function SiteMarketingPages({
   setNlSent,
   user,
   userData,
+  siteLocale = "fr",
 }) {
   switch (page) {
     case "faq":
@@ -62,17 +64,15 @@ export function SiteMarketingPages({
 
     case "devenirVendeur":
       return (
-        <section className="sec anim">
-          <div style={{ maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-            <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.45rem", color: "var(--ink)", marginBottom: 10 }}>Vendre sur Yorix — marketplace Cameroun</h1>
-            <p style={{ color: "var(--gray)", fontSize: ".88rem", lineHeight: 1.75, marginBottom: 20 }}>
-              Développez votre activité : boutique en ligne, visibilité nationale, paiements MoMo et outils vendeur.
-            </p>
-            <button type="button" className="cta-y" onClick={() => { setAuthTab("register"); setSelectedRole("seller"); setAuthOpen(true); }}>
-              Créer ma boutique vendeur
-            </button>
-          </div>
-        </section>
+        <SellerLanding
+          locale={siteLocale}
+          onRegister={() => {
+            setAuthTab("register");
+            setSelectedRole("seller");
+            setAuthOpen(true);
+          }}
+          onBrowse={() => goPage("produits")}
+        />
       );
 
     case "devenirLivreur":

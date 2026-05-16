@@ -4,6 +4,8 @@ import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
 import { resolveMadeInCameroon } from "../lib/madeInCameroon";
 import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
+import { SocialProofLine } from "./conversion/SocialProofLine";
+import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
 
 const LazyFicheProduit = lazy(() =>
   import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
@@ -12,7 +14,18 @@ const LazyFicheProduit = lazy(() =>
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : GRILLE PRODUITS (avec images optimisées Cloudinary)
 // ─────────────────────────────────────────────────────────────
-export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist, onOpenProd, onOpenProductUrl }) {
+export function ProdGrid({
+  prods,
+  user,
+  userData,
+  onAddToCart,
+  onWish,
+  wishlist,
+  onOpenProd,
+  onOpenProductUrl,
+  siteLocale = "fr",
+  showShare = false,
+}) {
   const [ficheOpen, setFicheOpen] = useState(null);
   const [cmdOpen, setCmdOpen]     = useState(null);
 
@@ -91,6 +104,7 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
 
                 <div className="prod-name">{p.name_fr}</div>
                 <div className="prod-loc">📍 {p.ville || "Cameroun"} · {p.vendeur_nom || ""}</div>
+                <SocialProofLine product={p} locale={siteLocale} />
 
                 <div className="prod-badge-row">
                   {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire">🔥 Stock limité</span>}
@@ -142,7 +156,7 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
               </div>
 
               {/* ── BOUTON PANIER ── */}
-              <div className="prod-actions" style={{ padding: "0 11px 11px" }}>
+              <div className="prod-actions" style={{ padding: "0 11px 11px", display: "flex", flexDirection: "column", gap: 6 }}>
                 <button
                   className="add-btn"
                   style={{
@@ -155,6 +169,18 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
                 >
                   🛒 Ajouter au panier
                 </button>
+                {showShare && (
+                  <button
+                    type="button"
+                    className="prod-share-mini"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openWhatsAppShare(buildProductWhatsAppText(p, siteLocale));
+                    }}
+                  >
+                    💬 {siteLocale === "en" ? "Share" : "Partager"}
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -175,6 +201,7 @@ export function ProdGrid({ prods, user, userData, onAddToCart, onWish, wishlist,
             userData={userData}
             onClose={() => setFicheOpen(null)}
             onAddToCart={onAddToCart}
+            siteLocale={siteLocale}
           />
         </Suspense>
       )}

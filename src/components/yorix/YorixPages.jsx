@@ -189,6 +189,7 @@ export function YorixPages({ ctx }) {
                 userData={userData}
                 onClose={() => goPage("produits")}
                 onAddToCart={addToCart}
+                siteLocale={route.locale || "fr"}
               />
             </Suspense>
           ) : (
@@ -376,6 +377,7 @@ export function YorixPages({ ctx }) {
             setNlSent={setNlSent}
             user={user}
             userData={userData}
+            siteLocale={route.locale || "fr"}
           />
         </Suspense>
       )}
