@@ -9,6 +9,7 @@ import {
   PAGE_PATH,
   buildEntitySlug,
   categoryToSlug,
+  localePath,
 } from "../src/lib/seoRoutes.js";
 import { CATS } from "../src/lib/constants.js";
 import {
@@ -116,6 +117,8 @@ const staticSeoPages = [
   [PAGE_PATH.devenirLivreur, "0.8", "monthly"],
 ];
 
+const SITEMAP_LANGS = ["fr", "en"];
+
 async function fetchProducts(supabase) {
   try {
     const { data, error } = await supabase
@@ -195,53 +198,68 @@ async function generate() {
 
   const urls = [];
 
-  for (const [path, pr, ch] of staticSeoPages) {
-    urls.push(urlEntry(siteBase, path || "/", today, pr, ch));
+  for (const lang of SITEMAP_LANGS) {
+    for (const [pathBare, pr, ch] of staticSeoPages) {
+      const loc = !pathBare || pathBare === "" ? localePath(lang, "/") : localePath(lang, pathBare);
+      urls.push(urlEntry(siteBase, loc, today, pr, ch));
+    }
   }
 
   for (const seoPath of PROGRAMMATIC_SITEMAP_PATHS) {
     urls.push(urlEntry(siteBase, seoPath, today, "0.92", "weekly"));
   }
-  for (const guidePath of getBlogGuidePaths()) {
-    urls.push(urlEntry(siteBase, guidePath, today, "0.82", "monthly"));
+  for (const lang of SITEMAP_LANGS) {
+    for (const guidePath of getBlogGuidePaths()) {
+      urls.push(urlEntry(siteBase, localePath(lang, guidePath), today, "0.82", "monthly"));
+    }
   }
 
-  for (const u of cityUrls()) {
-    urls.push(urlEntry(siteBase, u.loc, today, u.pr, u.ch));
+  for (const lang of SITEMAP_LANGS) {
+    for (const u of cityUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, u.loc), today, u.pr, u.ch));
+    }
   }
 
-  for (const row of categoryUrls()) {
-    urls.push(urlEntry(siteBase, row[0], today, row[1], row[2]));
+  for (const lang of SITEMAP_LANGS) {
+    for (const row of categoryUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, row[0]), today, row[1], row[2]));
+    }
   }
 
-  for (const m of metierVilleUrls()) {
-    urls.push(urlEntry(siteBase, m[0], today, m[1], m[2]));
+  for (const lang of SITEMAP_LANGS) {
+    for (const m of metierVilleUrls()) {
+      urls.push(urlEntry(siteBase, localePath(lang, m[0]), today, m[1], m[2]));
+    }
   }
 
-  for (const p of products) {
-    const slug = buildEntitySlug(p.name_fr || "produit", p.id);
-    urls.push(
-      urlEntry(
-        siteBase,
-        `/produit/${slug}`,
-        (p.created_at || today).split("T")[0],
-        "0.72",
-        "weekly"
-      )
-    );
+  for (const lang of SITEMAP_LANGS) {
+    for (const p of products) {
+      const slug = buildEntitySlug(p.name_fr || "produit", p.id);
+      urls.push(
+        urlEntry(
+          siteBase,
+          localePath(lang, `/produit/${slug}`),
+          (p.created_at || today).split("T")[0],
+          "0.72",
+          "weekly"
+        )
+      );
+    }
   }
 
-  for (const s of services) {
-    const slug = buildEntitySlug(s.provider_nom || "prestataire", `real-${s.id}`);
-    urls.push(
-      urlEntry(
-        siteBase,
-        `/prestataire/${slug}`,
-        (s.created_at || today).split("T")[0],
-        "0.68",
-        "weekly"
-      )
-    );
+  for (const lang of SITEMAP_LANGS) {
+    for (const s of services) {
+      const slug = buildEntitySlug(s.provider_nom || "prestataire", `real-${s.id}`);
+      urls.push(
+        urlEntry(
+          siteBase,
+          localePath(lang, `/prestataire/${slug}`),
+          (s.created_at || today).split("T")[0],
+          "0.68",
+          "weekly"
+        )
+      );
+    }
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

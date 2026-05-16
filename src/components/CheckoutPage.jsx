@@ -16,7 +16,7 @@ import {
   createCheckoutIntent,
   initPaymentCinetPay,
 } from "../lib/checkoutApi";
-import { PAGE_PATH } from "../lib/seoRoutes";
+import { PAGE_PATH, parseLocaleSegments, localePath } from "../lib/seoRoutes";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
@@ -64,6 +64,11 @@ export function CheckoutPage({
   const navigate = useNavigate();
   const location = useLocation();
   const processedCinetpayReturnRef = useRef(new Set());
+
+  const checkoutLocaleSeg = parseLocaleSegments(location.pathname);
+  const checkoutLocale =
+    checkoutLocaleSeg.locale === "fr" || checkoutLocaleSeg.locale === "en" ? checkoutLocaleSeg.locale : "fr";
+  const localizedCheckoutPath = localePath(checkoutLocale, PAGE_PATH.checkout);
 
   const [step, setStep] = useState(1);
 
@@ -239,7 +244,7 @@ export function CheckoutPage({
       processedCinetpayReturnRef.current.add(txRef);
       setCinetpayReturnBanner("");
       clearStoredTx();
-      navigate(PAGE_PATH.checkout, { replace: true });
+      navigate(localizedCheckoutPath, { replace: true });
     }
 
     const params = new URLSearchParams(location.search || "");
@@ -265,7 +270,7 @@ export function CheckoutPage({
     const hasReturnHint =
       st === "return" ||
       (rawTx && rawTx.startsWith("YRXPAY-")) ||
-      (expectReturn && Boolean(storedTx.startsWith("YRXPAY-")) && location.pathname === PAGE_PATH.checkout);
+        (expectReturn && Boolean(storedTx.startsWith("YRXPAY-")) && checkoutLocaleSeg.barePath === PAGE_PATH.checkout);
     if (!hasReturnHint) return undefined;
 
     const cand = [];

@@ -14,7 +14,7 @@
 //  ✅ Password input premium avec œil
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   parsePathname,
@@ -28,9 +28,15 @@ import {
   SITE_URL,
   getSearchActionUrl,
   PAGE_PATH,
+  localePath,
+  canonicalFromSeoAlias,
+  buildHrefLangAlternates,
+  ensureLocalePath,
+  parseLocaleSegments,
 } from "./lib/seoRoutes";
 import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
 import { SeoHead } from "./components/seo/SeoHead";
+import i18n from "./i18n/index.js";
 import {
   supabase,
   YORIX_WA_NUMBER,
@@ -84,6 +90,34 @@ export default function YorixApp() {
   const location                  = useLocation();
   const route                     = useMemo(() => parsePathname(location.pathname), [location.pathname]);
   const page                      = route.page;
+
+  useLayoutEffect(() => {
+    if (route.localeRewriteTo && location.pathname !== route.localeRewriteTo) {
+      navigate(
+        route.localeRewriteTo + (location.search || "") + (location.hash || ""),
+        { replace: true },
+      );
+    }
+  }, [route.localeRewriteTo, location.pathname, location.search, location.hash, navigate]);
+
+  useEffect(() => {
+    void i18n.changeLanguage(route.locale === "en" ? "en" : "fr");
+  }, [route.locale]);
+
+  const hrefLangAlternates = useMemo(
+    () => buildHrefLangAlternates(location.pathname),
+    [location.pathname],
+  );
+
+  const switchLocale = useCallback(
+    (lng) => {
+      const { barePath } = parseLocaleSegments(location.pathname);
+      const path =
+        lng === "en" || lng === "fr" ? localePath(lng, barePath) : localePath("fr", barePath);
+      navigate(path + (location.search || "") + (location.hash || ""));
+    },
+    [navigate, location.pathname, location.search, location.hash],
+  );
 
   const [dashTab, setDashTab] = useState("overview");
   const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
@@ -192,10 +226,10 @@ export default function YorixApp() {
   }, []);
 
   const goPage = useCallback((p, opts = {}) => {
-    navigate(pathForPage(p, opts));
+    navigate(pathForPage(p, { ...opts, locale: opts.locale ?? route.locale }));
     window.scrollTo(0, 0);
     setNotifOpen(false);
-  }, [navigate]);
+  }, [navigate, route.locale]);
 
   const authSession = useYorixAuth({
     goPage,
@@ -301,13 +335,13 @@ export default function YorixApp() {
   const goAcademyDetail = useCallback((course) => {
     if (!course?.id) return;
     setSelectedCourse(course);
-    navigate(pathForPage("academyDetail", { courseId: course.id }));
-  }, [navigate]);
+    navigate(pathForPage("academyDetail", { courseId: course.id, locale: route.locale }));
+  }, [navigate, route.locale]);
   const goAcademyContact = useCallback((course) => {
     if (!course?.id) return;
     setSelectedCourse(course);
-    navigate(pathForPage("academyContact", { courseId: course.id }));
-  }, [navigate]);
+    navigate(pathForPage("academyContact", { courseId: course.id, locale: route.locale }));
+  }, [navigate, route.locale]);
 
   const [inscriptionSent, setInscriptionSent]       = useState(false);
   const [inscriptionLoading, setInscriptionLoading] = useState(false);
@@ -495,11 +529,12 @@ export default function YorixApp() {
     const onMsg = (event) => {
       if (event.data?.type !== "NOTIF_NAV") return;
       const url = typeof event.data.url === "string" ? event.data.url : "/";
-      navigate(url.startsWith("/") ? url : `/${url}`);
+      const path = url.startsWith("/") ? url : `/${url}`;
+      navigate(ensureLocalePath(path, route.locale));
     };
     navigator.serviceWorker.addEventListener("message", onMsg);
     return () => navigator.serviceWorker.removeEventListener("message", onMsg);
-  }, [navigate]);
+  }, [navigate, route.locale]);
 
   // ── PRODUITS TEMPS RÉEL ──
   useEffect(() => {
@@ -699,7 +734,7 @@ export default function YorixApp() {
       return;
     }
     if (link.startsWith("/")) {
-      navigate(link);
+      navigate(ensureLocalePath(link, route.locale));
       return;
     }
     if (notification.type === "new_product" || link.includes("/products/")) {
@@ -835,6 +870,7 @@ export default function YorixApp() {
 
   const seoBundle = useMemo(() => {
     const canon = route.canonicalPath || location.pathname;
+    const L = (bare) => localePath(route.locale, bare);
     const orgLd = {
       "@context": "https://schema.org",
       "@type": "Organization",
@@ -888,9 +924,9 @@ export default function YorixApp() {
       "@type": "WebSite",
       name: "Yorix CM",
       url: SITE_URL,
-      potentialAction: {
+        potentialAction: {
         "@type": "SearchAction",
-        target: `${getSearchActionUrl()}?q={search_term_string}`,
+        target: `${getSearchActionUrl(route.locale)}?q={search_term_string}`,
         "query-input": "required name=search_term_string",
       },
     };
@@ -923,8 +959,8 @@ export default function YorixApp() {
               }
             : null;
         const blogCrumb = buildBreadcrumbLd([
-          { name: "Accueil", path: "/" },
-          { name: "Blog", path: "/blog" },
+          { name: "Accueil", path: L("/") },
+          { name: "Blog", path: L("/blog") },
           { name: art.headline.slice(0, 90), path: canon },
         ]);
         return {
@@ -940,11 +976,11 @@ export default function YorixApp() {
     if (
       route.seoAliasKey &&
       SEO_URL_ALIASES[route.seoAliasKey] &&
-      SEO_URL_ALIASES[route.seoAliasKey].canonicalPath === canon
+      canonicalFromSeoAlias(SEO_URL_ALIASES[route.seoAliasKey]) === canon
     ) {
       const a = SEO_URL_ALIASES[route.seoAliasKey];
       const crumb = buildBreadcrumbLd([
-        { name: "Accueil", path: "/" },
+        { name: "Accueil", path: L("/") },
         { name: (a.title && a.title.split("|")[0]?.trim()) || "Yorix.cm", path: canon },
       ]);
       const pieces = [crumb, orgLd];
@@ -973,7 +1009,7 @@ export default function YorixApp() {
         title: "Yorix.cm | Marketplace Cameroun – Achat, Vente, Livraison & Services",
         description:
           "Achetez, vendez et trouvez des services partout au Cameroun avec Yorix.cm : marketplace locale, e-commerce, petites annonces, livraison rapide à Douala, Yaoundé et plus encore. MTN MoMo, Orange Money, escrow.",
-        canonicalPath: canon === "/" ? "/" : canon,
+        canonicalPath: canon,
         keywords:
           "marketplace Cameroun, e-commerce Cameroun, achat en ligne Cameroun, vente en ligne Cameroun, livraison Cameroun, petites annonces Cameroun, marketplace Douala, marketplace Yaoundé, escrow",
         jsonLd: [orgLd, webLd],
@@ -1007,8 +1043,8 @@ export default function YorixApp() {
         },
       };
       const productCrumb = buildBreadcrumbLd([
-        { name: "Accueil", path: "/" },
-        { name: "Produits", path: "/produits" },
+        { name: "Accueil", path: L("/") },
+        { name: "Produits", path: L("/produits") },
         { name: p.name_fr || "Produit", path: canon },
       ]);
       return {
@@ -1026,7 +1062,7 @@ export default function YorixApp() {
         title: "Notifications — alertes commandes & messages | Yorix.cm",
         description:
           "Historique de vos alertes Yorix : commandes, paiements, livraisons, prestations et messages.",
-        canonicalPath: "/notifications",
+        canonicalPath: L("/notifications"),
         noindex: true,
         jsonLd: [orgLd],
       };
@@ -1067,7 +1103,7 @@ export default function YorixApp() {
         title: "FAQ Yorix — marketplace, livraison, escrow Cameroun",
         description:
           "Réponses sur l’achat en ligne, la livraison, les prestataires, MTN MoMo, Orange Money et l’escrow sur Yorix.cm.",
-        canonicalPath: "/faq",
+        canonicalPath: L("/faq"),
         jsonLd: [faqLd, orgLd],
       };
     }
@@ -1107,7 +1143,7 @@ export default function YorixApp() {
         parentOrganization: { "@type": "Organization", name: "Yorix CM" },
       };
       const cityCrumb = buildBreadcrumbLd([
-        { name: "Accueil", path: "/" },
+        { name: "Accueil", path: L("/") },
         { name: cn, path: canon },
       ]);
       return {
@@ -1122,8 +1158,8 @@ export default function YorixApp() {
     if (page === "produits" && route.categorySlug) {
       const catLabel = slugToCategoryName(route.categorySlug, CATS) || route.categorySlug.replace(/-/g, " ");
       const catCrumb = buildBreadcrumbLd([
-        { name: "Accueil", path: "/" },
-        { name: "Produits", path: "/produits" },
+        { name: "Accueil", path: L("/") },
+        { name: "Produits", path: L("/produits") },
         { name: catLabel, path: canon },
       ]);
       return {
@@ -1190,8 +1226,8 @@ export default function YorixApp() {
       const crumbLabel = fallbackCrumbLabel[page];
       const pageBc = crumbLabel
         ? buildBreadcrumbLd([
-            { name: "Accueil", path: "/" },
-            { name: crumbLabel, path: PAGE_PATH[page] || canon },
+            { name: "Accueil", path: L("/") },
+            { name: crumbLabel, path: PAGE_PATH[page] ? L(PAGE_PATH[page]) : canon },
           ])
         : null;
       return {
@@ -1203,7 +1239,7 @@ export default function YorixApp() {
               ? "Centre d'aide Yorix.cm : acheter, vendre, livraison Yorix Ride, fidélité points, escrow MoMo & Orange Money — guides et FAQ marketplace Cameroun."
               : "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
         canonicalPath:
-          page === "blog" && route.blogSlug ? canon : PAGE_PATH[page] || canon,
+          page === "blog" && route.blogSlug ? canon : PAGE_PATH[page] ? L(PAGE_PATH[page]) : canon,
         jsonLd: [pageBc, orgLd].filter(Boolean),
       };
     }
@@ -1223,6 +1259,7 @@ export default function YorixApp() {
     route.blogSlug,
     route.seoAliasKey,
     route.categorySlug,
+    route.locale,
     location.pathname,
     detailProduct,
   ]);
@@ -1330,6 +1367,8 @@ export default function YorixApp() {
         ogType={seoBundle.ogType || "website"}
         jsonLd={seoBundle.jsonLd}
         noindex={seoBundle.noindex}
+        locale={route.locale}
+        hrefLangAlternates={hrefLangAlternates}
       />
 
       {/* ── CONTRACT ACCEPTANCE MODAL ── */}
@@ -1393,6 +1432,8 @@ export default function YorixApp() {
         userData={userData}
         userRole={userRole}
         goPage={goPage}
+        siteLocale={route.locale}
+        switchLocale={switchLocale}
         filterCat={filterCat}
         setFilterCat={setFilterCat}
         search={search}

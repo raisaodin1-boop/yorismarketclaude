@@ -3,59 +3,182 @@
  * Source unique pour parsing (via seoRoutes), sitemap (generate-sitemap) et Helmet (YorixApp).
  */
 
-/** @typedef {{ page: string, canonicalPath: string, title: string, description: string, keywords?: string, citySlug?: string, cityMode?: string }} SeoAliasResolved */
+/** @typedef {{ page: string, pathBare: string, lang: "fr"|"en", title: string, description: string, keywords?: string, citySlug?: string, cityMode?: string }} SeoAliasResolved */
 
-/** Alias d’URL une-segment → même UI qu’une route existante + canonical dédié */
+/** Paires FR↔EN pour hreflang (slug URL segment unique) */
+const HREFLANG_SLUG_PAIRS = [
+  ["marketplace-cameroun", "cameroon-marketplace"],
+  ["achat-en-ligne-cameroun", "buy-online-cameroon"],
+  ["services-cameroun", "services-cameroon"],
+  ["immobilier-cameroun", "properties-cameroon"],
+  ["ecommerce-cameroun", "online-shopping-cameroon"],
+  ["livraison-cameroun", "delivery-cameroon"],
+  ["vendre-en-ligne-cameroun", "sell-online-cameroon"],
+];
+
+const HREFLANG_SLUG_MAP = Object.fromEntries(
+  HREFLANG_SLUG_PAIRS.flatMap(([a, b]) => [
+    [a, b],
+    [b, a],
+  ]),
+);
+
+/** Twin slug pour équivalent lingua (routes hub une-segment uniquement) */
+export function slugHreflangTwin(seg) {
+  return HREFLANG_SLUG_MAP[seg] ?? null;
+}
+
+/**
+ * Alias d’URL une-segment : pathBare sans /fr ou /en (cf. seoRoutes.localePath).
+ * canonicalPath ABSOLUTE = seoRoutes.localePath(alias.lang, alias.pathBare)
+ */
 export const SEO_URL_ALIASES = {
   "marketplace-cameroun": {
+    lang: "fr",
     page: "home",
-    canonicalPath: "/marketplace-cameroun",
+    pathBare: "/marketplace-cameroun",
     title: "Yorix.cm | Marketplace Cameroun – Achat, Vente, Livraison & Petites annonces",
     description:
       "La marketplace camerounaise Yorix.cm : achat en ligne, vente entre particuliers et pros, petites annonces vérifiées, livraison rapide et services partout au Cameroun (Douala, Yaoundé…).",
     keywords:
       "marketplace Cameroun, petites annonces Cameroun, achat en ligne Cameroun, vente en ligne Cameroun, e-commerce Cameroun",
   },
-  "ecommerce-cameroun": {
+  "cameroon-marketplace": {
+    lang: "en",
+    page: "home",
+    pathBare: "/cameroon-marketplace",
+    title: "Yorix.cm | Cameroon Marketplace — Shop, Sell, Delivery",
+    description:
+      "Cameroon-focused marketplace Yorix.cm: verified listings, nationwide delivery mindset, Mobile Money payouts, escrow for safer trades across Douala, Yaoundé and beyond.",
+    keywords:
+      "Cameroon marketplace, online shopping Cameroon, buy online Cameroon, e-commerce Cameroon, Yorix",
+  },
+  "achat-en-ligne-cameroun": {
+    lang: "fr",
     page: "produits",
-    canonicalPath: "/ecommerce-cameroun",
+    pathBare: "/achat-en-ligne-cameroun",
+    title: "Achat en ligne Cameroun | Catalogue marketplace & paiement Mobile Money | Yorix.cm",
+    description:
+      "Achat en ligne au Cameroun sur Yorix.cm : catalogue produits, paiement MoMo/Orange Money, escrow et livraison.",
+    keywords: "achat en ligne Cameroun, ecommerce Cameroun, marketplace Douala Yaoundé, paiement Mobile Money",
+  },
+  "buy-online-cameroon": {
+    lang: "en",
+    page: "produits",
+    pathBare: "/buy-online-cameroon",
+    title: "Buy online in Cameroon | Yorix.cm marketplace catalog",
+    description:
+      "Shop online in Cameroon on Yorix.cm: product catalog, Mobile Money payments, buyer protection and delivery options.",
+    keywords: "buy online Cameroon, Cameroon ecommerce, Mobile Money shopping, Yorix",
+  },
+  "services-cameroun": {
+    lang: "fr",
+    page: "prestataires",
+    pathBare: "/services-cameroun",
+    title: "Services au Cameroun | Prestataires & réservations | Yorix.cm",
+    description:
+      "Trouvez des services vérifiés au Cameroun : plomberie, beauté, IT, réparation, formation — réservation sur Yorix.cm.",
+    keywords: "services Cameroun, prestataires Douala, prestataires Yaoundé, marketplace services",
+  },
+  "services-cameroon": {
+    lang: "en",
+    page: "prestataires",
+    pathBare: "/services-cameroon",
+    title: "Services in Cameroon | Providers & bookings | Yorix.cm",
+    description:
+      "Book trusted local services in Cameroon: plumbing, beauty, IT, repairs, training — via Yorix.cm.",
+    keywords: "services Cameroon, local providers, Douala services, Yaoundé services, Yorix",
+  },
+  "immobilier-cameroun": {
+    lang: "fr",
+    page: "business",
+    pathBare: "/immobilier-cameroun",
+    title: "Immobilier Cameroun | Offres, professionnels & visibilité | Yorix.cm",
+    description:
+      "Hub immobilier Cameroun sur Yorix.cm : annonces, professionnels de l’habitat et solutions business pour la visibilité locale.",
+    keywords: "immobilier Cameroun, terrain maison appartement, annonces immo Douala Yaoundé",
+  },
+  "properties-cameroon": {
+    lang: "en",
+    page: "business",
+    pathBare: "/properties-cameroon",
+    title: "Real estate in Cameroon | Listings hub | Yorix.cm",
+    description:
+      "Cameroon property hub on Yorix.cm: verified professionals, visibility programs and curated housing supply over time.",
+    keywords: "real estate Cameroon, property Cameroon, Douala Yaoundé housing, Yorix",
+  },
+  "ecommerce-cameroun": {
+    lang: "fr",
+    page: "produits",
+    pathBare: "/ecommerce-cameroun",
     title: "E-commerce Cameroun | Boutique en ligne & catalogue produits | Yorix.cm",
     description:
       "E-commerce au Cameroun sur Yorix.cm : catalogue produits locaux et importés, paiement MTN MoMo & Orange Money, livraison nationale.",
     keywords:
       "ecommerce Cameroun, e-commerce Cameroun, boutique en ligne Cameroun, marketplace en ligne Cameroun",
   },
+  "online-shopping-cameroon": {
+    lang: "en",
+    page: "produits",
+    pathBare: "/online-shopping-cameroon",
+    title: "E-commerce Cameroon | Online storefront & catalog | Yorix.cm",
+    description:
+      "Shop Cameroon catalogs on Yorix.cm : local vendors, imports, Mobile Money checkout and escrow.",
+    keywords: "online shopping Cameroon, ecommerce Cameroon, Yorix marketplace",
+  },
   "livraison-cameroun": {
+    lang: "fr",
     page: "livraison",
-    canonicalPath: "/livraison-cameroun",
+    pathBare: "/livraison-cameroun",
     title: "Livraison Cameroun — colis, courses & Yorix Ride | Douala, Yaoundé",
     description:
       "Livraison au Cameroun avec Yorix Ride : suivi, tarifs clairs, couverture Douala, Yaoundé, Bafoussam et extension nationale.",
     keywords: "livraison Cameroun, livreur Cameroun, livraison Douala, livraison Yaoundé, Yorix Ride",
   },
+  "delivery-cameroon": {
+    lang: "en",
+    page: "livraison",
+    pathBare: "/delivery-cameroon",
+    title: "Delivery in Cameroon | Parcels & Yorix Ride | Douala, Yaoundé",
+    description:
+      "Nationwide-focused delivery UX on Yorix.cm : transparent fees, courier network growth and intra-city reliability.",
+    keywords: "delivery Cameroon, courier Douala, shipping Yaoundé, Yorix Ride",
+  },
   "vendre-en-ligne-cameroun": {
+    lang: "fr",
     page: "devenirVendeur",
-    canonicalPath: "/vendre-en-ligne-cameroun",
+    pathBare: "/vendre-en-ligne-cameroun",
     title: "Vendre en ligne au Cameroun | Vendeur marketplace Yorix.cm",
     description:
       "Vendez en ligne depuis le Cameroun : boutique Yorix, visibilité nationale, paiements mobile money et outils vendeur.",
     keywords: "vendre en ligne Cameroun, devenir vendeur marketplace, vendeur en ligne Cameroun",
   },
+  "sell-online-cameroon": {
+    lang: "en",
+    page: "devenirVendeur",
+    pathBare: "/sell-online-cameroon",
+    title: "Sell online from Cameroon | Yorix seller hub",
+    description:
+      "Launch your Cameroon storefront with Yorix : national reach, escrow tools and MoMo-compatible flows.",
+    keywords: "sell online Cameroon, become seller, Yorix vendor",
+  },
   "achat-en-ligne-douala": {
+    lang: "fr",
     page: "seoCity",
     citySlug: "douala",
     cityMode: "acheter",
-    canonicalPath: "/achat-en-ligne-douala",
+    pathBare: "/achat-en-ligne-douala",
     title: "Marketplace Douala — Achat en ligne & livraison | Yorix.cm",
     description:
       "Marketplace Douala sur Yorix.cm : achetez en ligne, livraison locale, paiement MoMo/Orange Money, escrow et vendeurs vérifiés.",
     keywords: "marketplace Douala, achat en ligne Douala, ecommerce Douala, livraison Douala",
   },
   "achat-en-ligne-yaounde": {
+    lang: "fr",
     page: "seoCity",
     citySlug: "yaounde",
     cityMode: "acheter",
-    canonicalPath: "/achat-en-ligne-yaounde",
+    pathBare: "/achat-en-ligne-yaounde",
     title: "Marketplace Yaoundé — Achat en ligne & livraison | Yorix.cm",
     description:
       "Marketplace Yaoundé : produits et services avec livraison, marketplace camerounaise Yorix.cm et paiements sécurisés.",
@@ -63,7 +186,14 @@ export const SEO_URL_ALIASES = {
   },
 };
 
-export const PROGRAMMATIC_SITEMAP_PATHS = Object.values(SEO_URL_ALIASES).map((a) => a.canonicalPath);
+/** Chemins complets hubs programmatics pour sitemap (préfixes /fr /en appliqués côté script) */
+export const PROGRAMMATIC_SITEMAP_PATHS = Object.values(SEO_URL_ALIASES).map(
+  (a) => `/${a.lang}${a.pathBare}`,
+);
+
+export function seoAliasLocalesForSitemap() {
+  return Object.values(SEO_URL_ALIASES).map((a) => ({ lang: a.lang, pathBare: a.pathBare }));
+}
 
 /** Articles guides — contenu éditorial + FAQ schema */
 export const SEO_BLOG_ARTICLES = {
@@ -167,7 +297,7 @@ export const SEO_BLOG_ARTICLES = {
 
 export const SEO_BLOG_SLUGS = Object.keys(SEO_BLOG_ARTICLES);
 
-/** Chemins guide pour sitemap */
+/** Chemins guide pour sitemap (sans préfixe langue — combinés en /fr/blog/… et /en/blog/…) */
 export function getBlogGuidePaths() {
   return SEO_BLOG_SLUGS.map((slug) => `/blog/${slug}`);
 }

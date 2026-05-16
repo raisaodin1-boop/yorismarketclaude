@@ -8,6 +8,8 @@ export function YorixHeader({
   userData,
   userRole,
   goPage,
+  siteLocale = "fr",
+  switchLocale,
   filterCat,
   setFilterCat,
   search,
@@ -41,7 +43,41 @@ export function YorixHeader({
             </span>
             <span>Cameroun 🇨🇲</span>
           </div>
-          <span>FR / EN</span>
+          <span
+            role="group"
+            aria-label="Langue du site"
+            style={{ display: "inline-flex", gap: 6, alignItems: "center", userSelect: "none" }}
+          >
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={() => switchLocale?.("fr")}
+              onKeyDown={(e) => e.key === "Enter" && switchLocale?.("fr")}
+              style={{
+                cursor: "pointer",
+                fontWeight: siteLocale === "fr" ? 700 : 500,
+                opacity: siteLocale === "fr" ? 1 : 0.7,
+              }}
+            >
+              FR
+            </span>
+            <span aria-hidden style={{ opacity: 0.45 }}>
+              |
+            </span>
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={() => switchLocale?.("en")}
+              onKeyDown={(e) => e.key === "Enter" && switchLocale?.("en")}
+              style={{
+                cursor: "pointer",
+                fontWeight: siteLocale === "en" ? 700 : 500,
+                opacity: siteLocale === "en" ? 1 : 0.7,
+              }}
+            >
+              EN
+            </span>
+          </span>
           <span>📞 +237 696 56 56 54</span>
         </div>
         <div className="topbar-r">

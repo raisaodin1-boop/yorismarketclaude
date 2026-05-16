@@ -1,13 +1,13 @@
 /**
- * Yorix.cm — Routage SEO (chemins indexables, slugs, parsing URL ↔ état d’app)
- * Commentaire : une seule source de vérité pour les paths marketing / Google.
+ * Yorix.cm — Routage SEO + préfixes linguistiques /fr | /en
+ * Une seule source de vérité pour paths marketing / Google.
  */
 
-import { resolveSeoLandingFromPath } from "./seoProgrammatic.js";
+import { resolveSeoLandingFromPath, SEO_URL_ALIASES, slugHreflangTwin } from "./seoProgrammatic.js";
 
 const DEFAULT_SITE_URL = "https://www.yorix.cm";
 
-/** URL publique du site (canonical, OG, liens). Surcharge : `VITE_PUBLIC_SITE_URL`. */
+/** URL publique du site (canonical, OG). Surcharge : `VITE_PUBLIC_SITE_URL`. */
 export const SITE_URL = (() => {
   try {
     const raw =
@@ -19,7 +19,11 @@ export const SITE_URL = (() => {
   }
 })();
 
-/** Villes Cameroun — slug ASCII → libellé affiché (SEO local scalable) */
+/** @typedef {"fr"|"en"} SiteLocale */
+export const SITE_LOCALES = /** @type {const} */ ["fr", "en"];
+export const DEFAULT_SITE_LOCALE = /** @type {SiteLocale} */ ("fr");
+
+/** Villes Cameroun — slug ASCII → libellé affiché */
 export const SEO_CITIES = [
   { slug: "yaounde", name: "Yaoundé", region: "Centre" },
   { slug: "douala", name: "Douala", region: "Littoral" },
@@ -36,7 +40,7 @@ export const SEO_CITIES = [
 export const CITY_BY_SLUG = Object.fromEntries(SEO_CITIES.map((c) => [c.slug, c]));
 
 export const NAME_TO_CITY_SLUG = Object.fromEntries(
-  SEO_CITIES.map((c) => [c.name.toLowerCase(), c.slug])
+  SEO_CITIES.map((c) => [c.name.toLowerCase(), c.slug]),
 );
 
 /** Métier (slug URL) → catégorie PrestPage / filtres */
@@ -58,10 +62,41 @@ export const METIER_SLUG_TO_CATEGORY = {
   couture: "Couture",
 };
 
-/** Slugs historiques (ex. typo dans l’URL) → libellé actuel dans CATS */
+/** Slugs historiques → libellé actuel dans CATS */
 export const CATEGORY_SLUG_LEGACY = {
   "mode-accesoires": "Mode & Accessoires",
 };
+
+/** @param {string} pathname */
+export function parseLocaleSegments(pathname) {
+  const raw = (pathname || "").replace(/\/+$/, "") || "/";
+  const parts = raw.split("/").filter(Boolean);
+  const first = parts[0]?.toLowerCase();
+  if (first === "fr" || first === "en") {
+    const locale = /** @type {SiteLocale} */ (first);
+    const rest = "/" + parts.slice(1).join("/");
+    const barePath = rest === "//" ? "/" : rest.replace(/\/+$/, "") || "/";
+    return { locale, barePath, hasLocalePrefix: true };
+  }
+  return { locale: DEFAULT_SITE_LOCALE, barePath: raw, hasLocalePrefix: false };
+}
+
+/**
+ * @param {SiteLocale} locale
+ * @param {string} bare — chemin sans langue ; "/" pour accueil
+ */
+export function localePath(locale, bare) {
+  const loc = SITE_LOCALES.includes(locale) ? locale : DEFAULT_SITE_LOCALE;
+  if (!bare || bare === "/") return `/${loc}`;
+  const b = bare.startsWith("/") ? bare : `/${bare}`;
+  return `/${loc}${b}`;
+}
+
+/** Préfixe inverse pour passer de /fr/... ↔ /en/... (sans symétrie slug miroir) */
+export function swapLocalePrefix(pathname, targetLocale = DEFAULT_SITE_LOCALE) {
+  const { barePath } = parseLocaleSegments(pathname);
+  return localePath(targetLocale, barePath);
+}
 
 export function categoryToSlug(cat) {
   return slugify(cat || "");
@@ -79,7 +114,6 @@ export function slugify(str) {
   return (s || "yorix").slice(0, 80);
 }
 
-/** Slug produit / prestataire : base--id (id peut être uuid ou p1, real-uuid…) */
 export function buildEntitySlug(name, id) {
   const base = slugify(name);
   return `${base}--${id}`;
@@ -92,7 +126,7 @@ export function parseEntitySlug(segment) {
   return { base: segment.slice(0, idx), id: segment.slice(idx + 2) };
 }
 
-/** Pages internes → chemin canonical */
+/** Pages internes → chemin canonique SANS préfixe /fr | /en */
 export const PAGE_PATH = {
   home: "/",
   produits: "/produits",
@@ -120,7 +154,21 @@ export const PAGE_PATH = {
   devenirLivreur: "/devenir-livreur",
 };
 
+/** Navigation interne : chemins relatifs avec préfixe langue */
 export function pathForPage(page, opts = {}) {
+  const locale = opts.locale === "en" || opts.locale === "fr" ? opts.locale : DEFAULT_SITE_LOCALE;
+  const innerOpts = { ...opts };
+  delete innerOpts.locale;
+  return localePath(locale, pathForPageBare(page, innerOpts));
+}
+
+/** @param {SiteLocale|string} locale */
+export function pathForPageWithLocale(locale, page, opts = {}) {
+  return pathForPage(page, { ...opts, locale });
+}
+
+/** Chemin métier sans /fr | /en (router redirect + parsers) */
+export function pathForPageBare(page, opts = {}) {
   if (page === "blog" && opts.blogSlug && /^[a-z0-9-]{1,80}$/.test(opts.blogSlug)) {
     return `/blog/${opts.blogSlug}`;
   }
@@ -156,7 +204,16 @@ export function pathForPage(page, opts = {}) {
   return PAGE_PATH[page] ?? "/";
 }
 
-/** Retrouve le libellé catégorie produit depuis l’URL /categories/:slug */
+/** @param {(typeof SEO_URL_ALIASES)[string]} alias */
+export function canonicalFromSeoAlias(alias) {
+  if (!alias?.pathBare) return "/";
+  const lang =
+    alias.lang === "fr" || alias.lang === "en"
+      ? /** @type {SiteLocale} */ (alias.lang)
+      : DEFAULT_SITE_LOCALE;
+  return localePath(lang, alias.pathBare);
+}
+
 export function slugToCategoryName(slug, categories = []) {
   if (!slug) return "";
   const legacyName = CATEGORY_SLUG_LEGACY[slug];
@@ -166,22 +223,24 @@ export function slugToCategoryName(slug, categories = []) {
 }
 
 /**
- * pathname → état SPA (page + options SEO)
+ * Bare pathname → état (canonicalPathBare sans /fr | /en)
+ * @returns {Record<string, unknown>}
  */
-export function parsePathname(pathname) {
-  const raw = pathname.replace(/\/+$/, "") || "/";
-  if (raw === "/") {
-    return { page: "home", canonicalPath: "/" };
-  }
+export function parsePathnameBare(rawIn) {
+  const raw = rawIn.replace(/\/+$/, "") || "/";
 
   const parts = raw.split("/").filter(Boolean);
   const [a, b, c] = parts;
 
+  if (raw === "/" || raw === "") {
+    return { page: "home", canonicalPathBare: "/" };
+  }
+
   if (a === "blog") {
     if (b && /^[a-z0-9-]{1,80}$/.test(b)) {
-      return { page: "blog", blogSlug: b, canonicalPath: raw };
+      return { page: "blog", blogSlug: b, canonicalPathBare: raw, seoAliasKey: null };
     }
-    return { page: "blog", canonicalPath: "/blog" };
+    return { page: "blog", canonicalPathBare: "/blog", seoAliasKey: null };
   }
 
   if (parts.length === 1) {
@@ -192,41 +251,41 @@ export function parsePathname(pathname) {
           page: "seoCity",
           citySlug: landing.citySlug,
           cityMode: landing.cityMode || "acheter",
-          canonicalPath: landing.canonicalPath,
-          seoAliasKey: a,
+          canonicalPathBare: landing.pathBare,
+          seoAliasKey: String(a),
         };
       }
       if (landing.page === "home") {
-        return { page: "home", canonicalPath: landing.canonicalPath, seoAliasKey: a };
+        return { page: "home", canonicalPathBare: landing.pathBare, seoAliasKey: String(a) };
       }
       if (landing.page === "produits") {
-        return { page: "produits", canonicalPath: landing.canonicalPath, seoAliasKey: a };
+        return { page: "produits", canonicalPathBare: landing.pathBare, seoAliasKey: String(a) };
       }
       if (landing.page === "livraison") {
-        return { page: "livraison", canonicalPath: landing.canonicalPath, seoAliasKey: a };
+        return { page: "livraison", canonicalPathBare: landing.pathBare, seoAliasKey: String(a) };
       }
       const pg = landing.page;
       if (PAGE_PATH[pg]) {
-        return { page: pg, canonicalPath: landing.canonicalPath, seoAliasKey: a };
+        return { page: pg, canonicalPathBare: landing.pathBare, seoAliasKey: String(a) };
       }
     }
   }
 
   if (a === "produit" && b) {
-    return { page: "productDetail", productSlug: b, canonicalPath: raw };
+    return { page: "productDetail", productSlug: b, canonicalPathBare: raw };
   }
   if (a === "categories" && b) {
-    return { page: "produits", categorySlug: b, canonicalPath: raw };
+    return { page: "produits", categorySlug: b, canonicalPathBare: raw };
   }
   if (a === "livraison") {
-    if (!b) return { page: "livraison", canonicalPath: "/livraison" };
+    if (!b) return { page: "livraison", canonicalPathBare: "/livraison" };
     if (CITY_BY_SLUG[b]) {
-      return { page: "livraison", citySlug: b, canonicalPath: raw };
+      return { page: "livraison", citySlug: b, canonicalPathBare: raw };
     }
-    return { page: "livraison", canonicalPath: "/livraison" };
+    return { page: "livraison", canonicalPathBare: "/livraison" };
   }
   if (a === "prestataire" && b) {
-    return { page: "prestDetail", prestSlug: b, canonicalPath: raw };
+    return { page: "prestDetail", prestSlug: b, canonicalPathBare: raw };
   }
   if (a === "prestataires" && b && c) {
     if (METIER_SLUG_TO_CATEGORY[b] && CITY_BY_SLUG[c]) {
@@ -234,42 +293,57 @@ export function parsePathname(pathname) {
         page: "prestataires",
         metierSlug: b,
         villeSlug: c,
-        canonicalPath: raw,
+        canonicalPathBare: raw,
       };
     }
   }
   if (a === "prestataires") {
-    return { page: "prestataires", canonicalPath: "/prestataires" };
+    return { page: "prestataires", canonicalPathBare: "/prestataires" };
   }
 
   if (a === "academy" && b) {
     if (c === "contact") {
-      return { page: "academyContact", courseId: b, canonicalPath: raw };
+      return { page: "academyContact", courseId: b, canonicalPathBare: raw };
     }
-    return { page: "academyDetail", courseId: b, canonicalPath: raw };
+    return { page: "academyDetail", courseId: b, canonicalPathBare: raw };
   }
 
   const hubMatch = CITY_BY_SLUG[a];
   if (parts.length === 1 && hubMatch) {
-    return { page: "seoCity", citySlug: a, cityMode: "hub", canonicalPath: raw };
+    return { page: "seoCity", citySlug: a, cityMode: "hub", canonicalPathBare: raw };
   }
 
   if (a?.startsWith("acheter-a-")) {
-    const slug = a.replace(/^acheter-a-/, "");
-    if (CITY_BY_SLUG[slug]) {
-      return { page: "seoCity", citySlug: slug, cityMode: "acheter", canonicalPath: raw };
+    const slugCity = a.replace(/^acheter-a-/, "");
+    if (CITY_BY_SLUG[slugCity]) {
+      return {
+        page: "seoCity",
+        citySlug: slugCity,
+        cityMode: "acheter",
+        canonicalPathBare: raw,
+      };
     }
   }
   if (a?.startsWith("livraison-a-")) {
-    const slug = a.replace(/^livraison-a-/, "");
-    if (CITY_BY_SLUG[slug]) {
-      return { page: "seoCity", citySlug: slug, cityMode: "livraison", canonicalPath: raw };
+    const slugCity = a.replace(/^livraison-a-/, "");
+    if (CITY_BY_SLUG[slugCity]) {
+      return {
+        page: "seoCity",
+        citySlug: slugCity,
+        cityMode: "livraison",
+        canonicalPathBare: raw,
+      };
     }
   }
   if (a?.startsWith("prestataires-a-")) {
-    const slug = a.replace(/^prestataires-a-/, "");
-    if (CITY_BY_SLUG[slug]) {
-      return { page: "seoCity", citySlug: slug, cityMode: "prestataires", canonicalPath: raw };
+    const slugCity = a.replace(/^prestataires-a-/, "");
+    if (CITY_BY_SLUG[slugCity]) {
+      return {
+        page: "seoCity",
+        citySlug: slugCity,
+        cityMode: "prestataires",
+        canonicalPathBare: raw,
+      };
     }
   }
 
@@ -305,12 +379,126 @@ export function parsePathname(pathname) {
 
   if (parts.length === 1 && staticMap[a]) {
     const pg = staticMap[a];
-    return { page: pg, canonicalPath: PAGE_PATH[pg] ?? `/${a}` };
+    return {
+      page: pg,
+      canonicalPathBare: PAGE_PATH[pg] ?? `/${a}`,
+      seoAliasKey: null,
+    };
   }
 
-  return { page: "home", canonicalPath: "/" };
+  return { page: "home", canonicalPathBare: "/" };
 }
 
-export function getSearchActionUrl() {
-  return `${SITE_URL}/produits`;
+/**
+ * pathname complet → état + canonical URL avec préfixe langue attendu
+ */
+export function parsePathname(pathname) {
+  const seg = parseLocaleSegments(pathname);
+  const inner = parsePathnameBare(seg.barePath);
+  /** @type {SiteLocale} */
+  const urlLocale =
+    seg.locale === "fr" || seg.locale === "en"
+      ? /** @type {SiteLocale} */ (seg.locale)
+      : DEFAULT_SITE_LOCALE;
+
+  const alias =
+    typeof inner.seoAliasKey === "string" && SEO_URL_ALIASES[inner.seoAliasKey]
+      ? SEO_URL_ALIASES[inner.seoAliasKey]
+      : null;
+
+  const authorityLocale =
+    alias && (alias.lang === "fr" || alias.lang === "en")
+      ? /** @type {SiteLocale} */ (alias.lang)
+      : urlLocale;
+
+  const canonicalPath = localePath(authorityLocale, inner.canonicalPathBare);
+
+  /** Rediriger si l’alias est défini dans une langue différente du segment URL */
+  const localeRewriteTo =
+    alias && (alias.lang === "fr" || alias.lang === "en") && urlLocale !== alias.lang
+      ? canonicalFromSeoAlias(alias)
+      : null;
+
+  return {
+    ...inner,
+    locale: urlLocale,
+    canonicalPath,
+    localeRewriteTo,
+    seoAliasCanonicalLocale: alias ? authorityLocale : null,
+    hasLocalePrefix: seg.hasLocalePrefix,
+  };
 }
+
+/** Schema.org SearchAction URL absolue */
+export function getSearchActionUrl(locale = DEFAULT_SITE_LOCALE) {
+  return `${SITE_URL}${localePath(locale, "/produits")}`;
+}
+
+/**
+ * Pour hreflang / switch UI : équivalent slug miroir (hubs FR↔EN) ou simple permutation /fr ↔ /en
+ * @returns {string} chemin complet /fr|/en...
+ */
+export function alternateLocaleFullPath(currentPathname) {
+  const seg = parseLocaleSegments(currentPathname);
+  const urlLocale =
+    seg.locale === "fr" || seg.locale === "en"
+      ? /** @type {SiteLocale} */ (seg.locale)
+      : DEFAULT_SITE_LOCALE;
+  const other = urlLocale === "fr" ? "en" : "fr";
+  const bare = seg.barePath.startsWith("/") ? seg.barePath : `/${seg.barePath}`;
+  const parts = bare.split("/").filter(Boolean);
+  if (parts.length === 1 && slugHreflangTwin(parts[0])) {
+    const twin = /** @type {string} */ (slugHreflangTwin(parts[0]));
+    return localePath(other, `/${twin}`);
+  }
+  return localePath(other, bare === "" ? "/" : bare);
+}
+
+/**
+ * Garantit /fr ou /en en tête pour liens legacy (notifications, SW).
+ */
+export function ensureLocalePath(pathname, locale = DEFAULT_SITE_LOCALE) {
+  const pRaw = pathname && pathname.startsWith("/") ? pathname : `/${pathname || ""}`;
+  if (/^\/(fr|en)(\/|$)/.test(pRaw)) {
+    return pRaw.replace(/\/+$/, "") || "/";
+  }
+  const norm = String(pathname || "/").replace(/\/+$/, "") || "/";
+  return localePath(locale, norm === "/" ? "/" : norm);
+}
+
+/**
+ * URLs absolues pour hreflang (slug miroir quand défini dans SEO_URL_ALIASES)
+ * @returns {{ hrefLang: string, href: string }[]}
+ */
+export function buildHrefLangAlternates(pathname) {
+  const base = SITE_URL.replace(/\/$/, "");
+  const seg = parseLocaleSegments(pathname.startsWith("/") ? pathname : `/${pathname}`);
+  const bareRaw = seg.barePath.startsWith("/") ? seg.barePath : `/${seg.barePath}`;
+  const parts = bareRaw.split("/").filter(Boolean);
+  let frBare = bareRaw;
+  let enBare = bareRaw;
+  if (parts.length === 1) {
+    const s = parts[0];
+    const twin = slugHreflangTwin(s);
+    const alias = SEO_URL_ALIASES[s];
+    if (twin && alias && (alias.lang === "fr" || alias.lang === "en")) {
+      if (alias.lang === "fr") {
+        frBare = `/${s}`;
+        enBare = `/${twin}`;
+      } else {
+        enBare = `/${s}`;
+        frBare = `/${twin}`;
+      }
+    }
+  }
+  const frPath = localePath("fr", frBare);
+  const enPath = localePath("en", enBare);
+  return [
+    { hrefLang: "fr", href: `${base}${frPath}` },
+    { hrefLang: "en", href: `${base}${enPath}` },
+    { hrefLang: "fr-CM", href: `${base}${frPath}` },
+    { hrefLang: "en-CM", href: `${base}${enPath}` },
+    { hrefLang: "x-default", href: `${base}${frPath}` },
+  ];
+}
+
