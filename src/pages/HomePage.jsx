@@ -6,8 +6,10 @@
 import { useCallback, useState } from "react";
 import { FlashCountdown } from "../components/FlashCountdown";
 import { ProdGrid } from "../components/ProdGrid";
-import { CATS, CITIES } from "../lib/constants";
+import { CITIES } from "../lib/constants";
 import { HomePremiumMerch } from "../components/home/HomePremiumMerch";
+import { HomeCategoryGrid } from "../components/categories/HomeCategoryGrid";
+import { categoryLabel } from "../lib/marketplaceCategories";
 import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
 import homePremiumCss from "./homePageV3Premium.css?raw";
@@ -116,6 +118,8 @@ export function HomePage({
   openProductUrl,
   setOnboardingOpen,
   goPage,
+  categoryTree = [],
+  goToCategory,
   allServices,
   nlEmail,
   setNlEmail,
@@ -251,9 +255,9 @@ export function HomePage({
                     aria-label="Catégorie"
                   >
                     <option value="">Toutes catégories</option>
-                    {CATS.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                    {categoryTree.map((r) => (
+                      <option key={r.id || r.slug} value={categoryLabel(r, siteLocale)}>
+                        {categoryLabel(r, siteLocale)}
                       </option>
                     ))}
                   </select>
@@ -323,6 +327,14 @@ export function HomePage({
             </div>
           </div>
         </header>
+
+        {categoryTree.length > 0 && (
+          <HomeCategoryGrid
+            tree={categoryTree}
+            locale={siteLocale}
+            onCategoryClick={(v) => goToCategory?.(v)}
+          />
+        )}
 
         <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
 

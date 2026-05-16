@@ -12,6 +12,7 @@ import {
   localePath,
 } from "../src/lib/seoRoutes.js";
 import { CATS } from "../src/lib/constants.js";
+import { ROOT_CATEGORY_SLUGS } from "../src/data/categoryTaxonomy.js";
 import { MERCH_HUB_SLUGS } from "../src/lib/merchHubs.js";
 import {
   PROGRAMMATIC_SITEMAP_PATHS,
@@ -169,11 +170,13 @@ function cityUrls() {
 }
 
 function categoryUrls() {
-  return CATS.filter(Boolean).map((cat) => [
+  const roots = (ROOT_CATEGORY_SLUGS || []).map((slug) => [`/${slug}`, "0.85", "weekly"]);
+  const legacy = CATS.filter(Boolean).map((cat) => [
     `/categories/${categoryToSlug(cat)}`,
     "0.82",
     "weekly",
   ]);
+  return [...roots, ...legacy];
 }
 
 function merchHubUrls() {

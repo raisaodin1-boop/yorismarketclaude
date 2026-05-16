@@ -5,6 +5,7 @@
 
 import { resolveSeoLandingFromPath, SEO_URL_ALIASES, slugHreflangTwin } from "./seoProgrammatic.js";
 import { MERCH_HUB_SLUGS, MERCH_HUBS } from "./merchHubs.js";
+import { ROOT_CATEGORY_SLUGS, CATEGORY_TAXONOMY } from "../data/categoryTaxonomy.js";
 
 const DEFAULT_SITE_URL = "https://www.yorix.cm";
 
@@ -183,6 +184,12 @@ export function pathForPageBare(page, opts = {}) {
     return `/${opts.merchHub}`;
   }
   if (page === "produits" && opts.categorySlug) {
+    if (opts.subCategorySlug) {
+      return `/categories/${opts.categorySlug}/${opts.subCategorySlug}`;
+    }
+    if (ROOT_CATEGORY_SLUGS.includes(opts.categorySlug)) {
+      return `/${opts.categorySlug}`;
+    }
     return `/categories/${opts.categorySlug}`;
   }
   if (page === "livraison" && opts.citySlug && CITY_BY_SLUG[opts.citySlug]) {
@@ -220,10 +227,29 @@ export function canonicalFromSeoAlias(alias) {
 
 export function slugToCategoryName(slug, categories = []) {
   if (!slug) return "";
+  const fromTax = categoryNameFromTaxonomySlug(slug);
+  if (fromTax) return fromTax;
   const legacyName = CATEGORY_SLUG_LEGACY[slug];
   if (legacyName && categories.includes(legacyName)) return legacyName;
   const hit = categories.find((c) => categoryToSlug(c) === slug);
   return hit || "";
+}
+
+/** Libellé FR depuis slug racine ou enfant (taxonomie statique). */
+export function categoryNameFromTaxonomySlug(slug, parentSlug = null) {
+  if (!slug) return "";
+  if (parentSlug) {
+    const parent = CATEGORY_TAXONOMY.find((p) => p.slug === parentSlug);
+    const child = parent?.children?.find((c) => c.slug === slug);
+    return child?.name_fr || "";
+  }
+  const root = CATEGORY_TAXONOMY.find((p) => p.slug === slug);
+  if (root) return root.name_fr;
+  for (const p of CATEGORY_TAXONOMY) {
+    const ch = p.children?.find((c) => c.slug === slug);
+    if (ch) return ch.name_fr;
+  }
+  return "";
 }
 
 /**
@@ -289,7 +315,32 @@ export function parsePathnameBare(rawIn) {
     return { page: "productDetail", productSlug: b, canonicalPathBare: raw };
   }
   if (a === "categories" && b) {
+    if (c && /^[a-z0-9-]{1,80}$/.test(c)) {
+      return {
+        page: "produits",
+        categorySlug: b,
+        subCategorySlug: c,
+        canonicalPathBare: raw,
+      };
+    }
     return { page: "produits", categorySlug: b, canonicalPathBare: raw };
+  }
+
+  if (parts.length === 1 && ROOT_CATEGORY_SLUGS.includes(a)) {
+    return {
+      page: "produits",
+      categorySlug: a,
+      canonicalPathBare: raw,
+    };
+  }
+
+  if (parts.length === 2 && ROOT_CATEGORY_SLUGS.includes(a) && /^[a-z0-9-]{1,80}$/.test(b)) {
+    return {
+      page: "produits",
+      categorySlug: a,
+      subCategorySlug: b,
+      canonicalPathBare: raw,
+    };
   }
   if (a === "livraison") {
     if (!b) return { page: "livraison", canonicalPathBare: "/livraison" };

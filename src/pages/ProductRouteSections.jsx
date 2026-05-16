@@ -1,5 +1,5 @@
 import { ProdGrid } from "../components/ProdGrid";
-import { CATS } from "../lib/constants";
+import { CategoryFilterPanel } from "../components/categories/CategoryFilterPanel";
 import { EscrowPremiumPage } from "./EscrowPremiumPage";
 
 export function ProductRouteSections({
@@ -11,6 +11,10 @@ export function ProductRouteSections({
   produits,
   filterCat,
   setFilterCat,
+  categoryTree = [],
+  categoryFilter,
+  goToCategory,
+  siteLocale = "fr",
   search,
   user,
   userData,
@@ -39,25 +43,21 @@ export function ProductRouteSections({
             )}
           </div>
         </div>
-        <div className="yorix-pill-row" role="tablist" aria-label="Catégories">
-          <button
-            type="button"
-            className={`yorix-pill${!filterCat ? " is-active" : ""}`}
-            onClick={() => setFilterCat("")}
-          >
-            Tout
-          </button>
-          {CATS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`yorix-pill${filterCat === c ? " is-active" : ""}`}
-              onClick={() => setFilterCat(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <CategoryFilterPanel
+          tree={categoryTree}
+          locale={siteLocale}
+          parentSlug={categoryFilter?.parent?.slug || ""}
+          subSlug={categoryFilter?.child?.slug || ""}
+          filterCat={filterCat}
+          onParentChange={(slug) => goToCategory?.({ parentSlug: slug })}
+          onSubChange={(sub) =>
+            goToCategory?.({
+              parentSlug: categoryFilter?.parent?.slug,
+              subSlug: sub,
+            })
+          }
+          onLegacyCatChange={setFilterCat}
+        />
         {produitsLoading ? (
           <div className="loading">
             <div className="spinner" /> Chargement...
