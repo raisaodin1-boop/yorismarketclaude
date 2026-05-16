@@ -102,28 +102,30 @@ const TRUST_BADGES = [
 
 export function HomePage({
   siteLocale = "fr",
-  filterCat,
-  setFilterCat,
-  search,
-  setSearch,
+  filterCat = "",
+  setFilterCat = () => {},
+  search = "",
+  setSearch = () => {},
   produitsLoading,
-  produits,
+  produits = [],
   user,
   userData,
-  wishlist,
-  addToCart,
-  toggleWish,
-  openProductUrl,
-  setOnboardingOpen,
-  goPage,
-  allServices,
-  nlEmail,
-  setNlEmail,
+  wishlist = [],
+  addToCart = () => {},
+  toggleWish = () => {},
+  openProductUrl = () => {},
+  setOnboardingOpen = () => {},
+  goPage = () => {},
+  allServices = [],
+  nlEmail = "",
+  setNlEmail = () => {},
   nlSent,
-  setNlSent,
+  setNlSent = () => {},
   freeShippingThresholdXaf = 50000,
 }) {
   const [quickCity, setQuickCity] = useState("");
+  const safeProduits = Array.isArray(produits) ? produits : [];
+  const safeServices = Array.isArray(allServices) ? allServices : [];
 
   const handleHeroSearch = useCallback(() => {
     const cityEntry = SEO_CITIES.find((c) => c.name === quickCity);
@@ -324,7 +326,7 @@ export function HomePage({
           </div>
         </header>
 
-        <HomePremiumMerch goPage={goPage} produits={produits} locale={siteLocale} />
+        <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
 
         <section className="yhm3-section">
           <div className="yhm3-section-head yhm3-section-head--center">
@@ -407,9 +409,9 @@ export function HomePage({
             </button>
           </div>
 
-          {!produitsLoading && produits.length > 0 && (
+          {!produitsLoading && safeProduits.length > 0 && (
             <ProdGrid
-              prods={produits.slice(0, 4).map((p, i) => ({
+              prods={safeProduits.slice(0, 4).map((p, i) => ({
                 ...p,
                 flash: i < 2,
                 promo: i >= 2 && i < 4,
@@ -444,14 +446,14 @@ export function HomePage({
               <div className="yhm3-spinner" />
               Chargement du marché…
             </div>
-          ) : produits.length === 0 ? (
+          ) : safeProduits.length === 0 ? (
             <div className="yhm3-empty">
               <div className="yhm3-empty-ico">🛍️</div>
               <p>Le catalogue se remplit — revenez très vite.</p>
             </div>
           ) : (
             <ProdGrid
-              prods={produits.slice(0, 10)}
+              prods={safeProduits.slice(0, 10)}
               user={user}
               userData={userData}
               onAddToCart={addToCart}
@@ -563,13 +565,13 @@ export function HomePage({
           </div>
 
           <div className="yhm3-prest-grid">
-            {allServices.length === 0 ? (
+            {safeServices.length === 0 ? (
               <div className="yhm3-empty" style={{ gridColumn: "1/-1" }}>
                 <div className="yhm3-empty-ico">🛠️</div>
                 <p>Les talents arrivent — explorez bientôt la vitrine services.</p>
               </div>
             ) : (
-              allServices.slice(0, 3).map((s) => (
+              safeServices.slice(0, 3).map((s) => (
                 <article key={s.id} className="yhm3-prest-card">
                   <div className="yhm3-prest-top">
                     <div className="yhm3-prest-av">🧑‍💼</div>

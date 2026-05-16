@@ -1,26 +1,47 @@
 # robots.txt pour Yorix CM — https://www.yorix.cm
-# Mise à jour : 12 mai 2026
+# Mise à jour : 16 mai 2026
 
 User-agent: *
 Allow: /
 
-# Hubs SEO marketplace (crawl explicite)
-Allow: /marketplace-cameroun
-Allow: /ecommerce-cameroun
-Allow: /livraison-cameroun
-Allow: /vendre-en-ligne-cameroun
-Allow: /blog/
+# Hubs SEO marketplace (crawl explicite, FR/EN)
+Allow: /fr/
+Allow: /en/
+Allow: /fr/marketplace-cameroun
+Allow: /en/cameroon-marketplace
+Allow: /fr/ecommerce-cameroun
+Allow: /en/online-shopping-cameroon
+Allow: /fr/livraison-cameroun
+Allow: /en/delivery-cameroon
+Allow: /fr/vendre-en-ligne-cameroun
+Allow: /en/sell-online-cameroon
+Allow: /fr/blog/
+Allow: /en/blog/
 
 # Sections privées / techniques (non indexables)
 Disallow: /admin
 Disallow: /admin/
+Disallow: /fr/admin
+Disallow: /fr/admin/
+Disallow: /en/admin
+Disallow: /en/admin/
 Disallow: /dashboard
 Disallow: /dashboard/
+Disallow: /fr/dashboard
+Disallow: /fr/dashboard/
+Disallow: /en/dashboard
+Disallow: /en/dashboard/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /checkout
+Disallow: /fr/checkout
+Disallow: /en/checkout
 Disallow: /panier
+Disallow: /fr/panier
+Disallow: /en/panier
 Disallow: /notifications
+Disallow: /fr/notifications
+Disallow: /en/notifications
 
 # Paramètres d'authentification / callbacks Supabase
 Disallow: /*?authTab=
@@ -52,4 +73,5 @@ User-agent: MJ12bot
 Crawl-delay: 20
 
 # Sitemap principal
+Host: https://www.yorix.cm
 Sitemap: https://www.yorix.cm/sitemap.xml

@@ -981,6 +981,25 @@ export default function YorixApp() {
         "query-input": "required name=search_term_string",
       },
     };
+    const marketplaceLd = {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      name: "Yorix.cm",
+      url: SITE_URL,
+      image: `${SITE_URL}/og-image.svg`,
+      description:
+        "Marketplace camerounaise pour acheter des produits, réserver des services et organiser la livraison avec paiement Mobile Money.",
+      areaServed: [
+        { "@type": "City", name: "Douala" },
+        { "@type": "City", name: "Yaoundé" },
+        { "@type": "City", name: "Bafoussam" },
+        { "@type": "Country", name: "Cameroun" },
+      ],
+      paymentAccepted: ["MTN Mobile Money", "Orange Money", "Carte bancaire", "Cash"],
+      currenciesAccepted: "XAF",
+      contactPoint: orgLd.contactPoint,
+      sameAs: orgLd.sameAs,
+    };
 
     if (page === "blog" && route.blogSlug) {
       const art = getBlogArticle(route.blogSlug);
@@ -1063,7 +1082,7 @@ export default function YorixApp() {
         canonicalPath: canon,
         keywords:
           "marketplace Cameroun, e-commerce Cameroun, achat en ligne Cameroun, vente en ligne Cameroun, livraison Cameroun, petites annonces Cameroun, marketplace Douala, marketplace Yaoundé, escrow",
-        jsonLd: [orgLd, webLd],
+        jsonLd: [orgLd, webLd, marketplaceLd],
       };
     }
 
@@ -1274,6 +1293,42 @@ export default function YorixApp() {
       devenirLivreur: "Devenir livreur Yorix Ride — livraison Cameroun",
       inscription: "Devenir prestataire Yorix — services Cameroun",
     };
+    const fallbackDescription = {
+      produits:
+        "Catalogue Yorix.cm : produits locaux et importés au Cameroun, vendeurs vérifiés, paiement MTN MoMo/Orange Money, escrow et livraison.",
+      livraison:
+        "Yorix Ride organise vos courses et colis au Cameroun avec suivi, livreurs assignés et couverture prioritaire Douala, Yaoundé, Bafoussam.",
+      escrow:
+        "Protection escrow Yorix : le paiement reste sécurisé jusqu'à réception, pour des achats marketplace plus fiables au Cameroun.",
+      prestataires:
+        "Trouvez des prestataires au Cameroun : beauté, réparation, IT, nettoyage, BTP et services à domicile avec profils vérifiés.",
+      business:
+        "Yorix Business accompagne vendeurs, marques et PME camerounaises avec visibilité marketplace, outils digitaux et programmes partenaires.",
+      blog:
+        "Guides Yorix sur l'e-commerce au Cameroun : vendre en ligne, livraison, Mobile Money, escrow, logistique et croissance locale.",
+      academy:
+        "Yorix Academy forme vendeurs et entrepreneurs camerounais : boutique en ligne, photos produits, ventes, data et marketing.",
+      loyalty:
+        "Programme fidélité Yorix : cumulez des points sur vos achats, services et interactions, puis débloquez des récompenses.",
+      contact:
+        "Contact Yorix.cm : WhatsApp (+237 696 56 56 54), téléphone, email support@yorix.cm — aide commande, remboursement, escrow, livraison Douala & Yaoundé.",
+      aide:
+        "Centre d'aide Yorix.cm : acheter, vendre, livraison Yorix Ride, fidélité points, escrow MoMo & Orange Money — guides et FAQ marketplace Cameroun.",
+      cgv:
+        "Conditions générales de vente Yorix.cm : commandes, paiements, livraison, escrow, litiges et responsabilités marketplace au Cameroun.",
+      confidentialite:
+        "Politique de confidentialité Yorix.cm : données collectées, finalités, sécurité Supabase, droits utilisateurs et contact DPO/support.",
+      mentions:
+        "Mentions légales Yorix.cm : éditeur, hébergement Vercel/Supabase/Cloudinary, propriété intellectuelle, cookies et contact.",
+      devenirVendeur:
+        "Devenir vendeur sur Yorix.cm : créez votre boutique marketplace, gagnez en visibilité et encaissez via Mobile Money au Cameroun.",
+      devenirLivreur:
+        "Devenir livreur Yorix Ride : rejoignez le réseau de livraison au Cameroun, recevez des missions et suivez vos gains.",
+      inscription:
+        "Devenir prestataire Yorix : proposez vos services au Cameroun, recevez des demandes clients et développez votre activité locale.",
+      bonsPlans:
+        "Bons plans Yorix.cm : promotions, livraison offerte, produits tendance et offres marketplace au Cameroun.",
+    };
     const fallbackCrumbLabel = {
       produits: "Produits",
       livraison: "Livraison",
@@ -1306,14 +1361,11 @@ export default function YorixApp() {
       return {
         title: ft,
         description:
-          page === "contact"
-            ? "Contact Yorix.cm : WhatsApp (+237 696 56 56 54), téléphone, email support@yorix.cm — aide commande, remboursement, escrow, livraison Douala & Yaoundé."
-            : page === "aide"
-              ? "Centre d'aide Yorix.cm : acheter, vendre, livraison Yorix Ride, fidélité points, escrow MoMo & Orange Money — guides et FAQ marketplace Cameroun."
-              : "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
+          fallbackDescription[page] ||
+          "Yorix.cm — marketplace & super-app pour acheter, vendre, se faire livrer et trouver des prestataires au Cameroun. MTN MoMo, Orange Money, escrow.",
         canonicalPath:
           page === "blog" && route.blogSlug ? canon : PAGE_PATH[page] ? L(PAGE_PATH[page]) : canon,
-        jsonLd: [pageBc, orgLd].filter(Boolean),
+        jsonLd: [pageBc, orgLd, page === "produits" ? webLd : null].filter(Boolean),
       };
     }
 
