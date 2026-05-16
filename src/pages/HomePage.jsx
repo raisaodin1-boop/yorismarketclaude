@@ -104,13 +104,6 @@ const TRUST_BADGES = [
   { i: "🇨🇲", t: "100% Cameroun" },
 ];
 
-const SEO_CITY_LINKS = [
-  { city: "Douala", slug: "douala", desc: "Marketplace Douala, livraison Akwa, Bonapriso, Bonamoussadi" },
-  { city: "Yaoundé", slug: "yaounde", desc: "Achat en ligne Yaoundé, livraison Bastos, Mvan, Nlongkak" },
-  { city: "Bafoussam", slug: "bafoussam", desc: "Produits, services et livraison dans l'Ouest Cameroun" },
-  { city: "Kribi", slug: "kribi", desc: "Prestataires, colis et shopping local au Sud Cameroun" },
-];
-
 const SEO_FAQS = [
   {
     q: "Quel site utiliser pour acheter en ligne au Cameroun ?",
@@ -407,35 +400,6 @@ export function HomePage({
                 <div className="yhm3-cat-icon">{l.icon}</div>
                 <div className="yhm3-cat-label">{l.label}</div>
                 <div className="yhm3-cat-desc">{l.desc}</div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="yhm3-section--tinted" aria-labelledby="seo-local-title">
-          <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">SEO local · Cameroun</span>
-            <h2 id="seo-local-title" className="yhm3-h2 yhm3-h2--center">
-              Achat en ligne, services et <em>livraison par ville</em>
-            </h2>
-            <p className="yhm3-lead yhm3-lead--center">
-              Yorix.cm cible les recherches locales à forte intention : marketplace Douala, livraison Yaoundé,
-              prestataires Bafoussam et achat en ligne partout au Cameroun.
-            </p>
-          </div>
-
-          <div className="yhm3-cats-grid">
-            {SEO_CITY_LINKS.map((item) => (
-              <button
-                key={item.slug}
-                type="button"
-                className="yhm3-cat-card"
-                style={{ "--cat-color": "#1a6b3a" }}
-                onClick={() => goPage("seoCity", { citySlug: item.slug, mode: "acheter" })}
-              >
-                <div className="yhm3-cat-icon">📍</div>
-                <div className="yhm3-cat-label">Marketplace {item.city}</div>
-                <div className="yhm3-cat-desc">{item.desc}</div>
               </button>
             ))}
           </div>
