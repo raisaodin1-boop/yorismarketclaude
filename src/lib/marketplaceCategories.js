@@ -78,9 +78,37 @@ function filterCached(rows, opts) {
   return out;
 }
 
+/** Taxonomie statique (repli vendeur / catalogue si Supabase indisponible). */
+export function getStaticCategoryTaxonomy() {
+  const flat = flattenTaxonomyToRows();
+  return { flat, tree: buildCategoryTree(flat) };
+}
+
 export async function fetchCategoryTree(opts = {}) {
   const flat = await fetchMarketplaceCategories(opts);
-  return buildCategoryTree(flat);
+  let tree = buildCategoryTree(flat);
+  if (!tree.length && flat.length) {
+    const fallback = getStaticCategoryTaxonomy();
+    return fallback.tree;
+  }
+  if (!tree.length) {
+    return getStaticCategoryTaxonomy().tree;
+  }
+  return tree;
+}
+
+/** Charge flat + arbre avec repli garanti (jamais de tableau vide). */
+export async function loadCategoryTaxonomy(opts = {}) {
+  const type = opts.type || "product";
+  try {
+    const flat = await fetchMarketplaceCategories({ ...opts, type, bust: opts.bust });
+    let tree = buildCategoryTree(flat);
+    if (tree.length) return { flat, tree, fromFallback: false };
+  } catch (e) {
+    console.warn("loadCategoryTaxonomy:", e?.message || e);
+  }
+  const { flat, tree } = getStaticCategoryTaxonomy();
+  return { flat, tree, fromFallback: true };
 }
 
 export function categoryLabel(row, locale = "fr") {

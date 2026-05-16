@@ -5,7 +5,6 @@ import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLi
 import { uploadSingleImage } from "../utils/helpers";
 import { buildMadeInCameroonPayload } from "../lib/madeInCameroon";
 import { buildProductCategoryPayload } from "../lib/marketplaceCategories";
-import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
 import { CategoryPicker } from "./categories/CategoryPicker";
 import {
   computeStockStatus,
@@ -18,9 +17,17 @@ import "./categories/categoryUi.css";
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
 // ─────────────────────────────────────────────────────────────
-export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
+export function SellerDashboard({
+  user,
+  userData,
+  dashTab,
+  setDashTab,
+  categoryTree = [],
+  categoryFlat = [],
+  categoryLoading = false,
+  onReloadCategories,
+}) {
   const { t } = useTranslation("seller");
-  const { tree: categoryTree, flat: categoryFlat } = useCategoryTaxonomy();
   const [mesProduits, setMesProduits]     = useState([]);
   const [mesCommandes, setMesCommandes]   = useState([]);
   const [wallet, setWallet]               = useState({ solde: 0, total_gagne: 0 });
@@ -171,6 +178,8 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       prix: "",
       stock: "",
       categorie: "",
+      parentSlug: "",
+      subSlug: "",
       ville: "",
       escrow: true,
       madeInChoice: "no",
@@ -186,8 +195,18 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       setTimeout(() => setSaveMsg(null), 3000);
       return;
     }
-    if (!form.parentSlug && !form.categorie?.trim()) {
-      setSaveMsg({ type: "error", text: "Choisissez une catégorie principale et une sous-catégorie." });
+    if (!form.parentSlug) {
+      setSaveMsg({
+        type: "error",
+        text: "Choisissez une catégorie (et une sous-catégorie si proposée).",
+      });
+      setTimeout(() => setSaveMsg(null), 3000);
+      return;
+    }
+    const parentNode = categoryTree.find((n) => n.slug === form.parentSlug);
+    const needsSub = (parentNode?.children?.length ?? 0) > 0;
+    if (needsSub && !form.subSlug) {
+      setSaveMsg({ type: "error", text: "Choisissez une sous-catégorie pour ce rayon." });
       setTimeout(() => setSaveMsg(null), 3000);
       return;
     }
@@ -686,7 +705,9 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
               <CategoryPicker
                 tree={categoryTree}
                 locale="fr"
+                loading={categoryLoading}
                 required
+                onRetry={onReloadCategories}
                 value={{ parentSlug: form.parentSlug, subSlug: form.subSlug, label: form.categorie }}
                 onChange={(v) =>
                   setForm((f) => ({

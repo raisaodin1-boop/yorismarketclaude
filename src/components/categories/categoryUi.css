@@ -276,6 +276,36 @@
   text-align: center;
 }
 
+.cat-picker-loading {
+  margin: 0;
+  padding: 16px;
+  font-size: 0.85rem;
+  color: var(--gray, #6b7280);
+  text-align: center;
+}
+
+.cat-picker-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cat-picker-fallback .form-select {
+  width: 100%;
+}
+
+.cat-picker-retry {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--green, #16a34a);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .cat-picker-empty {
   margin: 0;
   padding: 24px 12px;

@@ -43,6 +43,9 @@ export function YorixPages({ ctx }) {
     filterCat,
     setFilterCat,
     categoryTree,
+    categoryFlat,
+    categoryLoading,
+    reloadCategories,
     categoryFilter,
     goToCategory,
     search,
@@ -458,7 +461,16 @@ export function YorixPages({ ctx }) {
               )}
               {dashTab !== "messages" && userRole === "seller" && (
                 <Suspense fallback={<RouteSuspenseFallback label="Chargement espace vendeur..." />}>
-                  <LazySellerDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab} />
+                  <LazySellerDashboard
+                    user={user}
+                    userData={userData}
+                    dashTab={dashTab}
+                    setDashTab={setDashTab}
+                    categoryTree={categoryTree}
+                    categoryFlat={categoryFlat}
+                    categoryLoading={categoryLoading}
+                    onReloadCategories={reloadCategories}
+                  />
                 </Suspense>
               )}
               {dashTab !== "messages" && userRole === "delivery" && (

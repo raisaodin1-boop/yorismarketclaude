@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CATEGORY_TAXONOMY } from "../../data/categoryTaxonomy";
 import { categoryLabel } from "../../lib/marketplaceCategories";
 import {
   filterCategoryNodes,
@@ -68,7 +69,70 @@ function CategorySection({ title, subtitle, children }) {
 /**
  * Sélecteur 2 étapes : catégorie principale → sous-catégorie (UI premium).
  */
-export function CategoryPicker({ tree = [], locale = "fr", value = {}, onChange, required = true }) {
+function TaxonomySelectFallback({ locale = "fr", value = {}, onChange }) {
+  const isEn = locale === "en";
+  const parentSlug = value.parentSlug || "";
+  const parent = CATEGORY_TAXONOMY.find((c) => c.slug === parentSlug);
+  const subs = parent?.children || [];
+
+  return (
+    <div className="cat-picker-fallback">
+      <select
+        className="form-select"
+        value={parentSlug}
+        onChange={(e) => {
+          const slug = e.target.value;
+          const node = CATEGORY_TAXONOMY.find((c) => c.slug === slug);
+          onChange({
+            parentSlug: slug,
+            subSlug: "",
+            label: node ? (isEn ? node.name_en : node.name_fr) : "",
+          });
+        }}
+      >
+        <option value="">{isEn ? "Choose a category…" : "Choisir une catégorie…"}</option>
+        {CATEGORY_TAXONOMY.map((c) => (
+          <option key={c.slug} value={c.slug}>
+            {c.icon ? `${c.icon} ` : ""}
+            {isEn ? c.name_en : c.name_fr}
+          </option>
+        ))}
+      </select>
+      {subs.length > 0 && (
+        <select
+          className="form-select"
+          style={{ marginTop: 10 }}
+          value={value.subSlug || ""}
+          onChange={(e) => {
+            const sub = subs.find((s) => s.slug === e.target.value);
+            onChange({
+              parentSlug,
+              subSlug: e.target.value,
+              label: sub ? (isEn ? sub.name_en : sub.name_fr) : value.label,
+            });
+          }}
+        >
+          <option value="">{isEn ? "Choose a subcategory…" : "Choisir une sous-catégorie…"}</option>
+          {subs.map((s) => (
+            <option key={s.slug} value={s.slug}>
+              {isEn ? s.name_en : s.name_fr}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+export function CategoryPicker({
+  tree = [],
+  locale = "fr",
+  value = {},
+  onChange,
+  required = true,
+  loading = false,
+  onRetry,
+}) {
   const [step, setStep] = useState(value.parentSlug && !value.subSlug ? 2 : value.subSlug ? 2 : 1);
   const [parentSlug, setParentSlug] = useState(value.parentSlug || "");
   const [subSlug, setSubSlug] = useState(value.subSlug || "");
@@ -132,6 +196,32 @@ export function CategoryPicker({ tree = [], locale = "fr", value = {}, onChange,
   const showPremium = viewTab === "all" || viewTab === "premium";
   const showStandard = viewTab === "all" || viewTab === "marketplace";
   const isEn = locale === "en";
+
+  if (loading) {
+    return (
+      <p className="cat-picker-loading" role="status">
+        {isEn ? "Loading categories…" : "Chargement des catégories…"}
+      </p>
+    );
+  }
+
+  if (!tree.length) {
+    return (
+      <div className="cat-picker cat-picker--fallback">
+        <p className="cat-picker-empty">
+          {isEn
+            ? "Categories could not be loaded. Use the list below:"
+            : "Les catégories n'ont pas pu se charger. Utilisez la liste ci-dessous :"}
+        </p>
+        <TaxonomySelectFallback locale={locale} value={value} onChange={onChange} />
+        {onRetry && (
+          <button type="button" className="cat-picker-retry" onClick={onRetry}>
+            {isEn ? "Retry" : "Réessayer"}
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="cat-picker cat-picker--premium">

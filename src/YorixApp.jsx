@@ -153,7 +153,12 @@ export default function YorixApp() {
   const [search, setSearch]                     = useState("");
   const [filterCat, setFilterCat]               = useState("");
   const [categoryFilter, setCategoryFilter]     = useState(null);
-  const { flat: categoryFlat, tree: categoryTree } = useCategoryTaxonomy({ locale: route.locale });
+  const {
+    flat: categoryFlat,
+    tree: categoryTree,
+    loading: categoryLoading,
+    reload: reloadCategories,
+  } = useCategoryTaxonomy({ locale: route.locale });
 
   useEffect(() => {
     if (page !== "produits") return;
@@ -1468,6 +1473,8 @@ export default function YorixApp() {
     setCategoryFilter,
     categoryTree,
     categoryFlat,
+    categoryLoading,
+    reloadCategories,
     goToCategory,
     search,
     setSearch,
