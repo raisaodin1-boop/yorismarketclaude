@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { ROLE_LABELS, CATS } from "../lib/constants";
 import { LoyaltyAdminTab } from "./LoyaltyAdminTab";
@@ -17,6 +18,7 @@ import {
 // COMPOSANT : ADMIN DASHBOARD — Yorix CM (version pro complète)
 // ─────────────────────────────────────────────────────────────
 export function AdminDashboard({ user, userData, goPage }) {
+  const { t } = useTranslation("admin");
   // ═══════════ ÉTATS PRINCIPAUX ═══════════
   const [adminTab, setAdminTab]     = useState("overview");
   const [loading, setLoading]       = useState(true);
@@ -558,21 +560,24 @@ export function AdminDashboard({ user, userData, goPage }) {
     }
   };
 
-  const NAV = [
-    { id: "overview",     icon: "📊", label: "Vue d'ensemble" },
-    { id: "deliveries",   icon: "🚚", label: "Livraisons",   badge: deliveriesEnAttente || null },
-    { id: "produits",     icon: "📦", label: "Produits",     badge: produits.filter(p => (p.stock || 0) === 0).length || null },
-    { id: "commandes",    icon: "🛍️", label: "Commandes",    badge: commandes.filter(o => o.status === "pending").length || null },
-    { id: "utilisateurs", icon: "👥", label: "Utilisateurs" },
-    { id: "vendeurs",     icon: "🏪", label: "Vendeurs" },
-    { id: "livreurs",     icon: "🏍️", label: "Livreurs" },
-    { id: "prestataires", icon: "👷", label: "Prestataires", badge: prestPending || null },
-    { id: "revenus",      icon: "💰", label: "Revenus" },
-    { id: "commerce_promo", icon: "🎁", label: "Promo livraison" },
-    { id: "notif_center", icon: "📣", label: "Notifs réseau" },
-    { id: "loyalty",      icon: "🌟", label: "Yorix Points" },
-    { id: "alertes",      icon: "🔔", label: "Alertes",      badge: alertes.length || null },
-  ];
+  const NAV = useMemo(
+    () => [
+      { id: "overview", icon: "📊", label: t("nav.overview") },
+      { id: "deliveries", icon: "🚚", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
+      { id: "produits", icon: "📦", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
+      { id: "commandes", icon: "🛍️", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
+      { id: "utilisateurs", icon: "👥", label: t("nav.users") },
+      { id: "vendeurs", icon: "🏪", label: t("nav.sellers") },
+      { id: "livreurs", icon: "🏍️", label: t("nav.couriers") },
+      { id: "prestataires", icon: "👷", label: t("nav.providers"), badge: prestPending || null },
+      { id: "revenus", icon: "💰", label: t("nav.revenue") },
+      { id: "commerce_promo", icon: "🎁", label: t("nav.promoShipping") },
+      { id: "notif_center", icon: "📣", label: t("nav.notifNetwork") },
+      { id: "loyalty", icon: "🌟", label: t("nav.loyalty") },
+      { id: "alertes", icon: "🔔", label: t("nav.alerts"), badge: alertes.length || null },
+    ],
+    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length],
+  );
 
   // ═══════════ HELPERS UI ═══════════
   const StatCard = ({ icon, val, lbl, trend, col, ic, onClick }) => (
@@ -637,7 +642,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 14, color: "var(--green)", flexDirection: "column" }}>
         <div style={{ width: 46, height: 46, border: "4px solid var(--border)", borderTopColor: "var(--green)", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
-        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "1rem" }}>Chargement du Yorix Admin...</div>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "1rem" }}>{t("loading")}</div>
         <div style={{ fontSize: ".8rem", color: "var(--gray)" }}>Récupération des données Supabase</div>
       </div>
     );
@@ -774,7 +779,7 @@ export function AdminDashboard({ user, userData, goPage }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <div style={{ width: 32, height: 32, background: "var(--green)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>⚙️</div>
             <div>
-              <div className="admin-sidebar-logo-txt">Yorix Admin</div>
+              <div className="admin-sidebar-logo-txt">{t("brand")}</div>
               <div className="admin-sidebar-logo-sub">Panneau de contrôle</div>
             </div>
           </div>
@@ -843,7 +848,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         {adminTab === "overview" && (
           <>
             <div className="admin-page-title">
-              📊 Vue d'ensemble
+              📊 {t("overviewTitle")}
               <span style={{ fontSize: ".72rem", color: "var(--gray)", fontWeight: 400, marginLeft: "auto" }}>
                 {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </span>
@@ -994,7 +999,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         {adminTab === "deliveries" && (
           <>
             <div className="admin-page-title">
-              🚚 Gestion des livraisons
+              🚚 {t("sections.deliveries")}
               <span style={{ fontSize: ".75rem", background: "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
                 {adminDeliveries.length}
               </span>
@@ -1177,7 +1182,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         {adminTab === "livreurs" && (
           <>
             <div className="admin-page-title">
-              🏍️ Gestion des livreurs
+              🏍️ {t("sections.couriers")}
               <span style={{ fontSize: ".75rem", background: "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
                 {livreursDispo.length}
               </span>
@@ -1273,7 +1278,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         {adminTab === "produits" && (
           <>
             <div className="admin-page-title">
-              📦 Gestion des produits
+              📦 {t("sections.products")}
               <span style={{ fontSize: ".75rem", background: "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
                 {produitsFiltres.length} / {produits.length}
               </span>
@@ -1410,7 +1415,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         {adminTab === "utilisateurs" && (
           <>
             <div className="admin-page-title">
-              👥 Gestion des utilisateurs
+              👥 {t("sections.users")}
               <span style={{ fontSize: ".75rem", background: "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
                 {usersFiltres.length} / {utilisateurs.length}
               </span>
@@ -1499,7 +1504,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         {adminTab === "vendeurs" && (
           <>
             <div className="admin-page-title">
-              🏪 Gestion des vendeurs
+              🏪 {t("sections.sellers")}
               <span style={{ fontSize: ".75rem", background: "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>{sellers.length}</span>
             </div>
 

@@ -1,4 +1,6 @@
-import { CATS, ROLE_LABELS } from "../../lib/constants";
+import { useTranslation } from "react-i18next";
+import { CATS } from "../../lib/constants";
+import { roleLabel } from "../../i18n/index.js";
 
 export function YorixHeader({
   navCompact,
@@ -31,6 +33,10 @@ export function YorixHeader({
   commerceDeliveryPolicy,
   roleChipClass,
 }) {
+  const { t } = useTranslation("nav");
+  const localeTag = siteLocale === "en" ? "en-FR" : "fr-FR";
+  const freeShip = commerceDeliveryPolicy.freeShippingThresholdXaf.toLocaleString(localeTag);
+
   return (
     <div className={`header-sticky-stack${navCompact ? " header-sticky-stack--compact" : ""}`}>
       <div className="topbar">
@@ -41,11 +47,11 @@ export function YorixHeader({
               <span className="fr" />
               <span className="fy" />
             </span>
-            <span>Cameroun 🇨🇲</span>
+            <span>{t("topbar.cameroon")} 🇨🇲</span>
           </div>
           <span
             role="group"
-            aria-label="Langue du site"
+            aria-label={t("sticky_lang_hint", { ns: "common" })}
             style={{ display: "inline-flex", gap: 6, alignItems: "center", userSelect: "none" }}
           >
             <span
@@ -81,8 +87,8 @@ export function YorixHeader({
           <span>📞 +237 696 56 56 54</span>
         </div>
         <div className="topbar-r">
-          <span onClick={() => goPage("aide")}>🆘 Aide</span>
-          <span onClick={() => goPage("contact")}>📞 Contact</span>
+          <span onClick={() => goPage("aide")}>🆘 {t("topbar.help")}</span>
+          <span onClick={() => goPage("contact")}>📞 {t("topbar.contact")}</span>
           {user ? (
             <span style={{ color: "#b7e4c7" }}>👤 {userData?.nom || user.email?.split("@")[0]}</span>
           ) : (
@@ -92,7 +98,7 @@ export function YorixHeader({
                 setAuthOpen(true);
               }}
             >
-              🔑 Se connecter
+              🔑 {t("topbar.login")}
             </span>
           )}
         </div>
@@ -108,24 +114,24 @@ export function YorixHeader({
 
         <div className="nav-search-wrap">
           <div className="nav-search">
-            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} aria-label="Filtrer par catégorie">
-              <option value="">Tout</option>
+            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} aria-label={t("search.ariaCategory")}>
+              <option value="">{t("search.allCategories")}</option>
               {CATS.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
             <input
-              placeholder="Produit, marque, mot-clé…"
+              placeholder={t("search.placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && goPage("produits")}
               autoComplete="off"
-              aria-label="Rechercher dans le catalogue"
+              aria-label={t("search.ariaSearch")}
               aria-expanded={search.trim().length >= 2}
               aria-haspopup="listbox"
             />
             {search.trim().length >= 2 && (
-              <div className="nav-search-dd" role="listbox" aria-label="Suggestions catalogue">
+              <div className="nav-search-dd" role="listbox" aria-label={t("search.ariaSuggestions")}>
                 {produits
                   .filter(
                     (p) =>
@@ -160,7 +166,7 @@ export function YorixHeader({
                       )}
                       <div style={{ minWidth: 0 }}>
                         <div className="nav-search-dd-t">{p.name_fr}</div>
-                        <div className="nav-search-dd-p">{p.prix?.toLocaleString()} FCFA</div>
+                        <div className="nav-search-dd-p">{p.prix?.toLocaleString(localeTag)} FCFA</div>
                       </div>
                     </button>
                   ))}
@@ -171,29 +177,29 @@ export function YorixHeader({
                 )}
               </div>
             )}
-            <button type="button" onClick={() => goPage("produits")} aria-label="Lancer la recherche catalogue">
+            <button type="button" onClick={() => goPage("produits")} aria-label={t("search.ariaSubmit")}>
               🔍
             </button>
           </div>
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-cta-onboard" onClick={() => setOnboardingOpen(true)} title="Que cherchez-vous ?">
-            🚀 Démarrer
+          <button type="button" className="nav-cta-onboard" onClick={() => setOnboardingOpen(true)} title={t("actions.getStartedTitle")}>
+            🚀 {t("actions.getStarted")}
           </button>
 
-          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? "Mode clair" : "Mode sombre"}>
+          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? t("actions.lightMode") : t("actions.darkMode")}>
             {dark ? "☀️" : "🌙"}
           </button>
 
           {user && (
-            <button type="button" className="icon-btn" onClick={() => setNotifOpen((o) => !o)} title="Notifications">
+            <button type="button" className="icon-btn" onClick={() => setNotifOpen((o) => !o)} title={t("actions.notifications")}>
               🔔
               {unread > 0 && <span className="ibadge">{unread}</span>}
             </button>
           )}
 
-          <button type="button" className="icon-btn" onClick={() => goPage("cart")} title="Mon panier">
+          <button type="button" className="icon-btn" onClick={() => goPage("cart")} title={t("actions.cart")}>
             🛒
             {totalQty > 0 && <span className="ibadge">{totalQty}</span>}
           </button>
@@ -219,17 +225,17 @@ export function YorixHeader({
                   setAuthOpen(true);
                 }}
               >
-                🚀 S'inscrire
+                🚀 {t("actions.register")}
               </button>
             </>
           ) : (
             <>
-              <span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole || "buyer"]}</span>
-              <div className="user-av" onClick={() => goPage("dashboard")} title="Mon espace">
+              <span className={`role-chip ${roleChipClass()}`}>{roleLabel(t, userRole || "buyer")}</span>
+              <div className="user-av" onClick={() => goPage("dashboard")} title={t("actions.mySpace")}>
                 {(userData?.nom || user.email || "?")[0].toUpperCase()}
               </div>
-              <button type="button" className="btn-red" onClick={doLogout} title="Déconnexion">
-                🚪 Déconnexion
+              <button type="button" className="btn-red" onClick={doLogout} title={t("actions.logout")}>
+                🚪 {t("actions.logout")}
               </button>
             </>
           )}
@@ -237,7 +243,7 @@ export function YorixHeader({
       </nav>
 
       <div className="nav-tabs-row" ref={navQuickRef}>
-        <nav className="nav-tabs" aria-label="Rubriques Yorix">
+        <nav className="nav-tabs" aria-label={t("actions.navigation")}>
           {TABS.map((t) => (
             <div
               key={t.p}
@@ -254,23 +260,23 @@ export function YorixHeader({
         </nav>
         <div className="nav-quick-wrap">
           <button type="button" className="nav-quick-btn" aria-expanded={navQuickOpen} onClick={() => setNavQuickOpen((o) => !o)}>
-            ☰ Navigation
+            ☰ {t("actions.navigation")}
           </button>
           {navQuickOpen && (
-            <div className="nav-quick-panel" role="dialog" aria-label="Navigation Yorix">
+            <div className="nav-quick-panel" role="dialog" aria-label={t("actions.navDialog")}>
               <div className="nav-quick-mega-cols">
                 <div className="nav-quick-section">
-                  <h4>Marketplace</h4>
+                  <h4>{t("quickNav.marketplace")}</h4>
                   <div className="nav-quick-links">
                     {[
-                      { ic: "🏠", l: "Accueil", p: "home" },
-                      { ic: "🛍️", l: "Produits & catalogue", p: "produits" },
-                      { ic: "🛒", l: "Panier · paiement sécurisé", p: "cart" },
-                      { ic: "🏷️", l: "Bons plans du moment", p: "bonsPlans" },
-                      { ic: "🚚", l: "Livraison & suivi", p: "livraison" },
+                      { ic: "🏠", l: t("quickNav.home"), p: "home" },
+                      { ic: "🛍️", l: t("quickNav.catalog"), p: "produits" },
+                      { ic: "🛒", l: t("quickNav.cartSecure"), p: "cart" },
+                      { ic: "🏷️", l: t("quickNav.dealsNow"), p: "bonsPlans" },
+                      { ic: "🚚", l: t("quickNav.deliveryTrack"), p: "livraison" },
                     ].map((x) => (
                       <button
-                        key={x.l}
+                        key={x.p}
                         type="button"
                         onClick={() => {
                           setNavQuickOpen(false);
@@ -284,18 +290,18 @@ export function YorixHeader({
                   </div>
                 </div>
                 <div className="nav-quick-section">
-                  <h4>Confiance &amp; croissance</h4>
+                  <h4>{t("quickNav.trust")}</h4>
                   <div className="nav-quick-links">
                     {[
-                      { ic: "🔐", l: "Escrow acheteur", p: "escrow" },
-                      { ic: "🧑‍🔧", l: "Prestataires vérifiés", p: "prestataires" },
-                      { ic: "💼", l: "Yorix Business", p: "business" },
-                      { ic: "🎓", l: "Academy", p: "academy" },
-                      { ic: "📰", l: "Blog & tendances CM", p: "blog" },
-                      { ic: "⭐", l: "Programme fidélité", p: "loyalty" },
+                      { ic: "🔐", l: t("quickNav.escrowBuyer"), p: "escrow" },
+                      { ic: "🧑‍🔧", l: t("quickNav.providersVerified"), p: "prestataires" },
+                      { ic: "💼", l: t("tabs.business"), p: "business" },
+                      { ic: "🎓", l: t("tabs.academy"), p: "academy" },
+                      { ic: "📰", l: t("quickNav.blogTrends"), p: "blog" },
+                      { ic: "⭐", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
                     ].map((x) => (
                       <button
-                        key={x.l}
+                        key={x.p}
                         type="button"
                         onClick={() => {
                           setNavQuickOpen(false);
@@ -309,7 +315,7 @@ export function YorixHeader({
                   </div>
                 </div>
                 <div className="nav-quick-section">
-                  <h4>Support Yorix</h4>
+                  <h4>{t("quickNav.support")}</h4>
                   <div className="nav-quick-links">
                     <button
                       type="button"
@@ -319,7 +325,7 @@ export function YorixHeader({
                       }}
                     >
                       <span className="nav-quick-ico">📞</span>
-                      <span>Contact relation client</span>
+                      <span>{t("quickNav.contactSupport")}</span>
                     </button>
                     <button
                       type="button"
@@ -329,7 +335,7 @@ export function YorixHeader({
                       }}
                     >
                       <span className="nav-quick-ico">🆘</span>
-                      <span>SOS · centre d&apos;aide</span>
+                      <span>{t("quickNav.helpSos")}</span>
                     </button>
                     <button
                       type="button"
@@ -339,7 +345,7 @@ export function YorixHeader({
                       }}
                     >
                       <span className="nav-quick-ico">❓</span>
-                      <span>FAQ marketplace</span>
+                      <span>{t("quickNav.faqMarketplace")}</span>
                     </button>
                   </div>
                 </div>
@@ -350,15 +356,15 @@ export function YorixHeader({
       </div>
 
       <div className="pay-strip">
-        <b style={{ color: "var(--ink)" }}>Paiement :</b>
+        <b style={{ color: "var(--ink)" }}>{t("payStrip.payment")}</b>
         <div className="pay-methods">
-          <span className="pm mtn-b">📱 MTN MoMo</span>
-          <span className="pm ora-b">🔶 Orange Money</span>
-          <span className="pm">💳 Carte</span>
-          <span className="pm">💵 Cash</span>
+          <span className="pm mtn-b">📱 {t("payStrip.momo")}</span>
+          <span className="pm ora-b">🔶 {t("payStrip.orange")}</span>
+          <span className="pm">💳 {t("payStrip.card")}</span>
+          <span className="pm">💵 {t("payStrip.cash")}</span>
         </div>
         <div className="strip-right">
-          <span>🚚 J+1 Douala & Yaoundé</span>
+          <span>🚚 {t("payStrip.deliveryJ1")}</span>
           <span
             role="link"
             tabIndex={0}
@@ -371,9 +377,9 @@ export function YorixHeader({
               textDecoration: "underline",
             }}
           >
-            Livraison offerte dès {commerceDeliveryPolicy.freeShippingThresholdXaf.toLocaleString("fr-FR")} FCFA
+            {t("payStrip.freeShippingFrom", { amount: freeShip })}
           </span>
-          <span>🔐 Escrow sécurisé</span>
+          <span>🔐 {t("payStrip.escrowSecure")}</span>
           {user && <span style={{ color: "var(--gold)" }}>👤 {userData?.nom || user.email}</span>}
         </div>
       </div>

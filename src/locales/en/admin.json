@@ -1,0 +1,42 @@
+{
+  "loading": "Loading Yorix Admin...",
+  "brand": "Yorix Admin",
+  "overviewTitle": "Overview",
+  "nav": {
+    "overview": "Overview",
+    "deliveries": "Deliveries",
+    "products": "Products",
+    "orders": "Orders",
+    "users": "Users",
+    "sellers": "Sellers",
+    "couriers": "Couriers",
+    "providers": "Providers",
+    "revenue": "Revenue",
+    "promoShipping": "Shipping promo",
+    "notifNetwork": "Network notifications",
+    "loyalty": "Yorix Points",
+    "alerts": "Alerts"
+  },
+  "stats": {
+    "usersTotal": "Total users",
+    "usersTrend": "{{buyers}} buyers · {{sellers}} sellers",
+    "couriers": "Registered couriers",
+    "couriersTrend": "{{pending}} awaiting assignment",
+    "products": "Products",
+    "productsTrend": "{{active}} active · {{out}} out of stock",
+    "deliveries": "Deliveries",
+    "deliveriesTrend": "{{delivered}} delivered",
+    "orders": "Orders",
+    "ordersTrend": "{{pending}} pending · {{delivered}} delivered",
+    "commission": "Yorix commission",
+    "commissionTrend": "5% per transaction"
+  },
+  "sections": {
+    "deliveries": "Delivery management",
+    "couriers": "Courier management",
+    "products": "Product management",
+    "orders": "Order management",
+    "users": "User management",
+    "sellers": "Seller management"
+  }
+}

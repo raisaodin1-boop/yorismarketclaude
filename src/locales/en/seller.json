@@ -1,0 +1,64 @@
+{
+  "loading": "Loading...",
+  "greeting": "Hello {{name}} 👋",
+  "stats": {
+    "published": "Published products",
+    "activeOrders": "Active orders",
+    "delivered": "Delivered",
+    "netRevenue": "Net revenue"
+  },
+  "products": {
+    "title": "My products",
+    "titleCount": "My products ({{count}})",
+    "recent": "Recent products",
+    "seeAll": "See all →",
+    "empty": "No products published",
+    "addFirst": "+ Add my first product",
+    "add": "+ Add",
+    "active": "Active",
+    "inactive": "Inactive",
+    "addTitle": "Add a product",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteTitle": "Delete this product?",
+    "deleteBody": "\"{{name}}\" will be permanently removed from the platform.",
+    "deleting": "Deleting...",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "saveErrorNamePrice": "Name and price are required.",
+    "saved": "Product saved ✓",
+    "updated": "Product updated ✓",
+    "deleted": "Product deleted"
+  },
+  "orders": {
+    "title": "My orders",
+    "titleCount": "My orders ({{count}})",
+    "recent": "Recent orders",
+    "empty": "No orders yet",
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  },
+  "wallet": {
+    "title": "My wallet",
+    "balance": "Available balance",
+    "totalEarned": "Total earned"
+  },
+  "form": {
+    "nameFr": "Name (FR)",
+    "nameEn": "Name (EN)",
+    "description": "Description",
+    "price": "Price (XAF)",
+    "stock": "Stock",
+    "category": "Category",
+    "city": "City",
+    "escrow": "Enable Yorix escrow",
+    "photos": "Product photos",
+    "publish": "Publish product",
+    "publishing": "Publishing…"
+  }
+}

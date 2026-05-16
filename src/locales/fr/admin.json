@@ -1,0 +1,42 @@
+{
+  "loading": "Chargement du Yorix Admin...",
+  "brand": "Yorix Admin",
+  "overviewTitle": "Vue d'ensemble",
+  "nav": {
+    "overview": "Vue d'ensemble",
+    "deliveries": "Livraisons",
+    "products": "Produits",
+    "orders": "Commandes",
+    "users": "Utilisateurs",
+    "sellers": "Vendeurs",
+    "couriers": "Livreurs",
+    "providers": "Prestataires",
+    "revenue": "Revenus",
+    "promoShipping": "Promo livraison",
+    "notifNetwork": "Notifs réseau",
+    "loyalty": "Yorix Points",
+    "alerts": "Alertes"
+  },
+  "stats": {
+    "usersTotal": "Utilisateurs total",
+    "usersTrend": "{{buyers}} acheteurs · {{sellers}} vendeurs",
+    "couriers": "Livreurs inscrits",
+    "couriersTrend": "{{pending}} en attente d'assignation",
+    "products": "Produits",
+    "productsTrend": "{{active}} actifs · {{out}} en rupture",
+    "deliveries": "Livraisons",
+    "deliveriesTrend": "{{delivered}} livrées",
+    "orders": "Commandes",
+    "ordersTrend": "{{pending}} en attente · {{delivered}} livrées",
+    "commission": "Commissions Yorix",
+    "commissionTrend": "5% par transaction"
+  },
+  "sections": {
+    "deliveries": "Gestion des livraisons",
+    "couriers": "Gestion des livreurs",
+    "products": "Gestion des produits",
+    "orders": "Gestion des commandes",
+    "users": "Gestion des utilisateurs",
+    "sellers": "Gestion des vendeurs"
+  }
+}

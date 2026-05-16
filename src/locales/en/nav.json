@@ -1,0 +1,97 @@
+{
+  "topbar": {
+    "help": "Help",
+    "contact": "Contact",
+    "login": "Sign in",
+    "cameroon": "Cameroon"
+  },
+  "search": {
+    "allCategories": "All",
+    "placeholder": "Product, brand, keyword…",
+    "ariaCategory": "Filter by category",
+    "ariaSearch": "Search the catalog",
+    "ariaSuggestions": "Catalog suggestions",
+    "ariaSubmit": "Run catalog search",
+    "noResults": "No results for \"{{query}}\" — press Enter to open the filtered catalog."
+  },
+  "actions": {
+    "getStarted": "Get started",
+    "getStartedTitle": "What are you looking for?",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "notifications": "Notifications",
+    "cart": "My cart",
+    "loginShort": "Sign in",
+    "register": "Sign up",
+    "mySpace": "My account",
+    "logout": "Log out",
+    "navigation": "Navigation",
+    "navDialog": "Yorix navigation"
+  },
+  "tabs": {
+    "home": "Home",
+    "products": "Products",
+    "deals": "Deals",
+    "delivery": "Delivery",
+    "escrow": "Escrow",
+    "providers": "Providers",
+    "business": "Business",
+    "academy": "Academy",
+    "blog": "Blog",
+    "loyalty": "Loyalty",
+    "contact": "Contact",
+    "help": "Help",
+    "admin": "Admin"
+  },
+  "quickNav": {
+    "marketplace": "Marketplace",
+    "trust": "Trust & growth",
+    "support": "Yorix support",
+    "home": "Home",
+    "catalog": "Products & catalog",
+    "cartSecure": "Cart · secure checkout",
+    "dealsNow": "Current deals",
+    "deliveryTrack": "Delivery & tracking",
+    "escrowBuyer": "Buyer escrow",
+    "providersVerified": "Verified providers",
+    "blogTrends": "Blog & CM trends",
+    "loyaltyProgram": "Loyalty program",
+    "contactSupport": "Customer support",
+    "helpSos": "SOS · help center",
+    "faqMarketplace": "Marketplace FAQ"
+  },
+  "payStrip": {
+    "payment": "Payment:",
+    "momo": "MTN MoMo",
+    "orange": "Orange Money",
+    "card": "Card",
+    "cash": "Cash",
+    "deliveryJ1": "Next-day Douala & Yaoundé",
+    "freeShippingFrom": "Free shipping from {{amount}} XAF",
+    "escrowSecure": "Secure escrow"
+  },
+  "roles": {
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "delivery": "Courier",
+    "provider": "Provider",
+    "admin": "Administrator"
+  },
+  "dashNav": {
+    "overview": "Overview",
+    "myProducts": "My products",
+    "addProduct": "Add product",
+    "orders": "Orders",
+    "wallet": "Wallet",
+    "available": "Available",
+    "inProgress": "In progress",
+    "history": "History",
+    "earnings": "Earnings",
+    "requests": "Requests",
+    "myServices": "My services",
+    "addService": "Add service",
+    "myOrders": "My orders",
+    "favorites": "Favorites",
+    "loyalty": "Loyalty"
+  }
+}

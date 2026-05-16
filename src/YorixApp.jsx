@@ -15,6 +15,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   parsePathname,
@@ -851,22 +852,65 @@ export default function YorixApp() {
   const roleChipClass = () =>
     ({ buyer:"chip-buyer", seller:"chip-seller", delivery:"chip-delivery", provider:"chip-provider", admin:"chip-admin" }[userRole] || "chip-buyer");
 
-  const getDashNav = () => {
-    if (userRole === "seller")   return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🏪",id:"mesProduits",label:"Mes produits"},{icon:"➕",id:"ajouterProduit",label:"Ajouter produit"},{icon:"📦",id:"commandes",label:"Commandes"},{icon:"💰",id:"wallet",label:"Wallet"}];
-    if (userRole === "delivery") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"🟡",id:"disponibles",label:"Disponibles"},{icon:"🚚",id:"enCours",label:"En cours"},{icon:"✅",id:"historique",label:"Historique"},{icon:"💰",id:"wallet",label:"Gains"}];
-    if (userRole === "provider") return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📋",id:"demandes",label:"Demandes"},{icon:"🛠️",id:"mesServices",label:"Mes services"},{icon:"+",id:"ajouterService",label:"Ajouter service"}];
-    return [{icon:"📊",id:"overview",label:"Vue d'ensemble"},{icon:"📦",id:"commandes",label:"Mes commandes"},{icon:"❤️",id:"favoris",label:"Favoris"},{icon:"🌟",id:"loyalty",label:"Fidélité"}];
-  };
+  const { t: tNav } = useTranslation("nav");
 
-  const TABS = [
-    {l:"🏠 Accueil",p:"home"},{l:"🛍️ Produits",p:"produits"},{l:"🎁 Bons plans",p:"bonsPlans"},{l:"🚚 Livraison",p:"livraison"},
-    {l:"🔐 Escrow",p:"escrow"},{l:"👷 Prestataires",p:"prestataires"},{l:"💼 Business",p:"business"},
-    {l:"🎓 Academy",p:"academy"},{l:"📰 Blog",p:"blog"},{l:"🌟 Fidélité",p:"loyalty"},
-    {l:"📞 Contact",p:"contact"},{l:"🆘 Aide",p:"aide"},
-    ...(user && (userData?.role==="admin" || userData?.role==="superadmin")
-      ? [{l:"⚙️ Admin",p:"admin"}]
-      : []),
-  ];
+  const getDashNav = useCallback(() => {
+    const dn = (icon, id, key) => ({ icon, id, label: tNav(`dashNav.${key}`) });
+    if (userRole === "seller") {
+      return [
+        dn("📊", "overview", "overview"),
+        dn("🏪", "mesProduits", "myProducts"),
+        dn("➕", "ajouterProduit", "addProduct"),
+        dn("📦", "commandes", "orders"),
+        dn("💰", "wallet", "wallet"),
+      ];
+    }
+    if (userRole === "delivery") {
+      return [
+        dn("📊", "overview", "overview"),
+        dn("🟡", "disponibles", "available"),
+        dn("🚚", "enCours", "inProgress"),
+        dn("✅", "historique", "history"),
+        dn("💰", "wallet", "earnings"),
+      ];
+    }
+    if (userRole === "provider") {
+      return [
+        dn("📊", "overview", "overview"),
+        dn("📋", "demandes", "requests"),
+        dn("🛠️", "mesServices", "myServices"),
+        dn("+", "ajouterService", "addService"),
+      ];
+    }
+    return [
+      dn("📊", "overview", "overview"),
+      dn("📦", "commandes", "myOrders"),
+      dn("❤️", "favoris", "favorites"),
+      dn("🌟", "loyalty", "loyalty"),
+    ];
+  }, [userRole, tNav]);
+
+  const TABS = useMemo(() => {
+    const tab = (icon, key, p) => ({ l: `${icon} ${tNav(`tabs.${key}`)}`, p });
+    const base = [
+      tab("🏠", "home", "home"),
+      tab("🛍️", "products", "produits"),
+      tab("🎁", "deals", "bonsPlans"),
+      tab("🚚", "delivery", "livraison"),
+      tab("🔐", "escrow", "escrow"),
+      tab("👷", "providers", "prestataires"),
+      tab("💼", "business", "business"),
+      tab("🎓", "academy", "academy"),
+      tab("📰", "blog", "blog"),
+      tab("🌟", "loyalty", "loyalty"),
+      tab("📞", "contact", "contact"),
+      tab("🆘", "help", "aide"),
+    ];
+    if (user && (userData?.role === "admin" || userData?.role === "superadmin")) {
+      base.push(tab("⚙️", "admin", "admin"));
+    }
+    return base;
+  }, [tNav, user, userData?.role]);
 
   const seoBundle = useMemo(() => {
     const canon = route.canonicalPath || location.pathname;

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLimits";
 import { CATS as PRODUCT_CATS } from "../lib/constants";
@@ -8,6 +9,7 @@ import { uploadSingleImage } from "../utils/helpers";
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
 // ─────────────────────────────────────────────────────────────
 export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
+  const { t } = useTranslation("seller");
   const [mesProduits, setMesProduits]     = useState([]);
   const [mesCommandes, setMesCommandes]   = useState([]);
   const [wallet, setWallet]               = useState({ solde: 0, total_gagne: 0 });
@@ -37,7 +39,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   const CATS = [...PRODUCT_CATS, "Autre"];
   const VILLES = ["Yaoundé", "Douala", "Bafoussam", "Bamenda", "Garoua", "Maroua", "Ngaoundéré", "Bertoua", "Ebolowa", "Kribi"];
 
-  const STATUS_LABELS = { pending: "En attente", paid: "Payée", shipped: "Expédiée", delivered: "Livrée", cancelled: "Annulée" };
+  const statusLabel = (s) => t(`orders.status.${s}`, { defaultValue: s });
   const STATUS_COLORS = { pending: "#888", paid: "#2563eb", shipped: "#d97706", delivered: "#16a34a", cancelled: "#dc2626" };
 
   // ── CHARGEMENT DONNÉES ──
@@ -83,7 +85,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
   const saveNewProduct = async () => {
     if (!form.name_fr.trim() || !form.prix || isNaN(Number(form.prix))) {
-      setSaveMsg({ type: "error", text: "Nom et prix sont obligatoires." });
+      setSaveMsg({ type: "error", text: t("products.saveErrorNamePrice") });
       setTimeout(() => setSaveMsg(null), 3000);
       return;
     }
@@ -122,7 +124,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       if (error) throw error;
 
       setProgress(100);
-      setSaveMsg({ type: "success", text: "✅ Produit publié ! Il est visible sur la plateforme." });
+      setSaveMsg({ type: "success", text: t("products.saved") });
       resetForm();
       setTimeout(() => { setSaveMsg(null); setProgress(0); }, 3000);
       loadAll();
@@ -219,7 +221,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
   if (loadingData) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 60, gap: 12, color: "var(--green)" }}>
-        <div className="spinner" style={{ width: 30, height: 30, borderWidth: 3 }} /> Chargement...
+        <div className="spinner" style={{ width: 30, height: 30, borderWidth: 3 }} /> {t("loading")}
       </div>
     );
   }
@@ -231,18 +233,18 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "var(--surface)", borderRadius: 14, padding: 28, maxWidth: 340, width: "90%", textAlign: "center", border: "1px solid var(--border)" }}>
             <div style={{ fontSize: "2rem", marginBottom: 10 }}>🗑️</div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 8 }}>Supprimer ce produit ?</div>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 8 }}>{t("products.deleteTitle")}</div>
             <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 20, lineHeight: 1.6 }}>
-              "<strong>{pendingDelete.nom}</strong>" sera définitivement supprimé de la plateforme.
+              {t("products.deleteBody", { name: pendingDelete.nom })}
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button style={S.btnGhost} onClick={() => setPendingDelete(null)}>Annuler</button>
+              <button style={S.btnGhost} onClick={() => setPendingDelete(null)}>{t("products.cancel")}</button>
               <button
                 disabled={loadingAction}
                 style={{ ...S.btnRed, background: "#ce1126", color: "#fff", border: "none", padding: "8px 20px" }}
                 onClick={() => deleteProduct(pendingDelete.id)}
               >
-                {loadingAction ? "Suppression..." : "Supprimer"}
+                {loadingAction ? t("products.deleting") : t("products.delete")}
               </button>
             </div>
           </div>
@@ -255,9 +257,9 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
           <div style={{ background: "var(--surface)", borderRadius: 14, padding: 24, maxWidth: 320, width: "90%", textAlign: "center", border: "1px solid var(--border)" }}>
             <p style={{ marginBottom: 18, fontSize: ".85rem", lineHeight: 1.6 }}>{pendingConfirm.label}</p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              <button style={S.btnGhost} onClick={() => setPendingConfirm(null)}>Annuler</button>
+              <button style={S.btnGhost} onClick={() => setPendingConfirm(null)}>{t("products.cancel")}</button>
               <button style={S.btnGreen} onClick={() => updateOrderStatus(pendingConfirm.id, pendingConfirm.field, pendingConfirm.value)}>
-                Confirmer
+                {t("products.confirm")}
               </button>
             </div>
           </div>
@@ -267,14 +269,14 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       {/* ════ OVERVIEW ════ */}
       {dashTab === "overview" && (
         <>
-          <div className="dash-page-title">Bonjour {userData?.nom} 👋</div>
+          <div className="dash-page-title">{t("greeting", { name: userData?.nom || "" })}</div>
 
           <div className="dash-stats">
             {[
-              { icon: "📦", val: mesProduits.length,                                   lbl: "Produits publiés" },
-              { icon: "🛒", val: commandesActives,                                      lbl: "Commandes actives" },
-              { icon: "✅", val: mesCommandes.filter(c => c.status === "delivered").length, lbl: "Livrées" },
-              { icon: "💰", val: `${revenusTotal.toLocaleString("fr-FR")} FCFA`,        lbl: "Revenus nets" },
+              { icon: "📦", val: mesProduits.length, lbl: t("stats.published") },
+              { icon: "🛒", val: commandesActives, lbl: t("stats.activeOrders") },
+              { icon: "✅", val: mesCommandes.filter(c => c.status === "delivered").length, lbl: t("stats.delivered") },
+              { icon: "💰", val: `${revenusTotal.toLocaleString("fr-FR")} FCFA`, lbl: t("stats.netRevenue") },
             ].map(s => (
               <div key={s.lbl} className="dstat">
                 <div className="dstat-icon">{s.icon}</div>
@@ -286,14 +288,14 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
           <div style={S.card}>
             <div style={S.row}>
-              <div style={S.secTitle}>📦 Mes derniers produits</div>
-              <button style={S.btnGhost} onClick={() => setDashTab("mesProduits")}>Voir tout →</button>
+              <div style={S.secTitle}>📦 {t("products.recent")}</div>
+              <button style={S.btnGhost} onClick={() => setDashTab("mesProduits")}>{t("products.seeAll")}</button>
             </div>
             {mesProduits.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">📦</div>
-                <p>Aucun produit publié</p>
-                <button style={{ ...S.btnGreen, marginTop: 12 }} onClick={() => setDashTab("ajouterProduit")}>+ Ajouter mon premier produit</button>
+                <p>{t("products.empty")}</p>
+                <button style={{ ...S.btnGreen, marginTop: 12 }} onClick={() => setDashTab("ajouterProduit")}>+ {t("products.addFirst")}</button>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -310,7 +312,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     </div>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem", color: "var(--green)", flexShrink: 0 }}>{p.prix?.toLocaleString()} F</div>
                     <span style={{ fontSize: ".65rem", padding: "2px 8px", borderRadius: 20, background: p.actif ? "var(--green-pale)" : "var(--surface2)", color: p.actif ? "var(--green)" : "var(--gray)", border: `1px solid ${p.actif ? "var(--green-light)" : "var(--border)"}`, flexShrink: 0 }}>
-                      {p.actif ? "Actif" : "Inactif"}
+                      {p.actif ? t("products.active") : t("products.inactive")}
                     </span>
                   </div>
                 ))}
@@ -320,11 +322,11 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
           <div style={S.card}>
             <div style={S.row}>
-              <div style={S.secTitle}>🛒 Commandes récentes</div>
-              <button style={S.btnGhost} onClick={() => setDashTab("commandes")}>Voir tout →</button>
+              <div style={S.secTitle}>🛒 {t("orders.recent")}</div>
+              <button style={S.btnGhost} onClick={() => setDashTab("commandes")}>{t("products.seeAll")}</button>
             </div>
             {mesCommandes.length === 0 ? (
-              <div className="empty-state"><div className="empty-icon">🛒</div><p>Aucune commande</p></div>
+              <div className="empty-state"><div className="empty-icon">🛒</div><p>{t("orders.empty")}</p></div>
             ) : (
               mesCommandes.slice(0, 3).map(c => (
                 <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
@@ -333,7 +335,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     <div style={{ fontSize: ".7rem", color: "var(--gray)", marginTop: 2 }}>{(c.montant_vendeur || 0).toLocaleString()} FCFA</div>
                   </div>
                   <span style={{ fontSize: ".68rem", padding: "2px 10px", borderRadius: 20, background: (STATUS_COLORS[c.status] || "#888") + "22", color: STATUS_COLORS[c.status] || "#888", fontWeight: 600 }}>
-                    {STATUS_LABELS[c.status] || c.status}
+                    {statusLabel(c.status)}
                   </span>
                 </div>
               ))
@@ -346,16 +348,16 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       {dashTab === "mesProduits" && (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <div className="dash-page-title" style={{ marginBottom: 0 }}>📦 Mes produits ({mesProduits.length})</div>
-            <button style={S.btnGreen} onClick={() => setDashTab("ajouterProduit")}>+ Ajouter</button>
+            <div className="dash-page-title" style={{ marginBottom: 0 }}>📦 {t("products.titleCount", { count: mesProduits.length })}</div>
+            <button style={S.btnGreen} onClick={() => setDashTab("ajouterProduit")}>+ {t("products.add")}</button>
           </div>
 
           {mesProduits.length === 0 ? (
             <div style={S.card}>
               <div className="empty-state">
                 <div className="empty-icon">📦</div>
-                <p>Aucun produit publié</p>
-                <button style={{ ...S.btnGreen, marginTop: 12 }} onClick={() => setDashTab("ajouterProduit")}>+ Ajouter mon premier produit</button>
+                <p>{t("products.empty")}</p>
+                <button style={{ ...S.btnGreen, marginTop: 12 }} onClick={() => setDashTab("ajouterProduit")}>+ {t("products.addFirst")}</button>
               </div>
             </div>
           ) : (
@@ -363,7 +365,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
               <div key={p.id} style={{ ...S.card, opacity: p.actif ? 1 : 0.65, transition: "opacity .2s" }}>
                 {editingId === p.id ? (
                   <>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".9rem", color: "var(--green)", marginBottom: 14 }}>✏️ Modifier le produit</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".9rem", color: "var(--green)", marginBottom: 14 }}>✏️ {t("products.edit")}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       <div>
                         <label style={S.label}>Nom (FR) *</label>
@@ -400,7 +402,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                       <button style={S.btnGreen} disabled={loadingAction} onClick={() => saveEdit(p.id)}>
                         {loadingAction ? "Sauvegarde..." : "✅ Sauvegarder"}
                       </button>
-                      <button style={S.btnGhost} onClick={cancelEdit}>Annuler</button>
+                      <button style={S.btnGhost} onClick={cancelEdit}>{t("products.cancel")}</button>
                     </div>
                   </>
                 ) : (
@@ -432,12 +434,12 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                      <button style={S.btnGreen} onClick={() => startEdit(p)}>✏️ Modifier</button>
+                      <button style={S.btnGreen} onClick={() => startEdit(p)}>✏️ {t("products.edit")}</button>
                       <button style={S.btnGhost} disabled={loadingAction} onClick={() => toggleActif(p.id, p.actif)}>
                         {p.actif ? "⛔ Désactiver" : "✅ Activer"}
                       </button>
                       <button style={S.btnRed} onClick={() => setPendingDelete({ id: p.id, nom: p.name_fr })}>
-                        🗑️ Supprimer
+                        🗑️ {t("products.delete")}
                       </button>
                     </div>
                   </>
@@ -557,7 +559,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                 Publication... ({progress}%)
               </>
             ) : (
-              "✅ Publier le produit"
+              t("form.publish")
             )}
           </button>
         </div>
@@ -566,7 +568,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       {/* ════ COMMANDES ════ */}
       {dashTab === "commandes" && (
         <>
-          <div className="dash-page-title">🛒 Mes commandes ({mesCommandes.length})</div>
+          <div className="dash-page-title">🛒 {t("orders.titleCount", { count: mesCommandes.length })}</div>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
             {[
@@ -583,7 +585,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
 
           {mesCommandes.length === 0 ? (
             <div style={S.card}>
-              <div className="empty-state"><div className="empty-icon">🛒</div><p>Aucune commande pour l'instant</p></div>
+              <div className="empty-state"><div className="empty-icon">🛒</div><p>{t("orders.empty")}</p></div>
             </div>
           ) : (
             mesCommandes.map(c => (
@@ -596,7 +598,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
                     </div>
                   </div>
                   <span style={{ fontSize: ".68rem", padding: "3px 10px", borderRadius: 20, background: (STATUS_COLORS[c.status] || "#888") + "22", color: STATUS_COLORS[c.status] || "#888", fontWeight: 700 }}>
-                    {STATUS_LABELS[c.status] || c.status}
+                    {statusLabel(c.status)}
                   </span>
                 </div>
 

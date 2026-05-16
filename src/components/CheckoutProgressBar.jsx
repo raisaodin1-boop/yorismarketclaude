@@ -1,17 +1,13 @@
-const STEPS = [
-  { label: "Panier", labelShort: "Panier", icon: "🛒" },
-  { label: "Adresse", labelShort: "Adresse", icon: "📍" },
-  { label: "Paiement", labelShort: "Paiement", icon: "💳" },
-  { label: "Confirmation", labelShort: "OK", icon: "✓" },
-];
+import { useTranslation } from "react-i18next";
+
+const STEP_KEYS = ["cart", "address", "payment", "confirm"];
+const STEP_ICONS = ["🛒", "📍", "💳", "✓"];
 
 /**
  * Barre de progression type marketplace (Panier → Adresse → Paiement → Confirmation).
- * @param {number} activeIndex — 0..3 (étape courante)
- * @param {(index: number) => void} [onNavigate] — clic sur une étape déjà passée (retour)
- * @param {boolean} [navigationDisabled]
  */
 export function CheckoutProgressBar({ activeIndex = 0, onNavigate, navigationDisabled = false }) {
+  const { t } = useTranslation("checkout");
   const safeIndex = Math.min(3, Math.max(0, activeIndex));
 
   const stepClickable = (i) => {
@@ -23,16 +19,17 @@ export function CheckoutProgressBar({ activeIndex = 0, onNavigate, navigationDis
   };
 
   return (
-    <nav className="checkout-progress" aria-label="Étapes de commande">
+    <nav className="checkout-progress" aria-label={t("steps.aria")}>
       <ol className="checkout-progress-list">
-        {STEPS.map((step, i) => {
+        {STEP_KEYS.map((key, i) => {
+          const label = t(`steps.${key}`);
           const done = i < safeIndex;
           const current = i === safeIndex;
           const clickable = stepClickable(i);
           const railActive = i > 0 && i <= safeIndex;
 
           return (
-            <li key={step.label} className="checkout-progress-item" aria-current={current ? "step" : undefined}>
+            <li key={key} className="checkout-progress-item" aria-current={current ? "step" : undefined}>
               <div className="checkout-progress-cluster">
                 {i > 0 && (
                   <span
@@ -47,14 +44,14 @@ export function CheckoutProgressBar({ activeIndex = 0, onNavigate, navigationDis
                   } ${!done && !current ? "checkout-progress-node--todo" : ""}`}
                   disabled={!clickable}
                   onClick={() => clickable && onNavigate(i)}
-                  title={clickable ? `Retour : ${step.label}` : undefined}
+                  title={clickable ? t("steps.backTo", { step: label }) : undefined}
                 >
                   <span className="checkout-progress-node-inner" aria-hidden>
-                    {done ? "✓" : step.icon}
+                    {done ? "✓" : STEP_ICONS[i]}
                   </span>
                   <span className="checkout-progress-label">
-                    <span className="checkout-progress-label-full">{step.label}</span>
-                    <span className="checkout-progress-label-compact">{step.labelShort}</span>
+                    <span className="checkout-progress-label-full">{label}</span>
+                    <span className="checkout-progress-label-compact">{label}</span>
                   </span>
                 </button>
               </div>
