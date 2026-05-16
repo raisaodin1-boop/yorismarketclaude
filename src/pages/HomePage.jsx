@@ -182,18 +182,6 @@ export function HomePage({
     <>
       <style>{homePremiumCss}</style>
 
-      <div className="yx-promo-banner" role="region" aria-label="Offre limitée">
-        <span className="yx-promo-icon" aria-hidden>
-          🎁
-        </span>
-        <span className="yx-promo-text">
-          Livraison <strong>OFFERTE</strong> dès {th.toLocaleString("fr-FR")} FCFA · stocks limités
-        </span>
-        <button type="button" className="yx-promo-cta" onClick={() => goPage("bonsPlans")}>
-          J&apos;en profite
-        </button>
-      </div>
-
       <div className="home-premium yorix-home-v3 anim">
         <div className="yhm3-marquee" role="region" aria-label="Avantages Yorix">
           <div className="yhm3-marquee-track">
