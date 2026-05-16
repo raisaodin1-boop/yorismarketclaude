@@ -10,6 +10,8 @@ const from = vi.fn();
 const getUserProfile = vi.fn();
 const onProfileLoaded = vi.fn();
 
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 vi.mock("../../lib/supabase.js", () => ({
   supabase: {
     auth: {
