@@ -1347,8 +1347,8 @@ export function AdminDashboard({ user, userData, goPage }) {
                       <td style={{ fontSize: ".65rem" }}>
                         {p.made_in_cameroon_status === "verified" ? (
                           <span title="Vérifié admin">🇨🇲✔</span>
-                        ) : p.is_made_in_cameroon || p.local ? (
-                          <span title={p.made_in_cameroon_status || "local"}>🇨🇲</span>
+                        ) : p.is_made_in_cameroon && ["declared", "auto"].includes(p.made_in_cameroon_status) ? (
+                          <span title={p.made_in_cameroon_status || "declared"}>🇨🇲</span>
                         ) : (
                           "—"
                         )}

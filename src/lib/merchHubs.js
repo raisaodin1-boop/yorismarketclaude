@@ -1,3 +1,5 @@
+import { productMatchesMadeInFilter } from "./madeInCameroon.js";
+
 /**
  * Hubs merchandising premium — routes SEO + filtres catalogue.
  */
@@ -171,12 +173,7 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
   const list = Array.isArray(products) ? products : [];
   switch (filterKey) {
     case "made_in_cameroon":
-      return list.filter(
-        (p) =>
-          p.is_made_in_cameroon === true ||
-          p.local === true ||
-          ["declared", "verified", "auto"].includes(String(p.made_in_cameroon_status || "")),
-      );
+      return list.filter(productMatchesMadeInFilter);
     case "local_brand":
       return list.filter((p) => Boolean(p.local_brand_name?.trim?.()));
     case "top_products":

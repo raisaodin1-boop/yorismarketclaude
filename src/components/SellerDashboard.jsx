@@ -28,7 +28,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
     categorie: "",
     ville: "",
     escrow: true,
-    madeInChoice: "yes",
+    madeInChoice: "no",
     localBrandName: "",
     countryOfOrigin: "CM",
   });
@@ -101,7 +101,7 @@ export function SellerDashboard({ user, userData, dashTab, setDashTab }) {
       categorie: "",
       ville: "",
       escrow: true,
-      madeInChoice: "yes",
+      madeInChoice: "no",
       localBrandName: "",
       countryOfOrigin: "CM",
     });

@@ -1,5 +1,7 @@
 /**
- * Made in Cameroun 🇨🇲 — logique hybride (vendeur + auto + admin).
+ * Made in Cameroun 🇨🇲 — logique hybride (vendeur + admin).
+ * Le badge UI ne s'affiche que sur déclaration explicite ou validation admin —
+ * pas sur la seule ville CM ni le flag legacy `local`.
  */
 
 export const MIC_STATUS = {
@@ -10,77 +12,38 @@ export const MIC_STATUS = {
   REJECTED: "rejected",
 };
 
-const CAMEROON_CITIES = new Set([
-  "douala",
-  "yaoundé",
-  "yaounde",
-  "bafoussam",
-  "bamenda",
-  "garoua",
-  "maroua",
-  "ngaoundéré",
-  "ngaoundere",
-  "bertoua",
-  "ebolowa",
-  "kribi",
-  "buea",
+/** Statuts qui autorisent l'affichage du badge sur cartes / fiches */
+const BADGE_VISIBLE_STATUSES = new Set([
+  MIC_STATUS.DECLARED,
+  MIC_STATUS.VERIFIED,
+  MIC_STATUS.AUTO,
 ]);
 
-const LOCAL_CATEGORY_HINTS = [
-  "agricole",
-  "agriculture",
-  "artisan",
-  "mode",
-  "cosmét",
-  "cosmet",
-  "gastronom",
-  "local",
-  "cameroun",
-  "made in",
-];
-
 /**
- * Détection automatique (niveau 2) — ne remplace pas un refus admin.
- * @param {Record<string, unknown>} product
- * @param {Record<string, unknown>|null} [seller]
+ * Suggestion vendeur uniquement (ne force pas le badge catalogue).
+ * Volontairement strict : pas de badge auto pour « vendeur à Douala » seul.
  */
-export function detectMadeInCameroonAuto(product, seller = null) {
+export function detectMadeInCameroonAuto(product) {
   if (product?.made_in_cameroon_status === MIC_STATUS.REJECTED) return false;
-
-  const origin = String(product?.country_of_origin || seller?.pays || "CM")
-    .trim()
-    .toLowerCase();
-  if (origin && !["cm", "cameroun", "cameroon", "cmr"].includes(origin)) {
-    return false;
-  }
-
-  const ville = String(product?.ville || seller?.ville || "").toLowerCase();
-  if (ville && CAMEROON_CITIES.has(ville.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) {
-    return true;
-  }
+  if (product?.local_brand_name?.trim()) return true;
 
   const cat = String(product?.categorie || "").toLowerCase();
-  if (LOCAL_CATEGORY_HINTS.some((h) => cat.includes(h))) return true;
-
-  if (product?.local_brand_name?.trim()) return true;
+  const strongLocalCats = ["artisan", "agricole local", "made in", "fabriqué au cameroun", "produit local"];
+  if (strongLocalCats.some((h) => cat.includes(h))) return true;
 
   return false;
 }
 
 /**
- * Résout l'affichage badge + statut effectif pour l'UI.
+ * Affichage badge catalogue / recherche.
  * @param {Record<string, unknown>} product
- * @param {Record<string, unknown>|null} [seller]
  */
-export function resolveMadeInCameroon(product, seller = null) {
-  const status = String(product?.made_in_cameroon_status || MIC_STATUS.IMPORTED);
-  const declared = Boolean(product?.is_made_in_cameroon);
-  const legacyLocal = Boolean(product?.local);
-  const autoHit = detectMadeInCameroonAuto(product, seller);
+export function resolveMadeInCameroon(product) {
+  const status = normalizeMicStatus(product?.made_in_cameroon_status);
+  const explicit = Boolean(product?.is_made_in_cameroon);
 
-  let effectiveStatus = status;
   if (status === MIC_STATUS.REJECTED) {
-    return { show: false, status: effectiveStatus, label: null, verified: false };
+    return { show: false, status, label: null, verified: false };
   }
 
   if (status === MIC_STATUS.VERIFIED) {
@@ -92,16 +55,17 @@ export function resolveMadeInCameroon(product, seller = null) {
     };
   }
 
-  if (declared || legacyLocal) {
+  if (status === MIC_STATUS.DECLARED && explicit) {
     return {
       show: true,
-      status: declared ? MIC_STATUS.DECLARED : status,
+      status: MIC_STATUS.DECLARED,
       label: "🇨🇲 Made in Cameroun",
       verified: false,
     };
   }
 
-  if (autoHit || status === MIC_STATUS.AUTO) {
+  // Auto uniquement si enregistré en base (ex. marque locale renseignée à la création)
+  if (status === MIC_STATUS.AUTO && explicit) {
     return {
       show: true,
       status: MIC_STATUS.AUTO,
@@ -110,21 +74,24 @@ export function resolveMadeInCameroon(product, seller = null) {
     };
   }
 
-  if (status === MIC_STATUS.IMPORTED) {
-    return { show: false, status, label: "🌍 Importé", verified: false, imported: true };
-  }
-
   return { show: false, status, label: null, verified: false };
+}
+
+function normalizeMicStatus(raw) {
+  const s = String(raw || "").toLowerCase();
+  if (BADGE_VISIBLE_STATUSES.has(s) || s === MIC_STATUS.REJECTED || s === MIC_STATUS.IMPORTED) {
+    return s;
+  }
+  // Anciens produits sans colonne / valeur vide → pas de badge
+  return MIC_STATUS.IMPORTED;
 }
 
 /**
  * Champs à persister à l'enregistrement produit (vendeur).
- * @param {{ madeInChoice: 'yes'|'no'|'imported', localBrandName?: string, countryOfOrigin?: string }} input
- * @param {Record<string, unknown>} productDraft
- * @param {Record<string, unknown>|null} [seller]
  */
-export function buildMadeInCameroonPayload(input, productDraft, seller = null) {
+export function buildMadeInCameroonPayload(input, productDraft) {
   const choice = input.madeInChoice || "no";
+
   if (choice === "imported") {
     return {
       is_made_in_cameroon: false,
@@ -134,6 +101,7 @@ export function buildMadeInCameroonPayload(input, productDraft, seller = null) {
       local_brand_name: null,
     };
   }
+
   if (choice === "yes") {
     return {
       is_made_in_cameroon: true,
@@ -144,18 +112,23 @@ export function buildMadeInCameroonPayload(input, productDraft, seller = null) {
     };
   }
 
-  const auto = detectMadeInCameroonAuto(productDraft, seller);
+  // « Non » : jamais de badge auto côté catalogue ; suggestion seulement si signal fort
+  const suggestAuto = detectMadeInCameroonAuto(productDraft);
   return {
-    is_made_in_cameroon: auto,
-    made_in_cameroon_status: auto ? MIC_STATUS.AUTO : MIC_STATUS.IMPORTED,
-    country_of_origin: auto ? "CM" : input.countryOfOrigin || "CM",
-    local: auto,
+    is_made_in_cameroon: false,
+    made_in_cameroon_status: MIC_STATUS.IMPORTED,
+    country_of_origin: input.countryOfOrigin || "CM",
+    local: false,
     local_brand_name: input.localBrandName?.trim() || null,
+    _suggestMadeInCameroon: suggestAuto,
   };
 }
 
-/** Filtre client-side si colonnes SQL absentes (migration non appliquée). */
+/** Filtre hub Made in Cameroun — uniquement déclarés / vérifiés / auto explicites en base */
 export function productMatchesMadeInFilter(p) {
-  const r = resolveMadeInCameroon(p);
-  return r.show;
+  const status = normalizeMicStatus(p?.made_in_cameroon_status);
+  if (status === MIC_STATUS.VERIFIED) return true;
+  if (status === MIC_STATUS.DECLARED && p?.is_made_in_cameroon) return true;
+  if (status === MIC_STATUS.AUTO && p?.is_made_in_cameroon) return true;
+  return false;
 }

@@ -1,4 +1,5 @@
 import { HOMEPAGE_MERCH_TILES, MERCH_HUBS } from "../../lib/merchHubs";
+import { productMatchesMadeInFilter } from "../../lib/madeInCameroon";
 import { MadeInCameroonBadge } from "../MadeInCameroonBadge";
 import { buildEntitySlug } from "../../lib/seoRoutes";
 import "./homePremiumMerch.css";
@@ -8,14 +9,7 @@ import "./homePremiumMerch.css";
  */
 export function HomePremiumMerch({ goPage, produits = [], locale = "fr" }) {
   const isEn = locale === "en";
-  const madeIn = produits
-    .filter(
-      (p) =>
-        p.is_made_in_cameroon ||
-        p.local ||
-        ["declared", "verified", "auto"].includes(String(p.made_in_cameroon_status || "")),
-    )
-    .slice(0, 8);
+  const madeIn = produits.filter(productMatchesMadeInFilter).slice(0, 8);
 
   return (
     <section className="hpm-root" aria-labelledby="hpm-title">
