@@ -374,7 +374,7 @@ export function HomePage({
           toggleWish={toggleWish}
           wishlist={wishlist}
           openProductUrl={openProductUrl}
-          onSeeAll={() => goPage("produits")}
+          onSeeAll={() => goPage("merchHub", { merchHub: "produits-tendance" })}
         />
 
         <section className="yhm3-section">

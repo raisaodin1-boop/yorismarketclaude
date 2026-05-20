@@ -52,6 +52,9 @@ export function SellerDashboard({
     madeInChoice: "no",
     localBrandName: "",
     countryOfOrigin: "CM",
+    isPack: false,
+    packDescription: "",
+    linkedProductIds: [],
   });
   const [images, setImages]     = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -185,6 +188,9 @@ export function SellerDashboard({
       madeInChoice: "no",
       localBrandName: "",
       countryOfOrigin: "CM",
+      isPack: false,
+      packDescription: "",
+      linkedProductIds: [],
     });
     setImages([]); setPreviews([]); setProgress(0);
   };
@@ -195,7 +201,7 @@ export function SellerDashboard({
       setTimeout(() => setSaveMsg(null), 3000);
       return;
     }
-    if (!form.parentSlug) {
+    if (!form.isPack && !form.parentSlug) {
       setSaveMsg({
         type: "error",
         text: "Choisissez une catégorie (et une sous-catégorie si proposée).",
@@ -203,12 +209,26 @@ export function SellerDashboard({
       setTimeout(() => setSaveMsg(null), 3000);
       return;
     }
-    const parentNode = categoryTree.find((n) => n.slug === form.parentSlug);
-    const needsSub = (parentNode?.children?.length ?? 0) > 0;
+    const parentNode = form.isPack
+      ? null
+      : categoryTree.find((n) => n.slug === form.parentSlug);
+    const needsSub = !form.isPack && (parentNode?.children?.length ?? 0) > 0;
     if (needsSub && !form.subSlug) {
       setSaveMsg({ type: "error", text: "Choisissez une sous-catégorie pour ce rayon." });
       setTimeout(() => setSaveMsg(null), 3000);
       return;
+    }
+    if (form.isPack) {
+      if (!form.packDescription.trim()) {
+        setSaveMsg({ type: "error", text: "Décrivez le contenu du pack (ex. poisson + riz)." });
+        setTimeout(() => setSaveMsg(null), 4000);
+        return;
+      }
+      if ((form.linkedProductIds || []).length < 2) {
+        setSaveMsg({ type: "error", text: "Liez au moins 2 produits existants à ce pack." });
+        setTimeout(() => setSaveMsg(null), 4000);
+        return;
+      }
     }
     setSaving(true); setProgress(10);
     try {
@@ -241,28 +261,48 @@ export function SellerDashboard({
         userData,
       );
 
+      const isPack = Boolean(form.isPack);
+      const packParentSlug = isPack ? "packs-ensemble" : form.parentSlug;
+      const packCatPayload = isPack
+        ? buildProductCategoryPayload(categoryFlat, {
+            parentSlug: packParentSlug,
+            subSlug: "",
+            legacyLabel: "Packs & ensembles",
+          })
+        : catPayload;
+
       const { error } = await supabase.from("products").insert({
         name_fr:        form.name_fr,
         name_en:        form.name_en || form.name_fr,
         description_fr: form.description_fr,
         prix:           Number(form.prix),
         stock:          Number(form.stock || 0),
-        categorie:      catPayload.categorie || "Autre",
-        category_id:    catPayload.category_id,
+        categorie:      packCatPayload.categorie || "Autre",
+        category_id:    packCatPayload.category_id,
         ville:          form.ville || "Douala",
         image:          imageUrls[0] || null,
         image_urls:     imageUrls,
         vendeur_id:     user.id,
         vendeur_nom:    userData?.nom || "",
-        actif:          true,
+        actif:          isPack ? false : true,
         escrow:         form.escrow,
+        is_pack:        isPack,
+        pack_status:    isPack ? "pending" : null,
+        pack_description: isPack ? form.packDescription.trim() : null,
+        pack_linked_product_ids: isPack ? form.linkedProductIds : [],
+        pack_submitted_at: isPack ? new Date().toISOString() : null,
         ...micPayload,
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;
 
       setProgress(100);
-      setSaveMsg({ type: "success", text: t("products.saved") });
+      setSaveMsg({
+        type: "success",
+        text: isPack
+          ? "Pack envoyé — publication après validation admin (24–48 h)."
+          : t("products.saved"),
+      });
       resetForm();
       setTimeout(() => { setSaveMsg(null); setProgress(0); }, 3000);
       loadAll();
@@ -314,6 +354,11 @@ export function SellerDashboard({
 
   // ── ACTIVER / DÉSACTIVER PRODUIT ──
   const toggleActif = async (id, current) => {
+    const prod = mesProduits.find((p) => p.id === id);
+    if (prod?.is_pack && prod.pack_status !== "approved" && !current) {
+      alert("Ce pack doit être validé par l'admin avant publication.");
+      return;
+    }
     setLoadingAction(true);
     const { error } = await supabase.from("products").update({ actif: !current }).eq("id", id);
     if (error) { console.error(error); alert("Erreur : " + error.message); setLoadingAction(false); return; }
@@ -632,6 +677,25 @@ export function SellerDashboard({
                           <span style={{ fontSize: ".62rem", padding: "2px 8px", borderRadius: 20, background: p.actif ? "var(--green-pale)" : "var(--surface2)", color: p.actif ? "var(--green)" : "var(--gray)", border: `1px solid ${p.actif ? "var(--green-light)" : "var(--border)"}` }}>
                             {p.actif ? "✅ Actif" : "⛔ Inactif"}
                           </span>
+                          {p.is_pack && (
+                            <span
+                              style={{
+                                fontSize: ".62rem",
+                                padding: "2px 8px",
+                                borderRadius: 20,
+                                background: p.pack_status === "approved" ? "#ede9fe" : "#fef3c7",
+                                color: p.pack_status === "approved" ? "#5b21b6" : "#92400e",
+                                border: "1px solid #c4b5fd",
+                              }}
+                            >
+                              📦 Pack ·{" "}
+                              {p.pack_status === "approved"
+                                ? "Publié"
+                                : p.pack_status === "correction"
+                                  ? "À corriger"
+                                  : "En validation"}
+                            </span>
+                          )}
                         </div>
                         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: ".75rem", color: "var(--gray)", marginBottom: 6 }}>
                           <span>💰 <strong style={{ color: "var(--green)" }}>{p.prix?.toLocaleString()} FCFA</strong></span>
@@ -648,7 +712,39 @@ export function SellerDashboard({
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                       <button style={S.btnGreen} onClick={() => startEdit(p)}>✏️ {t("products.edit")}</button>
-                      <button style={S.btnGhost} disabled={loadingAction} onClick={() => toggleActif(p.id, p.actif)}>
+                      {p.is_pack && p.pack_status === "correction" && (
+                        <button
+                          style={S.btnBlue}
+                          disabled={loadingAction}
+                          onClick={async () => {
+                            setLoadingAction(true);
+                            const { error } = await supabase
+                              .from("products")
+                              .update({
+                                pack_status: "pending",
+                                pack_submitted_at: new Date().toISOString(),
+                                actif: false,
+                              })
+                              .eq("id", p.id)
+                              .eq("vendeur_id", user.id);
+                            setLoadingAction(false);
+                            if (error) alert(error.message);
+                            else loadAll();
+                          }}
+                        >
+                          📤 Renvoyer en validation
+                        </button>
+                      )}
+                      <button
+                        style={S.btnGhost}
+                        disabled={loadingAction || (p.is_pack && p.pack_status !== "approved" && !p.actif)}
+                        onClick={() => toggleActif(p.id, p.actif)}
+                        title={
+                          p.is_pack && p.pack_status !== "approved" && !p.actif
+                            ? "En attente de validation admin"
+                            : undefined
+                        }
+                      >
                         {p.actif ? "⛔ Désactiver" : "✅ Activer"}
                       </button>
                       <button style={S.btnRed} onClick={() => setPendingDelete({ id: p.id, nom: p.name_fr })}>
@@ -700,25 +796,32 @@ export function SellerDashboard({
               <label className="form-label">Stock disponible</label>
               <input className="form-input" type="number" min="0" placeholder="Ex: 10" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
             </div>
-            <div className="form-group full">
-              <label className="form-label">Catégorie <span>*</span></label>
-              <CategoryPicker
-                tree={categoryTree}
-                locale="fr"
-                loading={categoryLoading}
-                required
-                onRetry={onReloadCategories}
-                value={{ parentSlug: form.parentSlug, subSlug: form.subSlug, label: form.categorie }}
-                onChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    parentSlug: v.parentSlug,
-                    subSlug: v.subSlug || "",
-                    categorie: v.label,
-                  }))
-                }
-              />
-            </div>
+            {!form.isPack ? (
+              <div className="form-group full">
+                <label className="form-label">Catégorie <span>*</span></label>
+                <CategoryPicker
+                  tree={categoryTree}
+                  locale="fr"
+                  loading={categoryLoading}
+                  required
+                  sellerMode
+                  onRetry={onReloadCategories}
+                  value={{ parentSlug: form.parentSlug, subSlug: form.subSlug, label: form.categorie }}
+                  onChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      parentSlug: v.parentSlug,
+                      subSlug: v.subSlug || "",
+                      categorie: v.label,
+                    }))
+                  }
+                />
+              </div>
+            ) : (
+              <p className="cat-picker-seller-note" style={{ margin: 0 }}>
+                Catégorie automatique : <strong>Packs &amp; ensembles</strong> (après validation admin).
+              </p>
+            )}
             <div className="form-group">
               <label className="form-label">Ville</label>
               <select className="form-select" value={form.ville} onChange={e => setForm(f => ({ ...f, ville: e.target.value }))}>
@@ -774,6 +877,71 @@ export function SellerDashboard({
                 <input type="checkbox" checked={form.escrow} onChange={e => setForm(f => ({ ...f, escrow: e.target.checked }))} />
                 🔐 Activer la protection Escrow (recommandé)
               </label>
+            </div>
+
+            <div className="form-group full seller-pack-panel">
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: ".82rem", fontWeight: 700, color: "var(--ink)" }}>
+                <input
+                  type="checkbox"
+                  checked={form.isPack}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setForm((f) => ({
+                      ...f,
+                      isPack: checked,
+                      linkedProductIds: checked ? f.linkedProductIds : [],
+                      parentSlug: checked ? "packs-ensemble" : "",
+                      subSlug: "",
+                      categorie: checked ? "Packs & ensembles" : "",
+                    }));
+                  }}
+                />
+                📦 Créer un pack (ensemble de produits — validation admin obligatoire)
+              </label>
+              {form.isPack && (
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <textarea
+                    className="form-textarea"
+                    placeholder="Ex. Pack déjeuner : poisson braisé + riz + sauce…"
+                    value={form.packDescription}
+                    onChange={(e) => setForm((f) => ({ ...f, packDescription: e.target.value }))}
+                  />
+                  <p style={{ fontSize: ".72rem", color: "var(--gray)", margin: 0 }}>
+                    Liez au moins 2 de vos produits déjà publiés (le pack sera invisible jusqu&apos;à validation).
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 180, overflowY: "auto" }}>
+                    {mesProduits
+                      .filter((p) => !p.is_pack && p.actif !== false)
+                      .map((p) => {
+                        const checked = form.linkedProductIds.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".78rem", cursor: "pointer" }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setForm((f) => {
+                                  const ids = f.linkedProductIds || [];
+                                  const next = checked ? ids.filter((x) => x !== p.id) : [...ids, p.id];
+                                  return { ...f, linkedProductIds: next.slice(0, 8) };
+                                });
+                              }}
+                            />
+                            {p.name_fr} — {Number(p.prix).toLocaleString()} F
+                          </label>
+                        );
+                      })}
+                    {mesProduits.filter((p) => !p.is_pack && p.actif !== false).length === 0 && (
+                      <span style={{ fontSize: ".72rem", color: "var(--gray)" }}>
+                        Publiez d&apos;abord au moins 2 produits simples pour les lier au pack.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

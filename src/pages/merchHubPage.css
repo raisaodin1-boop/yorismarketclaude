@@ -58,3 +58,23 @@
   padding: 2rem;
   color: var(--green);
 }
+
+@media (max-width: 768px) {
+  .mhub-page {
+    padding: 0 12px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .mhub-hero {
+    padding: 1.15rem 1rem;
+    border-radius: 14px;
+  }
+
+  .mhub-hero-title {
+    font-size: 1.15rem;
+  }
+
+  .mhub-hero-desc {
+    font-size: 0.85rem;
+  }
+}

@@ -1,13 +1,7 @@
 import { useMemo } from "react";
 import { ProdGrid } from "../ProdGrid";
+import { computeHomepageTrendingProducts } from "../../lib/merchPlacement";
 import "../conversion/conversion.css";
-
-function trendingScore(p) {
-  const ventes = Number(p?.vente_total) || 0;
-  const vues = Number(p?.vues) || 0;
-  const note = Number(p?.note) || 0;
-  return ventes * 100 + vues + note * 5;
-}
 
 export function HomeTrendingProducts({
   produits = [],
@@ -21,12 +15,10 @@ export function HomeTrendingProducts({
   openProductUrl,
   onSeeAll,
 }) {
-  const trending = useMemo(() => {
-    const safeProduits = Array.isArray(produits) ? produits : [];
-    return [...safeProduits]
-      .sort((a, b) => trendingScore(b) - trendingScore(a))
-      .slice(0, 8);
-  }, [produits]);
+  const trending = useMemo(
+    () => computeHomepageTrendingProducts(produits, 8),
+    [produits],
+  );
 
   if (loading || trending.length === 0) return null;
 
@@ -36,19 +28,19 @@ export function HomeTrendingProducts({
     <section className="yhm3-section home-trending">
       <div className="home-trending__head">
         <div>
-          <span className="yhm3-eyebrow-light">{isEn ? "Popular now" : "Tendances"}</span>
+          <span className="yhm3-eyebrow-light">{isEn ? "Trending now" : "Tendances"}</span>
           <h2 className="home-trending__title">
-            {isEn ? "Top sellers & most viewed" : "Meilleures ventes & plus vus"}
+            {isEn ? "Recent sales & views" : "Ventes et vues récentes"}
           </h2>
           <p className="home-trending__sub">
             {isEn
-              ? "Real marketplace data — sales and views from Yorix sellers."
-              : "Données réelles du marché — ventes et vues des vendeurs Yorix."}
+              ? "Popular right now — distinct from Top products (new arrivals)."
+              : "Populaires en ce moment — distinct des Top produits (nouveautés 30 j)."}
           </p>
         </div>
         {onSeeAll && (
-          <button type="button" className="yhm3-section-link" onClick={onSeeAll}>
-            {isEn ? "Full catalog" : "Tout le catalogue"} <span>→</span>
+          <button type="button" className="yhm3-section-link" onClick={() => onSeeAll()}>
+            {isEn ? "All trends" : "Toutes les tendances"} <span>→</span>
           </button>
         )}
       </div>

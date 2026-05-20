@@ -1,5 +1,8 @@
 import { MERCH_HUBS } from "../../lib/merchHubs";
+import { AUTO_MERCH_CATEGORY_SLUGS, isSellerSelectableCategory } from "../../lib/merchPlacement";
 import { categoryLabel } from "../../lib/marketplaceCategories";
+
+export { isSellerSelectableCategory, AUTO_MERCH_CATEGORY_SLUGS };
 
 const PREMIUM_KINDS = new Set(["featured", "promotional", "local", "seasonal", "brand_driven"]);
 const HUB_SLUGS = new Set(Object.keys(MERCH_HUBS));
@@ -36,10 +39,11 @@ export function getCategoryDisplayIcon(node) {
   return node.icon || "📦";
 }
 
-export function partitionCategoryRoots(roots) {
+export function partitionCategoryRoots(roots, { sellerMode = false } = {}) {
   const premium = [];
   const standard = [];
   for (const r of roots) {
+    if (sellerMode && !isSellerSelectableCategory(r)) continue;
     if (isPremiumCategoryNode(r)) premium.push(r);
     else standard.push(r);
   }

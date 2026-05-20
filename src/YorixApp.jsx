@@ -136,6 +136,7 @@ export default function YorixApp() {
   // Produits
   const [produits, setProduits]                 = useState([]);
   const [produitsLoading, setProduitsLoading]   = useState(true);
+  const [sellerMerchProfiles, setSellerMerchProfiles] = useState([]);
   const [allServices, setAllServices]           = useState([]);
 
   useEffect(() => {
@@ -815,6 +816,23 @@ export default function YorixApp() {
 
   const unread = notifs.filter(n => !n.lu).length;
 
+  useEffect(() => {
+    const hub = page === "merchHub" && route.merchHub ? getMerchHub(route.merchHub) : null;
+    if (!hub || !["new_sellers", "top_sellers"].includes(hub.filter)) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, role, created_at, nom")
+        .or("role.eq.seller,role.eq.vendeur")
+        .limit(3000);
+      if (!cancelled && !error) setSellerMerchProfiles(data || []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [page, route.merchHub]);
+
   const produitsFiltres = useMemo(() => {
     let list = produits.filter(
       (p) =>
@@ -832,7 +850,10 @@ export default function YorixApp() {
     if (page === "merchHub" && route.merchHub) {
       const hub = getMerchHub(route.merchHub);
       if (hub?.filter) {
-        list = filterProductsByMerchHub(list, hub.filter, { citySlug: route.citySlug });
+        list = filterProductsByMerchHub(list, hub.filter, {
+          citySlug: route.citySlug,
+          sellerProfiles: sellerMerchProfiles,
+        });
       }
     }
     if (categoryFilter?.filterLabel || categoryFilter?.categoryId) {
@@ -842,7 +863,7 @@ export default function YorixApp() {
       list = list.filter((p) => (p.categorie || "").toLowerCase() === fc);
     }
     return list;
-  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName, categoryFilter, filterCat]);
+  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName, categoryFilter, filterCat, sellerMerchProfiles]);
 
   const showSeoLocal =
     page === "seoCity" || (page === "livraison" && !!route.citySlug);

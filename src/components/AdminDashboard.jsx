@@ -13,6 +13,8 @@ import { ModalEditDelivery } from "./ModalEditDelivery";
 import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
 import { AdminCategoryManager } from "./admin/AdminCategoryManager";
 import { AdminBroadcastPanel } from "./admin/AdminBroadcastPanel";
+import { AdminPackModeration } from "./admin/AdminPackModeration";
+import "./admin/adminPackModeration.css";
 import {
   getStatutConfig,
   adminAssignerLivreur,
@@ -651,12 +653,21 @@ export function AdminDashboard({ user, userData, goPage }) {
     }
   };
 
+  const pendingPacksCount = useMemo(
+    () =>
+      produits.filter(
+        (p) => p.is_pack && (p.pack_status === "pending" || p.pack_status === "correction"),
+      ).length,
+    [produits],
+  );
+
   const NAV = useMemo(
     () => {
       const items = [
         { id: "overview", icon: "📊", label: t("nav.overview") },
         { id: "deliveries", icon: "🚚", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
         { id: "categories", icon: "🏷️", label: "Catégories" },
+        { id: "packs", icon: "📦", label: "Packs à modérer", badge: pendingPacksCount || null },
         { id: "produits", icon: "📦", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
         { id: "commandes", icon: "🛍️", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
         { id: "utilisateurs", icon: "👥", label: t("nav.users") },
@@ -672,7 +683,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       ];
       return items.filter((n) => canWrite || n.id !== "messagerie");
     },
-    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite],
+    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite, pendingPacksCount],
   );
 
   const ROLE_ASSIGN_OPTIONS = useMemo(
@@ -976,6 +987,28 @@ export function AdminDashboard({ user, userData, goPage }) {
               <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Revenus aujourd'hui" trend="Commissions du jour" col="#f0fff4" ic="#276749" />
               <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Revenus 7 jours" trend="Cette semaine" col="#fef9f0" ic="#7b5a10" />
             </div>
+
+            {pendingPacksCount > 0 && (
+              <div className="admin-overview-alert admin-overview-alert--pack" role="alert">
+                <div style={{ fontSize: "2.2rem" }}>📦</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "#5b21b6" }}>
+                    {pendingPacksCount} pack{pendingPacksCount > 1 ? "s" : ""} en attente de validation
+                  </div>
+                  <div style={{ fontSize: ".8rem", color: "#6d28d9", marginTop: 3 }}>
+                    Valider, corriger et publier, ou supprimer avec motif (message automatique au vendeur).
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="admin-overview-alert__btn"
+                  style={{ background: "#7c3aed", color: "#fff" }}
+                  onClick={() => setAdminTab("packs")}
+                >
+                  Modérer →
+                </button>
+              </div>
+            )}
 
             {deliveriesEnAttente > 0 && (
               <div style={{
@@ -1400,6 +1433,36 @@ export function AdminDashboard({ user, userData, goPage }) {
                 readOnly={!canWrite}
               />
             )}
+          </>
+        )}
+
+        {/* ════════ PACKS (modération) ════════ */}
+        {adminTab === "packs" && (
+          <>
+            <div className="admin-page-title">
+              📦 Packs vendeur — modération
+              {pendingPacksCount > 0 && (
+                <span
+                  style={{
+                    fontSize: ".75rem",
+                    background: "#7c3aed",
+                    color: "#fff",
+                    padding: "3px 10px",
+                    borderRadius: 50,
+                    fontWeight: 600,
+                    marginLeft: 8,
+                  }}
+                >
+                  {pendingPacksCount} en attente
+                </span>
+              )}
+            </div>
+            <AdminPackModeration
+              produits={produits}
+              showToast={showToast}
+              requireWrite={requireWrite}
+              onDone={() => setRefreshKey((k) => k + 1)}
+            />
           </>
         )}
 

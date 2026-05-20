@@ -1,4 +1,12 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
+import {
+  computeTopNewProducts,
+  computeTrendingProducts,
+  filterProductsByNewSellers,
+  filterProductsByTopSellers,
+  getNewSellerIds,
+  getTopSellerIds,
+} from "./merchPlacement.js";
 
 /**
  * Hubs merchandising premium — routes SEO + filtres catalogue.
@@ -54,8 +62,8 @@ export const MERCH_HUBS = {
     categorySlug: "top-produits",
     titleFr: "Top produits — Meilleures ventes Cameroun",
     titleEn: "Top products — Best sellers Cameroon",
-    descFr: "Meilleures ventes, produits les plus vus et recommandations premium.",
-    descEn: "Best sellers, most viewed and premium recommendations.",
+    descFr: "Nouveautés des 30 derniers jours, classées par ventes et vues.",
+    descEn: "New arrivals from the last 30 days, ranked by sales and views.",
     keywordsFr: "meilleurs produits cameroun, top ventes",
     emoji: "⭐",
     theme: "gold",
@@ -67,8 +75,8 @@ export const MERCH_HUBS = {
     categorySlug: "produits-tendance",
     titleFr: "Tendances & produits du moment",
     titleEn: "Trending products now",
-    descFr: "Nouveautés, viral et offres populaires du moment.",
-    descEn: "New arrivals, viral and popular picks right now.",
+    descFr: "Ventes et vues récentes — sélection distincte des Top produits (sans doublon).",
+    descEn: "Recent sales and views — separate from Top products (no duplicates).",
     keywordsFr: "tendances cameroun, produits du moment",
     emoji: "🔥",
     theme: "fire",
@@ -106,8 +114,8 @@ export const MERCH_HUBS = {
     categorySlug: "top-vendeurs",
     titleFr: "Top vendeurs & boutiques premium",
     titleEn: "Top sellers & premium stores",
-    descFr: "Vendeurs vérifiés, boutiques officielles et marques premium.",
-    descEn: "Verified sellers, official stores and premium brands.",
+    descFr: "Boutiques avec au moins 30 produits actifs sur Yorix.",
+    descEn: "Stores with at least 30 active products on Yorix.",
     keywordsFr: "top vendeurs cameroun, boutique premium",
     emoji: "👑",
     theme: "crown",
@@ -119,8 +127,8 @@ export const MERCH_HUBS = {
     categorySlug: "nouveaux-vendeurs",
     titleFr: "Nouveaux vendeurs sur Yorix",
     titleEn: "New sellers on Yorix",
-    descFr: "Découvrez les talents qui rejoignent la marketplace.",
-    descEn: "Discover fresh sellers joining the marketplace.",
+    descFr: "Vendeurs inscrits depuis moins de 30 jours.",
+    descEn: "Sellers who joined within the last 30 days.",
     keywordsFr: "nouveaux vendeurs cameroun",
     emoji: "🚀",
     theme: "rocket",
@@ -167,38 +175,39 @@ export const EMOTIONAL_NAV = [
  * Applique le filtre merchandising côté client (post-fetch ou complément SQL).
  * @param {Record<string, unknown>[]} products
  * @param {string} filterKey
- * @param {{ citySlug?: string }} [opts]
+ * @param {{ citySlug?: string, sellerProfiles?: Record<string, unknown>[] }} [opts]
  */
 export function filterProductsByMerchHub(products, filterKey, opts = {}) {
   const list = Array.isArray(products) ? products : [];
+  const active = list.filter((p) => p.actif !== false && (!p.is_pack || p.pack_status === "approved"));
+
   switch (filterKey) {
     case "made_in_cameroon":
-      return list.filter(productMatchesMadeInFilter);
+      return active.filter(productMatchesMadeInFilter);
     case "local_brand":
-      return list.filter((p) => Boolean(p.local_brand_name?.trim?.()));
+      return active.filter((p) => Boolean(p.local_brand_name?.trim?.()));
     case "top_products":
-      return [...list].sort(
-        (a, b) =>
-          (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0) ||
-          (Number(b.vues) || 0) - (Number(a.vues) || 0),
-      );
-    case "trending":
-      return list.filter((p) => p.flash || p.promo || p.sponsorise).concat(
-        [...list]
-          .filter((p) => !p.flash && !p.promo)
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
-      );
+      return computeTopNewProducts(active, { limit: 64 });
+    case "trending": {
+      const topNew = computeTopNewProducts(active, { limit: 64 });
+      const exclude = new Set(topNew.map((p) => p.id));
+      return computeTrendingProducts(active, { limit: 48, excludeIds: exclude });
+    }
     case "promo":
-      return list.filter((p) => p.promo || p.flash || (p.promo_pct && p.promo_pct > 0));
+      return active.filter((p) => p.promo || p.flash || (p.promo_pct && p.promo_pct > 0));
     case "express_delivery":
-      return list.filter((p) => {
+      return active.filter((p) => {
         const v = String(p.ville || "").toLowerCase();
         return v.includes("douala") || v.includes("yaound");
       });
-    case "top_sellers":
-      return list.filter((p) => p.sponsorise || p.vendeur_verifie || p.verifie);
-    case "new_sellers":
-      return [...list].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    case "top_sellers": {
+      const ids = getTopSellerIds(active);
+      return filterProductsByTopSellers(active, ids);
+    }
+    case "new_sellers": {
+      const ids = getNewSellerIds(opts.sellerProfiles || []);
+      return filterProductsByNewSellers(active, ids);
+    }
     case "local_city": {
       const city = opts.citySlug;
       if (!city) return list;
@@ -211,10 +220,10 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
         kribi: "kribi",
       };
       const needle = nameMap[city] || city;
-      return list.filter((p) => String(p.ville || "").toLowerCase().includes(needle));
+      return active.filter((p) => String(p.ville || "").toLowerCase().includes(needle));
     }
     default:
-      return list;
+      return active;
   }
 }
 

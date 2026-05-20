@@ -10,15 +10,17 @@ import {
 } from "./categoryPickerUtils";
 import "./categoryUi.css";
 
-function CategoryCard({ node, selected, onPick, locale, variant = "standard" }) {
+function CategoryCard({ node, selected, onPick, locale, variant = "standard", disabled = false }) {
   const premium = variant === "premium" || isPremiumCategoryNode(node);
   return (
     <button
       type="button"
       role="option"
       aria-selected={selected}
-      className={`cat-picker-card${selected ? " is-selected" : ""}${premium ? " is-premium" : ""}`}
-      onClick={() => onPick(node)}
+      aria-disabled={disabled}
+      disabled={disabled}
+      className={`cat-picker-card${selected ? " is-selected" : ""}${premium ? " is-premium" : ""}${disabled ? " is-disabled" : ""}`}
+      onClick={() => !disabled && onPick(node)}
     >
       <span className="cat-picker-card__check" aria-hidden>
         {selected ? "✓" : ""}
@@ -132,6 +134,7 @@ export function CategoryPicker({
   required = true,
   loading = false,
   onRetry,
+  sellerMode = false,
 }) {
   const [step, setStep] = useState(value.parentSlug && !value.subSlug ? 2 : value.subSlug ? 2 : 1);
   const [parentSlug, setParentSlug] = useState(value.parentSlug || "");
@@ -143,8 +146,8 @@ export function CategoryPicker({
   const children = parent?.children || [];
 
   const { premium: premiumRoots, standard: standardRoots } = useMemo(
-    () => partitionCategoryRoots(tree),
-    [tree],
+    () => partitionCategoryRoots(tree, { sellerMode }),
+    [tree, sellerMode],
   );
 
   const needle = q.trim();
@@ -225,6 +228,13 @@ export function CategoryPicker({
 
   return (
     <div className="cat-picker cat-picker--premium">
+      {sellerMode && (
+        <p className="cat-picker-seller-note" role="note">
+          {isEn
+            ? "Top products, Trends, Top sellers, New sellers and city hubs are assigned automatically by Yorix. Choose a marketplace category or Packs."
+            : "Top produits, Tendances, Top vendeurs, Nouveaux vendeurs et hubs par ville sont attribués automatiquement par Yorix. Choisissez une catégorie marketplace ou Packs."}
+        </p>
+      )}
       <div className="cat-picker-search-wrap">
         <span className="cat-picker-search-ico" aria-hidden>
           🔍
