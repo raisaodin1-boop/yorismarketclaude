@@ -61,6 +61,13 @@ function inferFromType(type, titre, message) {
   return { category: NOTIF_CATEGORIES.system, priority: NOTIF_PRIORITIES.standard };
 }
 
+/** Corps complet pour le panneau détail (texte intégral, retours à la ligne conservés). */
+export function getNotificationFullBody(row) {
+  if (row == null) return "";
+  const msg = row.message ?? row.body ?? row.content ?? "";
+  return String(msg).trim();
+}
+
 /** Remplace URLs brutes par un libellé lisible. */
 export function formatNotificationBody(raw) {
   if (raw == null) return "";

@@ -2,11 +2,10 @@
  * Cloche notifications header — dropdown paginé + temps réel Supabase.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { enrichNotification, showBrowserNotificationIfPossible } from "../domain/notificationsDomain";
+import { enrichNotification, getNotificationFullBody, showBrowserNotificationIfPossible } from "../domain/notificationsDomain";
+import { getNotificationOpenAction, stashNotificationOpenId } from "../lib/notificationNavigation";
 import { loadNotificationPrefs } from "../lib/notificationPrefs";
-import { ensureLocalePath } from "../lib/seoRoutes";
 
 const PAGE_SIZE = 10;
 
@@ -40,9 +39,16 @@ function colorForType(type) {
   return "#666";
 }
 
-export function NotificationBell({ user, goPage, siteLocale = "fr", onSync }) {
-  const navigate = useNavigate();
+export function NotificationBell({
+  user,
+  goPage,
+  siteLocale = "fr",
+  onSync,
+  onOpenNotification,
+  onMarkNotifRead,
+}) {
   const [open, setOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -171,29 +177,30 @@ export function NotificationBell({ user, goPage, siteLocale = "fr", onSync }) {
     onSync?.();
   };
 
-  const handleClickNotif = async (notif) => {
-    if (!notif.lu) await markAsRead(notif.id);
+  const handleSelectNotif = async (notif) => {
+    setSelectedId(notif.id);
+    if (onMarkNotifRead) {
+      await onMarkNotifRead(notif, { navigate: false, closeDrawer: false });
+    } else if (!notif.lu) {
+      await markAsRead(notif.id);
+    }
+  };
 
-    const link = String(notif.link || "").trim();
-    if (link.startsWith("http")) {
-      window.open(link, "_blank", "noopener,noreferrer");
+  const handleOpenSelected = (notif) => {
+    if (onOpenNotification?.(notif)) {
       setOpen(false);
+      setSelectedId(null);
       return;
-    }
-    if (link.startsWith("/")) {
-      navigate(ensureLocalePath(link, siteLocale));
-      setOpen(false);
-      return;
-    }
-    if (notif.type === "new_product" || link.includes("/products/")) {
-      goPage?.("produits");
-    } else if (notif.type === "new_message") {
-      goPage?.("dashboard");
-    } else {
-      goPage?.("notifications");
     }
     setOpen(false);
+    setSelectedId(null);
+    stashNotificationOpenId(notif.id);
+    goPage?.("notifications");
   };
+
+  const selectedNotif = items.find((n) => n.id === selectedId);
+  const selectedEnriched = selectedNotif ? enrichNotification(selectedNotif) : null;
+  const selectedAction = selectedNotif ? getNotificationOpenAction(selectedNotif, siteLocale) : { kind: "none" };
 
   const loadMore = () => fetchNotifs(page + 1, true);
 
@@ -274,6 +281,20 @@ export function NotificationBell({ user, goPage, siteLocale = "fr", onSync }) {
     }
     .ybell-foot-btn:disabled { opacity: .5; cursor: not-allowed; }
     .ybell-loading { text-align: center; padding: 12px; color: #888; font-size: .78rem; }
+    .ybell-detail {
+      border-top: 1px solid #e5e5e5; padding: 12px 14px; background: #f9fafb;
+      max-height: 42vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    .ybell-detail-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .92rem; margin: 0 0 8px; color: #111; }
+    .ybell-detail-body { font-size: .82rem; line-height: 1.55; color: #333; white-space: pre-wrap; word-break: break-word; margin: 0 0 12px; }
+    .ybell-detail-actions { display: flex; flex-direction: column; gap: 8px; }
+    .ybell-detail-btn {
+      padding: 11px 14px; border-radius: 9px; border: none; cursor: pointer;
+      font-size: .78rem; font-weight: 700; font-family: inherit;
+    }
+    .ybell-detail-btn--primary { background: #1a6b3a; color: #fff; }
+    .ybell-detail-btn--ghost { background: #fff; border: 1px solid #e5e5e5; color: #333; }
+    .ybell-item--selected { background: rgba(26, 107, 58, .1); outline: 2px solid rgba(26, 107, 58, .25); }
   `;
 
   return (
@@ -283,7 +304,12 @@ export function NotificationBell({ user, goPage, siteLocale = "fr", onSync }) {
         <button
           type="button"
           className="ybell-btn"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            setOpen((o) => {
+              if (o) setSelectedId(null);
+              return !o;
+            });
+          }}
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ""}`}
           aria-expanded={open}
         >
@@ -334,11 +360,11 @@ export function NotificationBell({ user, goPage, siteLocale = "fr", onSync }) {
                     return (
                       <div
                         key={n.id}
-                        className={`ybell-item${!n.lu ? " ybell-item--unread" : ""}`}
-                        onClick={() => handleClickNotif(n)}
+                        className={`ybell-item${!n.lu ? " ybell-item--unread" : ""}${selectedId === n.id ? " ybell-item--selected" : ""}`}
+                        onClick={() => handleSelectNotif(n)}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={(e) => e.key === "Enter" && handleClickNotif(n)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSelectNotif(n)}
                       >
                         <div className="ybell-item-icon">{n.icon || enriched._icon || iconForType(n.type)}</div>
                         <div className="ybell-item-content">
@@ -365,6 +391,45 @@ export function NotificationBell({ user, goPage, siteLocale = "fr", onSync }) {
                 </>
               )}
             </div>
+
+            {selectedNotif && selectedEnriched && (
+              <div className="ybell-detail" role="region" aria-label="Détail notification">
+                <h4 className="ybell-detail-title">{selectedEnriched._title}</h4>
+                <p className="ybell-detail-body">
+                  {getNotificationFullBody(selectedNotif) || selectedEnriched._body}
+                </p>
+                <div className="ybell-detail-actions">
+                  {selectedAction.kind !== "none" && (
+                    <button
+                      type="button"
+                      className="ybell-detail-btn ybell-detail-btn--primary"
+                      onClick={() => handleOpenSelected(selectedNotif)}
+                    >
+                      Ouvrir dans Yorix →
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="ybell-detail-btn ybell-detail-btn--ghost"
+                    onClick={() => {
+                      stashNotificationOpenId(selectedNotif.id);
+                      goPage?.("notifications");
+                      setOpen(false);
+                      setSelectedId(null);
+                    }}
+                  >
+                    Voir sur la page Notifications
+                  </button>
+                  <button
+                    type="button"
+                    className="ybell-detail-btn ybell-detail-btn--ghost"
+                    onClick={() => setSelectedId(null)}
+                  >
+                    ← Retour à la liste
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="ybell-foot">
               {hasMore && items.length > 0 && (

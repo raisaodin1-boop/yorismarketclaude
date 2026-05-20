@@ -26,6 +26,8 @@ export function YorixHeader({
   produits,
   setOnboardingOpen,
   onNotifsSync,
+  onOpenNotification,
+  onMarkNotifRead,
   totalQty,
   setAuthTab,
   setAuthOpen,
@@ -215,7 +217,14 @@ export function YorixHeader({
           </button>
 
           {user && (
-            <NotificationBell user={user} goPage={goPage} siteLocale={siteLocale} onSync={onNotifsSync} />
+            <NotificationBell
+              user={user}
+              goPage={goPage}
+              siteLocale={siteLocale}
+              onSync={onNotifsSync}
+              onOpenNotification={onOpenNotification}
+              onMarkNotifRead={onMarkNotifRead}
+            />
           )}
 
           <button type="button" className="icon-btn" onClick={() => goPage("cart")} title={t("actions.cart")}>

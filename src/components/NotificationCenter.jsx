@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { NOTIF_CATEGORIES, NOTIF_PRIORITIES, enrichNotification, filterNotificationsByCategory } from "../domain/notificationsDomain";
+import {
+  NOTIF_CATEGORIES,
+  NOTIF_PRIORITIES,
+  enrichNotification,
+  filterNotificationsByCategory,
+  getNotificationFullBody,
+} from "../domain/notificationsDomain";
+import { getNotificationOpenAction } from "../lib/notificationNavigation";
 import {
   ensureNotificationPrefsSynced,
   loadNotificationPrefs,
@@ -29,6 +36,81 @@ function priorityClass(p) {
   return "notif-card-priority-standard";
 }
 
+function categoryLabelFr(key) {
+  const f = FILTERS.find((x) => x.key === key);
+  return f?.label || key;
+}
+
+function NotificationDetailPanel({ raw, enriched, onClose, onOpen, onDismiss, siteLocale = "fr" }) {
+  const fullBody = getNotificationFullBody(raw);
+  const action = getNotificationOpenAction(raw, siteLocale);
+  const hasOpen = action.kind !== "none";
+
+  return (
+    <div className="notif-detail" role="region" aria-label="Détail de la notification">
+      <div className="notif-detail__head">
+        <button type="button" className="notif-detail__back" onClick={onClose} aria-label="Retour à la liste">
+          ← Liste
+        </button>
+        <button type="button" className="notif-hub-close" onClick={onClose} aria-label="Fermer le détail">
+          ✕
+        </button>
+      </div>
+
+      <div className="notif-detail__hero">
+        <span className="notif-detail__avatar" aria-hidden>
+          {enriched._image ? (
+            <img src={enriched._image} alt="" loading="lazy" />
+          ) : (
+            <span className="notif-card-emoji">{enriched._icon}</span>
+          )}
+        </span>
+        <div className="notif-detail__meta">
+          <h3 className="notif-detail__title">{enriched._title}</h3>
+          <div className="notif-detail__chips">
+            <span className="notif-detail__chip">{categoryLabelFr(enriched._category)}</span>
+            {raw.type && <span className="notif-detail__chip notif-detail__chip--muted">{String(raw.type)}</span>}
+            <time className="notif-detail__time" dateTime={raw.created_at || undefined}>
+              {enriched._timeLabel}
+            </time>
+          </div>
+        </div>
+      </div>
+
+      <div className="notif-detail__body-wrap">
+        <p className="notif-detail__body">{fullBody || enriched._body || "—"}</p>
+        {enriched._deeplink?.startsWith("http") && (
+          <p className="notif-detail__link-hint">Lien externe : {enriched._deeplink}</p>
+        )}
+        {enriched._deeplink?.startsWith("/") && (
+          <p className="notif-detail__link-hint">Page Yorix : {enriched._deeplink}</p>
+        )}
+      </div>
+
+      <div className="notif-detail__actions">
+        {hasOpen && (
+          <button type="button" className="notif-detail__btn notif-detail__btn--primary" onClick={() => onOpen?.(raw)}>
+            Ouvrir dans Yorix →
+          </button>
+        )}
+        <button type="button" className="notif-detail__btn" onClick={onClose}>
+          Fermer
+        </button>
+        <button
+          type="button"
+          className="notif-detail__btn notif-detail__btn--danger"
+          onClick={() => {
+            onDismiss?.(raw.id);
+            onClose?.();
+          }}
+        >
+          Supprimer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Centre de notifications premium (dropdown ou page complète).
  */
@@ -37,14 +119,22 @@ export function NotificationCenter({
   notifs = [],
   user,
   goPage,
+  siteLocale = "fr",
   onMarkRead,
   onMarkAllRead,
   onDismiss,
   onClose,
+  onOpenNotif,
   onPrefsUpdated,
+  initialSelectedId = null,
 }) {
   const [filter, setFilter] = useState("all");
+  const [selectedId, setSelectedId] = useState(initialSelectedId);
   const [prefs, setPrefs] = useState(() => loadNotificationPrefs());
+
+  useEffect(() => {
+    if (initialSelectedId) setSelectedId(initialSelectedId);
+  }, [initialSelectedId]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -62,6 +152,17 @@ export function NotificationCenter({
 
   const filtered = useMemo(() => filterNotificationsByCategory(notifs, filter === "all" ? null : filter), [notifs, filter]);
 
+  const selectedRaw = useMemo(
+    () => filtered.find((n) => String(n.id) === String(selectedId)) ?? null,
+    [filtered, selectedId],
+  );
+
+  useEffect(() => {
+    if (selectedId && !filtered.some((n) => String(n.id) === String(selectedId))) {
+      setSelectedId(null);
+    }
+  }, [filtered, selectedId]);
+
   const updatePrefs = (patch) => {
     saveNotificationPrefsHybrid(supabase, user?.id, patch).then((next) => {
       setPrefs(next);
@@ -71,8 +172,15 @@ export function NotificationCenter({
 
   const unread = useMemo(() => notifs.filter((n) => !n.lu).length, [notifs]);
 
+  const selectNotification = (raw) => {
+    setSelectedId(raw.id);
+    onMarkRead?.(raw, { navigate: false, closeDrawer: false });
+  };
+
+  const showDetailOnly = variant === "page" && selectedRaw && typeof window !== "undefined" && window.innerWidth < 720;
+
   return (
-    <div className={`notif-hub notif-hub--${variant}`}>
+    <div className={`notif-hub notif-hub--${variant}${selectedRaw ? " notif-hub--has-detail" : ""}`}>
       <div className="notif-hub-toolbar">
         <div className="notif-hub-title-row">
           <h2 className="notif-hub-title">Notifications</h2>
@@ -112,70 +220,91 @@ export function NotificationCenter({
         ))}
       </div>
 
-      <div className={variant === "dropdown" ? "notif-hub-scroll notif-hub-scroll--drop" : "notif-hub-scroll notif-hub-scroll--page"}>
-        {filtered.length === 0 ? (
-          <div className="notif-empty premium">
-            <div className="notif-empty-icon">🔕</div>
-            <div className="notif-empty-title">Aucune alerte dans ce filtre</div>
-            <p className="notif-empty-sub">Les commandes, messages et livraisons apparaîtront ici en temps réel.</p>
+      <div className="notif-hub-body">
+        {(!showDetailOnly || !selectedRaw) && (
+          <div className={variant === "dropdown" ? "notif-hub-scroll notif-hub-scroll--drop" : "notif-hub-scroll notif-hub-scroll--page"}>
+            {filtered.length === 0 ? (
+              <div className="notif-empty premium">
+                <div className="notif-empty-icon">🔕</div>
+                <div className="notif-empty-title">Aucune alerte dans ce filtre</div>
+                <p className="notif-empty-sub">Les commandes, messages et livraisons apparaîtront ici en temps réel.</p>
+              </div>
+            ) : (
+              <ul className="notif-card-list">
+                {filtered.map((raw) => {
+                  const n = enrichNotification(raw);
+                  const isSelected = String(raw.id) === String(selectedId);
+                  return (
+                    <li
+                      key={String(n.id)}
+                      className={`notif-card-li ${priorityClass(n._priority)}${isSelected ? " notif-card-li--selected" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className={`notif-card-main${raw.lu ? "" : " notif-card-unread"}`}
+                        aria-pressed={isSelected}
+                        onClick={() => selectNotification(raw)}
+                      >
+                        <span className="notif-card-avatar" aria-hidden>
+                          {n._image ? <img src={n._image} alt="" loading="lazy" /> : <span className="notif-card-emoji">{n._icon}</span>}
+                          {!raw.lu && <span className="notif-card-dot" />}
+                        </span>
+                        <span className="notif-card-copy">
+                          <span className="notif-card-top">
+                            <span className="notif-card-title">{n._title}</span>
+                            <time className="notif-card-time" dateTime={raw.created_at || undefined}>
+                              {n._timeLabel}
+                            </time>
+                          </span>
+                          <span className="notif-card-body">{n._body}</span>
+                          <span className="notif-card-cta-secondary">Appuyer pour voir le détail complet</span>
+                        </span>
+                      </button>
+                      <div className="notif-card-side">
+                        <button
+                          type="button"
+                          className="notif-mini-btn"
+                          title="Lu"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMarkRead?.(raw, { navigate: false, closeDrawer: false });
+                          }}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          className="notif-mini-btn notif-mini-btn-del"
+                          title="Masquer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (String(raw.id) === String(selectedId)) setSelectedId(null);
+                            onDismiss?.(raw.id);
+                          }}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-        ) : (
-          <ul className="notif-card-list">
-            {filtered.map((raw) => {
-              const n = enrichNotification(raw);
-              return (
-                <li key={String(n.id)} className={`notif-card-li ${priorityClass(n._priority)}`}>
-                  <button
-                    type="button"
-                    className={`notif-card-main${raw.lu ? "" : " notif-card-unread"}`}
-                    onClick={() => onMarkRead?.(raw, { navigate: true, closeDrawer: variant === "dropdown" })}
-                  >
-                    <span className="notif-card-avatar" aria-hidden>
-                      {n._image ? <img src={n._image} alt="" loading="lazy" /> : <span className="notif-card-emoji">{n._icon}</span>}
-                      {!raw.lu && <span className="notif-card-dot" />}
-                    </span>
-                    <span className="notif-card-copy">
-                      <span className="notif-card-top">
-                        <span className="notif-card-title">{n._title}</span>
-                        <time className="notif-card-time" dateTime={raw.created_at || undefined}>
-                          {n._timeLabel}
-                        </time>
-                      </span>
-                      <span className="notif-card-body">{n._body}</span>
-                      {n._deeplink?.startsWith("http") && (
-                        <span className="notif-card-cta-secondary">Ouverture du lien sécurisé →</span>
-                      )}
-                      {n._deeplink?.startsWith("/") && <span className="notif-card-cta-secondary">Appuyer pour ouvrir dans Yorix</span>}
-                    </span>
-                  </button>
-                  <div className="notif-card-side">
-                    <button
-                      type="button"
-                      className="notif-mini-btn"
-                      title="Lu"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onMarkRead?.(raw, { navigate: false, closeDrawer: false });
-                      }}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      type="button"
-                      className="notif-mini-btn notif-mini-btn-del"
-                      title="Masquer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDismiss?.(raw.id);
-                      }}
-                    >
-                      🗑
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+        )}
+
+        {selectedRaw && (
+          <NotificationDetailPanel
+            raw={selectedRaw}
+            enriched={enrichNotification(selectedRaw)}
+            siteLocale={siteLocale}
+            onClose={() => setSelectedId(null)}
+            onOpen={(raw) => {
+              onOpenNotif?.(raw);
+              if (variant === "dropdown") onClose?.();
+            }}
+            onDismiss={onDismiss}
+          />
         )}
       </div>
 

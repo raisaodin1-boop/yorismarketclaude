@@ -702,6 +702,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .notif-card-side{display:flex;flex-direction:column;gap:4px;padding:8px 8px 8px 0;}
 .notif-mini-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.78rem;display:flex;align-items:center;justify-content:center;}
 .notif-mini-btn-del{font-size:.72rem;opacity:.75;}
+.notif-hub-body{display:flex;flex:1;min-height:0;flex-direction:column;}
+.notif-hub--page .notif-hub-body{min-height:min(70vh,640px);}
+@media(min-width:720px){
+  .notif-hub--page.notif-hub--has-detail .notif-hub-body{flex-direction:row;align-items:stretch;}
+  .notif-hub--page.notif-hub--has-detail .notif-hub-scroll--page{flex:1;min-width:0;border-right:1px solid var(--border);}
+  .notif-hub--page .notif-detail{flex:1;min-width:min(360px,42%);max-width:480px;}
+}
+.notif-card-li--selected{box-shadow:0 0 0 2px rgba(26,107,58,.22);}
+.notif-detail{display:flex;flex-direction:column;min-height:0;background:var(--surface);border-top:1px solid var(--border);flex:1;}
+.notif-hub--dropdown .notif-detail{max-height:min(46vh,360px);}
+.notif-detail__head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.notif-detail__back{background:none;border:none;color:var(--green);font-weight:700;font-size:.78rem;cursor:pointer;padding:8px 4px;min-height:44px;}
+.notif-detail__hero{display:flex;gap:12px;padding:14px 14px 10px;flex-shrink:0;}
+.notif-detail__avatar{width:52px;height:52px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--border);flex-shrink:0;}
+.notif-detail__avatar img{width:100%;height:100%;object-fit:cover;}
+.notif-detail__title{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin:0 0 6px;color:var(--ink);line-height:1.3;}
+.notif-detail__chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.notif-detail__chip{font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:50px;background:var(--green-pale);color:var(--green);}
+.notif-detail__chip--muted{background:var(--surface2);color:var(--gray);}
+.notif-detail__time{font-size:.68rem;color:var(--gray);}
+.notif-detail__body-wrap{flex:1;min-height:0;overflow-y:auto;padding:0 14px 14px;-webkit-overflow-scrolling:touch;}
+.notif-detail__body{margin:0;font-size:.88rem;line-height:1.6;color:var(--ink);white-space:pre-wrap;word-break:break-word;}
+.notif-detail__link-hint{font-size:.72rem;color:var(--gray);margin:10px 0 0;}
+.notif-detail__actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex-shrink:0;}
+.notif-detail__btn{min-height:44px;padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);font-weight:700;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.notif-detail__btn--primary{background:var(--green);color:#fff;border-color:var(--green);}
+.notif-detail__btn--danger{color:#b91c1c;border-color:#fecaca;background:#fff5f5;}
+.notif-page-wrap{padding-bottom:calc(72px + env(safe-area-inset-bottom));}
 .notif-hub-footer-premium{border-top:1px solid var(--border);padding:10px 12px;background:var(--surface2);flex-shrink:0;max-height:min(240px,40vh);overflow-y:auto;}
 .notif-preferences-mini{display:grid;gap:6px;margin-bottom:8px;font-size:.72rem;color:var(--ink);}
 .notif-preferences-title{font-weight:800;font-family:'Syne',sans-serif;font-size:.74rem;color:var(--ink);}
@@ -1217,6 +1245,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
   .checkout-progress-node{width:min(22vw,80px);}
   .notif-drawer{top:56px;right:8px;width:calc(100vw - 16px);border-radius:14px;}
   .notif-hub-scroll--drop{max-height:min(48vh,380px);}
+  .notif-hub--page .notif-hub-body{min-height:auto;}
+  .notif-detail__actions{flex-direction:column;}
+  .notif-detail__btn{width:100%;}
 }
 /* ========================================
    YORIX CM - MOBILE FIXES

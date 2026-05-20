@@ -77,9 +77,9 @@ import { PointsAnimation } from "./components/PointsAnimation";
 import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
+import { applyNotificationOpen, getNotificationOpenAction } from "./lib/notificationNavigation.js";
 import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
 import { OptimizedImage } from "./components/OptimizedImage";
-import { NotificationCenter } from "./components/NotificationCenter";
 import { PremiumSiteFooter } from "./components/layout/PremiumSiteFooter";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { ContractAcceptance } from "./components/ContractAcceptance";
@@ -757,7 +757,16 @@ export default function YorixApp() {
 
   const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
-  const marquerNotifLue = async (notif, opts = { navigate: true, closeDrawer: true }) => {
+  const openNotificationTarget = useCallback(
+    (notification) => {
+      if (!notification) return false;
+      const action = getNotificationOpenAction(notification, route.locale);
+      return applyNotificationOpen(action, { navigate, goPage, setDashTab });
+    },
+    [navigate, route.locale, goPage, setDashTab],
+  );
+
+  const marquerNotifLue = async (notif, opts = { navigate: false, closeDrawer: false }) => {
     const id = typeof notif === "object" ? notif.id : notif;
     const notification = typeof notif === "object" ? notif : notifs.find((n) => n.id === id);
 
@@ -770,22 +779,8 @@ export default function YorixApp() {
 
     setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
 
-    if (!opts.navigate || !notification) return;
-
-    const link = String(notification.link || "").trim();
-    if (link.startsWith("http")) {
-      window.open(link, "_blank", "noopener,noreferrer");
-      return;
-    }
-    if (link.startsWith("/")) {
-      navigate(ensureLocalePath(link, route.locale));
-      return;
-    }
-    if (notification.type === "new_product" || link.includes("/products/")) {
-      goPage("produits");
-    } else if (notification.type === "new_message") {
-      goPage("dashboard");
-      setDashTab("messages");
+    if (opts.navigate && notification) {
+      openNotificationTarget(notification);
     }
   };
 
@@ -1547,6 +1542,7 @@ export default function YorixApp() {
     setDemandeLivraisonOpen,
     notifs,
     marquerNotifLue,
+    openNotificationTarget,
     marquerToutesLues,
     supprimerNotif,
     loadNotifsForUser,
@@ -1676,6 +1672,8 @@ export default function YorixApp() {
         produits={produits}
         setOnboardingOpen={setOnboardingOpen}
         onNotifsSync={() => user?.id && loadNotifsForUser(user.id)}
+        onOpenNotification={openNotificationTarget}
+        onMarkNotifRead={marquerNotifLue}
         totalQty={totalQty}
         setAuthTab={setAuthTab}
         setAuthOpen={setAuthOpen}

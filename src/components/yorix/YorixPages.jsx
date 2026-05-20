@@ -89,6 +89,7 @@ export function YorixPages({ ctx }) {
     setDemandeLivraisonOpen,
     notifs,
     marquerNotifLue,
+    openNotificationTarget,
     marquerToutesLues,
     supprimerNotif,
     loadNotifsForUser,
@@ -345,7 +346,9 @@ export function YorixPages({ ctx }) {
             user={user}
             notifs={notifs}
             goPage={goPage}
+            siteLocale={route.locale || "fr"}
             onMarkRead={marquerNotifLue}
+            onOpenNotif={openNotificationTarget}
             onMarkAllRead={marquerToutesLues}
             onDismiss={supprimerNotif}
             refreshNotificationsFull={() => loadNotifsForUser(user.id, 120)}
