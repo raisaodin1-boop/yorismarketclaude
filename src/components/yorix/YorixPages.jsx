@@ -458,7 +458,7 @@ export function YorixPages({ ctx }) {
                 <>
                   <div className="dash-page-title">💬 Messagerie Yorix</div>
                   <div className="info-msg">
-                    🔐 Messagerie sécurisée entre acheteurs et vendeurs. Tes discussions sont privées et protégées.
+                    🔐 Messagerie sécurisée Yorix — téléphones et e-mails masqués entre membres. Photos et liens https autorisés. Canal officiel « Yorix Équipe » pour les annonces.
                   </div>
                   <ChatUsers user={user} userData={userData} />
                 </>

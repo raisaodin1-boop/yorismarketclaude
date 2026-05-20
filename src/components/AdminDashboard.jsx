@@ -6,6 +6,7 @@ import { LoyaltyAdminTab } from "./LoyaltyAdminTab";
 import { ModalEditDelivery } from "./ModalEditDelivery";
 import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
 import { AdminCategoryManager } from "./admin/AdminCategoryManager";
+import { AdminBroadcastPanel } from "./admin/AdminBroadcastPanel";
 import {
   getStatutConfig,
   adminAssignerLivreur,
@@ -632,6 +633,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       { id: "prestataires", icon: "👷", label: t("nav.providers"), badge: prestPending || null },
       { id: "revenus", icon: "💰", label: t("nav.revenue") },
       { id: "commerce_promo", icon: "🎁", label: t("nav.promoShipping") },
+      { id: "messagerie", icon: "💬", label: "Messagerie" },
       { id: "notif_center", icon: "📣", label: t("nav.notifNetwork") },
       { id: "loyalty", icon: "🌟", label: t("nav.loyalty") },
       { id: "alertes", icon: "🔔", label: t("nav.alerts"), badge: alertes.length || null },
@@ -1930,6 +1932,13 @@ export function AdminDashboard({ user, userData, goPage }) {
         {/* ════════ YORIX POINTS ════════ */}
         {adminTab === "loyalty" && (
           <LoyaltyAdminTab user={user} userData={userData} showToast={showToast} />
+        )}
+
+        {adminTab === "messagerie" && (
+          <>
+            <div className="admin-page-title">💬 Messagerie communauté</div>
+            <AdminBroadcastPanel showToast={showToast} />
+          </>
         )}
 
         {adminTab === "notif_center" && (
