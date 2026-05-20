@@ -4,6 +4,7 @@ import { EMOTIONAL_NAV } from "../../lib/merchHubs";
 import { categoryLabel } from "../../lib/marketplaceCategories";
 import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
 import { CategoryMobileNav } from "../categories/CategoryMobileNav";
+import { NotificationBell } from "../NotificationBell";
 import "../categories/categoryUi.css";
 
 export function YorixHeader({
@@ -24,8 +25,7 @@ export function YorixHeader({
   setSearch,
   produits,
   setOnboardingOpen,
-  setNotifOpen,
-  unread,
+  onNotifsSync,
   totalQty,
   setAuthTab,
   setAuthOpen,
@@ -215,10 +215,7 @@ export function YorixHeader({
           </button>
 
           {user && (
-            <button type="button" className="icon-btn" onClick={() => setNotifOpen((o) => !o)} title={t("actions.notifications")}>
-              🔔
-              {unread > 0 && <span className="ibadge">{unread}</span>}
-            </button>
+            <NotificationBell user={user} goPage={goPage} siteLocale={siteLocale} onSync={onNotifsSync} />
           )}
 
           <button type="button" className="icon-btn" onClick={() => goPage("cart")} title={t("actions.cart")}>

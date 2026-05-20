@@ -7,6 +7,7 @@ import {
 } from "../lib/notificationPrefs";
 import { supabase } from "../lib/supabase";
 import { PushManager } from "./PushManager";
+import { EnablePushButton } from "../hooks/usePushNotifications";
 
 const FILTERS = [
   { key: "all", label: "Tous" },
@@ -198,7 +199,12 @@ export function NotificationCenter({
             Son discret (si navigateur autorise)
           </label>
         </div>
-        <PushManager user={user} compact />
+        {user?.id &&
+          (variant === "page" ? (
+            <EnablePushButton variant="primary" />
+          ) : (
+            <PushManager user={user} compact />
+          ))}
       </div>
     </div>
   );

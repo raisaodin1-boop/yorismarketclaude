@@ -167,7 +167,6 @@ export default function YorixApp() {
   }, [page, location.search]);
 
   // Notifs
-  const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs]       = useState([]);
   const [notifPrefs, setNotifPrefs] = useState(() => loadNotificationPrefs());
   const notifPrefsRef = useRef(notifPrefs);
@@ -243,7 +242,6 @@ export default function YorixApp() {
   const goPage = useCallback((p, opts = {}) => {
     navigate(pathForPage(p, { ...opts, locale: opts.locale ?? route.locale }));
     window.scrollTo(0, 0);
-    setNotifOpen(false);
   }, [navigate, route.locale]);
 
   const goToCategory = useCallback(
@@ -769,7 +767,6 @@ export default function YorixApp() {
     }
 
     setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
-    if (opts.closeDrawer) setNotifOpen(false);
 
     if (!opts.navigate || !notification) return;
 
@@ -1656,8 +1653,7 @@ export default function YorixApp() {
         setSearch={setSearch}
         produits={produits}
         setOnboardingOpen={setOnboardingOpen}
-        setNotifOpen={setNotifOpen}
-        unread={unread}
+        onNotifsSync={() => user?.id && loadNotifsForUser(user.id)}
         totalQty={totalQty}
         setAuthTab={setAuthTab}
         setAuthOpen={setAuthOpen}
@@ -1671,26 +1667,6 @@ export default function YorixApp() {
         commerceDeliveryPolicy={commerceDeliveryPolicy}
         roleChipClass={roleChipClass}
       />
-
-      {/* ── NOTIFICATIONS (hors header sticky — z-index overlay) ── */}
-      {notifOpen && user && (
-        <>
-          <div className="notif-backdrop" role="presentation" onClick={() => setNotifOpen(false)} />
-          <div className="notif-drawer notif-drawer--premium">
-            <NotificationCenter
-              variant="dropdown"
-              user={user}
-              notifs={notifs}
-              goPage={goPage}
-              onMarkRead={marquerNotifLue}
-              onMarkAllRead={marquerToutesLues}
-              onDismiss={supprimerNotif}
-              onClose={() => setNotifOpen(false)}
-              onPrefsUpdated={setNotifPrefs}
-            />
-          </div>
-        </>
-      )}
 
       <RouteErrorBoundary resetKeys={[page, location.pathname]}>
         <YorixPages ctx={pagesCtx} />
