@@ -1,6 +1,22 @@
 -- Messagerie Yorix : annonces admin, pièces jointes, notifications pair-à-pair
 -- Idempotent — safe à rejouer.
 
+-- Prérequis (certains projets n'ont que is_admin() JWT)
+CREATE OR REPLACE FUNCTION public.is_platform_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles p
+    WHERE p.id = auth.uid()
+      AND p.role IN ('admin', 'superadmin')
+  );
+$$;
+
 -- Colonnes optionnelles sur messages (photos / liens officiels)
 ALTER TABLE public.messages
   ADD COLUMN IF NOT EXISTS image_url text,
@@ -131,7 +147,7 @@ BEGIN
      AND to_regclass('public.conversations') IS NOT NULL THEN
     UPDATE public.conversations
     SET last_message_at = coalesce(NEW.created_at, now())
-    WHERE id::text = NEW.conversation_id::text;
+    WHERE id = NEW.conversation_id;
   END IF;
   RETURN NEW;
 END;
@@ -162,30 +178,30 @@ BEGIN
 
   SELECT * INTO v_conv
   FROM public.conversations c
-  WHERE c.id::text = NEW.conversation_id::text;
+  WHERE c.id = NEW.conversation_id;
 
   IF NOT FOUND THEN
     RETURN NEW;
   END IF;
 
-  IF v_conv.user1_id::text = coalesce(NEW.sender_id, NEW.expediteur_id)::text THEN
+  IF v_conv.user1_id = NEW.sender_id THEN
     v_recipient := v_conv.user2_id;
-  ELSIF v_conv.user2_id::text = coalesce(NEW.sender_id, NEW.expediteur_id)::text THEN
+  ELSIF v_conv.user2_id = NEW.sender_id THEN
     v_recipient := v_conv.user1_id;
   ELSE
     RETURN NEW;
   END IF;
 
-  IF v_recipient IS NULL OR v_recipient = coalesce(NEW.sender_id, NEW.expediteur_id) THEN
+  IF v_recipient IS NULL OR v_recipient = NEW.sender_id THEN
     RETURN NEW;
   END IF;
 
   SELECT coalesce(p.nom, 'Un membre Yorix') INTO v_sender_name
   FROM public.profiles p
-  WHERE p.id = coalesce(NEW.sender_id, NEW.expediteur_id);
+  WHERE p.id = NEW.sender_id;
 
   v_preview := left(
-    coalesce(NEW.content, NEW.texte, CASE WHEN NEW.image_url IS NOT NULL THEN '📷 Photo' ELSE 'Nouveau message' END),
+    coalesce(NEW.content, CASE WHEN NEW.image_url IS NOT NULL THEN '📷 Photo' ELSE 'Nouveau message' END),
     180
   );
 
@@ -197,7 +213,7 @@ BEGIN
     v_preview,
     '/dashboard?tab=messages',
     false,
-    jsonb_build_object('conversation_id', v_conv.id, 'sender_id', coalesce(NEW.sender_id, NEW.expediteur_id))
+    jsonb_build_object('conversation_id', v_conv.id, 'sender_id', NEW.sender_id)
   );
 
   RETURN NEW;
