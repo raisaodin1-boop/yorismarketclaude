@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { categoryLabel, bustCategoryCache } from "../../lib/marketplaceCategories";
 import "../categories/categoryUi.css";
 
-export function AdminCategoryManager({ tree = [], flat = [], onReload }) {
+export function AdminCategoryManager({ tree = [], flat = [], onReload, readOnly = false }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name_fr: "", name_en: "", icon: "", sort_order: 0, active: true });
   const [msg, setMsg] = useState(null);
@@ -20,6 +20,7 @@ export function AdminCategoryManager({ tree = [], flat = [], onReload }) {
   };
 
   const save = async () => {
+    if (readOnly) return;
     if (!editing || String(editing).startsWith("tax-")) {
       setMsg({ type: "error", text: "Catégorie locale uniquement — appliquez la migration SQL Supabase." });
       return;
@@ -46,6 +47,7 @@ export function AdminCategoryManager({ tree = [], flat = [], onReload }) {
   };
 
   const toggleActive = async (row) => {
+    if (readOnly) return;
     if (String(row.id).startsWith("tax-")) return;
     await supabase.from("marketplace_categories").update({ active: !row.active }).eq("id", row.id);
     bustCategoryCache();
@@ -121,12 +123,18 @@ export function AdminCategoryManager({ tree = [], flat = [], onReload }) {
                   )}
                 </td>
                 <td>
-                  <button type="button" className="admin-badge" onClick={() => toggleActive(row)}>
-                    {row.active !== false ? "✅" : "⛔"}
-                  </button>
+                  {readOnly ? (
+                    <span>{row.active !== false ? "✅" : "⛔"}</span>
+                  ) : (
+                    <button type="button" className="admin-badge" onClick={() => toggleActive(row)}>
+                      {row.active !== false ? "✅" : "⛔"}
+                    </button>
+                  )}
                 </td>
                 <td>
-                  {editing === row.id ? (
+                  {readOnly ? (
+                    <span style={{ fontSize: ".72rem", color: "var(--gray)" }}>—</span>
+                  ) : editing === row.id ? (
                     <>
                       <button type="button" className="btn-green" style={{ marginRight: 6 }} onClick={save}>
                         OK

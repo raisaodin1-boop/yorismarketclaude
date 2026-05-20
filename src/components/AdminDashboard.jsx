@@ -2,6 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { ROLE_LABELS, CATS } from "../lib/constants";
+import {
+  isAdminViewer,
+  canWriteAdmin,
+  ROLE_ADMIN_PARTNER,
+  ADMIN_ROLE_LABELS,
+} from "../lib/roles";
 import { LoyaltyAdminTab } from "./LoyaltyAdminTab";
 import { ModalEditDelivery } from "./ModalEditDelivery";
 import { useCategoryTaxonomy } from "../hooks/useCategoryTaxonomy";
@@ -90,12 +96,20 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [assignModalOpen, setAssignModalOpen] = useState(null);
   const [editDelivery, setEditDelivery]       = useState(null);
 
-  const isAuthorized = Boolean(user && (userData?.role === "admin" || userData?.role === "superadmin"));
+  const isAuthorized = Boolean(user && isAdminViewer(userData));
+  const canWrite = canWriteAdmin(userData);
+  const isPartnerReadOnly = isAuthorized && !canWrite;
 
   // ═══════════ TOAST ═══════════
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const requireWrite = () => {
+    if (canWrite) return true;
+    showToast("Mode partenaire — consultation uniquement", "error");
+    return false;
   };
 
   // ═══════════ CHARGEMENT DES DONNÉES ═══════════
@@ -306,6 +320,7 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   // ═══════════ ACTIONS LIVRAISONS (workflow centralisé) ═══════════
   const assignerLivreur = async (delivery, livreur) => {
+    if (!requireWrite()) return;
     try {
       const { delivery: updated, waOpened } = await adminAssignerLivreur({
         delivery,
@@ -327,6 +342,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const assignerLivreurManuel = async (delivery) => {
+    if (!requireWrite()) return;
     const nom = window.prompt("Nom du livreur :");
     if (!nom || !nom.trim()) return;
     const tel = window.prompt("Téléphone du livreur (+237...) :");
@@ -352,6 +368,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const changerStatutLivraison = async (delivery, newStatut) => {
+    if (!requireWrite()) return;
     try {
       const updated = await adminChangerStatut({
         delivery,
@@ -367,6 +384,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const sauvegarderEditionLivraison = async (form) => {
+    if (!requireWrite()) return;
     if (!editDelivery) return;
     try {
       const updated = await adminEditerLivraison({
@@ -383,6 +401,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const retirerLivreur = async () => {
+    if (!requireWrite()) return;
     if (!editDelivery) return;
     if (!window.confirm(`Retirer le livreur ${editDelivery.livreur_nom || ""} de la mission ${editDelivery.code_suivi} ?`)) return;
     try {
@@ -408,6 +427,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const annulerLivraisonAdmin = async (motif) => {
+    if (!requireWrite()) return;
     if (!editDelivery) return;
     try {
       const updated = await adminAnnulerLivraison({
@@ -434,6 +454,7 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   // ═══════════ ACTIONS PRODUITS ═══════════
   const supprimerProduit = async (id, nom) => {
+    if (!requireWrite()) return;
     if (!window.confirm(`Supprimer le produit "${nom}" ?`)) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
@@ -442,6 +463,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const toggleActifProduit = async (id, actif) => {
+    if (!requireWrite()) return;
     const { error } = await supabase.from("products").update({ actif: !actif }).eq("id", id);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
     setProduits(p => p.map(x => x.id === id ? { ...x, actif: !actif } : x));
@@ -449,6 +471,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const setMadeInCameroonStatus = async (id, status) => {
+    if (!requireWrite()) return;
     const payload = {
       made_in_cameroon_status: status,
       is_made_in_cameroon: status === "verified" || status === "declared" || status === "auto",
@@ -472,16 +495,18 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   // ═══════════ ACTIONS UTILISATEURS ═══════════
   const changerRole = async (uid, newRole) => {
+    if (!requireWrite()) return;
     const [r1, r2] = await Promise.all([
       supabase.from("users").update({ role: newRole }).eq("uid", uid),
       supabase.from("profiles").update({ role: newRole }).eq("id", uid),
     ]);
     if (r1.error && r2.error) { showToast("Erreur changement rôle", "error"); return; }
     setUtilisateurs(u => u.map(x => (x.uid || x.id) === uid ? { ...x, role: newRole } : x));
-    showToast(`Rôle changé → ${newRole}`);
+    showToast(`Rôle changé → ${ADMIN_ROLE_LABELS[newRole] || newRole}`);
   };
 
   const supprimerUser = async (uid, email) => {
+    if (!requireWrite()) return;
     if (!window.confirm(`Supprimer "${email}" ?`)) return;
     const { error } = await supabase.from("users").delete().eq("uid", uid);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
@@ -490,6 +515,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const toggleVendeur = async (uid, actif) => {
+    if (!requireWrite()) return;
     const { error } = await supabase.from("users").update({ actif: !actif }).eq("uid", uid);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
     setUtilisateurs(u => u.map(x => (x.uid || x.id) === uid ? { ...x, actif: !actif } : x));
@@ -497,6 +523,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const verifierUser = async (uid, verifie) => {
+    if (!requireWrite()) return;
     await supabase.from("users").update({ verifie: !verifie }).eq("uid", uid).catch(() => {});
     setUtilisateurs(u => u.map(x => (x.uid || x.id) === uid ? { ...x, verifie: !verifie } : x));
     showToast(verifie ? "Vérification retirée" : "Utilisateur vérifié ✅");
@@ -504,6 +531,7 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   // ═══════════ ACTIONS COMMANDES ═══════════
   const validerCommande = async (id) => {
+    if (!requireWrite()) return;
     const { error } = await supabase.from("orders").update({ status: "validee" }).eq("id", id);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
     setCommandes(c => c.map(x => x.id === id ? { ...x, status: "validee" } : x));
@@ -511,6 +539,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const marquerLivre = async (id) => {
+    if (!requireWrite()) return;
     const { error } = await supabase.from("orders").update({ status: "livre", livraison_status: "livre", escrow_status: "libere" }).eq("id", id);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
     setCommandes(c => c.map(x => x.id === id ? { ...x, status: "livre", livraison_status: "livre", escrow_status: "libere" } : x));
@@ -518,6 +547,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const annulerCommande = async (id) => {
+    if (!requireWrite()) return;
     if (!window.confirm("Annuler cette commande ?")) return;
     const { error } = await supabase.from("orders").update({ status: "annulee" }).eq("id", id);
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
@@ -576,6 +606,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const prestPending = prestatairesList.filter(p => p.status === "pending").length;
 
   const persistCommercePromo = async () => {
+    if (!requireWrite()) return;
     try {
       const thr = Number(commerceForm.threshold);
       const fee = Number(commerceForm.fee);
@@ -621,24 +652,32 @@ export function AdminDashboard({ user, userData, goPage }) {
   };
 
   const NAV = useMemo(
-    () => [
-      { id: "overview", icon: "📊", label: t("nav.overview") },
-      { id: "deliveries", icon: "🚚", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
-      { id: "categories", icon: "🏷️", label: "Catégories" },
-      { id: "produits", icon: "📦", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
-      { id: "commandes", icon: "🛍️", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
-      { id: "utilisateurs", icon: "👥", label: t("nav.users") },
-      { id: "vendeurs", icon: "🏪", label: t("nav.sellers") },
-      { id: "livreurs", icon: "🏍️", label: t("nav.couriers") },
-      { id: "prestataires", icon: "👷", label: t("nav.providers"), badge: prestPending || null },
-      { id: "revenus", icon: "💰", label: t("nav.revenue") },
-      { id: "commerce_promo", icon: "🎁", label: t("nav.promoShipping") },
-      { id: "messagerie", icon: "💬", label: "Messagerie" },
-      { id: "notif_center", icon: "📣", label: t("nav.notifNetwork") },
-      { id: "loyalty", icon: "🌟", label: t("nav.loyalty") },
-      { id: "alertes", icon: "🔔", label: t("nav.alerts"), badge: alertes.length || null },
-    ],
-    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length],
+    () => {
+      const items = [
+        { id: "overview", icon: "📊", label: t("nav.overview") },
+        { id: "deliveries", icon: "🚚", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
+        { id: "categories", icon: "🏷️", label: "Catégories" },
+        { id: "produits", icon: "📦", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
+        { id: "commandes", icon: "🛍️", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
+        { id: "utilisateurs", icon: "👥", label: t("nav.users") },
+        { id: "vendeurs", icon: "🏪", label: t("nav.sellers") },
+        { id: "livreurs", icon: "🏍️", label: t("nav.couriers") },
+        { id: "prestataires", icon: "👷", label: t("nav.providers"), badge: prestPending || null },
+        { id: "revenus", icon: "💰", label: t("nav.revenue") },
+        { id: "commerce_promo", icon: "🎁", label: t("nav.promoShipping") },
+        { id: "messagerie", icon: "💬", label: "Messagerie" },
+        { id: "notif_center", icon: "📣", label: t("nav.notifNetwork") },
+        { id: "loyalty", icon: "🌟", label: t("nav.loyalty") },
+        { id: "alertes", icon: "🔔", label: t("nav.alerts"), badge: alertes.length || null },
+      ];
+      return items.filter((n) => canWrite || n.id !== "messagerie");
+    },
+    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite],
+  );
+
+  const ROLE_ASSIGN_OPTIONS = useMemo(
+    () => ["buyer", "seller", "delivery", "provider", "admin", ROLE_ADMIN_PARTNER],
+    [],
   );
 
   // ═══════════ HELPERS UI ═══════════
@@ -689,8 +728,8 @@ export function AdminDashboard({ user, userData, goPage }) {
         <div style={{ fontSize: "4rem" }}>🔒</div>
         <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.4rem", color: "var(--ink)" }}>Accès refusé</div>
         <p style={{ color: "var(--gray)", textAlign: "center", maxWidth: 400, lineHeight: 1.7 }}>
-          Cette page est réservée aux administrateurs Yorix.<br />
-          Connectez-vous avec un compte admin pour y accéder.
+          Cette page est réservée aux administrateurs Yorix et aux partenaires autorisés.<br />
+          Connectez-vous avec un compte habilité pour y accéder.
         </p>
         <button className="form-submit" style={{ width: "auto", padding: "10px 24px" }} onClick={() => goPage("home")}>
           ← Retour à l'accueil
@@ -712,7 +751,17 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   // ═══════════ RENDU PRINCIPAL ═══════════
   return (
-    <div className="admin-layout" style={{ minHeight: "calc(100vh - 130px)" }}>
+    <div className={`admin-layout${isPartnerReadOnly ? " admin-layout--readonly" : ""}`} style={{ minHeight: "calc(100vh - 130px)" }}>
+
+      {isPartnerReadOnly && (
+        <div className="admin-partner-banner" role="status">
+          <span className="admin-partner-banner-icon">👁️</span>
+          <div>
+            <strong>Mode Admin partenaire</strong>
+            <p>Consultation uniquement — exports CSV autorisés. Aucune modification possible.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── TOAST ── */}
       {toast && (
@@ -835,6 +884,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         </div>
       )}
 
+      <div className="admin-layout-inner">
       {/* ── SIDEBAR ── */}
       <div className="admin-sidebar">
         <div className="admin-sidebar-logo">
@@ -1347,6 +1397,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                 tree={categoryTree}
                 flat={categoryFlat}
                 onReload={() => setCatReload((k) => k + 1)}
+                readOnly={!canWrite}
               />
             )}
           </>
@@ -1375,6 +1426,7 @@ export function AdminDashboard({ user, userData, goPage }) {
               </select>
               <button className="admin-action-btn" style={{ background: "var(--surface2)", color: "var(--ink)", padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)" }} onClick={() => { setSearchProd(""); setFilterProdCat(""); setFilterProdStatut(""); }}>✕ Reset</button>
               <button className="admin-action-btn" style={{ background: "#e6f0ff", color: "#1a4a9a", padding: "7px 12px", borderRadius: 8, marginLeft: "auto" }}
+                data-readonly-ok="1"
                 onClick={() => exportCSV(produitsFiltres.map(p => ({ id: p.id, nom: p.name_fr, prix: p.prix, vendeur: p.vendeur_nom, ville: p.ville, stock: p.stock, categorie: p.categorie, actif: p.actif })), "produits-yorix.csv")}>
                 📤 Export CSV
               </button>
@@ -1511,15 +1563,15 @@ export function AdminDashboard({ user, userData, goPage }) {
             </div>
 
             <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-              {["buyer", "seller", "delivery", "provider", "admin"].map(r => {
+              {["buyer", "seller", "delivery", "provider", "admin", ROLE_ADMIN_PARTNER].map(r => {
                 const cnt = utilisateurs.filter(u => u.role === r).length;
-                const colors = { buyer: "#1a4a9a", seller: "#1a6b3a", delivery: "#b8860b", provider: "#6a1b9a", admin: "#ce1126" };
+                const colors = { buyer: "#1a4a9a", seller: "#1a6b3a", delivery: "#b8860b", provider: "#6a1b9a", admin: "#ce1126", [ROLE_ADMIN_PARTNER]: "#0e7490" };
                 return (
                   <div key={r} onClick={() => setFilterRole(r === filterRole ? "" : r)} style={{
                     background: "var(--surface)", border: `1.5px solid ${filterRole === r ? colors[r] : "var(--border)"}`,
                     borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: ".73rem",
                   }}>
-                    <span style={{ color: colors[r] || "var(--gray)", fontWeight: 700 }}>{ROLE_LABELS[r] || r}</span>
+                    <span style={{ color: colors[r] || "var(--gray)", fontWeight: 700 }}>{ADMIN_ROLE_LABELS[r] || ROLE_LABELS[r] || r}</span>
                     <span style={{ color: "var(--gray)", marginLeft: 6 }}>{cnt}</span>
                   </div>
                 );
@@ -1530,6 +1582,7 @@ export function AdminDashboard({ user, userData, goPage }) {
               <input className="admin-search" style={{ maxWidth: 260 }} placeholder="🔍 Nom ou email..." value={searchUser} onChange={e => setSearchUser(e.target.value)} />
               <button className="admin-action-btn" style={{ background: "var(--surface2)", color: "var(--ink)", padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)" }} onClick={() => { setSearchUser(""); setFilterRole(""); }}>✕ Reset</button>
               <button className="admin-action-btn" style={{ background: "#e6f0ff", color: "#1a4a9a", padding: "7px 12px", borderRadius: 8, marginLeft: "auto" }}
+                data-readonly-ok="1"
                 onClick={() => exportCSV(usersFiltres.map(u => ({ uid: u.uid, nom: u.nom, email: u.email, role: u.role, ville: u.ville, telephone: u.telephone })), "utilisateurs-yorix.csv")}>
                 📤 Export CSV
               </button>
@@ -1567,8 +1620,15 @@ export function AdminDashboard({ user, userData, goPage }) {
                           </td>
                           <td style={{ fontSize: ".75rem", color: "var(--gray)" }}>{u.email || "—"}</td>
                           <td>
-                            <select value={u.role || "buyer"} style={{ border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 6, padding: "3px 8px", fontSize: ".72rem", cursor: "pointer", color: "var(--ink)" }} onChange={e => changerRole(uid, e.target.value)}>
-                              {["buyer", "seller", "delivery", "provider", "admin"].map(r => <option key={r} value={r}>{r}</option>)}
+                            <select
+                              value={u.role || "buyer"}
+                              disabled={!canWrite}
+                              style={{ border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 6, padding: "3px 8px", fontSize: ".72rem", cursor: canWrite ? "pointer" : "not-allowed", color: "var(--ink)", opacity: canWrite ? 1 : 0.75 }}
+                              onChange={e => changerRole(uid, e.target.value)}
+                            >
+                              {ROLE_ASSIGN_OPTIONS.map(r => (
+                                <option key={r} value={r}>{ADMIN_ROLE_LABELS[r] || r}</option>
+                              ))}
                             </select>
                           </td>
                           <td style={{ fontSize: ".73rem" }}>{u.ville || "—"}</td>
@@ -1931,10 +1991,10 @@ export function AdminDashboard({ user, userData, goPage }) {
 
         {/* ════════ YORIX POINTS ════════ */}
         {adminTab === "loyalty" && (
-          <LoyaltyAdminTab user={user} userData={userData} showToast={showToast} />
+          <LoyaltyAdminTab user={user} userData={userData} showToast={showToast} readOnly={!canWrite} />
         )}
 
-        {adminTab === "messagerie" && (
+        {adminTab === "messagerie" && canWrite && (
           <>
             <div className="admin-page-title">💬 Messagerie communauté</div>
             <AdminBroadcastPanel showToast={showToast} />
@@ -2056,6 +2116,7 @@ export function AdminDashboard({ user, userData, goPage }) {
           </>
         )}
 
+      </div>
       </div>
     </div>
   );

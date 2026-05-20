@@ -3,14 +3,12 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { uploadSingleImage } from "../utils/helpers";
 import { filtrerMsg, publicDisplayName, adminContactLines } from "../lib/chatSecurity";
+import { canWriteAdmin } from "../lib/roles";
 import { CHAT_CONVERSATIONS_LIMIT, CHAT_MESSAGES_LIMIT } from "../lib/queryLimits";
 import { ChatMessageBody } from "./ChatMessageBody";
 
 export const YORIX_TEAM_CHANNEL = "__yorix_team__";
 
-function isAdminRole(userData) {
-  return userData?.role === "admin" || userData?.role === "superadmin";
-}
 
 function safeHttpsUrl(raw) {
   if (!raw || typeof raw !== "string") return null;
@@ -31,7 +29,7 @@ function messagePreview(m) {
 }
 
 export function ChatUsers({ user, userData, initialProduct = null, onClose, isModal = false }) {
-  const isAdmin = isAdminRole(userData);
+  const isAdmin = canWriteAdmin(userData);
   const revealPII = isAdmin;
 
   const [conversations, setConversations] = useState([]);

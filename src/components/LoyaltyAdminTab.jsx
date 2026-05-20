@@ -5,7 +5,7 @@ import { sendEmail } from "../utils/helpers";
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT ADMIN : Gestion achats de points (Yorix Points)
 // ─────────────────────────────────────────────────────────────
-export function LoyaltyAdminTab({ user, userData, showToast }) {
+export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false }) {
   const [purchases, setPurchases]             = useState([]);
   const [loading, setLoading]                 = useState(true);
   const [filter, setFilter]                   = useState("pending");
@@ -59,6 +59,10 @@ export function LoyaltyAdminTab({ user, userData, showToast }) {
   useEffect(() => { loadPurchases(); }, []);
 
   const validateP = async (purchase) => {
+    if (readOnly) {
+      showToast?.("Mode partenaire — consultation uniquement", "error");
+      return;
+    }
     if (!window.confirm(
       `Valider l'achat de ${purchase.points} points pour ${purchase.client?.nom || "ce client"} ?\n\n` +
       `Montant : ${purchase.prix_fcfa?.toLocaleString("fr-FR")} FCFA\n` +
@@ -134,6 +138,10 @@ export function LoyaltyAdminTab({ user, userData, showToast }) {
   };
 
   const cancelP = async (purchase) => {
+    if (readOnly) {
+      showToast?.("Mode partenaire — consultation uniquement", "error");
+      return;
+    }
     const reason = window.prompt("Raison de l'annulation ?", "Paiement non reçu");
     if (!reason) return;
 

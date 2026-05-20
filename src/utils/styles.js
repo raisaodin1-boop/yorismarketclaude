@@ -899,7 +899,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .nl-btn{background:var(--yellow);color:#0d1f14;border:none;padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:.79rem;cursor:pointer;}
 
 /* ── ADMIN DASHBOARD ── */
-.admin-layout{display:flex;min-height:100vh;gap:0;}
+.admin-layout{display:flex;min-height:100vh;gap:0;flex-direction:column;width:100%;}
+.admin-layout--readonly .admin-content .admin-action-btn:not([data-readonly-ok]){opacity:.55;pointer-events:none;}
+.admin-partner-banner{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:linear-gradient(90deg,#e0f2fe,#f0f9ff);border-bottom:1px solid #bae6fd;color:#0c4a6e;font-size:.82rem;line-height:1.5;}
+.admin-partner-banner-icon{font-size:1.4rem;line-height:1;}
+.admin-partner-banner strong{display:block;font-family:'Syne',sans-serif;font-weight:800;margin-bottom:2px;}
+.admin-partner-banner p{margin:0;font-size:.78rem;opacity:.9;}
+.admin-layout-inner{display:flex;flex:1;min-height:0;width:100%;align-items:stretch;}
 .admin-sidebar{width:220px;background:${dark?"#060d09":"#0a1a10"};color:#fff;padding:20px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
 .admin-sidebar-logo{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;}
 .admin-sidebar-logo-txt{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:#b7e4c7;}

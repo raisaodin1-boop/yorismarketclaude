@@ -145,13 +145,7 @@ export async function getUserProfile(uid) {
   return data;
 }
 
-export function getUserRole(profileData) {
-  const valid = ["buyer", "seller", "delivery", "provider", "admin"];
-  const role = profileData?.role;
-  if (role === "superadmin") return "admin";
-  if (role && valid.includes(role)) return role;
-  return "buyer";
-}
+export { getUserRole, isAdminFull, isAdminViewer, canWriteAdmin, getProfileRole, ROLE_ADMIN_PARTNER, ADMIN_ROLE_LABELS } from "../lib/roles";
 
 export { filtrerMsg, maskPIIForDisplay } from "../lib/chatSecurity";
 // ═══════════════════════════════════════════════════════════════

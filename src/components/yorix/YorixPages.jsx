@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER, MOMO_NUMBER, ORANGE_NUMBER, PAYMENT_WA_NUMBER } from "../../lib/supabase";
 import { ROLE_LABELS } from "../../lib/constants";
+import { isAdminViewer, canWriteAdmin } from "../../lib/roles";
 import { SeoLocalIntro } from "../seo/SeoLocalIntro";
 import { ChatUsers } from "../ChatUsers";
 import {
@@ -542,9 +543,9 @@ export function YorixPages({ ctx }) {
       )}
 
       <div className="yorix-fab-stack" aria-live="polite">
-        {user && (userData?.role === "admin" || userData?.role === "superadmin") && page !== "admin" && (
-          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title="Ouvrir l’administration">
-            ⚙️ Admin Yorix
+        {user && isAdminViewer(userData) && page !== "admin" && (
+          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title={canWriteAdmin(userData) ? "Ouvrir l’administration" : "Consultation partenaire"}>
+            {canWriteAdmin(userData) ? "⚙️ Admin Yorix" : "👁️ Consultation Yorix"}
           </button>
         )}
         <div className="wa-float">

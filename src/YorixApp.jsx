@@ -68,6 +68,7 @@ import {
   updateLivraisonStatut,
   genererCodeSuivi,
 } from "./utils/helpers";
+import { isAdminViewer } from "./lib/roles";
 import { makeCSS } from "./utils/styles";
 import { Stars } from "./components/Stars";
 import { ModalCommander } from "./components/ModalCommander";
@@ -959,7 +960,7 @@ export default function YorixApp() {
       tab("📞", "contact", "contact"),
       tab("🆘", "help", "aide"),
     ];
-    if (user && (userData?.role === "admin" || userData?.role === "superadmin")) {
+    if (user && isAdminViewer(userData)) {
       base.push(tab("⚙️", "admin", "admin"));
     }
     return base;
