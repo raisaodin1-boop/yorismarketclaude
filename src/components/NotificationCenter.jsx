@@ -7,7 +7,7 @@ import {
 } from "../lib/notificationPrefs";
 import { supabase } from "../lib/supabase";
 import { PushManager } from "./PushManager";
-import { EnablePushButton } from "../hooks/usePushNotifications";
+import { EnablePushButton } from "./EnablePushButton";
 
 const FILTERS = [
   { key: "all", label: "Tous" },
