@@ -1,6 +1,6 @@
 import React from "react";
 import { act } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { HomePage } from "../HomePage.jsx";
@@ -8,6 +8,10 @@ import { HomePage } from "../HomePage.jsx";
 describe("HomePage", () => {
   let mountedRoot = null;
   let mountedContainer = null;
+
+  beforeAll(() => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  });
 
   afterEach(async () => {
     if (mountedRoot) {

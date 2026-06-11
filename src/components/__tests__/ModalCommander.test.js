@@ -1,5 +1,5 @@
 import React, { act } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createCheckoutIntent, confirmCheckout } from "../../lib/checkoutApi";
 import { showAppToast } from "../../lib/appToast";
@@ -22,6 +22,7 @@ vi.mock("../../lib/appToast", () => ({
 describe("ModalCommander", () => {
   let root;
   let container;
+  let consoleErrorSpy;
 
   const product = {
     id: "product-1",
@@ -35,8 +36,13 @@ describe("ModalCommander", () => {
   const user = { id: "buyer-1", email: "buyer@example.com" };
   const userData = { nom: "Amina", telephone: "690000000", ville: "Douala" };
 
+  beforeAll(() => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -49,6 +55,8 @@ describe("ModalCommander", () => {
     container?.remove();
     root = null;
     container = null;
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = null;
   });
 
   async function renderModal() {
