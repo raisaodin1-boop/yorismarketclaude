@@ -164,7 +164,10 @@ export function HomePage({
   useEffect(() => {
     const container = homeRef.current;
     if (!container) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
       container.querySelectorAll(".yx-reveal").forEach((el) => el.classList.add("is-in"));
       return;
     }

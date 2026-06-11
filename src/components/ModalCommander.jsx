@@ -6,6 +6,18 @@ import { showAppToast } from "../lib/appToast";
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL COMMANDER (Commande + WhatsApp)
 // ─────────────────────────────────────────────────────────────
+export function isCheckoutEdgeUnavailable(err) {
+  const errMsg = err?.message || "";
+  return (
+    errMsg.includes("Edge Function") ||
+    errMsg.includes("Failed to send") ||
+    errMsg.includes("FunctionsHttpError") ||
+    errMsg.includes("FunctionsRelayError") ||
+    errMsg.includes("404") ||
+    errMsg.includes("fetch")
+  );
+}
+
 export function ModalCommander({ product, user, userData, onClose, onSuccess }) {
   const [nom, setNom]         = useState(userData?.nom || "");
   const [tel, setTel]         = useState(userData?.telephone || "");
@@ -28,29 +40,47 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
     try {
       // ── Tentative via Edge Functions
       const subtotal = Number(product?.prix || 0);
-      const intent = await createCheckoutIntent({
-        checkoutType: "product_only",
-        customer: {
-          id: user?.id || null,
-          nom,
-          telephone: tel,
-          email: user?.email || "",
-          ville: userData?.ville || "",
-        },
-        items: [
-          {
-            id: product.id,
-            kind: "product",
-            qty: 1,
-            price: subtotal,
-            fulfillmentMode: "delivery",
-            vendeur_id: product.vendeur_id ?? null,
-            vendeur_nom: product.vendeur_nom || "",
-            ville: product.ville || "",
+      let intent;
+      try {
+        intent = await createCheckoutIntent({
+          checkoutType: "product_only",
+          customer: {
+            id: user?.id || null,
+            nom,
+            telephone: tel,
+            email: user?.email || "",
+            ville: userData?.ville || "",
           },
-        ],
-        summary: { subtotal, delivery: 0, total: subtotal },
-      });
+          items: [
+            {
+              id: product.id,
+              kind: "product",
+              qty: 1,
+              price: subtotal,
+              fulfillmentMode: "delivery",
+              vendeur_id: product.vendeur_id ?? null,
+              vendeur_nom: product.vendeur_nom || "",
+              ville: product.ville || "",
+            },
+          ],
+          summary: { subtotal, delivery: 0, total: subtotal },
+        });
+      } catch (createErr) {
+        if (!isCheckoutEdgeUnavailable(createErr)) throw createErr;
+        await creerCommandeSupabase({
+          product,
+          clientNom: nom.trim(),
+          telephone: tel.trim(),
+          userId: user?.id || null,
+        });
+        setDone(true);
+        setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
+        return;
+      }
+
+      if (!intent?.checkout_intent_id) {
+        throw new Error("Référence checkout manquante");
+      }
       const confirmation = await confirmCheckout({
         checkout_intent_id: intent.checkout_intent_id,
         payment_method: "whatsapp_backup",
@@ -62,37 +92,12 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
       setDeliveryTracking(codes);
       setDone(true);
       setTimeout(() => { onSuccess?.(); onClose(); }, codes.length > 0 ? 5000 : 2000);
-    } catch (edgeFnErr) {
-      // ── Fallback : insertion directe en base (Edge Functions non déployées)
-      const errMsg = edgeFnErr?.message || "";
-      const isEdgeUnavailable =
-        errMsg.includes("Edge Function") ||
-        errMsg.includes("Failed to send") ||
-        errMsg.includes("FunctionsHttpError") ||
-        errMsg.includes("FunctionsRelayError") ||
-        errMsg.includes("404") ||
-        errMsg.includes("fetch");
-
-      if (isEdgeUnavailable) {
-        try {
-          await creerCommandeSupabase({
-            product,
-            clientNom: nom.trim(),
-            telephone: tel.trim(),
-            userId: user?.id || null,
-          });
-          setDone(true);
-          setTimeout(() => { onSuccess?.(); onClose(); }, 2000);
-        } catch (fallbackErr) {
-          console.error("commander fallback:", fallbackErr);
-          showAppToast("Erreur lors de la commande : " + fallbackErr.message, "error");
-        }
-      } else {
-        console.error("creerCommande:", edgeFnErr);
-        showAppToast("Erreur lors de la commande : " + errMsg, "error");
-      }
+    } catch (err) {
+      console.error("creerCommande:", err);
+      showAppToast("Erreur lors de la commande : " + (err?.message || "Erreur inconnue"), "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
