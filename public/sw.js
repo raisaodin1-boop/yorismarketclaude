@@ -1,7 +1,9 @@
 /* Yorix CM — Service worker : shell cache + push + navigation fallback */
-const CACHE = "yorix-sw-v3";
+const CACHE = "yorix-sw-v4";
 const OFFLINE = "/offline.html";
-const PRECACHE = ["/", OFFLINE, "/favicon.svg", "/manifest.json"];
+// Do not precache "/" or HTML documents: cached Vite shells can reference
+// deleted/incompatible hashed chunks after a deploy and white-screen the app.
+const PRECACHE = [OFFLINE, "/favicon.svg", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -22,38 +24,25 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
 
-  /* Navigation document : réseau puis cache offline */
+  /* Navigation document : réseau puis page offline, jamais shell HTML stale */
   if (req.mode === "navigate" || req.headers.get("Accept")?.includes("text/html")) {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (res && res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() =>
-          caches.match(req).then((hit) => hit || caches.match(OFFLINE) || caches.match("/")),
-        ),
+      fetch(req).catch(() => caches.match(OFFLINE)),
     );
     return;
   }
 
-  /* Assets : stale-while-revalidate léger */
+  /* Assets : network-first, fallback cache seulement hors-ligne */
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const net = fetch(req)
-        .then((res) => {
-          if (res && res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || net;
-    }),
+    fetch(req)
+      .then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      })
+      .catch(() => caches.match(req)),
   );
 });
 
