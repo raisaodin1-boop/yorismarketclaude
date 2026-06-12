@@ -1,13 +1,9 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import migrationSql from "../../../supabase/migrations/20260612000100_fix_messages_insert_participant_rls.sql?raw";
 
 describe("messages insert RLS migration", () => {
   it("requires the sender to participate in the target conversation", () => {
-    const sql = readFileSync(
-      new URL("../../../supabase/migrations/20260612000100_fix_messages_insert_participant_rls.sql", import.meta.url),
-      "utf8",
-    );
-    const normalized = sql.replace(/\s+/g, " ").toLowerCase();
+    const normalized = migrationSql.replace(/\s+/g, " ").toLowerCase();
 
     expect(normalized).toContain("drop policy if exists messages_insert_sender on public.messages");
     expect(normalized).toContain("create policy messages_insert_sender");
