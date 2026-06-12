@@ -1,11 +1,10 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("messages insert RLS migration", () => {
   it("requires the sender to participate in the target conversation", () => {
     const sql = readFileSync(
-      join(process.cwd(), "supabase/migrations/20260612000100_fix_messages_insert_participant_rls.sql"),
+      new URL("../../../supabase/migrations/20260612000100_fix_messages_insert_participant_rls.sql", import.meta.url),
       "utf8",
     );
     const normalized = sql.replace(/\s+/g, " ").toLowerCase();
