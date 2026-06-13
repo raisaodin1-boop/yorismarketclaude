@@ -32,3 +32,6 @@ mobile/ios/.generated/
 .env.*.local
 supabase/.env
 .claude/skills/ui-ux-pro-max/scripts/__pycache__/
+
+# Notes perso débrief (non versionné)
+explication.md
