@@ -1,4 +1,4 @@
-# NOTES_PERF — Performance & Scalabilité du Catalogue
+# NOTES_PERF : Performance & Scalabilité du Catalogue
 
 > Brouillon de travail. Les colonnes **AVANT** sont mesurées sur la branche d'origine
 > (code non modifié). Les colonnes **APRÈS** sont à remplir une fois l'implémentation
@@ -47,9 +47,9 @@
 |----------|-------|-------|
 | Requêtes images | 184 | **57** |
 | Transféré images | 834 Ko | ~0 (servies en cache / dédupliquées intra-page) |
-| Carte produit inspectée — Rendered | 288 × 432 px | (inchangé) |
-| Carte produit inspectée — **Intrinsic (téléchargé)** | **1024 × 1536 px** | **600 × 600 px** (variante 2x retina du preset `card`) |
-| Carte produit inspectée — **Poids** | **267 Ko** | **48,2 Ko** (−82 %) |
+| Carte produit inspectée - Rendered | 288 × 432 px | (inchangé) |
+| Carte produit inspectée - **Intrinsic (téléchargé)** | **1024 × 1536 px** | **600 × 600 px** (variante 2x retina du preset `card`) |
+| Carte produit inspectée - **Poids** | **267 Ko** | **48,2 Ko** (−82 %) |
 | Placeholders `w_20` (1 par carte) | ~200 requêtes redondantes | ~20 (1 × 20 produits paginés) |
 
 > Sur-téléchargement constaté : image de **1024×1536 / 267 Ko** affichée dans un slot de **288 px**.
@@ -65,10 +65,10 @@
 | **INP** | 216 ms | 88 ms (good) | < 200 ms |
 
 > **INP −59 %** : gain net. Les valeurs live metrics ci-dessus sont des mesures **à chaud**
-> sur serveur dev (bruitées) — pour des chiffres fiables, voir le **Lighthouse build prod**
+> sur serveur dev (bruitées)  pour des chiffres fiables, voir le **Lighthouse build prod**
 > ci-dessous, qui **contredit le CLS** (0,27 à chaud → 0,743 à froid).
 
-### Lighthouse (build prod + navigation privée — Slow 4G, Moto G, CPU 4×)
+### Lighthouse (build prod + navigation privée : Slow 4G, Moto G, CPU 4×)
 
 | Catégorie | Score |
 |---|-------|
@@ -105,10 +105,10 @@
 
 Justification spécifique à *ce* cahier des charges (pas « c'est plus populaire ») :
 
-1. **`placeholderData: keepPreviousData`** — affiche la page précédente pendant le chargement
+1. **`placeholderData: keepPreviousData`**  affiche la page précédente pendant le chargement
    de la suivante. C'est littéralement l'exigence *stale-while-revalidate* sur la pagination,
    sans code custom, et ça évite le flash de skeleton à chaque changement de page.
-2. **`staleTime: 120_000`** — mappe directement l'exigence « cache 2 minutes ». Tant que la
+2. **`staleTime: 120_000`**  mappe directement l'exigence « cache 2 minutes ». Tant que la
    donnée est « fresh », React Query ne refetch pas.
 3. **Query key `['products', { page, category, search }]`** — cache par combinaison de filtres.
    Revenir sur un filtre déjà visité dans les 2 min = instantané, zéro requête réseau.
@@ -117,7 +117,7 @@ SWR sait faire tout ça aussi, mais l'ergonomie pagination de React Query
 (`placeholderData` + `staleTime` explicite) est plus directe pour ce besoin précis.
 
 **Compromis Realtime** : l'app a un abonnement Supabase Realtime qui rechargeait *tout* le
-catalogue à chaque changement produit — ce qui contredit l'idée même de cache. Décision :
+catalogue à chaque changement produit ce qui contredit l'idée même de cache. Décision :
 remplacer le « refetch tout » par `queryClient.invalidateQueries(['products'])` ; React Query
 décide alors s'il refetch selon le `staleTime`.
 
@@ -157,5 +157,5 @@ const { data, count } = await supabase
   mais `q_auto:low` resterait défendable pour la 3G camerounaise (bande passante).
 - **URL** : `?page=` en query param (état de pagination) ; la catégorie reste lue depuis la
   route SEO existante OU `?categorie=`, pour ne pas bulldozer le routing en place.
-- **Placeholder `w_20`** : à reconsidérer — 1 requête HTTP par carte (200 au total). Un fond
+- **Placeholder `w_20`** : à reconsidérer  1 requête HTTP par carte (200 au total). Un fond
   CSS ou un SVG inline éviterait ces requêtes sur 3G.
