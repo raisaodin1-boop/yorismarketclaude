@@ -9,7 +9,6 @@ export function CategoryFilterPanel({
   onParentChange,
   onSubChange,
   filterCat = "",
-  onLegacyCatChange,
 }) {
   const parent = tree.find((r) => r.slug === parentSlug);
   const children = parent?.children || [];
@@ -21,11 +20,7 @@ export function CategoryFilterPanel({
         <button
           type="button"
           className={`cat-filter-pill${!parentSlug && !filterCat ? " is-active" : ""}`}
-          onClick={() => {
-            onParentChange?.("");
-            onSubChange?.("");
-            onLegacyCatChange?.("");
-          }}
+          onClick={() => onParentChange?.("")}
         >
           {locale === "en" ? "All" : "Tout"}
         </button>
@@ -34,11 +29,7 @@ export function CategoryFilterPanel({
             key={r.id || r.slug}
             type="button"
             className={`cat-filter-pill${parentSlug === r.slug ? " is-active" : ""}`}
-            onClick={() => {
-              onParentChange?.(r.slug);
-              onSubChange?.("");
-              onLegacyCatChange?.(categoryLabel(r, locale));
-            }}
+            onClick={() => onParentChange?.(r.slug)}
           >
             {r.icon} {categoryLabel(r, locale)}
           </button>
@@ -60,10 +51,7 @@ export function CategoryFilterPanel({
                 key={ch.id || ch.slug}
                 type="button"
                 className={`cat-filter-pill${subSlug === ch.slug ? " is-active" : ""}`}
-                onClick={() => {
-                  onSubChange?.(ch.slug);
-                  onLegacyCatChange?.(categoryLabel(ch, locale));
-                }}
+                onClick={() => onSubChange?.(ch.slug)}
               >
                 {categoryLabel(ch, locale)}
               </button>
