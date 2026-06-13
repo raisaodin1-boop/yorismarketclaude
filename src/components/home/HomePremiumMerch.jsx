@@ -1,6 +1,7 @@
 import { HOMEPAGE_MERCH_TILES, MERCH_HUBS } from "../../lib/merchHubs";
 import { productMatchesMadeInFilter } from "../../lib/madeInCameroon";
 import { MadeInCameroonBadge } from "../MadeInCameroonBadge";
+import { OptimizedImage } from "../OptimizedImage";
 import { buildEntitySlug } from "../../lib/seoRoutes";
 import "./homePremiumMerch.css";
 
@@ -80,7 +81,13 @@ export function HomePremiumMerch({ goPage, produits = [], locale = "fr" }) {
                 }
               >
                 <div className="hpm-mic-card-img">
-                  {p.image ? <img src={p.image} alt="" loading="lazy" /> : <span>📦</span>}
+                  <OptimizedImage
+                    src={p.image}
+                    alt={p.name_fr || ""}
+                    size="card"
+                    fallbackEmoji="📦"
+                    style={{ width: "100%", height: "100%" }}
+                  />
                   <MadeInCameroonBadge product={p} size="sm" />
                 </div>
                 <div className="hpm-mic-card-name">{p.name_fr}</div>

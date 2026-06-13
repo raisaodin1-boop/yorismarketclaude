@@ -29,25 +29,52 @@ export function optimizeCloudinaryUrl(url, options = {}) {
 
   const {
     width = 400,          // Largeur par défaut pour mobile
+    height,               // Hauteur optionnelle (presets c_fill)
     quality = "auto:low", // Qualité adaptative (plus agressive pour Cameroun)
     format = "auto",      // WebP/AVIF automatique selon le navigateur
     dpr = "auto",         // Retina auto
+    crop = "limit",       // limit = réduit sans agrandir ; fill = recadre au format
   } = options;
 
   // Si déjà optimisée, on retourne tel quel
   if (url.includes("/w_") || url.includes("/q_")) return url;
 
-  // Transformation Cloudinary
   const transforms = [
     `w_${width}`,
+    height ? `h_${height}` : null,
     `q_${quality}`,
     `f_${format}`,
     `dpr_${dpr}`,
-    "c_limit", // Ne jamais agrandir, juste réduire
-  ].join(",");
+    `c_${crop}`,
+  ]
+    .filter(Boolean)
+    .join(",");
 
   // Insère les transformations après /upload/
   return url.replace(/\/upload\//, `/upload/${transforms}/`);
+}
+
+// Tailles d'affichage du catalogue → transformations Cloudinary.
+export const CLOUDINARY_PRESETS = {
+  thumb: { width: 80, height: 80, crop: "fill", quality: "auto" },
+  card: { width: 300, height: 300, crop: "fill", quality: "auto" },
+  hero: { width: 800, height: 600, crop: "limit", quality: "auto" },
+};
+
+/**
+ * src + srcset 1x/2x (Retina) pour un slot d'affichage de taille fixe.
+ * @param {string} url
+ * @param {"thumb"|"card"|"hero"} size
+ */
+export function cloudinaryResponsive(url, size = "card") {
+  const preset = CLOUDINARY_PRESETS[size] || CLOUDINARY_PRESETS.card;
+  const x1 = optimizeCloudinaryUrl(url, preset);
+  const x2 = optimizeCloudinaryUrl(url, {
+    ...preset,
+    width: preset.width * 2,
+    height: preset.height ? preset.height * 2 : undefined,
+  });
+  return { src: x1, srcSet: `${x1} 1x, ${x2} 2x` };
 }
 
 /**
@@ -73,16 +100,6 @@ export function cloudinaryPlaceholder(url) {
   if (!url || !url.includes("cloudinary.com")) return "";
   return optimizeCloudinaryUrl(url, { width: 20, quality: "auto:low" });
 }
-const getOptimizedImageUrl = (url, width = 400) => {
-  if (!url || !url.includes('cloudinary.com')) return url
-  // Si l'URL a déjà des transformations, on ne les duplique pas
-  if (url.includes('f_auto')) return url
-  return url.replace(
-    '/upload/',
-    `/upload/f_auto,q_auto,w_${width},c_limit/`
-  )
-}
-
 export async function uploadSingleImage(file) {
   const fd = new FormData();
   fd.append("file", file);
