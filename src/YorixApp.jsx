@@ -641,30 +641,50 @@ export default function YorixApp() {
     return () => navigator.serviceWorker.removeEventListener("message", onMsg);
   }, [navigate, route.locale]);
 
-  // ── PRODUITS TEMPS RÉEL ──
-  // Ne pas filtrer par filterCat côté API : ce libellé UI/URL est appliqué dans produitsFiltres.
-  // Un filtre serveur trop strict (ex. « Téléphones & HighTech ») vidait tout le catalogue y compris l'accueil.
+  // ── PRODUITS GLOBAUX (accueil, panier, hubs merch, pages SEO) ──
+  // Le catalogue `/produits` a son propre fetch paginé (useCatalogProducts) : on ne charge pas
+  // ce cache global de 200 produits sur la page catalogue, pour éviter une requête select(*) redondante.
+  const [globalProductsLoaded, setGlobalProductsLoaded] = useState(false);
+
+  const loadGlobalProducts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .or("actif.eq.true,actif.is.null")
+      .order("sponsorise", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) console.warn("Produits:", error.message);
+    setProduits(data || []);
+    setProduitsLoading(false);
+  }, []);
+
   useEffect(() => {
+    const isCatalogPage = page === "produits" || (page === "seoCity" && route.cityMode === "acheter");
+    if (isCatalogPage) {
+      setProduitsLoading(false); // le catalogue gère son propre chargement paginé
+      return undefined;
+    }
+    if (globalProductsLoaded) return undefined;
+    let cancelled = false;
     setProduitsLoading(true);
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .or("actif.eq.true,actif.is.null")
-        .order("sponsorise", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) console.warn("Produits:", error.message);
-      setProduits(data || []);
-      setProduitsLoading(false);
+    loadGlobalProducts().then(() => {
+      if (!cancelled) setGlobalProductsLoaded(true);
+    });
+    return () => {
+      cancelled = true;
     };
-    load();
+  }, [page, route.cityMode, globalProductsLoaded, loadGlobalProducts]);
+
+  // Realtime : actif une fois le cache global chargé — jamais sur un accès direct au catalogue.
+  useEffect(() => {
+    if (!globalProductsLoaded) return undefined;
     const channel = supabase
       .channel("prod_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, loadGlobalProducts)
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [globalProductsLoaded, loadGlobalProducts]);
 
 
   const routeBarePath = route.barePath ?? parseLocaleSegments(location.pathname).barePath;
