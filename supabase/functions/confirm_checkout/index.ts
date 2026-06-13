@@ -4,6 +4,7 @@ import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 import { dispatchNotificationById } from "../_shared/internal_dispatch.ts";
+import { collectProductStockReservations, stockUnavailablePayload } from "./stock_reservations.ts";
 
 function uuidish(v: string) {
   return /^[0-9a-fA-F-]{16,}$/.test(v);
@@ -28,9 +29,29 @@ async function insertNotificationAndDispatch(
   }
 }
 
+async function cleanupCreatedCheckoutRows(
+  supabase: ReturnType<typeof createClient>,
+  orderIds: string[],
+  serviceBookingIds: string[],
+) {
+  if (orderIds.length) {
+    await supabase.from("order_items").delete().in("order_id", orderIds);
+    await supabase.from("deliveries").delete().in("order_id", orderIds);
+    await supabase.from("orders").delete().in("id", orderIds);
+  }
+  if (serviceBookingIds.length) {
+    await supabase.from("service_bookings").delete().in("id", serviceBookingIds);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
+
+  let supabase: ReturnType<typeof createClient> | null = null;
+  let lockedCheckoutIntentId = "";
+  const createdOrderIds: string[] = [];
+  const createdServiceBookingIds: string[] = [];
 
   try {
     const body = await req.json();
@@ -40,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentMethod = String(body?.payment_method || "cinetpay");
-    const supabase = createClient(
+    supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
@@ -52,6 +73,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (intentError) throw intentError;
     if (!intent) return ok({ error: "Checkout intent not found" }, { status: 404 });
+    const intentStatus = String(intent.status || "");
+    if (intentStatus !== "ready") {
+      return ok(
+        {
+          error: intentStatus === "confirmed"
+            ? "Checkout intent already confirmed"
+            : "Checkout intent is not ready for confirmation",
+        },
+        { status: 409 },
+      );
+    }
 
     const payload = intent.payload || {};
     const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
@@ -85,6 +117,19 @@ Deno.serve(async (req) => {
       if (patchErr) throw patchErr;
     }
 
+    const { data: lockedIntent, error: lockError } = await supabase
+      .from("checkout_intents")
+      .update({ status: "confirming", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId)
+      .eq("status", "ready")
+      .select("id")
+      .maybeSingle();
+    if (lockError) throw lockError;
+    if (!lockedIntent) {
+      return ok({ error: "Checkout intent is already being confirmed" }, { status: 409 });
+    }
+    lockedCheckoutIntentId = checkoutIntentId;
+
     const productIds = [...new Set(
       items
         .filter((line) => (line.kind || "product") === "product")
@@ -103,6 +148,15 @@ Deno.serve(async (req) => {
     }
 
     const deliveryTracking: { order_id: string; code_suivi: string }[] = [];
+    const productFulfillmentTasks: {
+      orderId: string;
+      vendeurId: string | null;
+      gross: number;
+      commission: number;
+      fulfillment: string;
+      item: Record<string, unknown>;
+    }[] = [];
+    const stockReservations = collectProductStockReservations(items);
 
     const clientNom = String(customer.nom || "Client Yorix");
     const clientTel = String(customer.telephone || "");
@@ -134,6 +188,7 @@ Deno.serve(async (req) => {
           .select("id")
           .single();
         if (bookingError) throw bookingError;
+        createdServiceBookingIds.push(String(booking.id));
         ordersCreated.push({ type: "service_booking", id: booking.id });
         continue;
       }
@@ -175,21 +230,7 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (orderError) throw orderError;
-
-      if (vendeurId) {
-        await insertNotificationAndDispatch(supabase, {
-          user_id: vendeurId,
-          type: "seller_new_order",
-          title: "Nouvelle commande Yorix",
-          message:
-            `${clientNom} · groupe ${orderGroupId} · ligne ${gross.toLocaleString("fr-FR")} FCFA (commission ${commission.toLocaleString("fr-FR")} F)`,
-          link: "/dashboard",
-          lu: false,
-          priority: "high",
-          category: "orders",
-          payload: { order_id: order.id, checkout_intent_id: checkoutIntentId },
-        });
-      }
+      createdOrderIds.push(String(order.id));
 
       const { error: itemError } = await supabase.from("order_items").insert({
         order_id: order.id,
@@ -203,31 +244,66 @@ Deno.serve(async (req) => {
       });
       if (itemError) throw itemError;
 
-      // Décrémentation du stock — appel RPC atomique défini dans la migration SQL
-      const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
-        p_product_id: pid,
-        p_qty: qty,
+      productFulfillmentTasks.push({
+        orderId: String(order.id),
+        vendeurId,
+        gross,
+        commission,
+        fulfillment,
+        item: item as Record<string, unknown>,
+      });
+      ordersCreated.push({ type: "order", id: order.id });
+    }
+
+    if (stockReservations.length) {
+      const { error: stockErr } = await supabase.rpc("decrement_checkout_product_stock", {
+        p_items: stockReservations,
       });
       if (stockErr) {
-        console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
-        // Non-bloquant : on continue mais on log pour audit
+        console.error("[confirm_checkout] stock decrement:", stockErr.message);
+        await cleanupCreatedCheckoutRows(supabase, createdOrderIds, createdServiceBookingIds);
+        createdOrderIds.length = 0;
+        createdServiceBookingIds.length = 0;
+        await supabase
+          .from("checkout_intents")
+          .update({ status: "failed", updated_at: new Date().toISOString() })
+          .eq("id", checkoutIntentId);
+        lockedCheckoutIntentId = "";
+        return ok(stockUnavailablePayload(stockErr.message), { status: 409 });
+      }
+    }
+
+    for (const task of productFulfillmentTasks) {
+      if (task.vendeurId) {
+        await insertNotificationAndDispatch(supabase, {
+          user_id: task.vendeurId,
+          type: "seller_new_order",
+          title: "Nouvelle commande Yorix",
+          message:
+            `${clientNom} · groupe ${orderGroupId} · ligne ${task.gross.toLocaleString("fr-FR")} FCFA (commission ${task.commission.toLocaleString("fr-FR")} F)`,
+          link: "/dashboard",
+          lu: false,
+          priority: "high",
+          category: "orders",
+          payload: { order_id: task.orderId, checkout_intent_id: checkoutIntentId },
+        });
       }
 
-      if (fulfillment !== "pickup") {
-        const vn = String((item as { vendeur_nom?: string }).vendeur_nom || "vendeur");
-        const vville = String((item as { ville?: string }).ville || "").trim();
+      if (task.fulfillment !== "pickup") {
+        const vn = String((task.item as { vendeur_nom?: string }).vendeur_nom || "vendeur");
+        const vville = String((task.item as { ville?: string }).ville || "").trim();
         const pickup = vville !== ""
           ? `Boutique ${vn}, ${vville}`
           : "Boutique Yorix";
         try {
           const { code } = await insertAutoDelivery(supabase, {
-            orderId: String(order.id),
+            orderId: task.orderId,
             clientNom,
             clientTel,
             adresseLivraison,
             adresseCollecte: pickup,
           });
-          deliveryTracking.push({ order_id: String(order.id), code_suivi: code });
+          deliveryTracking.push({ order_id: task.orderId, code_suivi: code });
         } catch (derr) {
           console.error(
             "confirm_checkout livraison auto:",
@@ -235,11 +311,13 @@ Deno.serve(async (req) => {
           );
         }
       }
-
-      ordersCreated.push({ type: "order", id: order.id });
     }
 
-    await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
+    await supabase
+      .from("checkout_intents")
+      .update({ status: "confirmed", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId);
+    lockedCheckoutIntentId = "";
 
     const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
     if (buyerId) {
@@ -273,6 +351,23 @@ Deno.serve(async (req) => {
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
     });
   } catch (e) {
+    if (supabase) {
+      try {
+        await cleanupCreatedCheckoutRows(supabase, createdOrderIds, createdServiceBookingIds);
+        if (lockedCheckoutIntentId) {
+          await supabase
+            .from("checkout_intents")
+            .update({ status: "ready", updated_at: new Date().toISOString() })
+            .eq("id", lockedCheckoutIntentId)
+            .eq("status", "confirming");
+        }
+      } catch (cleanupErr) {
+        console.error(
+          "[confirm_checkout] cleanup after error:",
+          cleanupErr instanceof Error ? cleanupErr.message : cleanupErr,
+        );
+      }
+    }
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
   }
 });
