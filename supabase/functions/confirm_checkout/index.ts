@@ -176,6 +176,45 @@ Deno.serve(async (req) => {
         .single();
       if (orderError) throw orderError;
 
+      try {
+        const { error: itemError } = await supabase.from("order_items").insert({
+          order_id: order.id,
+          item_kind: "product",
+          product_id: item.id,
+          quantity: qty,
+          unit_price: unitPrice,
+          subtotal: gross,
+          fulfillment_mode: item.fulfillmentMode || "delivery",
+          meta: { checkout_intent_id: checkoutIntentId },
+        });
+        if (itemError) throw itemError;
+
+        // L'ordre n'est confirmé que si la réservation atomique du stock réussit.
+        const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
+          p_product_id: pid,
+          p_qty: qty,
+        });
+        if (stockErr) {
+          throw new Error(`[confirm_checkout] stock decrement failed ${pid}: ${stockErr.message}`);
+        }
+      } catch (lineError) {
+        const { error: itemCleanupError } = await supabase
+          .from("order_items")
+          .delete()
+          .eq("order_id", order.id);
+        if (itemCleanupError) {
+          console.error("[confirm_checkout] cleanup order_items:", itemCleanupError.message);
+        }
+        const { error: orderCleanupError } = await supabase
+          .from("orders")
+          .delete()
+          .eq("id", order.id);
+        if (orderCleanupError) {
+          console.error("[confirm_checkout] cleanup order:", orderCleanupError.message);
+        }
+        throw lineError;
+      }
+
       if (vendeurId) {
         await insertNotificationAndDispatch(supabase, {
           user_id: vendeurId,
@@ -189,28 +228,6 @@ Deno.serve(async (req) => {
           category: "orders",
           payload: { order_id: order.id, checkout_intent_id: checkoutIntentId },
         });
-      }
-
-      const { error: itemError } = await supabase.from("order_items").insert({
-        order_id: order.id,
-        item_kind: "product",
-        product_id: item.id,
-        quantity: qty,
-        unit_price: unitPrice,
-        subtotal: gross,
-        fulfillment_mode: item.fulfillmentMode || "delivery",
-        meta: { checkout_intent_id: checkoutIntentId },
-      });
-      if (itemError) throw itemError;
-
-      // Décrémentation du stock — appel RPC atomique défini dans la migration SQL
-      const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
-        p_product_id: pid,
-        p_qty: qty,
-      });
-      if (stockErr) {
-        console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
-        // Non-bloquant : on continue mais on log pour audit
       }
 
       if (fulfillment !== "pickup") {
