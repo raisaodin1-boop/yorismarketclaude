@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
