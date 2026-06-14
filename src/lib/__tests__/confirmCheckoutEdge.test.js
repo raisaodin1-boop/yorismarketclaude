@@ -164,6 +164,7 @@ describe("confirm_checkout Edge Function", () => {
       dispatchNotificationById: vi.fn(async () => ({ ok: true })),
       insertAutoDelivery,
     };
+    globalThis.Deno = { env: { get: () => "" } };
 
     const handler = await loadConfirmCheckoutHandler();
     const response = await handler(
@@ -187,5 +188,6 @@ describe("confirm_checkout Edge Function", () => {
 
     delete globalThis.__confirmCheckoutMocks;
     delete globalThis.__confirmCheckoutHandler;
+    delete globalThis.Deno;
   });
 });
