@@ -33,7 +33,7 @@ describe("checkout Edge safety invariants", () => {
   it("claims only ready intents before creating checkout side effects", async () => {
     const source = await readSource(confirmCheckoutUrl);
     const claimIndex = source.indexOf('.eq("status", "ready")');
-    const orderInsertIndex = source.indexOf('.from("orders")');
+    const orderInsertIndex = source.indexOf('.from("orders")\n        .insert');
 
     expect(source).toContain('status: "processing"');
     expect(source).toContain('status: "confirmed"');
