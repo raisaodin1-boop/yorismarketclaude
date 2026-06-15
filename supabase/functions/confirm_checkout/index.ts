@@ -9,6 +9,90 @@ function uuidish(v: string) {
   return /^[0-9a-fA-F-]{16,}$/.test(v);
 }
 
+class CheckoutHttpError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function verifyIntentOwner(
+  req: Request,
+  supabaseUrl: string,
+  customerId: unknown,
+) {
+  if (typeof customerId !== "string" || !uuidish(customerId)) return;
+
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) {
+    throw new CheckoutHttpError("Authorization requise pour confirmer ce panier.", 401);
+  }
+
+  const anon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "");
+  const { data: { user }, error } = await anon.auth.getUser(token);
+  if (error || !user || user.id !== customerId) {
+    throw new CheckoutHttpError("Session invalide ou compte différent du client.", 403);
+  }
+}
+
+async function cleanupCreatedCheckoutRows(
+  supabase: ReturnType<typeof createClient>,
+  orderIds: string[],
+  serviceBookingIds: string[],
+  stockAdjustments: { productId: string; qty: number }[],
+): Promise<boolean> {
+  let ok = true;
+  if (orderIds.length) {
+    const { error: itemErr } = await supabase.from("order_items").delete().in("order_id", orderIds);
+    if (itemErr) {
+      ok = false;
+      console.error("[confirm_checkout] cleanup order_items:", itemErr.message);
+    }
+
+    const { error: deliveryErr } = await supabase.from("deliveries").delete().in("order_id", orderIds);
+    if (deliveryErr) {
+      ok = false;
+      console.error("[confirm_checkout] cleanup deliveries:", deliveryErr.message);
+    }
+
+    const { error: orderErr } = await supabase.from("orders").delete().in("id", orderIds);
+    if (orderErr) {
+      ok = false;
+      console.error("[confirm_checkout] cleanup orders:", orderErr.message);
+    }
+  }
+
+  if (serviceBookingIds.length) {
+    const { error: bookingErr } = await supabase
+      .from("service_bookings")
+      .delete()
+      .in("id", serviceBookingIds);
+    if (bookingErr) {
+      ok = false;
+      console.error("[confirm_checkout] cleanup service_bookings:", bookingErr.message);
+    }
+  }
+
+  for (const stock of stockAdjustments) {
+    const { error: restoreErr } = await supabase.rpc("increment_product_stock", {
+      p_product_id: stock.productId,
+      p_qty: stock.qty,
+    });
+    if (restoreErr) {
+      ok = false;
+      console.error(
+        `[confirm_checkout] restore stock ${stock.productId}:`,
+        restoreErr.message,
+      );
+    }
+  }
+
+  return ok;
+}
+
 async function insertNotificationAndDispatch(
   supabase: ReturnType<typeof createClient>,
   row: Record<string, unknown>,
@@ -32,6 +116,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
 
+  let supabaseForCleanup: ReturnType<typeof createClient> | null = null;
+  let claimedCheckoutIntentId = "";
+  let confirmedIntent = false;
+  const createdOrderIds: string[] = [];
+  const createdServiceBookingIds: string[] = [];
+  const appliedStockAdjustments: { productId: string; qty: number }[] = [];
+
   try {
     const body = await req.json();
     const checkoutIntentId = String(body?.checkout_intent_id || "");
@@ -40,18 +131,42 @@ Deno.serve(async (req) => {
     }
 
     const paymentMethod = String(body?.payment_method || "cinetpay");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
+      supabaseUrl,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
+    supabaseForCleanup = supabase;
 
-    const { data: intent, error: intentError } = await supabase
+    const { data: existingIntent, error: intentError } = await supabase
       .from("checkout_intents")
       .select("*")
       .eq("id", checkoutIntentId)
       .maybeSingle();
     if (intentError) throw intentError;
-    if (!intent) return ok({ error: "Checkout intent not found" }, { status: 404 });
+    if (!existingIntent) return ok({ error: "Checkout intent not found" }, { status: 404 });
+
+    if (String(existingIntent.status || "") !== "ready") {
+      const msg = existingIntent.status === "confirmed"
+        ? "Checkout intent already confirmed"
+        : "Checkout intent is already being processed";
+      return ok({ error: msg }, { status: 409 });
+    }
+
+    await verifyIntentOwner(req, supabaseUrl, existingIntent.customer_id);
+
+    const { data: intent, error: claimError } = await supabase
+      .from("checkout_intents")
+      .update({ status: "processing", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId)
+      .eq("status", "ready")
+      .select("*")
+      .maybeSingle();
+    if (claimError) throw claimError;
+    if (!intent) {
+      return ok({ error: "Checkout intent is already being processed" }, { status: 409 });
+    }
+    claimedCheckoutIntentId = checkoutIntentId;
 
     const payload = intent.payload || {};
     const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
@@ -114,6 +229,7 @@ Deno.serve(async (req) => {
       String(customer.adresse || customer.ville || "Cameroun");
 
     const ordersCreated: any[] = [];
+    const sellerNotifications: Record<string, unknown>[] = [];
     for (const item of items) {
       if (item.kind === "service") {
         const { data: booking, error: bookingError } = await supabase
@@ -134,6 +250,7 @@ Deno.serve(async (req) => {
           .select("id")
           .single();
         if (bookingError) throw bookingError;
+        createdServiceBookingIds.push(String(booking.id));
         ordersCreated.push({ type: "service_booking", id: booking.id });
         continue;
       }
@@ -175,21 +292,7 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (orderError) throw orderError;
-
-      if (vendeurId) {
-        await insertNotificationAndDispatch(supabase, {
-          user_id: vendeurId,
-          type: "seller_new_order",
-          title: "Nouvelle commande Yorix",
-          message:
-            `${clientNom} · groupe ${orderGroupId} · ligne ${gross.toLocaleString("fr-FR")} FCFA (commission ${commission.toLocaleString("fr-FR")} F)`,
-          link: "/dashboard",
-          lu: false,
-          priority: "high",
-          category: "orders",
-          payload: { order_id: order.id, checkout_intent_id: checkoutIntentId },
-        });
-      }
+      createdOrderIds.push(String(order.id));
 
       const { error: itemError } = await supabase.from("order_items").insert({
         order_id: order.id,
@@ -210,7 +313,23 @@ Deno.serve(async (req) => {
       });
       if (stockErr) {
         console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
-        // Non-bloquant : on continue mais on log pour audit
+        throw new CheckoutHttpError("Stock insuffisant pour finaliser la commande.", 409);
+      }
+      appliedStockAdjustments.push({ productId: pid, qty });
+
+      if (vendeurId) {
+        sellerNotifications.push({
+          user_id: vendeurId,
+          type: "seller_new_order",
+          title: "Nouvelle commande Yorix",
+          message:
+            `${clientNom} · groupe ${orderGroupId} · ligne ${gross.toLocaleString("fr-FR")} FCFA (commission ${commission.toLocaleString("fr-FR")} F)`,
+          link: "/dashboard",
+          lu: false,
+          priority: "high",
+          category: "orders",
+          payload: { order_id: order.id, checkout_intent_id: checkoutIntentId },
+        });
       }
 
       if (fulfillment !== "pickup") {
@@ -239,7 +358,22 @@ Deno.serve(async (req) => {
       ordersCreated.push({ type: "order", id: order.id });
     }
 
-    await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
+    const { data: confirmedRow, error: confirmIntentError } = await supabase
+      .from("checkout_intents")
+      .update({ status: "confirmed", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId)
+      .eq("status", "processing")
+      .select("id")
+      .maybeSingle();
+    if (confirmIntentError) throw confirmIntentError;
+    if (!confirmedRow) {
+      throw new CheckoutHttpError("Checkout intent state changed during confirmation.", 409);
+    }
+    confirmedIntent = true;
+
+    for (const notification of sellerNotifications) {
+      await insertNotificationAndDispatch(supabase, notification);
+    }
 
     const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
     if (buyerId) {
@@ -273,7 +407,27 @@ Deno.serve(async (req) => {
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
     });
   } catch (e) {
-    return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
+    const status = e instanceof CheckoutHttpError ? e.status : 500;
+    if (supabaseForCleanup && claimedCheckoutIntentId && !confirmedIntent) {
+      const cleanupOk = await cleanupCreatedCheckoutRows(
+        supabaseForCleanup,
+        createdOrderIds,
+        createdServiceBookingIds,
+        appliedStockAdjustments,
+      );
+      const { error: resetErr } = await supabaseForCleanup
+        .from("checkout_intents")
+        .update({
+          status: cleanupOk ? "ready" : "failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", claimedCheckoutIntentId)
+        .eq("status", "processing");
+      if (resetErr) {
+        console.error("[confirm_checkout] reset intent status:", resetErr.message);
+      }
+    }
+    return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status });
   }
 });
 
