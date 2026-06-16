@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createCheckoutIntent, confirmCheckout } from "../lib/checkoutApi";
+import { createCheckoutIntent, confirmCheckout, isEdgeFunctionUnavailable } from "../lib/checkoutApi";
 import { creerCommandeSupabase } from "../utils/helpers";
 import { showAppToast } from "../lib/appToast";
 
@@ -65,15 +65,7 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
     } catch (edgeFnErr) {
       // ── Fallback : insertion directe en base (Edge Functions non déployées)
       const errMsg = edgeFnErr?.message || "";
-      const isEdgeUnavailable =
-        errMsg.includes("Edge Function") ||
-        errMsg.includes("Failed to send") ||
-        errMsg.includes("FunctionsHttpError") ||
-        errMsg.includes("FunctionsRelayError") ||
-        errMsg.includes("404") ||
-        errMsg.includes("fetch");
-
-      if (isEdgeUnavailable) {
+      if (await isEdgeFunctionUnavailable(edgeFnErr)) {
         try {
           await creerCommandeSupabase({
             product,
