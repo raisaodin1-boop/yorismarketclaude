@@ -94,6 +94,10 @@
   "errors": {
     "loginRequired": "Connexion requise pour finaliser la commande.",
     "addressIncomplete": "Complétez l'adresse et le téléphone à l'étape précédente.",
-    "checkoutFailed": "Impossible de finaliser le checkout. Réessayez ou contactez Yorix sur WhatsApp (+237 696 56 56 54)."
+    "checkoutFailed": "Impossible de finaliser le checkout. Réessayez ou contactez Yorix sur WhatsApp (+237 696 56 56 54).",
+    "stockInsufficient": "Stock insuffisant pour « {{product}} » : il n'en reste que {{available}} alors que vous en demandez {{requested}}. Ajustez la quantité dans votre panier.",
+    "thisProduct": "ce produit",
+    "network": "Connexion interrompue. Votre panier est conservé — vérifiez votre réseau et réessayez.",
+    "inProgress": "Une confirmation est déjà en cours pour cette commande. Patientez quelques secondes avant de réessayer."
   }
 }

@@ -94,6 +94,10 @@
   "errors": {
     "loginRequired": "Sign in required to complete checkout.",
     "addressIncomplete": "Complete address and phone on the previous step.",
-    "checkoutFailed": "Could not complete checkout. Try again or contact Yorix on WhatsApp (+237 696 56 56 54)."
+    "checkoutFailed": "Could not complete checkout. Try again or contact Yorix on WhatsApp (+237 696 56 56 54).",
+    "stockInsufficient": "Not enough stock for \"{{product}}\": only {{available}} left but you requested {{requested}}. Adjust the quantity in your cart.",
+    "thisProduct": "this product",
+    "network": "Connection lost. Your cart is kept — check your network and try again.",
+    "inProgress": "A confirmation is already in progress for this order. Wait a few seconds before retrying."
   }
 }
