@@ -1,46 +1,84 @@
 import { supabase } from "./supabase";
 
-const REFERRAL_BONUS_AMOUNT = 5000; // FCFA
+export const REFERRAL_BONUS_AMOUNT = 5000; // FCFA
+export const REFERRAL_CONSENT_VERSION = "v1.0-2026";
 
-/**
- * Génère un code de parrainage unique pour un vendeur.
- * Format : PRENOM4-IDSLICE (ex: JEAN-A3F8B2)
- */
-export function buildReferralCode(nom, userId) {
-  const slug = String(nom || "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-zA-Z]/g, "")
-    .toUpperCase()
-    .slice(0, 5) || "YORIX";
-  const idSlice = String(userId || "").replace(/-/g, "").slice(0, 6).toUpperCase();
-  return `${slug}-${idSlice}`;
+// Catégories de produits éligibles au bonus parrainage
+export const REFERRAL_ELIGIBLE_CATEGORIES = [
+  "electronique", "electromenager", "maison-cuisine", "mode-beaute",
+  "sante-bienetre", "auto-moto", "alimentation", "bebe-enfants",
+  "education", "agriculture",
+];
+
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sans 0/O/1/I ambigus
+
+function generateRawCode() {
+  let c = "";
+  for (let i = 0; i < 6; i++) c += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  return c;
 }
 
 /**
- * Récupère ou crée le code de parrainage d'un vendeur.
+ * Génère un code 6 caractères unique en vérifiant l'unicité en DB.
  */
-export async function getOrCreateReferralCode(userId, nom) {
-  const { data: profile } = await supabase
+async function generateUniqueCode() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateRawCode();
+    const { count } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("referral_code", code);
+    if (!count || count === 0) return code;
+  }
+  // Fallback sécurisé si collision (ultra-rare)
+  return generateRawCode() + Math.floor(Math.random() * 9);
+}
+
+/**
+ * Enregistre le consentement et génère le code.
+ * Retourne { ok, code, error }
+ */
+export async function signConsentAndGetCode(userId, fullName) {
+  if (!userId || !fullName?.trim()) return { ok: false, error: "Nom complet requis." };
+
+  // Vérifier si déjà un code
+  const { data: existing } = await supabase
     .from("profiles")
-    .select("referral_code")
+    .select("referral_code, referral_consent_signed_at")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profile?.referral_code) return profile.referral_code;
+  if (existing?.referral_code) {
+    return { ok: true, code: existing.referral_code, alreadyHad: true };
+  }
 
-  const code = buildReferralCode(nom, userId);
-  await supabase
-    .from("profiles")
-    .update({ referral_code: code })
-    .eq("id", userId);
+  const code = await generateUniqueCode();
 
-  return code;
+  const { error } = await supabase.from("profiles").update({
+    referral_code: code,
+    referral_consent_signed_at: new Date().toISOString(),
+    referral_consent_fullname: fullName.trim(),
+    referral_consent_version: REFERRAL_CONSENT_VERSION,
+  }).eq("id", userId);
+
+  if (error) return { ok: false, error: "Erreur lors de la sauvegarde. Réessayez." };
+  return { ok: true, code };
 }
 
 /**
- * Récupère les stats de parrainage d'un vendeur.
- * Retourne { referrals: [], totalEarned, pendingCount, creditedCount }
+ * Vérifie si l'utilisateur a déjà son code de parrainage.
+ */
+export async function getReferralProfile(userId) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("referral_code, referral_consent_signed_at, referral_consent_fullname, referral_bonus_earned")
+    .eq("id", userId)
+    .maybeSingle();
+  return data || {};
+}
+
+/**
+ * Stats complètes de parrainage.
  */
 export async function getReferralStats(userId) {
   const { data: bonuses } = await supabase
@@ -53,15 +91,17 @@ export async function getReferralStats(userId) {
   const totalEarned = list
     .filter((b) => b.status === "credited")
     .reduce((s, b) => s + Number(b.bonus_amount), 0);
-  const pendingCount = list.filter((b) => b.status === "pending").length;
-  const creditedCount = list.filter((b) => b.status === "credited").length;
 
-  return { referrals: list, totalEarned, pendingCount, creditedCount };
+  return {
+    referrals: list,
+    totalEarned,
+    pendingCount: list.filter((b) => b.status === "pending").length,
+    creditedCount: list.filter((b) => b.status === "credited").length,
+  };
 }
 
 /**
- * Lie un nouvel utilisateur à son parrain via le code de parrainage.
- * À appeler à l'inscription si un code ref est présent dans l'URL.
+ * Lie un nouvel utilisateur à son parrain (tous rôles acceptés).
  */
 export async function applyReferralCode(referralCode, newUserId) {
   if (!referralCode || !newUserId) return { ok: false };
@@ -70,29 +110,26 @@ export async function applyReferralCode(referralCode, newUserId) {
     .from("profiles")
     .select("id")
     .eq("referral_code", referralCode.trim().toUpperCase())
-    .eq("role", "seller")
+    .not("referral_consent_signed_at", "is", null) // doit avoir signé le consentement
     .maybeSingle();
 
   if (!referrer || referrer.id === newUserId) return { ok: false };
 
-  await supabase
-    .from("profiles")
-    .update({ referrer_id: referrer.id })
-    .eq("id", newUserId);
+  await supabase.from("profiles").update({ referrer_id: referrer.id }).eq("id", newUserId);
 
   await supabase.from("referral_bonuses").insert({
     referrer_id: referrer.id,
     referred_id: newUserId,
     bonus_amount: REFERRAL_BONUS_AMOUNT,
     status: "pending",
-  }).onConflict("referred_id").ignore();
+  }).on("conflict", { ignoreDuplicates: true }).catch(() => {});
 
   return { ok: true, referrerId: referrer.id };
 }
 
 /**
- * Crédite le bonus de parrainage au parrain après la 1ère commande du filleul.
- * À appeler après confirmCheckout() si l'utilisateur a un referrer_id.
+ * Crédite le bonus après la 1ère commande confirmée du filleul (produits éligibles).
+ * Appeler après confirmCheckout() côté client.
  */
 export async function creditReferralBonusIfEligible(userId, orderId) {
   if (!userId) return;
@@ -114,38 +151,55 @@ export async function creditReferralBonusIfEligible(userId, orderId) {
 
   if (!bonus) return;
 
-  // Créditer le bonus sur le wallet du parrain
-  await supabase.rpc("add_wallet_credit", {
-    p_user_id: profile.referrer_id,
-    p_amount: REFERRAL_BONUS_AMOUNT,
-  }).catch(() => {
-    // Si RPC absente, update direct
-    supabase
-      .from("wallets")
-      .upsert({ user_id: profile.referrer_id, solde: REFERRAL_BONUS_AMOUNT }, { onConflict: "user_id", ignoreDuplicates: false })
-      .then(({ data: existing }) => {
-        if (existing) {
-          supabase
-            .from("wallets")
-            .update({ solde: supabase.raw("solde + ?", [REFERRAL_BONUS_AMOUNT]) })
-            .eq("user_id", profile.referrer_id);
-        }
-      });
-  });
+  // Vérifier que la commande contient des produits des catégories éligibles
+  if (orderId) {
+    const { data: orderItems } = await supabase
+      .from("order_items")
+      .select("categorie, parent_slug")
+      .eq("order_id", orderId)
+      .limit(20);
 
-  // Mettre à jour le statut du bonus
-  await supabase
-    .from("referral_bonuses")
-    .update({ status: "credited", order_id: orderId || null, credited_at: new Date().toISOString() })
-    .eq("id", bonus.id);
+    if (orderItems && orderItems.length > 0) {
+      const hasEligible = orderItems.some((item) =>
+        REFERRAL_ELIGIBLE_CATEGORIES.some(
+          (cat) => (item.parent_slug || item.categorie || "").toLowerCase().includes(cat)
+        )
+      );
+      if (!hasEligible) return;
+    }
+  }
 
-  // Mettre à jour le total gagné sur le profil du parrain
-  await supabase
-    .from("profiles")
-    .update({ referral_bonus_earned: supabase.rpc ? undefined : REFERRAL_BONUS_AMOUNT })
-    .eq("id", profile.referrer_id);
+  // Créditer le wallet du parrain
+  const { data: wallet } = await supabase
+    .from("wallets")
+    .select("id, solde")
+    .eq("user_id", profile.referrer_id)
+    .maybeSingle();
 
-  // Notifier le parrain
+  if (wallet) {
+    await supabase.from("wallets").update({
+      solde: Number(wallet.solde) + REFERRAL_BONUS_AMOUNT,
+      total_gagne: supabase.rpc
+        ? undefined
+        : Number(wallet.total_gagne || 0) + REFERRAL_BONUS_AMOUNT,
+    }).eq("id", wallet.id);
+  } else {
+    await supabase.from("wallets").insert({
+      user_id: profile.referrer_id,
+      solde: REFERRAL_BONUS_AMOUNT,
+      total_gagne: REFERRAL_BONUS_AMOUNT,
+      devise: "FCFA",
+    });
+  }
+
+  // Marquer le bonus comme crédité
+  await supabase.from("referral_bonuses").update({
+    status: "credited",
+    order_id: orderId || null,
+    credited_at: new Date().toISOString(),
+  }).eq("id", bonus.id);
+
+  // Notification au parrain
   await supabase.from("notifications").insert({
     user_id: profile.referrer_id,
     type: "referral_bonus",
@@ -155,5 +209,5 @@ export async function creditReferralBonusIfEligible(userId, orderId) {
     priority: "important",
     category: "referral",
     lu: false,
-  });
+  }).catch(() => {});
 }

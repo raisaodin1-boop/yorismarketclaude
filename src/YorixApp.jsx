@@ -1065,6 +1065,7 @@ export default function YorixApp() {
       dn("📦", "commandes", "myOrders"),
       dn("❤️", "favoris", "favorites"),
       dn("🌟", "loyalty", "loyalty"),
+      { icon: "🤝", id: "parrainage", label: "Parrainage" },
     ];
   }, [userRole, tNav]);
 
