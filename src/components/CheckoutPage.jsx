@@ -22,6 +22,8 @@ import { PAGE_PATH, parseLocaleSegments, localePath } from "../lib/seoRoutes";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
+import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
+import { creditReferralBonusIfEligible } from "../lib/referralApi";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
 
@@ -124,6 +126,12 @@ export function CheckoutPage({
   const [carrier, setCarrier] = useState("seller");
   const [checkoutError, setCheckoutError] = useState("");
   const [orderDone, setOrderDone] = useState(null);
+
+  // ── Coupon promo ──
+  const [couponInput, setCouponInput] = useState("");
+  const [couponApplied, setCouponApplied] = useState(null); // { code, discount }
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
   const [cinetpayReturnBanner, setCinetpayReturnBanner] = useState("");
 
   const [addressErrors, setAddressErrors] = useState({});
@@ -410,6 +418,33 @@ export function CheckoutPage({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponError("");
+    setCouponLoading(true);
+    const result = await validateCoupon(couponInput.trim(), user?.id);
+    setCouponLoading(false);
+    if (result.ok) {
+      setCouponApplied({ code: couponInput.trim().toUpperCase(), discount: result.discount });
+      setCouponError("");
+    } else {
+      setCouponApplied(null);
+      setCouponError(result.error || "Code invalide.");
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponApplied(null);
+    setCouponInput("");
+    setCouponError("");
+  };
+
+  // Total affiché avec réduction coupon
+  const couponDiscount = couponApplied?.discount || 0;
+  const summaryWithDiscount = couponDiscount > 0
+    ? { ...summary, total: Math.max(0, summary.total - couponDiscount), couponDiscount }
+    : summary;
+
   const handlePlaceOrder = async () => {
     if (!hasItems) return;
     if (!user) {
@@ -533,6 +568,16 @@ export function CheckoutPage({
       // Succès confirmé (HTTP 200) → panier vidé.
       setCartItems([]);
       idempotencyKeyRef.current = null; // commande aboutie → clé consommée
+
+      // Enregistrer coupon + crédit bonus parrainage (non-bloquant)
+      const confirmedOrderId = confirmation?.order_group_id || intent.checkout_intent_id;
+      if (couponApplied && user?.id) {
+        recordCouponRedemption(couponApplied.code, user.id, confirmedOrderId, couponApplied.discount).catch(() => {});
+      }
+      if (user?.id) {
+        creditReferralBonusIfEligible(user.id, confirmedOrderId).catch(() => {});
+      }
+
       setOrderDone({
         mode: !confirmation?.order_group_id ? "whatsapp" : "standard",
         orderGroupId: confirmation?.order_group_id || null,
@@ -857,6 +902,38 @@ export function CheckoutPage({
                   <option value="whatsapp_backup">WhatsApp — backup & preuve manuelle</option>
                 </select>
 
+                {/* ── Champ coupon promo ── */}
+                <div className="yx-coupon-box">
+                  {couponApplied ? (
+                    <div className="yx-coupon-applied">
+                      <span className="yx-coupon-tag">🎉 {couponApplied.code}</span>
+                      <span className="yx-coupon-saving">−{couponApplied.discount.toLocaleString()} FCFA</span>
+                      <button className="yx-coupon-remove" onClick={handleRemoveCoupon} aria-label="Retirer le coupon">✕</button>
+                    </div>
+                  ) : (
+                    <div className="yx-coupon-input-row">
+                      <input
+                        className="yx-coupon-input"
+                        type="text"
+                        placeholder="Code promo (ex: BIENVENUE2000)"
+                        value={couponInput}
+                        onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                        onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                        aria-label="Code promo"
+                        disabled={couponLoading}
+                      />
+                      <button
+                        className="yx-coupon-apply-btn"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponInput.trim()}
+                      >
+                        {couponLoading ? "…" : "Appliquer"}
+                      </button>
+                    </div>
+                  )}
+                  {couponError && <p className="yx-coupon-error">{couponError}</p>}
+                </div>
+
                 <div className="yorix-ds-inset-panel checkout-pay-recap" style={{ marginBottom: 0 }}>
                   {summary.hasShippableProducts && summary.freeShippingUnlocked && (
                     <div className="fs-ship-badge" style={{ marginBottom: 10 }}>
@@ -877,9 +954,15 @@ export function CheckoutPage({
                           : `${summary.delivery.toLocaleString()} FCFA`}
                     </strong>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="checkout-pay-recap-row" style={{ color: "var(--green)", fontWeight: 700 }}>
+                      <span>🎉 Code promo {couponApplied.code}</span>
+                      <strong>−{couponDiscount.toLocaleString()} FCFA</strong>
+                    </div>
+                  )}
                   <div className="checkout-pay-recap-total">
                     <span>Total à payer</span>
-                    <strong>{summary.total.toLocaleString()} FCFA</strong>
+                    <strong>{summaryWithDiscount.total.toLocaleString()} FCFA</strong>
                   </div>
                   <p style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 8, marginBottom: 0, lineHeight: 1.35 }}>
                     Montant validé côté serveur au paiement (seuil livraison offerte appliqué automatiquement).

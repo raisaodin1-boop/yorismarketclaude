@@ -5328,6 +5328,64 @@ button{transition:transform .15s var(--yorix-ease-out,cubic-bezier(.16,1,.3,1)),
   .yx-push-banner__btn{flex:1;}
 }
 @media(prefers-reduced-motion:reduce){.yx-push-banner{animation:none!important;}}
+
+/* ══════════════════════════════════════════════════
+   COUPON PROMO — Checkout step 3
+══════════════════════════════════════════════════ */
+.yx-coupon-box{background:var(--surface2);border-radius:12px;padding:12px 14px;border:1.5px dashed var(--border);}
+.yx-coupon-input-row{display:flex;gap:8px;align-items:center;}
+.yx-coupon-input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.82rem;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);outline:none;transition:border .15s;}
+.yx-coupon-input:focus{border-color:var(--green);}
+.yx-coupon-input::placeholder{color:var(--gray);font-size:.78rem;}
+.yx-coupon-apply-btn{padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+.yx-coupon-apply-btn:disabled{opacity:.5;cursor:not-allowed;}
+.yx-coupon-applied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.yx-coupon-tag{background:var(--green);color:#fff;padding:5px 12px;border-radius:20px;font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.04em;}
+.yx-coupon-saving{font-family:'Syne',sans-serif;font-weight:800;color:var(--green);font-size:.9rem;flex:1;}
+.yx-coupon-remove{background:none;border:none;color:var(--gray);font-size:.9rem;cursor:pointer;padding:4px;border-radius:50%;transition:color .15s;}
+.yx-coupon-remove:hover{color:var(--red);}
+.yx-coupon-error{margin:6px 0 0;font-size:.75rem;color:var(--red,#dc2626);line-height:1.4;}
+
+/* ══════════════════════════════════════════════════
+   REFERRAL PANEL — Espace vendeur
+══════════════════════════════════════════════════ */
+.yrp-root{display:flex;flex-direction:column;gap:16px;}
+.yrp-hero{display:flex;align-items:flex-start;gap:14px;background:linear-gradient(135deg,#1a6b3a,#27a85a);color:#fff;border-radius:16px;padding:20px 18px;}
+.yrp-hero-badge{font-size:2rem;flex-shrink:0;margin-top:2px;}
+.yrp-hero-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;line-height:1.3;margin-bottom:6px;}
+.yrp-hero-sub{font-size:.78rem;opacity:.88;line-height:1.5;}
+.yrp-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:600px){.yrp-steps{grid-template-columns:repeat(2,1fr);}}
+.yrp-step{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.yrp-step-num{width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:.72rem;display:flex;align-items:center;justify-content:center;margin-bottom:4px;}
+.yrp-step-icon{font-size:1.5rem;}
+.yrp-step-label{font-weight:700;font-size:.78rem;line-height:1.3;}
+.yrp-step-sub{font-size:.7rem;color:var(--gray);line-height:1.35;}
+.yrp-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 16px;}
+.yrp-card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:12px;color:var(--ink);}
+.yrp-code-display{font-family:'Syne',sans-serif;font-weight:900;font-size:1.6rem;color:var(--green);letter-spacing:.12em;text-align:center;padding:14px;background:var(--green-pale,#c8f5d9);border-radius:12px;margin-bottom:12px;}
+.yrp-link-row{display:flex;gap:8px;margin-bottom:12px;}
+.yrp-link-input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.75rem;background:var(--surface2);color:var(--gray);font-family:'DM Sans',sans-serif;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.yrp-copy-btn{padding:9px 16px;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;background:var(--surface2);color:var(--ink);border:1.5px solid var(--border);transition:all .15s;white-space:nowrap;}
+.yrp-copy-btn.copied{background:var(--green);color:#fff;border-color:var(--green);}
+.yrp-wa-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;background:#25D366;color:#fff;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:opacity .15s,transform .15s;}
+.yrp-wa-btn:hover{opacity:.9;transform:translateY(-1px);}
+.yrp-wa-icon{width:18px;height:18px;flex-shrink:0;}
+.yrp-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.yrp-stat{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;}
+.yrp-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;margin-bottom:4px;}
+.yrp-stat-lbl{font-size:.72rem;color:var(--gray);font-weight:600;}
+.yrp-referral-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;}
+.yrp-referral-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.yrp-referral-nom{font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.yrp-referral-date{font-size:.72rem;color:var(--gray);}
+.yrp-referral-badge{padding:4px 10px;border-radius:20px;font-family:'Syne',sans-serif;font-weight:700;font-size:.72rem;white-space:nowrap;}
+.yrp-referral-badge.credited{background:var(--green-pale,#c8f5d9);color:var(--green);}
+.yrp-referral-badge.pending{background:#fef3c7;color:#92400e;}
+.yrp-empty{text-align:center;padding:28px 20px;background:var(--surface2);border-radius:14px;border:1.5px dashed var(--border);}
+.yrp-conditions{font-size:.72rem;color:var(--gray);line-height:1.5;padding:10px 14px;background:var(--surface2);border-radius:10px;border-left:3px solid var(--green);}
+.yrp-loading{display:flex;flex-direction:column;gap:12px;}
+.yrp-shimmer{background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:yxShimmer 1.4s infinite;}
 `;
 
 

@@ -176,6 +176,12 @@ export default function YorixApp() {
     if (q != null && q !== "") setSearch((prev) => (prev === q.trim() ? prev : q.trim()));
   }, [page, location.search]);
 
+  // Persister le code de parrainage depuis l'URL ?ref=XXX
+  useEffect(() => {
+    const ref = new URLSearchParams(location.search).get("ref");
+    if (ref) localStorage.setItem("yorix_ref_code", ref.trim().toUpperCase());
+  }, [location.search]);
+
   // Notifs
   const [notifs, setNotifs]       = useState([]);
   const [notifRevision, setNotifRevision] = useState(0);
@@ -1034,6 +1040,7 @@ export default function YorixApp() {
         dn("➕", "ajouterProduit", "addProduct"),
         dn("📦", "commandes", "orders"),
         dn("💰", "wallet", "wallet"),
+        { icon: "🤝", id: "parrainage", label: "Parrainage" },
       ];
     }
     if (userRole === "delivery") {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { getUserProfile, sendEmail, emailBienvenue } from "../utils/helpers";
 import { isProfileAccessible } from "../lib/userMutations";
+import { applyReferralCode } from "../lib/referralApi";
 
 /**
  * Session Supabase, profil, modale auth / contrat, actions login-register-logout.
@@ -242,6 +243,15 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         .from("wallets")
         .insert({ user_id: uid, solde: 0, total_gagne: 0, devise: "FCFA" })
         .then((r) => r.error && console.error(r.error));
+
+      // Appliquer code de parrainage si présent dans l'URL ou localStorage
+      const refCode = new URLSearchParams(window.location.search).get("ref")
+        || localStorage.getItem("yorix_ref_code");
+      if (refCode && selectedRole === "seller") {
+        applyReferralCode(refCode, uid).catch(() => {});
+        localStorage.removeItem("yorix_ref_code");
+      }
+
       await chargerProfil(uid);
       setAuthOpen(false);
       setAuthForm({ nom: "", email: "", tel: "", password: "" });
