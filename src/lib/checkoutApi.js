@@ -73,10 +73,13 @@ export async function initPaymentCinetPay(payload) {
 
 /** Retour depuis CinetPay : lit `payment_transactions` + `deliveries` (JWT requis côté Edge). */
 export async function checkoutReturnStatus(payload) {
-  const { data, error } = await supabase.functions.invoke("checkout_return_status", {
-    body: payload,
-  });
-  if (error) throw error;
-  if (data?.error) throw new Error(String(data.error));
+  let data, error;
+  try {
+    ({ data, error } = await supabase.functions.invoke("checkout_return_status", { body: payload }));
+  } catch (e) {
+    throw new CheckoutError(e?.message || "network", { isNetwork: true });
+  }
+  if (error) throw await parseEdgeError(error);
+  if (data?.error) throw new CheckoutError(String(data.error), { code: String(data.error), details: data });
   return data;
 }
