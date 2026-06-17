@@ -74,6 +74,11 @@ Deno.serve(async (req) => {
   // Hoistés hors du try pour rester accessibles au catch (libération de la clé).
   let supabase: ReturnType<typeof createClient> | null = null;
   let idempotencyKey = "";
+  let stockReserved = false;
+  let cleanupFailed = false;
+  let reservedStockItems: { id: string; qty: number }[] = [];
+  const createdOrderIds: string[] = [];
+  const createdBookingIds: string[] = [];
 
   try {
     const body = await req.json();
@@ -121,12 +126,18 @@ Deno.serve(async (req) => {
       .eq("id", checkoutIntentId)
       .maybeSingle();
     if (intentError) throw intentError;
-    if (!intent) return ok({ error: "Checkout intent not found" }, { status: 404 });
+    if (!intent) {
+      if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+      return ok({ error: "Checkout intent not found" }, { status: 404 });
+    }
 
     const payload = intent.payload || {};
     const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
     const priceRes = await applyCatalogPricing(supabase, itemsRaw);
-    if (priceRes.error) return ok({ error: priceRes.error }, { status: 400 });
+    if (priceRes.error) {
+      if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+      return ok({ error: priceRes.error }, { status: 400 });
+    }
     const items = priceRes.lines;
     const customer = payload.customer || {};
     const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
@@ -135,6 +146,7 @@ Deno.serve(async (req) => {
     const totals = computeCheckoutTotals(items, policy);
     const intentSub = Math.round(Number(intent.subtotal ?? 0));
     if (intentSub !== totals.subtotalFull) {
+      if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
       return ok(
         { error: "Cart subtotal mismatch — refresh checkout." },
         { status: 409 },
@@ -183,10 +195,12 @@ Deno.serve(async (req) => {
     const adresseLivraison = addrFromBody ||
       String(customer.adresse || customer.ville || "Cameroun");
 
-    // ── Tâche 1 : vérification de stock AVANT toute création de commande ─────
-    // L'appel RPC verrouille (FOR UPDATE) les lignes produits et compare le
-    // stock disponible à la quantité demandée. Bloque la survente en amont avec
-    // un message clair (produit concerné + disponible vs demandé).
+    // ── Stock : décrément atomique AVANT toute création de commande ───────────
+    // Un checkout peut contenir plusieurs produits. Le RPC agrège les quantités,
+    // verrouille toutes les lignes produits dans une transaction Postgres unique,
+    // vérifie le stock puis décrémente tout-ou-rien. Cela évite les commandes
+    // partielles si un produit est vidé par un autre acheteur entre le check et
+    // la création des lignes.
     const stockCheckItems = items
       .filter((line) => (line.kind || "product") === "product")
       .map((line) => ({
@@ -195,11 +209,11 @@ Deno.serve(async (req) => {
       }));
 
     if (stockCheckItems.length) {
-      const { data: shortage, error: stockCheckErr } = await supabase.rpc(
-        "check_cart_stock",
+      const { data: shortage, error: stockDecrementErr } = await supabase.rpc(
+        "decrement_cart_stock",
         { p_items: stockCheckItems },
       );
-      if (stockCheckErr) throw stockCheckErr;
+      if (stockDecrementErr) throw stockDecrementErr;
       if (shortage) {
         const s = shortage as {
           name?: string;
@@ -217,9 +231,12 @@ Deno.serve(async (req) => {
           { status: 409 },
         );
       }
+      reservedStockItems = stockCheckItems;
+      stockReserved = true;
     }
 
     const ordersCreated: any[] = [];
+    const sellerNotifications: Record<string, unknown>[] = [];
     for (const item of items) {
       if (item.kind === "service") {
         const { data: booking, error: bookingError } = await supabase
@@ -240,6 +257,7 @@ Deno.serve(async (req) => {
           .select("id")
           .single();
         if (bookingError) throw bookingError;
+        createdBookingIds.push(String(booking.id));
         ordersCreated.push({ type: "service_booking", id: booking.id });
         continue;
       }
@@ -281,9 +299,10 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (orderError) throw orderError;
+      createdOrderIds.push(String(order.id));
 
       if (vendeurId) {
-        await insertNotificationAndDispatch(supabase, {
+        sellerNotifications.push({
           user_id: vendeurId,
           type: "seller_new_order",
           title: "Nouvelle commande Yorix",
@@ -308,30 +327,6 @@ Deno.serve(async (req) => {
         meta: { checkout_intent_id: checkoutIntentId },
       });
       if (itemError) throw itemError;
-
-      // ── Tâche 2 : décrémentation atomique et BLOQUANTE du stock ────────────
-      // decrement_product_stock re-vérifie sous verrou (FOR UPDATE) que
-      // stock >= qty puis décrémente — c'est la double sécurité contre une race
-      // condition survenue entre le check pré-commande et ici. En cas d'échec
-      // (stock devenu insuffisant), on NE doit pas valider : on libère la clé
-      // d'idempotency et on renvoie un 409 plutôt que d'avaler l'erreur.
-      const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
-        p_product_id: pid,
-        p_qty: qty,
-      });
-      if (stockErr) {
-        console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
-        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
-        return ok(
-          {
-            error: "STOCK_INSUFFICIENT",
-            product: String((item as { name_fr?: string }).name_fr || "Produit"),
-            available: 0,
-            requested: qty,
-          },
-          { status: 409 },
-        );
-      }
 
       if (fulfillment !== "pickup") {
         const vn = String((item as { vendeur_nom?: string }).vendeur_nom || "vendeur");
@@ -362,20 +357,6 @@ Deno.serve(async (req) => {
     await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
 
     const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
-    if (buyerId) {
-      await insertNotificationAndDispatch(supabase, {
-        user_id: buyerId,
-        type: "buyer_order_confirmed",
-        title: "Commande confirmée",
-        message:
-          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(totals.total)).toLocaleString("fr-FR")} FCFA.`,
-        link: "/dashboard",
-        lu: false,
-        priority: "high",
-        category: "orders",
-        payload: { checkout_intent_id: checkoutIntentId, order_group_id: orderGroupId },
-      });
-    }
 
     const { data: intentAfter } = await supabase
       .from("checkout_intents")
@@ -407,11 +388,56 @@ Deno.serve(async (req) => {
         .eq("key", idempotencyKey);
     }
 
+    for (const row of sellerNotifications) {
+      await insertNotificationAndDispatch(supabase, row);
+    }
+
+    if (buyerId) {
+      await insertNotificationAndDispatch(supabase, {
+        user_id: buyerId,
+        type: "buyer_order_confirmed",
+        title: "Commande confirmée",
+        message:
+          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(totals.total)).toLocaleString("fr-FR")} FCFA.`,
+        link: "/dashboard",
+        lu: false,
+        priority: "high",
+        category: "orders",
+        payload: { checkout_intent_id: checkoutIntentId, order_group_id: orderGroupId },
+      });
+    }
+
     return ok(responseBody);
   } catch (e) {
-    // Échec non géré : on libère la clé pour autoriser une nouvelle tentative.
+    // Échec non géré : nettoyer les écritures déjà effectuées avant de libérer
+    // la clé. Sans cela, un retry pourrait doubler le décrément de stock ou
+    // laisser des commandes orphelines.
     try {
-      if (supabase && idempotencyKey) {
+      if (supabase) {
+        if (createdOrderIds.length) {
+          await supabase.from("deliveries").delete().in("order_id", createdOrderIds);
+          await supabase.from("order_items").delete().in("order_id", createdOrderIds);
+          await supabase.from("orders").delete().in("id", createdOrderIds);
+        }
+        if (createdBookingIds.length) {
+          await supabase.from("service_bookings").delete().in("id", createdBookingIds);
+        }
+        if (stockReserved && reservedStockItems.length) {
+          const { error: restoreErr } = await supabase.rpc("restore_cart_stock", {
+            p_items: reservedStockItems,
+          });
+          if (restoreErr) throw restoreErr;
+        }
+      }
+    } catch (cleanupErr) {
+      cleanupFailed = true;
+      console.error(
+        "[confirm_checkout] cleanup failed:",
+        cleanupErr instanceof Error ? cleanupErr.message : cleanupErr,
+      );
+    }
+    try {
+      if (supabase && idempotencyKey && !cleanupFailed) {
         await releaseIdempotency(supabase, idempotencyKey);
       }
     } catch { /* best-effort */ }
