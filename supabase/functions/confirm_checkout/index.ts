@@ -9,6 +9,45 @@ function uuidish(v: string) {
   return /^[0-9a-fA-F-]{16,}$/.test(v);
 }
 
+/**
+ * Réclame une clé d'idempotency.
+ * - `owned: true`  → la ligne vient d'être créée, c'est NOUS qui traitons ce checkout.
+ * - `owned: false` + `existing` → la clé existait déjà : soit la confirmation est
+ *   terminée (on rejoue `response`), soit elle est encore en cours (doublon concurrent).
+ * Le `upsert ... ignoreDuplicates` garantit l'atomicité de la prise de verrou même
+ * si deux requêtes arrivent en parallèle (la contrainte de clé primaire tranche).
+ */
+async function claimIdempotency(
+  supabase: ReturnType<typeof createClient>,
+  key: string,
+): Promise<{
+  owned: boolean;
+  existing?: { status?: string; response?: unknown };
+}> {
+  const { data: inserted, error } = await supabase
+    .from("checkout_idempotency")
+    .upsert({ key, status: "in_progress" }, { onConflict: "key", ignoreDuplicates: true })
+    .select("key")
+    .maybeSingle();
+  if (error) throw error;
+  if (inserted) return { owned: true };
+
+  const { data: existing } = await supabase
+    .from("checkout_idempotency")
+    .select("status, response")
+    .eq("key", key)
+    .maybeSingle();
+  return { owned: false, existing: existing ?? {} };
+}
+
+/** Libère une clé en cas d'échec, pour permettre une nouvelle tentative. */
+async function releaseIdempotency(
+  supabase: ReturnType<typeof createClient>,
+  key: string,
+) {
+  await supabase.from("checkout_idempotency").delete().eq("key", key);
+}
+
 async function insertNotificationAndDispatch(
   supabase: ReturnType<typeof createClient>,
   row: Record<string, unknown>,
@@ -32,6 +71,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
 
+  // Hoistés hors du try pour rester accessibles au catch (libération de la clé).
+  let supabase: ReturnType<typeof createClient> | null = null;
+  let idempotencyKey = "";
+
   try {
     const body = await req.json();
     const checkoutIntentId = String(body?.checkout_intent_id || "");
@@ -40,10 +83,37 @@ Deno.serve(async (req) => {
     }
 
     const paymentMethod = String(body?.payment_method || "cinetpay");
-    const supabase = createClient(
+
+    // Clé d'idempotency générée côté client (une seule fois par session de
+    // checkout). Optionnelle pour rester rétrocompatible, mais le frontend
+    // l'envoie toujours : elle protège contre le double-clic / retry réseau.
+    idempotencyKey =
+      typeof body?.idempotency_key === "string" && uuidish(body.idempotency_key)
+        ? body.idempotency_key
+        : "";
+
+    supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
+
+    // ── Idempotency : on tente de réclamer la clé AVANT tout traitement ──────
+    // Si une confirmation identique est déjà passée, on rejoue sa réponse sans
+    // recréer la moindre commande.
+    if (idempotencyKey) {
+      const claim = await claimIdempotency(supabase, idempotencyKey);
+      if (!claim.owned) {
+        const ex = claim.existing ?? {};
+        if (ex.status === "completed" && ex.response) {
+          return ok(ex.response as Record<string, unknown>, { status: 200 });
+        }
+        // Confirmation encore en cours (doublon concurrent) : on ne recrée rien.
+        return ok(
+          { error: "CHECKOUT_IN_PROGRESS" },
+          { status: 409 },
+        );
+      }
+    }
 
     const { data: intent, error: intentError } = await supabase
       .from("checkout_intents")
@@ -112,6 +182,42 @@ Deno.serve(async (req) => {
         : "";
     const adresseLivraison = addrFromBody ||
       String(customer.adresse || customer.ville || "Cameroun");
+
+    // ── Tâche 1 : vérification de stock AVANT toute création de commande ─────
+    // L'appel RPC verrouille (FOR UPDATE) les lignes produits et compare le
+    // stock disponible à la quantité demandée. Bloque la survente en amont avec
+    // un message clair (produit concerné + disponible vs demandé).
+    const stockCheckItems = items
+      .filter((line) => (line.kind || "product") === "product")
+      .map((line) => ({
+        id: String(line.id),
+        qty: Math.max(1, Number(line.qty || 1)),
+      }));
+
+    if (stockCheckItems.length) {
+      const { data: shortage, error: stockCheckErr } = await supabase.rpc(
+        "check_cart_stock",
+        { p_items: stockCheckItems },
+      );
+      if (stockCheckErr) throw stockCheckErr;
+      if (shortage) {
+        const s = shortage as {
+          name?: string;
+          available?: number;
+          requested?: number;
+        };
+        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+        return ok(
+          {
+            error: "STOCK_INSUFFICIENT",
+            product: s.name ?? "Produit",
+            available: Number(s.available ?? 0),
+            requested: Number(s.requested ?? 0),
+          },
+          { status: 409 },
+        );
+      }
+    }
 
     const ordersCreated: any[] = [];
     for (const item of items) {
@@ -203,14 +309,28 @@ Deno.serve(async (req) => {
       });
       if (itemError) throw itemError;
 
-      // Décrémentation du stock — appel RPC atomique défini dans la migration SQL
+      // ── Tâche 2 : décrémentation atomique et BLOQUANTE du stock ────────────
+      // decrement_product_stock re-vérifie sous verrou (FOR UPDATE) que
+      // stock >= qty puis décrémente — c'est la double sécurité contre une race
+      // condition survenue entre le check pré-commande et ici. En cas d'échec
+      // (stock devenu insuffisant), on NE doit pas valider : on libère la clé
+      // d'idempotency et on renvoie un 409 plutôt que d'avaler l'erreur.
       const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
         p_product_id: pid,
         p_qty: qty,
       });
       if (stockErr) {
         console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
-        // Non-bloquant : on continue mais on log pour audit
+        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+        return ok(
+          {
+            error: "STOCK_INSUFFICIENT",
+            product: String((item as { name_fr?: string }).name_fr || "Produit"),
+            available: 0,
+            requested: qty,
+          },
+          { status: 409 },
+        );
       }
 
       if (fulfillment !== "pickup") {
@@ -263,7 +383,7 @@ Deno.serve(async (req) => {
       .eq("id", checkoutIntentId)
       .maybeSingle();
 
-    return ok({
+    const responseBody = {
       checkout_intent_id: checkoutIntentId,
       order_group_id: orderGroupId,
       created: ordersCreated,
@@ -271,8 +391,30 @@ Deno.serve(async (req) => {
       total: intentAfter?.total ?? totals.total,
       delivery_fee: intentAfter?.delivery_fee ?? totals.deliveryFee,
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
-    });
+    };
+
+    // Idempotency : on marque la clé « completed » et on archive la réponse
+    // exacte pour la rejouer sur un éventuel reclic / retry réseau.
+    if (idempotencyKey) {
+      await supabase
+        .from("checkout_idempotency")
+        .update({
+          status: "completed",
+          order_group_id: orderGroupId,
+          response: responseBody,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("key", idempotencyKey);
+    }
+
+    return ok(responseBody);
   } catch (e) {
+    // Échec non géré : on libère la clé pour autoriser une nouvelle tentative.
+    try {
+      if (supabase && idempotencyKey) {
+        await releaseIdempotency(supabase, idempotencyKey);
+      }
+    } catch { /* best-effort */ }
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
   }
 });

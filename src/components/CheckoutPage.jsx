@@ -12,6 +12,7 @@ import {
 } from "../domain/checkoutForm";
 import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrchestrator";
 import {
+  CheckoutError,
   checkoutReturnStatus,
   confirmCheckout,
   createCheckoutIntent,
@@ -66,11 +67,47 @@ export function CheckoutPage({
   const location = useLocation();
   const processedCinetpayReturnRef = useRef(new Set());
 
+  /**
+   * Clé d'idempotency : générée UNE seule fois par session de checkout et
+   * conservée tant que la commande n'est pas confirmée. Si le réseau coupe et
+   * que l'utilisateur reclique, la même clé est renvoyée → le serveur déduplique
+   * au lieu de créer une 2ᵉ commande. Réinitialisée uniquement après succès.
+   */
+  const idempotencyKeyRef = useRef(null);
+  const getIdempotencyKey = useCallback(() => {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `idem-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+    return idempotencyKeyRef.current;
+  }, []);
+
   const { t } = useTranslation("checkout");
   const checkoutLocaleSeg = parseLocaleSegments(location.pathname);
   const checkoutLocale =
     checkoutLocaleSeg.locale === "fr" || checkoutLocaleSeg.locale === "en" ? checkoutLocaleSeg.locale : "fr";
   const localizedCheckoutPath = localePath(checkoutLocale, PAGE_PATH.checkout);
+
+  /** Traduit une erreur de checkout en message utilisateur clair (sans alert()). */
+  const describeCheckoutError = useCallback(
+    (e) => {
+      if (e instanceof CheckoutError) {
+        if (e.code === "STOCK_INSUFFICIENT") {
+          return t("errors.stockInsufficient", {
+            product: e.details?.product || t("errors.thisProduct"),
+            available: Number(e.details?.available ?? 0),
+            requested: Number(e.details?.requested ?? 0),
+          });
+        }
+        if (e.code === "CHECKOUT_IN_PROGRESS") return t("errors.inProgress");
+        if (e.isNetwork) return t("errors.network");
+      }
+      return t("errors.checkoutFailed");
+    },
+    [t],
+  );
 
   const [step, setStep] = useState(1);
 
@@ -416,6 +453,7 @@ export function CheckoutPage({
                 payment_method: paymentMethod,
                 location_type: locationType,
                 address: mergedUserData.adresse,
+                idempotency_key: getIdempotencyKey(),
               });
               orderGroupId = confirmation?.order_group_id || null;
               if (Array.isArray(confirmation?.delivery_tracking)) {
@@ -433,6 +471,7 @@ export function CheckoutPage({
       }
       openWhatsAppFallback(intentId, serverRecap);
       setCartItems([]);
+      idempotencyKeyRef.current = null; // commande aboutie → clé consommée
       setOrderDone({
         mode: "whatsapp",
         orderGroupId,
@@ -456,6 +495,7 @@ export function CheckoutPage({
         payment_method: paymentMethod,
         location_type: locationType,
         address: mergedUserData.adresse,
+        idempotency_key: getIdempotencyKey(),
       });
       const serverPayTotal = Math.round(
         Number(confirmation?.total ?? intent?.total ?? summary.total),
@@ -490,7 +530,9 @@ export function CheckoutPage({
         });
       }
 
+      // Succès confirmé (HTTP 200) → panier vidé.
       setCartItems([]);
+      idempotencyKeyRef.current = null; // commande aboutie → clé consommée
       setOrderDone({
         mode: !confirmation?.order_group_id ? "whatsapp" : "standard",
         orderGroupId: confirmation?.order_group_id || null,
@@ -500,8 +542,9 @@ export function CheckoutPage({
           : [],
       });
     } catch (e) {
+      // Le panier n'est PAS vidé ici : l'utilisateur peut réessayer.
       console.warn("Checkout:", e?.message || e);
-      setCheckoutError(t("errors.checkoutFailed"));
+      setCheckoutError(describeCheckoutError(e));
     } finally {
       setLoading(false);
     }
