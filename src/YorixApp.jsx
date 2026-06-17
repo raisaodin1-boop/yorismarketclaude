@@ -78,6 +78,7 @@ import { CartDrawer } from "./components/CartDrawer";
 import { UserMenuDrawer } from "./components/UserMenuDrawer";
 import { GlobalToastHost } from "./components/ui/GlobalToastHost";
 import { PageProgressBar } from "./components/ui/PageProgressBar";
+import { PushPromptBanner } from "./components/ui/PushPromptBanner";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
 import { applyNotificationOpen, getNotificationOpenAction } from "./lib/notificationNavigation.js";
@@ -1838,6 +1839,7 @@ export default function YorixApp() {
 
       <GlobalToastHost />
       <PageProgressBar active={pageNavigating} />
+      <PushPromptBanner user={user} />
     </>
   );
 }

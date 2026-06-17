@@ -5297,6 +5297,37 @@ button{transition:transform .15s var(--yorix-ease-out,cubic-bezier(.16,1,.3,1)),
   .empty-icon,.yhm3-btn--pri,.yhm3-hero .yhm3-orb1,.yhm3-hero .yhm3-orb2{animation:none!important;}
   .prod-card:hover{transform:none!important;}
 }
+
+/* ── PUSH PROMPT BANNER ── */
+@keyframes yxPushBannerIn{from{opacity:0;transform:translateY(12px) scale(.97);}to{opacity:1;transform:none;}}
+.yx-push-banner{
+  position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  z-index:11000;display:flex;align-items:center;gap:12px;
+  max-width:min(96vw,480px);width:100%;
+  background:${dark?"#1c2e22":"#fff"};
+  border:1.5px solid ${dark?"rgba(79,209,125,.25)":"rgba(26,107,58,.18)"};
+  border-radius:18px;padding:14px 16px;
+  box-shadow:0 16px 48px rgba(0,0,0,.22),0 0 0 1px rgba(26,107,58,.06);
+  animation:yxPushBannerIn .35s cubic-bezier(.16,1,.3,1);
+  font-family:'DM Sans',sans-serif;
+}
+.yx-push-banner__icon{font-size:1.6rem;flex-shrink:0;}
+.yx-push-banner__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.yx-push-banner__title{font-size:.86rem;font-weight:700;color:var(--ink);font-family:'Syne',sans-serif;}
+.yx-push-banner__sub{font-size:.75rem;color:var(--gray);line-height:1.4;}
+.yx-push-banner__actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.yx-push-banner__btn{border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:.75rem;cursor:pointer;padding:7px 14px;transition:transform .15s,box-shadow .15s;}
+.yx-push-banner__btn--accept{background:linear-gradient(135deg,var(--green),#27a85a);color:#fff;box-shadow:0 4px 14px rgba(26,107,58,.3);}
+.yx-push-banner__btn--accept:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,107,58,.4);}
+.yx-push-banner__btn--accept:disabled{opacity:.65;cursor:wait;}
+.yx-push-banner__btn--snooze{background:var(--surface2);color:var(--gray);font-size:.7rem;}
+.yx-push-banner__btn--snooze:hover{color:var(--ink);}
+@media(max-width:500px){
+  .yx-push-banner{bottom:calc(68px + env(safe-area-inset-bottom));flex-wrap:wrap;gap:10px;}
+  .yx-push-banner__actions{flex-direction:row;width:100%;}
+  .yx-push-banner__btn{flex:1;}
+}
+@media(prefers-reduced-motion:reduce){.yx-push-banner{animation:none!important;}}
 `;
 
 
