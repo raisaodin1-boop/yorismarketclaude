@@ -68,7 +68,7 @@ export function HomePremiumMerch({ goPage, produits = [], locale = "fr" }) {
             </button>
           </div>
           <div className="hpm-mic-scroll">
-            {madeIn.map((p) => (
+            {madeIn.map((p, i) => (
               <article
                 key={p.id}
                 className="hpm-mic-card"
@@ -85,6 +85,7 @@ export function HomePremiumMerch({ goPage, produits = [], locale = "fr" }) {
                     src={p.image}
                     alt={p.name_fr || ""}
                     size="card"
+                    priority={i === 0}
                     fallbackEmoji="📦"
                     style={{ width: "100%", height: "100%" }}
                   />

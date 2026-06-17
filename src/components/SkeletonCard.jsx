@@ -1,4 +1,4 @@
-export function SkeletonCard() {
+function SkeletonCardSingle() {
   return (
     <div className="sk-card" aria-hidden="true">
       <div className="sk-block sk-img" />
@@ -13,4 +13,16 @@ export function SkeletonCard() {
       </div>
     </div>
   );
+}
+
+// Accepts optional `count` prop: <SkeletonCard count={8} /> renders a grid of N cards.
+export function SkeletonCard({ count }) {
+  if (count > 1) {
+    return (
+      <div className="prod-grid">
+        {Array.from({ length: count }, (_, i) => <SkeletonCardSingle key={i} />)}
+      </div>
+    );
+  }
+  return <SkeletonCardSingle />;
 }
