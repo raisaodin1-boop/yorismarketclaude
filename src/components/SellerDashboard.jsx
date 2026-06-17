@@ -18,6 +18,7 @@ import {
   deleteProduct,
 } from "../lib/catalogMutations";
 import { showAppToast } from "../lib/appToast";
+import { ReferralPanel } from "./ReferralPanel";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
@@ -1064,6 +1065,11 @@ export function SellerDashboard({
             ))
           )}
         </>
+      )}
+
+      {/* ════ PARRAINAGE ════ */}
+      {dashTab === "parrainage" && (
+        <ReferralPanel user={user} userData={userData} />
       )}
 
       {/* ════ WALLET ════ */}

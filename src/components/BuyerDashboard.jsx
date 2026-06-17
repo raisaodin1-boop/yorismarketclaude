@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT } from "../lib/queryLimits";
 import { DELIVERY_STATUSES, REWARDS_DATA } from "../lib/constants";
 import { OrderCardWithTracking } from "./OrderCardWithTracking";
+import { ReferralPanel } from "./ReferralPanel";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : DASHBOARD ACHETEUR (BUYER)
@@ -145,6 +146,10 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
             ))}
           </div>
         </>
+      )}
+
+      {dashTab === "parrainage" && (
+        <ReferralPanel user={user} userData={userData} />
       )}
     </>
   );
