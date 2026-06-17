@@ -231,6 +231,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .add-btn:hover{background:#0f4a28;transform:scale(1.08);box-shadow:0 4px 12px rgba(26,107,58,.32);}
 .add-btn:active{transform:scale(.96);}
 .prod-actions{display:flex;gap:6px;margin-top:7px;}
+
+/* Skeletons catalogue */
+@keyframes yorix-sk-shimmer{100%{transform:translateX(100%);}}
+.sk-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
+.sk-block{position:relative;overflow:hidden;background:var(--surface2);}
+.sk-block::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,${dark?"rgba(255,255,255,.07)":"rgba(255,255,255,.6)"},transparent);animation:yorix-sk-shimmer 1.3s infinite;}
+.sk-img{height:180px;}
+.sk-body{padding:12px;display:flex;flex-direction:column;gap:9px;flex:1;}
+.sk-line{height:11px;border-radius:6px;}
+.sk-line--lg{height:15px;width:75%;}
+.sk-line--sm{width:45%;}
+.sk-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:6px;}
+.sk-line--price{height:18px;width:38%;border-radius:6px;}
+.sk-btn{width:38px;height:38px;border-radius:8px;}
+@media(prefers-reduced-motion:reduce){.sk-block::after{animation:none;}}
+
+/* Pagination catalogue */
+.catalog-pager{display:flex;align-items:center;justify-content:center;gap:14px;margin:26px 0 8px;}
+.catalog-pager-btn{padding:9px 18px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:border-color var(--yorix-t-fast),background var(--yorix-t-fast),color var(--yorix-t-fast);}
+.catalog-pager-btn:hover:not(:disabled){border-color:var(--green);color:var(--green);}
+.catalog-pager-btn:disabled{opacity:.45;cursor:not-allowed;}
+.catalog-pager-status{font-size:.82rem;color:var(--gray);font-weight:600;min-width:96px;text-align:center;}
 .btn-wa-sm{background:var(--wa);color:#fff;border:none;padding:7px 10px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.68rem;cursor:pointer;display:flex;align-items:center;gap:4px;flex:1;justify-content:center;transition:filter var(--yorix-t-fast),transform var(--yorix-t-fast);}
 .btn-wa-sm:hover{filter:brightness(1.1);transform:translateY(-1px);}
 .btn-cmd-sm{background:var(--green);color:#fff;border:none;padding:7px 10px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.68rem;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:4px;transition:background var(--yorix-t-fast),transform var(--yorix-t-fast);}

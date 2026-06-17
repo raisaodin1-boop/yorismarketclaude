@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { optimizeCloudinaryUrl, cloudinarySrcset, cloudinaryPlaceholder } from "../utils/helpers";
+import {
+  optimizeCloudinaryUrl,
+  cloudinarySrcset,
+  cloudinaryPlaceholder,
+  cloudinaryResponsive,
+} from "../utils/helpers";
 
 // ═══════════════════════════════════════════════════════════════
 // 🖼️ COMPOSANT IMAGE OPTIMISÉE
@@ -19,11 +24,12 @@ export function OptimizedImage({
   alt = "",
   width = 400,
   height,
+  size, // "thumb" | "card" | "hero" — presets Cloudinary (w/h/crop fixes + srcset Retina)
   className = "",
   style = {},
   fallbackEmoji = "📦",
   objectFit = "cover",
-  priority = false, // true = charge tout de suite (hero, above fold)
+  priority = false, // true = charge tout de suite (hero, above fold) → pas de lazy, LCP
   onLoad,
   onError,
   ...rest
@@ -54,8 +60,11 @@ export function OptimizedImage({
     );
   }
 
-  const optimizedSrc = optimizeCloudinaryUrl(src, { width });
-  const srcset = cloudinarySrcset(src);
+  const responsive = size ? cloudinaryResponsive(src, size) : null;
+  const optimizedSrc = responsive ? responsive.src : optimizeCloudinaryUrl(src, { width });
+  const srcset = responsive ? responsive.srcSet : cloudinarySrcset(src);
+  // En mode preset, le srcset utilise des descripteurs de densité (1x/2x) → pas d'attribut sizes.
+  const sizesAttr = responsive ? undefined : `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, ${width}px`;
   const placeholder = cloudinaryPlaceholder(src);
 
   return (
@@ -93,11 +102,12 @@ export function OptimizedImage({
       <img
         src={optimizedSrc}
         srcSet={srcset}
-        sizes={`(max-width: 640px) 100vw, (max-width: 1024px) 50vw, ${width}px`}
+        sizes={sizesAttr}
         alt={alt}
-        loading={priority ? "eager" : "lazy"}
         decoding="async"
-        fetchPriority={priority ? "high" : "auto"}
+        {...(priority
+          ? { loading: "eager", fetchpriority: "high" }
+          : { loading: "lazy", fetchpriority: "auto" })}
         onLoad={(e) => {
           setLoaded(true);
           onLoad?.(e);

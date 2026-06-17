@@ -64,7 +64,7 @@ export function ProdGrid({
   return (
     <>
       <div className="prod-grid">
-        {prods.map(p => {
+        {prods.map((p, i) => {
           const safeImg    = getSafeImg(p);
           const stockClass = p.stock > 5 ? "stock-ok" : p.stock > 0 ? "stock-low" : "stock-out";
           const vendBadges = getVendeurBadges(p);
@@ -85,7 +85,8 @@ export function ProdGrid({
                 <OptimizedImage
                   src={safeImg}
                   alt={p.name_fr || "Produit Yorix"}
-                  width={400}
+                  size="card"
+                  priority={i === 0}
                   fallbackEmoji="📦"
                   style={{ width: "100%", height: "100%" }}
                 />

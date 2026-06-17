@@ -1,12 +1,10 @@
-import { ProdGrid } from "../components/ProdGrid";
-import { CategoryFilterPanel } from "../components/categories/CategoryFilterPanel";
+import { CatalogProducts } from "../components/catalog/CatalogProducts";
 import { EscrowPremiumPage } from "./EscrowPremiumPage";
 
 export function ProductRouteSections({
   showProduits,
   page,
   seoCityName,
-  produitsFiltres,
   produitsLoading,
   produits,
   filterCat,
@@ -27,58 +25,23 @@ export function ProductRouteSections({
 }) {
   if (showProduits) {
     return (
-      <section className="sec anim yorix-page-flow yorix-pro-page">
-        <div className="sec-head yorix-catalog-head">
-          <h1 className="sec-title">
-            {page === "seoCity" && seoCityName
-              ? `🛍️ Achat en ligne à ${seoCityName} — produits marketplace`
-              : "🛍️ Marketplace Cameroun — tous les produits"}
-          </h1>
-          <div className="yorix-sec-toolbar-end" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <span className="yorix-catalog-meta">{produitsFiltres.length} résultat(s)</span>
-            {filterCat && (
-              <button type="button" className="btn-ghost yorix-pill--ghost" onClick={() => setFilterCat("")}>
-                ✕ {filterCat}
-              </button>
-            )}
-          </div>
-        </div>
-        <CategoryFilterPanel
-          tree={categoryTree}
-          locale={siteLocale}
-          parentSlug={categoryFilter?.parent?.slug || ""}
-          subSlug={categoryFilter?.child?.slug || ""}
-          filterCat={filterCat}
-          onParentChange={(slug) => goToCategory?.({ parentSlug: slug })}
-          onSubChange={(sub) =>
-            goToCategory?.({
-              parentSlug: categoryFilter?.parent?.slug,
-              subSlug: sub,
-            })
-          }
-          onLegacyCatChange={setFilterCat}
-        />
-        {produitsLoading ? (
-          <div className="loading">
-            <div className="spinner" /> Chargement...
-          </div>
-        ) : produitsFiltres.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🔍</div>
-            <p>Aucun produit{search ? ` pour « ${search} »` : ""}.</p>
-          </div>
-        ) : (
-          <ProdGrid
-            prods={produitsFiltres}
-            user={user}
-            userData={userData}
-            onAddToCart={addToCart}
-            onWish={toggleWish}
-            wishlist={wishlist}
-            onOpenProductUrl={openProductUrl}
-          />
-        )}
-      </section>
+      <CatalogProducts
+        page={page}
+        seoCityName={seoCityName}
+        filterCat={filterCat}
+        setFilterCat={setFilterCat}
+        categoryTree={categoryTree}
+        categoryFilter={categoryFilter}
+        goToCategory={goToCategory}
+        siteLocale={siteLocale}
+        search={search}
+        user={user}
+        userData={userData}
+        wishlist={wishlist}
+        addToCart={addToCart}
+        toggleWish={toggleWish}
+        openProductUrl={openProductUrl}
+      />
     );
   }
 
