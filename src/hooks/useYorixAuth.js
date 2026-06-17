@@ -29,7 +29,10 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
     localStorage.setItem("yorix_pending_role", role);
     _setSelectedRole(role);
   };
-  const [authForm, setAuthForm] = useState({ nom: "", email: "", tel: "", password: "" });
+  const [authForm, setAuthForm] = useState({
+    nom: "", email: "", tel: "", password: "",
+    refCode: localStorage.getItem("yorix_ref_code") || "",
+  });
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -244,17 +247,18 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         .insert({ user_id: uid, solde: 0, total_gagne: 0, devise: "FCFA" })
         .then((r) => r.error && console.error(r.error));
 
-      // Appliquer code de parrainage si présent dans l'URL ou localStorage
-      const refCode = new URLSearchParams(window.location.search).get("ref")
+      // Appliquer code de parrainage : champ du formulaire > URL > localStorage
+      const refCode = authForm.refCode?.trim()
+        || new URLSearchParams(window.location.search).get("ref")
         || localStorage.getItem("yorix_ref_code");
-      if (refCode && selectedRole === "seller") {
+      if (refCode) {
         applyReferralCode(refCode, uid).catch(() => {});
         localStorage.removeItem("yorix_ref_code");
       }
 
       await chargerProfil(uid);
       setAuthOpen(false);
-      setAuthForm({ nom: "", email: "", tel: "", password: "" });
+      setAuthForm({ nom: "", email: "", tel: "", password: "", refCode: "" });
       setContractAccepted(false);
       setPendingRegistration(null);
       if (pendingAction) {

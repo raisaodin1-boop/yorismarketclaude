@@ -176,11 +176,23 @@ export default function YorixApp() {
     if (q != null && q !== "") setSearch((prev) => (prev === q.trim() ? prev : q.trim()));
   }, [page, location.search]);
 
-  // Persister le code de parrainage depuis l'URL ?ref=XXX
+  // Persister le code de parrainage + ouvrir la modale d'inscription si ?register=1&ref=XXX
   useEffect(() => {
-    const ref = new URLSearchParams(location.search).get("ref");
-    if (ref) localStorage.setItem("yorix_ref_code", ref.trim().toUpperCase());
-  }, [location.search]);
+    const params = new URLSearchParams(location.search);
+    const ref = params.get("ref");
+    const openRegister = params.get("register");
+    if (ref) {
+      const code = ref.trim().toUpperCase();
+      localStorage.setItem("yorix_ref_code", code);
+      // Pré-remplir le champ refCode dans le formulaire
+      setAuthForm((f) => ({ ...f, refCode: code }));
+    }
+    if (openRegister === "1") {
+      setAuthTab("register");
+      setAuthOpen(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Notifs
   const [notifs, setNotifs]       = useState([]);

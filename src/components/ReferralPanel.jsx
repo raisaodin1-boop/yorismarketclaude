@@ -26,7 +26,8 @@ export function ReferralPanel({ user, userData }) {
 
   const code = profile?.referral_code;
   const hasSigned = !!profile?.referral_consent_signed_at;
-  const referralLink = code ? `${SITE_URL}/devenir-vendeur?ref=${code}` : "";
+  // Lien direct vers la page d'inscription avec code pré-rempli
+  const referralLink = code ? `${SITE_URL}/?register=1&ref=${code}` : "";
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink).then(() => {

@@ -100,6 +100,33 @@ export function YorixAuthModal({
                 </div>
               ))}
             </div>
+            {/* Champ code de parrainage (optionnel, pré-rempli si lien parrainage) */}
+            {(authForm.refCode !== undefined) && (
+              <div className="form-group" style={{ marginBottom: 10 }}>
+                <label className="form-label" htmlFor="auth-refcode">
+                  Code de parrainage <span style={{ fontWeight: 400, color: "var(--gray)" }}>(facultatif)</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    id="auth-refcode"
+                    className="form-input"
+                    placeholder="Ex: K7MN3P"
+                    value={authForm.refCode || ""}
+                    onChange={(e) => setAuthForm((f) => ({ ...f, refCode: e.target.value.toUpperCase().slice(0, 6) }))}
+                    maxLength={6}
+                    style={{ paddingLeft: 36, fontFamily: "'Syne',sans-serif", fontWeight: 700, letterSpacing: ".1em" }}
+                    autoComplete="off"
+                  />
+                  <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none" }}>🤝</span>
+                </div>
+                {authForm.refCode?.length === 6 && (
+                  <p style={{ fontSize: ".7rem", color: "var(--green)", fontWeight: 600, marginTop: 4 }}>
+                    ✓ Code appliqué — votre parrain recevra un bonus à votre premier achat
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">
                 Nom complet <span>*</span>
