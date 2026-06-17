@@ -208,6 +208,8 @@ export function HomePage({
         </div>
 
         <header className="yhm3-hero">
+          <div className="yhm3-orb1" aria-hidden="true" />
+          <div className="yhm3-orb2" aria-hidden="true" />
           <div className="yhm3-hero-inner">
             <div className="yhm3-hero-grid">
               <div>

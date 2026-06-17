@@ -1,31 +1,45 @@
 import { useCallback, useEffect, useState } from "react";
 
-/** Toast premium fixe (bas écran) — remplace alert() dans le chat. */
+const ICONS = {
+  error:   "✕",
+  warning: "!",
+  success: "✓",
+  info:    "i",
+};
+
+/** Modern toast with auto-dismiss progress bar. */
 export function YorixToast({ toast, onClose }) {
+  const duration = toast?.duration ?? 4500;
+
   useEffect(() => {
     if (!toast) return undefined;
-    const t = setTimeout(() => onClose?.(), toast.duration ?? 4500);
+    const t = setTimeout(() => onClose?.(), duration);
     return () => clearTimeout(t);
-  }, [toast, onClose]);
+  }, [toast, onClose, duration]);
 
   if (!toast) return null;
 
-  const isError = toast.type === "error";
-  const isWarning = toast.type === "warning";
+  const type = toast.type || "info";
 
   return (
     <div
-      className={`yorix-toast yorix-toast--${toast.type || "info"}`}
+      className={`yorix-toast yorix-toast--${type}`}
       role="alert"
       aria-live="polite"
     >
-      <span className="yorix-toast__icon" aria-hidden>
-        {isError ? "⚠️" : isWarning ? "🔔" : toast.type === "success" ? "✓" : "ℹ️"}
+      <span className={`yorix-toast__icon yorix-toast__icon--${type}`} aria-hidden>
+        {ICONS[type] ?? "i"}
       </span>
       <span className="yorix-toast__msg">{toast.msg}</span>
       <button type="button" className="yorix-toast__close" onClick={onClose} aria-label="Fermer">
         ×
       </button>
+      {/* Progress bar depletes over the duration */}
+      <div
+        className="yorix-toast__bar"
+        style={{ animationDuration: `${duration}ms` }}
+        aria-hidden
+      />
     </div>
   );
 }

@@ -77,6 +77,7 @@ import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
 import { CartDrawer } from "./components/CartDrawer";
 import { UserMenuDrawer } from "./components/UserMenuDrawer";
 import { GlobalToastHost } from "./components/ui/GlobalToastHost";
+import { PageProgressBar } from "./components/ui/PageProgressBar";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
 import { applyNotificationOpen, getNotificationOpenAction } from "./lib/notificationNavigation.js";
@@ -183,6 +184,7 @@ export default function YorixApp() {
 
   const [navCompact, setNavCompact] = useState(false);
   const [navQuickOpen, setNavQuickOpen] = useState(false);
+  const [pageNavigating, setPageNavigating] = useState(false);
   const navQuickRef = useRef(null);
 
   const [commerceDeliveryPolicy, setCommerceDeliveryPolicy] = useState(() => getDefaultPolicyFromEnv());
@@ -250,8 +252,10 @@ export default function YorixApp() {
   }, []);
 
   const goPage = useCallback((p, opts = {}) => {
+    setPageNavigating(true);
     navigate(pathForPage(p, { ...opts, locale: opts.locale ?? route.locale }));
     window.scrollTo(0, 0);
+    setTimeout(() => setPageNavigating(false), 600);
   }, [navigate, route.locale]);
 
   const openCart = useCallback(() => {
@@ -1833,6 +1837,7 @@ export default function YorixApp() {
       <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
 
       <GlobalToastHost />
+      <PageProgressBar active={pageNavigating} />
     </>
   );
 }
