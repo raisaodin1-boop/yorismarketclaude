@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { tokens } from "../utils/designTokens";
 
 export function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) {
   const [hover, setHover] = useState(0);
@@ -18,7 +19,7 @@ export function Stars({ value = 0, max = 5, onSelect = null, size = "normal" }) 
           className={`star ${n <= current ? "filled" : "empty"}`}
           style={{
             fontSize: sz,
-            transition: "transform .15s cubic-bezier(0.34,1.56,0.64,1)",
+            transition: `transform ${tokens.transitions.spring}`,
             transform: onSelect && hover >= n ? "scale(1.28)" : "scale(1)",
             display: "inline-block",
           }}

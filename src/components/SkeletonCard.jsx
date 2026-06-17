@@ -1,6 +1,15 @@
+import { tokens } from "../utils/designTokens";
+
 function SkeletonCardSingle() {
   return (
-    <div className="sk-card" aria-hidden="true">
+    <div
+      className="sk-card"
+      aria-hidden="true"
+      style={{
+        borderRadius: tokens.radius.lg,
+        boxShadow: tokens.shadows.card,
+      }}
+    >
       <div className="sk-block sk-img" />
       <div className="sk-body">
         <div className="sk-block sk-line sk-line--lg" />
@@ -8,7 +17,7 @@ function SkeletonCardSingle() {
         <div className="sk-block sk-line sk-line--sm" />
         <div className="sk-foot">
           <div className="sk-block sk-line--price" />
-          <div className="sk-block sk-btn" />
+          <div className="sk-block sk-btn" style={{ borderRadius: tokens.radius.md }} />
         </div>
       </div>
     </div>
