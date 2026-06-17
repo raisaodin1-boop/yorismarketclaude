@@ -507,16 +507,22 @@ export async function livreurRefuser({ delivery, user, userData, motif }) {
     });
   }
 
-  // Pas de user_id admin direct : on émet une notif générique "system"
-  // (à récupérer dans AdminDashboard via filtre type=delivery_refused)
-  await pushNotification({
-    userId:  null, // broadcast (admin la verra via realtime ou filtre custom)
-    type:    "delivery_refused",
-    title:   "⚠️ Mission refusée",
-    message: `${userData?.nom || "Un livreur"} a refusé la mission ${delivery.code_suivi}. ${motif ? "Motif : " + motif : ""}`,
-    link:    adminDeliveriesPath(),
-    payload: { delivery_id: delivery.id, motif },
-  });
+  // Notif admin : envoyer à tous les admins
+  try {
+    const { data: admins } = await supabase.from("users").select("id").eq("role", "admin");
+    for (const admin of admins || []) {
+      await pushNotification({
+        userId:  admin.id,
+        type:    "delivery_refused",
+        title:   "⚠️ Mission refusée",
+        message: `${userData?.nom || "Un livreur"} a refusé la mission ${delivery.code_suivi}. ${motif ? "Motif : " + motif : ""}`,
+        link:    adminDeliveriesPath(),
+        payload: { delivery_id: delivery.id, motif },
+      });
+    }
+  } catch (e) {
+    console.warn("[deliveryWorkflow] notif admin refused skipped:", e);
+  }
 
   return updated;
 }
@@ -617,15 +623,25 @@ export async function creerDemandeLivraison({
 
   if (error) throw error;
 
-  // Notif admin (broadcast)
-  await pushNotification({
-    userId:  null,
-    type:    "delivery_request",
-    title:   "🚚 Nouvelle demande de livraison",
-    message: `${clientNom || "Client"} → ${adresseLivraison} (${code})`,
-    link:    adminDeliveriesPath(),
-    payload: { delivery_id: data.id, code },
-  });
+  // Notif admin : envoyer à tous les utilisateurs avec rôle "admin"
+  try {
+    const { data: admins } = await supabase
+      .from("users")
+      .select("id")
+      .eq("role", "admin");
+    for (const admin of admins || []) {
+      await pushNotification({
+        userId:  admin.id,
+        type:    "delivery_request",
+        title:   "🚚 Nouvelle demande de livraison",
+        message: `${clientNom || "Client"} → ${adresseLivraison} (${code})`,
+        link:    adminDeliveriesPath(),
+        payload: { delivery_id: data.id, code },
+      });
+    }
+  } catch (e) {
+    console.warn("[deliveryWorkflow] notif admin skipped:", e);
+  }
 
   await logAction({
     delivery:      data,

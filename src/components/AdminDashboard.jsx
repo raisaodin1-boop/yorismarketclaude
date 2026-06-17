@@ -1319,13 +1319,13 @@ export function AdminDashboard({ user, userData, goPage }) {
                           🛠️ Modifier
                         </button>
 
-                        {!d.livreur_id && !d.livreur_nom && (
+                        {!d.livreur_nom && (
                           <button onClick={() => setAssignModalOpen(d)} style={{
                             background: "var(--green)", color: "#fff", border: "none",
                             padding: "8px 14px", borderRadius: 8,
                             fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
                           }}>
-                            🏍️ Assigner
+                            🏍️ {d.livreur_id ? "Réassigner" : "Assigner"}
                           </button>
                         )}
 
