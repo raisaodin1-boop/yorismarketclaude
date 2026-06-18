@@ -29,12 +29,16 @@ export async function validateCoupon(code, userId) {
   }
 
   // Vérifier si l'utilisateur a déjà utilisé ce coupon
-  const { data: existing } = await supabase
+  const { data: existing, error: redemptionError } = await supabase
     .from("coupon_redemptions")
     .select("id")
     .eq("coupon_code", normalizedCode)
     .eq("user_id", userId)
     .maybeSingle();
+
+  if (redemptionError) {
+    return { ok: false, error: "Impossible de valider ce code promo pour le moment." };
+  }
 
   if (existing) {
     return { ok: false, error: "Vous avez déjà utilisé ce code promo." };
@@ -42,10 +46,14 @@ export async function validateCoupon(code, userId) {
 
   // Vérifier si c'est bien la 1ère commande
   if (coupon.first_order_only) {
-    const { count } = await supabase
+    const { count, error: ordersError } = await supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
-      .eq("customer_id", userId);
+      .eq("client_id", userId);
+
+    if (ordersError) {
+      return { ok: false, error: "Impossible de vérifier l'éligibilité du code promo." };
+    }
 
     if (count && count > 0) {
       return { ok: false, error: "Ce code est réservé à votre première commande." };

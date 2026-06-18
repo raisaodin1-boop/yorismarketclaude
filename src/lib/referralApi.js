@@ -115,14 +115,19 @@ export async function applyReferralCode(referralCode, newUserId) {
 
   if (!referrer || referrer.id === newUserId) return { ok: false };
 
-  await supabase.from("profiles").update({ referrer_id: referrer.id }).eq("id", newUserId);
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ referrer_id: referrer.id })
+    .eq("id", newUserId);
+  if (profileError) return { ok: false, error: "Impossible de lier le parrain." };
 
-  await supabase.from("referral_bonuses").insert({
+  const { error: bonusError } = await supabase.from("referral_bonuses").upsert({
     referrer_id: referrer.id,
     referred_id: newUserId,
     bonus_amount: REFERRAL_BONUS_AMOUNT,
     status: "pending",
-  }).on("conflict", { ignoreDuplicates: true }).catch(() => {});
+  }, { onConflict: "referred_id", ignoreDuplicates: true });
+  if (bonusError) return { ok: false, error: "Impossible d'enregistrer le bonus parrainage." };
 
   return { ok: true, referrerId: referrer.id };
 }
