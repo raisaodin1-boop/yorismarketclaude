@@ -53,6 +53,10 @@ function deliveryEstimateHint(ville, locationType, carrier) {
   return "Autres régions Cameroun — livraison typique sur 3 à 7 jours ouvrés selon la route.";
 }
 
+export function shouldBlockCinetPayCoupon(paymentMethod, couponApplied) {
+  return paymentMethod === "cinetpay" && Boolean(couponApplied);
+}
+
 export function CheckoutPage({
   user,
   userData,
@@ -455,7 +459,7 @@ export function CheckoutPage({
       setCheckoutError(t("errors.addressIncomplete"));
       return;
     }
-    if (paymentMethod === "cinetpay" && couponApplied) {
+    if (shouldBlockCinetPayCoupon(paymentMethod, couponApplied)) {
       setCheckoutError(
         "CinetPay ne peut pas encore appliquer ce code promo automatiquement. Choisissez WhatsApp / paiement à la livraison, ou retirez le code pour payer par CinetPay.",
       );
