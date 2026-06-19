@@ -6,8 +6,9 @@ export function detectCheckoutType(items) {
   return "product_only";
 }
 
-export function buildCheckoutIntent({ items, user, userData, summary }) {
+export function buildCheckoutIntent({ items, user, userData, summary, coupon }) {
   const checkoutType = detectCheckoutType(items);
+  const couponCode = coupon?.code ? String(coupon.code).trim().toUpperCase() : "";
   return {
     checkoutType,
     customer: {
@@ -31,6 +32,7 @@ export function buildCheckoutIntent({ items, user, userData, summary }) {
       ville: item.ville ?? "",
     })),
     summary,
+    coupon: couponCode ? { code: couponCode } : null,
   };
 }
 

@@ -42,11 +42,14 @@ export async function validateCoupon(code, userId) {
 
   // Vérifier si c'est bien la 1ère commande
   if (coupon.first_order_only) {
-    const { count } = await supabase
+    const { count, error: orderCountError } = await supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
-      .eq("customer_id", userId);
+      .eq("client_id", userId);
 
+    if (orderCountError) {
+      return { ok: false, error: "Impossible de valider ce code promo. Réessayez." };
+    }
     if (count && count > 0) {
       return { ok: false, error: "Ce code est réservé à votre première commande." };
     }

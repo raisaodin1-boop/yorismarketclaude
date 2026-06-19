@@ -27,5 +27,20 @@ describe("checkoutOrchestrator", () => {
     expect(intent.items[0].price).toBe(500);
     expect(intent.items[0].qty).toBe(2);
     expect(intent.summary).toEqual({ total: 1000 });
+    expect(intent.coupon).toBeNull();
+  });
+
+  it("buildCheckoutIntent forwards only the normalized coupon code", async () => {
+    const { buildCheckoutIntent } = await import("../checkoutOrchestrator.js");
+    const intent = buildCheckoutIntent({
+      items: [{ id: "p1", kind: "product", qty: 1, prix: 1000 }],
+      user: { id: "uid", email: "a@b.cm" },
+      userData: { nom: "Jean" },
+      summary: { total: 800, couponDiscount: 200 },
+      coupon: { code: " bienvenue2000 ", discount: 2000 },
+    });
+
+    expect(intent.coupon).toEqual({ code: "BIENVENUE2000" });
+    expect(intent.summary).toEqual({ total: 800, couponDiscount: 200 });
   });
 });

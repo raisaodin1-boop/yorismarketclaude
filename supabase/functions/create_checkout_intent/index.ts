@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { applyCheckoutDiscount, validateCheckoutCoupon } from "../_shared/checkout_coupons.ts";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
@@ -32,13 +33,31 @@ Deno.serve(async (req) => {
     const priceRes = await applyCatalogPricing(supabase, itemsRaw);
     if (priceRes.error) return ok({ error: priceRes.error }, { status: 400 });
     const items = priceRes.lines;
+    const policy = await resolveDeliveryPolicy(supabase);
+    const totals = computeCheckoutTotals(items, policy);
+    const coupon = await validateCheckoutCoupon(supabase, {
+      code: body?.coupon?.code,
+      customerId,
+      grossTotal: totals.total,
+    });
+    if (coupon.error) return ok({ error: coupon.error }, { status: 400 });
+
+    const discountTotal = coupon.discountAmount;
+    const payableTotal = applyCheckoutDiscount(totals.total, discountTotal);
     const bodyAuthoritative = {
       ...body,
       items,
+      coupon: coupon.code
+        ? { code: coupon.code, discount_amount: discountTotal }
+        : null,
+      summary: {
+        ...(typeof body?.summary === "object" && body.summary !== null ? body.summary : {}),
+        subtotal: totals.subtotalFull,
+        delivery: totals.deliveryFee,
+        couponDiscount: discountTotal,
+        total: payableTotal,
+      },
     };
-
-    const policy = await resolveDeliveryPolicy(supabase);
-    const totals = computeCheckoutTotals(items, policy);
 
     const { data, error } = await supabase
       .from("checkout_intents")
@@ -49,7 +68,7 @@ Deno.serve(async (req) => {
         status: "ready",
         subtotal: totals.subtotalFull,
         delivery_fee: totals.deliveryFee,
-        total: totals.total,
+        total: payableTotal,
       })
       .select(
         "id, checkout_type, subtotal, delivery_fee, total, status",
@@ -64,6 +83,8 @@ Deno.serve(async (req) => {
       subtotal: data.subtotal,
       delivery_fee: data.delivery_fee,
       total: data.total,
+      coupon_code: coupon.code || null,
+      coupon_discount: discountTotal,
       status: data.status,
       free_shipping_unlocked: totals.freeShippingUnlocked,
       shippable_products_subtotal: totals.shippableProductsSubtotal,

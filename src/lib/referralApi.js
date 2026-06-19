@@ -34,6 +34,94 @@ async function generateUniqueCode() {
   return generateRawCode() + Math.floor(Math.random() * 9);
 }
 
+function normalizeCategory(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function isReferralCategoryEligible(...values) {
+  const normalizedValues = values.map(normalizeCategory).filter(Boolean);
+  return normalizedValues.some((value) =>
+    REFERRAL_ELIGIBLE_CATEGORIES.some((cat) => {
+      const normalizedCat = normalizeCategory(cat);
+      return value === normalizedCat || value.includes(normalizedCat) || normalizedCat.includes(value);
+    })
+  );
+}
+
+async function orderHasEligibleReferralProduct(userId, orderIdOrGroupId) {
+  const rawOrderId = String(orderIdOrGroupId || "").trim();
+  if (!userId || !rawOrderId) return false;
+
+  let orderQuery = supabase
+    .from("orders")
+    .select("id")
+    .eq("client_id", userId);
+
+  orderQuery = rawOrderId.startsWith("YORIX-")
+    ? orderQuery.eq("order_group_id", rawOrderId)
+    : orderQuery.eq("id", rawOrderId);
+
+  const { data: orders, error: ordersError } = await orderQuery.limit(50);
+  if (ordersError || !orders?.length) return false;
+
+  const orderIds = orders.map((o) => o.id).filter(Boolean);
+  const { data: items, error: itemsError } = await supabase
+    .from("order_items")
+    .select("product_id")
+    .in("order_id", orderIds)
+    .eq("item_kind", "product")
+    .limit(100);
+
+  if (itemsError || !items?.length) return false;
+
+  const productIds = [...new Set(items.map((item) => item.product_id).filter(Boolean))];
+  if (!productIds.length) return false;
+
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, categorie, category_id")
+    .in("id", productIds);
+
+  if (productsError || !products?.length) return false;
+
+  const categoryIds = [...new Set(products.map((p) => p.category_id).filter(Boolean))];
+  const categorySlugById = new Map();
+  if (categoryIds.length) {
+    const { data: categories } = await supabase
+      .from("marketplace_categories")
+      .select("id, slug, parent_id")
+      .in("id", categoryIds);
+
+    const parentIds = [...new Set((categories || []).map((c) => c.parent_id).filter(Boolean))];
+    const parentSlugById = new Map();
+    if (parentIds.length) {
+      const { data: parents } = await supabase
+        .from("marketplace_categories")
+        .select("id, slug")
+        .in("id", parentIds);
+      (parents || []).forEach((p) => parentSlugById.set(p.id, p.slug));
+    }
+
+    (categories || []).forEach((c) => {
+      categorySlugById.set(c.id, {
+        slug: c.slug,
+        parentSlug: c.parent_id ? parentSlugById.get(c.parent_id) : "",
+      });
+    });
+  }
+
+  return products.some((product) => {
+    const category = categorySlugById.get(product.category_id);
+    return isReferralCategoryEligible(product.categorie, category?.slug, category?.parentSlug);
+  });
+}
+
 /**
  * Enregistre le consentement et génère le code.
  * Retourne { ok, code, error }
@@ -151,23 +239,9 @@ export async function creditReferralBonusIfEligible(userId, orderId) {
 
   if (!bonus) return;
 
-  // Vérifier que la commande contient des produits des catégories éligibles
-  if (orderId) {
-    const { data: orderItems } = await supabase
-      .from("order_items")
-      .select("categorie, parent_slug")
-      .eq("order_id", orderId)
-      .limit(20);
-
-    if (orderItems && orderItems.length > 0) {
-      const hasEligible = orderItems.some((item) =>
-        REFERRAL_ELIGIBLE_CATEGORIES.some(
-          (cat) => (item.parent_slug || item.categorie || "").toLowerCase().includes(cat)
-        )
-      );
-      if (!hasEligible) return;
-    }
-  }
+  // Vérifier que la commande contient au moins un produit d'une catégorie éligible.
+  // En cas d'erreur ou d'ordre introuvable, on échoue fermé pour éviter un crédit indu.
+  if (!(await orderHasEligibleReferralProduct(userId, orderId))) return;
 
   // Créditer le wallet du parrain
   const { data: wallet } = await supabase

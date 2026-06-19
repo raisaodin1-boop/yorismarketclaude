@@ -469,7 +469,8 @@ export function CheckoutPage({
           items: cartItems,
           user,
           userData: mergedUserData,
-          summary,
+          summary: summaryWithDiscount,
+          coupon: couponApplied,
         });
         try {
           const intent = await createCheckoutIntent(intentPayload);
@@ -522,7 +523,8 @@ export function CheckoutPage({
         items: cartItems,
         user,
         userData: mergedUserData,
-        summary,
+        summary: summaryWithDiscount,
+        coupon: couponApplied,
       });
       const intent = await createCheckoutIntent(intentPayload);
       const confirmation = await confirmCheckout({

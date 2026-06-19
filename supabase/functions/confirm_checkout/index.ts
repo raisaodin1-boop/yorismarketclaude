@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { applyCheckoutDiscount, validateCheckoutCoupon } from "../_shared/checkout_coupons.ts";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
@@ -133,6 +134,17 @@ Deno.serve(async (req) => {
 
     const policy = await resolveDeliveryPolicy(supabase);
     const totals = computeCheckoutTotals(items, policy);
+    const coupon = await validateCheckoutCoupon(supabase, {
+      code: (payload as { coupon?: { code?: unknown } }).coupon?.code,
+      customerId: (customer as { id?: unknown }).id,
+      grossTotal: totals.total,
+    });
+    if (coupon.error) {
+      if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+      return ok({ error: coupon.error }, { status: 400 });
+    }
+    const discountTotal = coupon.discountAmount;
+    const payableTotal = applyCheckoutDiscount(totals.total, discountTotal);
     const intentSub = Math.round(Number(intent.subtotal ?? 0));
     if (intentSub !== totals.subtotalFull) {
       return ok(
@@ -143,12 +155,18 @@ Deno.serve(async (req) => {
 
     const del = Math.round(Number(intent.delivery_fee ?? 0));
     const tot = Math.round(Number(intent.total ?? 0));
-    if (del !== totals.deliveryFee || tot !== totals.total) {
+    if (del !== totals.deliveryFee || tot !== payableTotal) {
       const { error: patchErr } = await supabase
         .from("checkout_intents")
         .update({
           delivery_fee: totals.deliveryFee,
-          total: totals.total,
+          total: payableTotal,
+          payload: {
+            ...(typeof payload === "object" && payload !== null ? payload : {}),
+            coupon: coupon.code
+              ? { code: coupon.code, discount_amount: discountTotal }
+              : null,
+          },
           updated_at: new Date().toISOString(),
         })
         .eq("id", checkoutIntentId);
@@ -368,7 +386,7 @@ Deno.serve(async (req) => {
         type: "buyer_order_confirmed",
         title: "Commande confirmée",
         message:
-          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(totals.total)).toLocaleString("fr-FR")} FCFA.`,
+          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(payableTotal)).toLocaleString("fr-FR")} FCFA.`,
         link: "/dashboard",
         lu: false,
         priority: "high",
@@ -388,9 +406,11 @@ Deno.serve(async (req) => {
       order_group_id: orderGroupId,
       created: ordersCreated,
       delivery_tracking: deliveryTracking,
-      total: intentAfter?.total ?? totals.total,
+      total: intentAfter?.total ?? payableTotal,
       delivery_fee: intentAfter?.delivery_fee ?? totals.deliveryFee,
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
+      coupon_code: coupon.code || null,
+      coupon_discount: discountTotal,
     };
 
     // Idempotency : on marque la clé « completed » et on archive la réponse
