@@ -415,7 +415,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 /* ═══ CART AMAZON STYLE ═══ */
 .cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(2px);}
 .cart-overlay.open{opacity:1;pointer-events:all;}
-.cart-drawer{position:fixed;top:0;right:0;width:min(440px,100vw);height:100vh;background:var(--bg);z-index:601;transform:translateX(100%);transition:transform .4s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.2);}
+.cart-drawer{position:fixed;top:0;right:0;width:min(440px,100vw);height:100vh;height:100dvh;background:var(--bg);z-index:601;transform:translateX(100%);transition:transform .4s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.2);}
 .cart-drawer.open{transform:none;}
 
 /* Header */
@@ -722,7 +722,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 
 /* NOTIFS — centre premium + ancien fallback */
 .notif-backdrop{position:fixed;inset:0;background:rgba(15,20,18,.28);z-index:1050;backdrop-filter:blur(3px);}
-.notif-drawer{position:fixed;top:clamp(72px,14vh,102px);right:12px;width:min(408px,calc(100vw - 20px));max-height:calc(100vh - 88px);display:flex;flex-direction:column;background:var(--surface);border-radius:16px;border:1px solid var(--border);box-shadow:0 16px 48px rgba(0,0,0,.14),0 4px 14px rgba(26,107,58,.08);z-index:1060;overflow:hidden;}
+.notif-drawer{position:fixed;top:clamp(72px,14vh,102px);right:12px;width:min(408px,calc(100vw - 20px));max-height:calc(100vh - 88px);max-height:calc(100dvh - 88px);display:flex;flex-direction:column;background:var(--surface);border-radius:16px;border:1px solid var(--border);box-shadow:0 16px 48px rgba(0,0,0,.14),0 4px 14px rgba(26,107,58,.08);z-index:1060;overflow:hidden;}
 .notif-drawer--premium{border-radius:16px;}
 .notif-hub{display:flex;flex-direction:column;height:100%;min-height:0;}
 .notif-hub--dropdown{min-height:380px;max-height:inherit;}
@@ -1133,14 +1133,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
 .nl-btn{background:var(--yellow);color:#0d1f14;border:none;padding:9px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:.79rem;cursor:pointer;}
 
 /* ── ADMIN DASHBOARD ── */
-.admin-layout{display:flex;min-height:100vh;gap:0;flex-direction:column;width:100%;}
+.admin-layout{display:flex;min-height:100vh;min-height:100dvh;gap:0;flex-direction:column;width:100%;}
 .admin-layout--readonly .admin-content .admin-action-btn:not([data-readonly-ok]){opacity:.55;pointer-events:none;}
 .admin-partner-banner{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:linear-gradient(90deg,#e0f2fe,#f0f9ff);border-bottom:1px solid #bae6fd;color:#0c4a6e;font-size:.82rem;line-height:1.5;}
 .admin-partner-banner-icon{font-size:1.4rem;line-height:1;}
 .admin-partner-banner strong{display:block;font-family:'Syne',sans-serif;font-weight:800;margin-bottom:2px;}
 .admin-partner-banner p{margin:0;font-size:.78rem;opacity:.9;}
 .admin-layout-inner{display:flex;flex:1;min-height:0;width:100%;align-items:stretch;}
-.admin-sidebar{width:220px;background:${dark?"#060d09":"#0a1a10"};color:#fff;padding:20px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.admin-sidebar{width:220px;background:${dark?"#060d09":"#0a1a10"};color:#fff;padding:20px 0;flex-shrink:0;position:sticky;top:0;height:100vh;height:100dvh;overflow-y:auto;}
 .admin-sidebar-logo{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;}
 .admin-sidebar-logo-txt{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:#b7e4c7;}
 .admin-sidebar-logo-sub{font-size:.65rem;color:rgba(255,255,255,.35);margin-top:2px;}
@@ -1520,9 +1520,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);tran
    YORIX CM - MOBILE FIXES
    ======================================== */
 
-html, body, #root {
-  overflow-x: hidden;
-  max-width: 100vw;
+/* overflow-x sur body uniquement — NE PAS mettre sur html (bloquerait le mode ordinateur Safari iOS) */
+body, #root {
+  overflow-x: clip;
+}
+/* Hauteur dynamique Safari iOS : 100dvh tient compte de la barre d'adresse */
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 *{ box-sizing: border-box; }
@@ -1826,7 +1831,7 @@ input, select, textarea {
   }
   
   /* ═══ FIX PANIER YORIX — Override final ═══ */
-.cart-drawer{display:flex !important;flex-direction:column !important;height:100vh !important;max-height:100vh !important;overflow:hidden !important;}
+.cart-drawer{display:flex !important;flex-direction:column !important;height:100vh !important;height:100dvh !important;max-height:100vh !important;max-height:100dvh !important;overflow:hidden !important;}
 .cart-header,.cart-trust-bar,.cart-footer{flex-shrink:0 !important;}
 .cart-items{flex:1 1 auto !important;overflow-y:auto !important;overflow-x:hidden !important;min-height:0 !important;padding:12px 16px !important;}
 .cart-items::-webkit-scrollbar{width:6px;}
