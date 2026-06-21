@@ -81,6 +81,6 @@ export function isHighUrgencyPush(row: Record<string, unknown>, category: string
     priority === "critical" ||
     category === "security" ||
     category === "payments" ||
-    (category === "orders" && priority === "important")
+    (category === "orders" && (priority === "high" || priority === "important"))
   );
 }

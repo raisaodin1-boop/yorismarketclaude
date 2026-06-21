@@ -9,7 +9,11 @@
  * - Ne jamais exposer `NOTIFY_DISPATCH_SECRET` dans le bundle client.
  */
 
-import { defaultCategoryForType, defaultPriorityForType } from "../lib/notificationChannels.js";
+import {
+  defaultCategoryForType,
+  defaultPriorityForType,
+  normalizeStoragePriority,
+} from "../lib/notificationChannels.js";
 
 /** @typedef {"in_app"|"push"|"email"|"whatsapp"} NotifyChannel */
 
@@ -48,7 +52,7 @@ export async function publishInAppNotification(client, p) {
     message: p.message ?? "",
     link: p.link ?? null,
     lu: false,
-    priority: p.priority || defaultPriorityForType(p.type),
+    priority: normalizeStoragePriority(p.priority || defaultPriorityForType(p.type)),
     category: p.category || defaultCategoryForType(p.type),
     payload: meta,
   };

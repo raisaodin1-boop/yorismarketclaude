@@ -29,6 +29,25 @@ export function defaultCategoryForType(type) {
 /** @param {string} [type] */
 export function defaultPriorityForType(type) {
   const t = String(type || "").toLowerCase();
-  if (t === "seller_new_order" || t === "new_message") return "important";
+  if (t === "seller_new_order" || t === "new_message") return "high";
   return "standard";
+}
+
+const STORAGE_ALLOWED_PRIORITIES = new Set([
+  "low",
+  "standard",
+  "normal",
+  "high",
+  "urgent",
+  "business",
+  "critical",
+]);
+
+/** @param {string} [priority] */
+export function normalizeStoragePriority(priority) {
+  const p = String(priority || "").trim().toLowerCase();
+  if (!p) return "standard";
+  if (STORAGE_ALLOWED_PRIORITIES.has(p)) return p;
+  if (p === "important" || p === "promo" || p === "promotion") return "high";
+  return "high";
 }

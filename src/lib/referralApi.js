@@ -206,7 +206,7 @@ export async function creditReferralBonusIfEligible(userId, orderId) {
     title: "🎉 Bonus parrainage débloqué !",
     message: `Votre filleul vient de passer sa première commande. +${REFERRAL_BONUS_AMOUNT.toLocaleString("fr-FR")} FCFA crédités sur votre wallet Yorix.`,
     link: "/dashboard",
-    priority: "important",
+    priority: "high",
     category: "referral",
     lu: false,
   }).catch(() => {});
