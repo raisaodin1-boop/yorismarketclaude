@@ -44,14 +44,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _addToCart() {
-    context.read<CartProvider>().add(p, quantity: _qty);
+    final ok = context.read<CartProvider>().add(p, quantity: _qty);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$_qty × ${p.name} ajouté au panier'),
-        action: SnackBarAction(
-          label: 'Voir',
-          onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+        content: Text(
+          ok
+              ? '$_qty × ${p.name} ajouté au panier'
+              : 'Stock insuffisant (${p.stock} disponible${p.stock > 1 ? 's' : ''})',
         ),
+        action: ok
+            ? SnackBarAction(
+                label: 'Voir',
+                onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              )
+            : null,
       ),
     );
   }

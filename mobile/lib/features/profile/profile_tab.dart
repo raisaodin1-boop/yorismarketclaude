@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/env.dart';
 import '../../core/theme/yorix_theme.dart';
@@ -22,12 +25,50 @@ class _ProfileTabState extends State<ProfileTab> {
   final _profiles = ProfileRepository(Supabase.instance.client);
   UserProfile? _profile;
   bool _loadingProfile = false;
+  StreamSubscription<AuthState>? _authSub;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
-    Supabase.instance.client.auth.onAuthStateChange.listen((_) => _loadProfile());
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((_) => _loadProfile());
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir le lien')),
+      );
+    }
+  }
+
+  void _showAbout() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Yorix Market',
+      applicationVersion: '1.0.0',
+      applicationIcon: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [YorixColors.greenDark, YorixColors.green]),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.center,
+        child: const Text('Y', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24)),
+      ),
+      children: const [
+        SizedBox(height: 8),
+        Text('Marketplace camerounaise — produits, livraison, paiement Escrow.'),
+      ],
+    );
   }
 
   Future<void> _loadProfile() async {
@@ -143,9 +184,24 @@ class _ProfileTabState extends State<ProfileTab> {
             MaterialPageRoute(builder: (_) => const ServicesHubScreen()),
           ),
         ),
-        _MenuTile(icon: Icons.language, title: 'Site web', subtitle: Env.siteUrl, onTap: () {}),
-        _MenuTile(icon: Icons.help_outline, title: 'Aide & support', subtitle: 'WhatsApp 7j/7', onTap: () {}),
-        _MenuTile(icon: Icons.info_outline, title: 'À propos', subtitle: 'Yorix Market v1.0', onTap: () {}),
+        _MenuTile(
+          icon: Icons.language,
+          title: 'Site web',
+          subtitle: Env.siteUrl,
+          onTap: () => _openUrl(Env.siteUrl),
+        ),
+        _MenuTile(
+          icon: Icons.help_outline,
+          title: 'Aide & support',
+          subtitle: 'WhatsApp 7j/7',
+          onTap: () => _openUrl('https://wa.me/${Env.whatsAppNumber}'),
+        ),
+        _MenuTile(
+          icon: Icons.info_outline,
+          title: 'À propos',
+          subtitle: 'Yorix Market v1.0',
+          onTap: _showAbout,
+        ),
       ],
     );
   }

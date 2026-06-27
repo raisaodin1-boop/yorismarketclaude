@@ -114,7 +114,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(12),
                     itemCount: _users.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, i) {
                       final u = _users[i];
                       final suspended = !u.actif || u.deletedAt != null;

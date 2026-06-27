@@ -460,11 +460,6 @@ export function CheckoutPage({
     setLoading(true);
 
     if (paymentMethod === "whatsapp_backup") {
-      let intentId = null;
-      let orderGroupId = null;
-      let serverRecap = null;
-      /** @type {{ order_id: string; code_suivi: string }[]} */
-      let deliveryTracking = [];
       try {
         const intentPayload = buildCheckoutIntent({
           items: cartItems,
@@ -472,38 +467,42 @@ export function CheckoutPage({
           userData: mergedUserData,
           summary,
         });
-        try {
-          const intent = await createCheckoutIntent(intentPayload);
-          intentId = intent?.checkout_intent_id || null;
-          if (intent != null) {
-            serverRecap = {
-              subtotal: Math.round(Number(intent.subtotal ?? summary.subtotal)),
-              delivery: Math.round(Number(intent.delivery_fee ?? summary.delivery)),
-              total: Math.round(Number(intent.total ?? summary.total)),
-            };
-          }
-          if (intentId) {
-            try {
-              const confirmation = await confirmCheckout({
-                checkout_intent_id: intentId,
-                payment_method: paymentMethod,
-                location_type: locationType,
-                address: mergedUserData.adresse,
-                idempotency_key: getIdempotencyKey(),
-              });
-              orderGroupId = confirmation?.order_group_id || null;
-              if (Array.isArray(confirmation?.delivery_tracking)) {
-                deliveryTracking = confirmation.delivery_tracking;
-              }
-            } catch (ce) {
-              console.warn("confirm checkout (WhatsApp):", ce?.message || ce);
-            }
-          }
-        } catch (ie) {
-          console.warn("create intent (WhatsApp):", ie?.message || ie);
+        const intent = await createCheckoutIntent(intentPayload);
+        if (!intent?.checkout_intent_id) {
+          throw new Error(t("errors.checkoutFailed"));
         }
+        const serverRecap = {
+          subtotal: Math.round(Number(intent.subtotal ?? summary.subtotal)),
+          delivery: Math.round(Number(intent.delivery_fee ?? summary.delivery)),
+          total: Math.round(Number(intent.total ?? summary.total)),
+        };
+        const confirmation = await confirmCheckout({
+          checkout_intent_id: intent.checkout_intent_id,
+          payment_method: paymentMethod,
+          location_type: locationType,
+          address: mergedUserData.adresse,
+          idempotency_key: getIdempotencyKey(),
+        });
+        if (!confirmation?.order_group_id) {
+          throw new Error(t("errors.checkoutFailed"));
+        }
+        openWhatsAppFallback(intent.checkout_intent_id, serverRecap);
+        setCartItems([]);
+        idempotencyKeyRef.current = null;
+        userFacingSuccess("✅ Commande envoyée via WhatsApp — suivez la conversation pour confirmer.", 6000);
+        setOrderDone({
+          mode: "whatsapp",
+          orderGroupId: confirmation.order_group_id,
+          intentId: intent.checkout_intent_id,
+          deliveryTracking: Array.isArray(confirmation?.delivery_tracking)
+            ? confirmation.delivery_tracking
+            : [],
+        });
       } catch (e) {
-        console.warn("checkout WhatsApp préparation:", e?.message || e);
+        console.warn("checkout WhatsApp:", e?.message || e);
+        setCheckoutError(describeCheckoutError(e) || t("errors.checkoutFailed"));
+      } finally {
+        setLoading(false);
       }
       openWhatsAppFallback(intentId, serverRecap);
       setCartItems([]);
@@ -560,11 +559,7 @@ export function CheckoutPage({
       }
 
       if (!confirmation?.order_group_id) {
-        openWhatsAppFallback(intent.checkout_intent_id, {
-          subtotal: Math.round(Number(intent?.subtotal ?? summary.subtotal)),
-          delivery: Math.round(Number(intent?.delivery_fee ?? summary.delivery)),
-          total: serverPayTotal,
-        });
+        throw new Error(t("errors.checkoutFailed"));
       }
 
       // Succès confirmé (HTTP 200) → panier vidé.
@@ -582,8 +577,8 @@ export function CheckoutPage({
       }
 
       setOrderDone({
-        mode: !confirmation?.order_group_id ? "whatsapp" : "standard",
-        orderGroupId: confirmation?.order_group_id || null,
+        mode: "standard",
+        orderGroupId: confirmation.order_group_id,
         intentId: intent.checkout_intent_id,
         deliveryTracking: Array.isArray(confirmation?.delivery_tracking)
           ? confirmation.delivery_tracking

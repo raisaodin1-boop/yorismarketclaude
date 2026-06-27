@@ -51,8 +51,24 @@ class ExploreTab extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: catalog.loading
-              ? const Center(child: CircularProgressIndicator())
+          child: catalog.loading && catalog.all.isEmpty
+              ? const Center(child: CircularProgressIndicator(color: YorixColors.green))
+              : catalog.error != null && catalog.all.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.cloud_off, size: 48, color: YorixColors.gray),
+                            const SizedBox(height: 12),
+                            Text(catalog.error!, textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            FilledButton(onPressed: catalog.load, child: const Text('Réessayer')),
+                          ],
+                        ),
+                      ),
+                    )
               : catalog.filtered.isEmpty
                   ? const Center(child: Text('Aucun produit trouvé'))
                   : RefreshIndicator(
