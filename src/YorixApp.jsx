@@ -77,6 +77,7 @@ import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
 import { CartDrawer } from "./components/CartDrawer";
 import { UserMenuDrawer } from "./components/UserMenuDrawer";
 import { GlobalToastHost } from "./components/ui/GlobalToastHost";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { PageProgressBar } from "./components/ui/PageProgressBar";
 import { PushPromptBanner } from "./components/ui/PushPromptBanner";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
@@ -1858,6 +1859,7 @@ export default function YorixApp() {
       <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
 
       <GlobalToastHost />
+      <OfflineBanner />
       <PageProgressBar active={pageNavigating} />
       <PushPromptBanner user={user} />
     </>

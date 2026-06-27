@@ -24,6 +24,7 @@ import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
 import { creditReferralBonusIfEligible } from "../lib/referralApi";
+import { userFacingSuccess } from "../lib/appToast";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
 
@@ -507,6 +508,7 @@ export function CheckoutPage({
       openWhatsAppFallback(intentId, serverRecap);
       setCartItems([]);
       idempotencyKeyRef.current = null; // commande aboutie → clé consommée
+      userFacingSuccess("✅ Commande envoyée via WhatsApp — suivez la conversation pour confirmer.", 6000);
       setOrderDone({
         mode: "whatsapp",
         orderGroupId,
@@ -568,6 +570,7 @@ export function CheckoutPage({
       // Succès confirmé (HTTP 200) → panier vidé.
       setCartItems([]);
       idempotencyKeyRef.current = null; // commande aboutie → clé consommée
+      userFacingSuccess("✅ Commande confirmée ! Vous recevrez une notification de suivi sous peu.", 6000);
 
       // Enregistrer coupon + crédit bonus parrainage (non-bloquant)
       const confirmedOrderId = confirmation?.order_group_id || intent.checkout_intent_id;

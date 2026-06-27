@@ -5461,6 +5461,12 @@ button{transition:transform .15s var(--yorix-ease-out,cubic-bezier(.16,1,.3,1)),
 .rcm-sign-meta strong{color:var(--ink);}
 .rcm-error{color:var(--red,#dc2626);font-size:.78rem;margin:0;font-weight:600;}
 .rcm-hint{font-size:.72rem;color:var(--gray);text-align:center;margin:0;}
+
+/* ── OFFLINE BANNER ─────────────────────────────────────────── */
+@keyframes yorix-offline-in{from{transform:translateY(-100%);opacity:0}to{transform:none;opacity:1}}
+.offline-banner{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:#1c1c1e;color:#fff;font-size:.8rem;font-weight:600;letter-spacing:.01em;animation:yorix-offline-in .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 24px rgba(0,0,0,.35);padding-top:calc(10px + env(safe-area-inset-top));}
+.offline-banner svg{flex-shrink:0;opacity:.9;}
+@media(prefers-color-scheme:light){.offline-banner{background:#1c1c1e;}}
 `;
 
 
