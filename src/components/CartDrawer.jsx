@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ShoppingCart, X } from "lucide-react";
 import { OptimizedImage } from "./OptimizedImage";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 
@@ -46,7 +47,9 @@ export function CartDrawer({
       >
         <div className="cart-header">
           <div className="cart-header-left">
-            <div className="cart-header-icon">🛒</div>
+            <div className="cart-header-icon" aria-hidden="true">
+              <ShoppingCart className="yx-icon yx-icon--md" />
+            </div>
             <div>
               <h2 className="cart-title">Mon panier</h2>
               <div className="cart-subtitle">
@@ -54,8 +57,8 @@ export function CartDrawer({
               </div>
             </div>
           </div>
-          <button type="button" className="cart-close" onClick={onClose} aria-label="Fermer">
-            ✕
+          <button type="button" className="cart-close" onClick={onClose} aria-label="Fermer le panier">
+            <X className="yx-icon yx-icon--sm" aria-hidden="true" />
           </button>
         </div>
 

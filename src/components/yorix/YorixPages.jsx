@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Home, ShoppingBag, ShoppingCart, Bell, User, LogIn, Rocket } from "lucide-react";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { WhatsAppFab } from "../WhatsAppFab";
 import { supabase, YORIX_WA_NUMBER, MOMO_NUMBER, ORANGE_NUMBER, PAYMENT_WA_NUMBER } from "../../lib/supabase";
@@ -126,7 +127,7 @@ export function YorixPages({ ctx }) {
   } = ctx;
 
   return (
-    <>
+    <main id="main-content">
       {page === "merchHub" && route.merchHub && (
         <Suspense fallback={<RouteSuspenseFallback label="Chargement sélection..." />}>
           <LazyMerchHubPage
@@ -563,11 +564,11 @@ export function YorixPages({ ctx }) {
       <div className="mobile-nav">
         <div className="mn-inner">
           {[
-            { icon: "🏠", label: "Accueil",   p: "home" },
-            { icon: "🛍️", label: "Produits",  p: "produits" },
-            { icon: "🛒", label: "Panier",    p: "cart", drawer: true, cart: true },
-            { icon: "🔔", label: "Alertes",   p: "notifications" },
-            { icon: "👤", label: "Mon espace", p: "dashboard" },
+            { Icon: Home, label: "Accueil", p: "home" },
+            { Icon: ShoppingBag, label: "Produits", p: "produits" },
+            { Icon: ShoppingCart, label: "Panier", p: "cart", drawer: true, cart: true },
+            { Icon: Bell, label: "Alertes", p: "notifications" },
+            { Icon: User, label: "Mon espace", p: "dashboard" },
           ].map((item) => (
             <div
               key={item.label}
@@ -587,10 +588,14 @@ export function YorixPages({ ctx }) {
             >
               {item.cart ? (
                 <div className="mn-icon-wrap">
-                  <div className="mn-icon">{item.icon}</div>
+                  <div className="mn-icon">
+                    <item.Icon size={22} strokeWidth={2} aria-hidden="true" />
+                  </div>
                 </div>
               ) : (
-                <div className="mn-icon">{item.icon}</div>
+                <div className="mn-icon">
+                  <item.Icon size={22} strokeWidth={2} aria-hidden="true" />
+                </div>
               )}
               <div className="mn-label">{item.label}</div>
               {item.p === "cart" && totalQty > 0 && (
@@ -600,57 +605,35 @@ export function YorixPages({ ctx }) {
                 <div className="mn-badge">{unread > 99 ? "99+" : unread}</div>
               )}
               {item.p === "dashboard" && !user && (
-                <div className="mn-badge" style={{ background: "var(--green)", fontSize: ".45rem", minWidth: 20, height: 14 }}>
-                  NEW
-                </div>
+                <div className="mn-badge mn-badge--new">NEW</div>
               )}
             </div>
           ))}
         </div>
         {!user && (
-          <div style={{ borderTop: "1px solid var(--border)", padding: "8px 16px", display: "flex", gap: 8 }}>
+          <div className="yx-mobile-auth-strip">
             <button
               type="button"
+              className="yx-mobile-auth-strip__btn yx-mobile-auth-strip__btn--ghost"
               onClick={() => {
                 setAuthTab("login");
                 setAuthOpen(true);
               }}
-              style={{
-                flex: 1,
-                padding: "9px",
-                borderRadius: 8,
-                border: "1.5px solid var(--border)",
-                background: "var(--surface)",
-                fontFamily: "'DM Sans',sans-serif",
-                fontWeight: 600,
-                fontSize: ".78rem",
-                cursor: "pointer",
-                color: "var(--ink)",
-              }}
             >
-              🔑 Connexion
+              <LogIn size={16} strokeWidth={2.25} aria-hidden="true" />
+              Connexion
             </button>
             <button
               type="button"
+              className="yx-mobile-auth-strip__btn yx-mobile-auth-strip__btn--primary"
               onClick={() => {
                 setAuthTab("register");
                 setSelectedRole("buyer");
                 setAuthOpen(true);
               }}
-              style={{
-                flex: 2,
-                padding: "9px",
-                borderRadius: 8,
-                border: "none",
-                background: "var(--green)",
-                fontFamily: "'Syne',sans-serif",
-                fontWeight: 700,
-                fontSize: ".78rem",
-                cursor: "pointer",
-                color: "#fff",
-              }}
             >
-              🚀 S'inscrire gratuitement
+              <Rocket size={16} strokeWidth={2.25} aria-hidden="true" />
+              S'inscrire gratuitement
             </button>
           </div>
         )}
@@ -661,6 +644,6 @@ export function YorixPages({ ctx }) {
           <LazyAdminDashboard user={user} userData={userData} goPage={goPage} />
         </Suspense>
       )}
-    </>
+    </main>
   );
 }

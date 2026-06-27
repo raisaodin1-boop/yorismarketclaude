@@ -22,6 +22,10 @@
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+.trust-strip__item svg {
+  flex-shrink: 0;
+}
+
 .share-wa-btn {
   display: inline-flex;
   align-items: center;

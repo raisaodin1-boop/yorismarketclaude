@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ShoppingCart } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
@@ -105,8 +106,12 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     setShowChatModal(true);
   };
 
+  const displayPrice = isPromoActive(product)
+    ? effectiveProductPrice(product)
+    : product.prix;
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 40 }}>
+    <div className="yx-pdp-page" style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <YorixToast toast={toast} onClose={clearToast} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "16px" }}>
         <button
@@ -218,11 +223,11 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               </div>
             )}
 
-            <div className="fp-price product-price" style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800, color: "var(--green)", marginBottom: 14 }}>
+            <div className="fp-price product-price" style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--green)", marginBottom: 14 }}>
               {isPromoActive(product) ? (
                 <>
                   {effectiveProductPrice(product).toLocaleString()}{" "}
-                  <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+                  <span style={{ fontSize: ".8rem", fontFamily: "var(--font-body)", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
                   {productPromoListPrice(product) != null && (
                     <span style={{ marginLeft: 8, fontSize: ".85rem", color: "var(--gray)", textDecoration: "line-through", fontWeight: 500 }}>
                       {productPromoListPrice(product).toLocaleString()} FCFA
@@ -235,7 +240,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               ) : (
                 <>
                   {product.prix?.toLocaleString()}{" "}
-                  <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+                  <span style={{ fontSize: ".8rem", fontFamily: "var(--font-body)", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
                 </>
               )}
             </div>
@@ -295,7 +300,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                     border: `1.5px dashed ${restockState === "done" ? "var(--green)" : "var(--border)"}`,
                     borderRadius: 9,
                     padding: "10px 12px",
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     fontSize: ".8rem",
                     cursor: restockState === "done" ? "default" : "pointer",
@@ -331,7 +336,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   cursor: "pointer",
                   fontSize: ".85rem",
                   fontWeight: 700,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   marginBottom: 16,
                   transition: "all .2s",
                   display: "flex",
@@ -372,7 +377,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
             <div className="divider-h" />
 
             <div className="avis-section">
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", marginBottom: 12 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", marginBottom: 12 }}>
                 💬 Avis clients ({avis.length})
               </div>
               {user && (
@@ -453,47 +458,35 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
         )}
       </div>
 
-      {/* ═══ STICKY MOBILE CTA BAR ═══ */}
+      {/* Barre d'achat sticky mobile */}
       {buyable && (
-        <div style={{
-          position: "fixed", bottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)",
-          left: 0, right: 0,
-          display: "none",
-          zIndex: 600,
-          padding: "10px 16px",
-          background: "var(--surface)",
-          borderTop: "1px solid var(--border)",
-          boxShadow: "0 -8px 28px rgba(0,0,0,.1)",
-          gap: 10,
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-        className="fp-sticky-cta"
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".82rem", color: "var(--green)", lineHeight: 1 }}>
-              {(isPromoActive(product) ? effectiveProductPrice(product) : product.prix)?.toLocaleString()} FCFA
-            </div>
-            <div style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {product.name_fr}
-            </div>
+        <div className="yx-pdp-sticky-bar" aria-label="Actions produit">
+          <div className="yx-pdp-sticky-bar__price">
+            {displayPrice?.toLocaleString()} FCFA
+            <small>{product.name_fr}</small>
           </div>
-          {onAddToCart && (
+          <div className="yx-pdp-sticky-bar__actions">
+            {onAddToCart && (
+              <button
+                type="button"
+                className="yx-pdp-sticky-bar__btn yx-pdp-sticky-bar__btn--cart"
+                aria-label="Ajouter au panier"
+                onClick={() => {
+                  onAddToCart(product);
+                  onClose();
+                }}
+              >
+                <ShoppingCart size={18} strokeWidth={2.25} aria-hidden="true" />
+              </button>
+            )}
             <button
-              className="btn-cmd-sm"
-              onClick={() => { onAddToCart(product); onClose(); }}
-              style={{ flex: "none", padding: "11px 20px", borderRadius: 10, fontSize: ".82rem", fontWeight: 800 }}
+              type="button"
+              className="yx-pdp-sticky-bar__btn yx-pdp-sticky-bar__btn--primary"
+              onClick={() => setShowCmdModal(true)}
             >
-              🛒 Panier
+              Commander
             </button>
-          )}
-          <button
-            className="btn-cmd-sm"
-            onClick={() => setShowCmdModal(true)}
-            style={{ flex: "none", padding: "11px 20px", borderRadius: 10, background: "#0f4a28", fontSize: ".82rem", fontWeight: 800 }}
-          >
-            ✅ Commander
-          </button>
+          </div>
         </div>
       )}
     </div>

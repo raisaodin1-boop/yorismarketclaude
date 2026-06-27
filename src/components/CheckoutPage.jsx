@@ -22,6 +22,7 @@ import { PAGE_PATH, parseLocaleSegments, localePath } from "../lib/seoRoutes";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
+import { TrustStrip } from "./ui/TrustStrip";
 import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
 import { creditReferralBonusIfEligible } from "../lib/referralApi";
 import { userFacingSuccess } from "../lib/appToast";
@@ -633,6 +634,12 @@ export function CheckoutPage({
       <p className="yorix-ds-lead">
         {orderDone ? t("lead.done") : t("lead.active", { type: checkoutTypeLabel })}
       </p>
+
+      {!orderDone && hasItems && (
+        <div style={{ marginBottom: 20 }}>
+          <TrustStrip />
+        </div>
+      )}
 
       {cinetpayReturnBanner && !orderDone && (
         <div role="status" className="yorix-ds-inline-banner">

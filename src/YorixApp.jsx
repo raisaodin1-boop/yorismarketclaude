@@ -77,6 +77,8 @@ import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
 import { CartDrawer } from "./components/CartDrawer";
 import { UserMenuDrawer } from "./components/UserMenuDrawer";
 import { GlobalToastHost } from "./components/ui/GlobalToastHost";
+import { BackToTop } from "./components/ui/BackToTop";
+import { ScrollProgress } from "./components/ui/ScrollProgress";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PageProgressBar } from "./components/ui/PageProgressBar";
 import { PushPromptBanner } from "./components/ui/PushPromptBanner";
@@ -1704,7 +1706,7 @@ export default function YorixApp() {
 
 
   if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'Inter',sans-serif", color:"#1a6b3a", gap:12 }}>
       <div style={{ width:40, height:40, border:"4px solid #e2ddd6", borderTopColor:"#1a6b3a", borderRadius:"50%", animation:"spin .7s linear infinite" }}/>
       Chargement de Yorix...
       <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
@@ -1713,6 +1715,9 @@ export default function YorixApp() {
 
   return (
     <>
+      <a href="#main-content" className="yx-skip-link">
+        Aller au contenu principal
+      </a>
       <style>{makeCSS(dark)}</style>
       <SeoHead
         title={seoBundle.title}
@@ -1861,6 +1866,8 @@ export default function YorixApp() {
 
       <GlobalToastHost />
       <OfflineBanner />
+      <ScrollProgress />
+      <BackToTop />
       <PageProgressBar active={pageNavigating} />
       <PushPromptBanner user={user} />
       <MobileBottomNav
