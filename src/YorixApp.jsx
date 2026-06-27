@@ -80,6 +80,7 @@ import { GlobalToastHost } from "./components/ui/GlobalToastHost";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PageProgressBar } from "./components/ui/PageProgressBar";
 import { PushPromptBanner } from "./components/ui/PushPromptBanner";
+import { MobileBottomNav } from "./components/MobileBottomNav";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
 import { applyNotificationOpen, getNotificationOpenAction } from "./lib/notificationNavigation.js";
@@ -1862,6 +1863,14 @@ export default function YorixApp() {
       <OfflineBanner />
       <PageProgressBar active={pageNavigating} />
       <PushPromptBanner user={user} />
+      <MobileBottomNav
+        page={page}
+        cartQty={totalQty}
+        user={user}
+        onOpenCart={openCart}
+        goPage={goPage}
+        onOpenUser={() => { setAuthTab("login"); setAuthOpen(true); }}
+      />
     </>
   );
 }

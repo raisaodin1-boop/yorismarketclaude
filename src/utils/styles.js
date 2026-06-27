@@ -5467,6 +5467,566 @@ button{transition:transform .15s var(--yorix-ease-out,cubic-bezier(.16,1,.3,1)),
 .offline-banner{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:#1c1c1e;color:#fff;font-size:.8rem;font-weight:600;letter-spacing:.01em;animation:yorix-offline-in .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 24px rgba(0,0,0,.35);padding-top:calc(10px + env(safe-area-inset-top));}
 .offline-banner svg{flex-shrink:0;opacity:.9;}
 @media(prefers-color-scheme:light){.offline-banner{background:#1c1c1e;}}
+
+/* ══════════════════════════════════════════════════════════════
+   YORIX DESIGN SYSTEM v5 — Typography + Spacing + Premium Polish
+   Inter (body) · Plus Jakarta Sans (headings) · Syne (brand)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── GLOBAL TYPOGRAPHY UPGRADE ─── */
+body{font-family:'Inter','DM Sans',sans-serif!important;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+/* Headings → Plus Jakarta Sans */
+h1,h2,h3,h4,h5,h6,
+.dash-page-title,.section-title,.hero-title,.cart-page-title,
+.checkout-title,.prod-name,.modal-title,.vendor-title,
+.fiche-title,.fiche-name,.admin-title{
+  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+}
+
+/* Brand elements keep Syne */
+.logo-txt,.nav-cta-onboard,.add-btn-full,.form-submit,
+.btn-green,.btn-cmd,.rcm-legal-logo{
+  font-family:'Syne',sans-serif!important;
+}
+
+/* Body copy → Inter */
+.prod-desc,.prod-loc,.prod-meta,.oc-meta,.order-meta,
+.form-input,.form-select,.form-textarea,.nav-search input,
+.nav-search select,.rcm-check-text,.rcm-sign-input,
+p,li,td,th,.dstat-lbl,.dstat-trend{
+  font-family:'Inter','DM Sans',sans-serif!important;
+}
+
+/* ── PRODUCT CARD IMAGE HEIGHT (desktop 220px, mobile 190px) ── */
+.prod-img-wrap{height:190px!important;}
+@media(min-width:600px){.prod-img-wrap{height:220px!important;}}
+
+/* ── PRODUCT GRID — tighter on wide screens ── */
+@media(min-width:1200px){
+  .prod-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important;gap:20px!important;}
+}
+
+/* ── BUTTON SYSTEM UPGRADE ── */
+.add-btn-full,.form-submit,.btn-green{
+  font-size:.8rem!important;
+  letter-spacing:.03em!important;
+  text-transform:uppercase!important;
+  border-radius:12px!important;
+  transition:all .2s var(--yorix-ease-out)!important;
+}
+.add-btn-full:not(:disabled):hover,.form-submit:hover,.btn-green:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:0 8px 24px rgba(26,107,58,.28)!important;
+}
+.add-btn-full:not(:disabled):active,.form-submit:active,.btn-green:active{
+  transform:translateY(0)!important;
+  box-shadow:0 3px 10px rgba(26,107,58,.18)!important;
+}
+
+/* ── FORM INPUTS UPGRADE ── */
+.form-input,.form-select,.form-textarea,.rcm-sign-input{
+  font-size:.88rem!important;
+  border-radius:12px!important;
+  padding:13px 16px!important;
+  border:1.5px solid var(--border)!important;
+  transition:border-color .15s,box-shadow .15s!important;
+  font-family:'Inter','DM Sans',sans-serif!important;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus,.rcm-sign-input:focus{
+  border-color:var(--green-mid)!important;
+  box-shadow:0 0 0 3px rgba(39,168,90,.12)!important;
+  outline:none!important;
+}
+
+/* ── CARD SYSTEM POLISH ── */
+.order-card,.dstat,.reward-card,.cart-item{
+  border-radius:16px!important;
+  transition:box-shadow .2s,transform .2s!important;
+}
+.order-card:hover{
+  box-shadow:0 8px 28px rgba(0,0,0,.09)!important;
+  transform:translateY(-2px)!important;
+}
+
+/* ── DASHBOARD STATS UPGRADE ── */
+.dstat{
+  padding:18px 14px!important;
+  text-align:center;
+}
+.dstat-val{
+  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-size:1.55rem!important;
+  font-weight:800!important;
+  letter-spacing:-.03em!important;
+  color:var(--ink)!important;
+  line-height:1.1!important;
+}
+.dstat-lbl{
+  font-size:.72rem!important;
+  font-weight:600!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  color:var(--gray)!important;
+  margin-top:4px!important;
+}
+
+/* ── SECTION TITLE POLISH ── */
+.section-title,.dash-page-title{
+  font-size:1.35rem!important;
+  font-weight:800!important;
+  letter-spacing:-.025em!important;
+  line-height:1.2!important;
+}
+
+/* ── STATUS BADGES ── */
+.status-badge{
+  border-radius:20px!important;
+  font-size:.65rem!important;
+  font-weight:700!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  padding:3px 10px!important;
+}
+
+/* ── TOAST UPGRADE ── */
+.app-toast{
+  border-radius:16px!important;
+  font-family:'Inter','DM Sans',sans-serif!important;
+  font-size:.82rem!important;
+  font-weight:600!important;
+  padding:13px 18px!important;
+  backdrop-filter:blur(12px)!important;
+  box-shadow:0 12px 40px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.12)!important;
+}
+
+/* ── MODAL POLISH ── */
+.modal{
+  border-radius:24px!important;
+  box-shadow:0 32px 80px rgba(0,0,0,.22),0 8px 24px rgba(0,0,0,.12)!important;
+}
+.modal-title{
+  font-size:1.15rem!important;
+  font-weight:800!important;
+  letter-spacing:-.025em!important;
+}
+
+/* ── VENDOR BADGES UPGRADE ── */
+.vendor-badge{
+  font-family:'Inter',sans-serif!important;
+  font-size:.6rem!important;
+  font-weight:700!important;
+  letter-spacing:.03em!important;
+  border-radius:6px!important;
+  padding:2px 7px!important;
+}
+
+/* ── FOCUS RING ACCESSIBILITY ── */
+:focus-visible{
+  outline:2.5px solid var(--green-mid)!important;
+  outline-offset:2px!important;
+}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
+  outline:2.5px solid var(--green-mid)!important;
+  outline-offset:2px!important;
+  border-radius:6px!important;
+}
+
+/* ── SKIP TO CONTENT (accessibility) ── */
+.skip-to-main{
+  position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:-1;
+}
+.skip-to-main:focus{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);
+  padding:10px 20px;border-radius:8px;font-weight:700;font-size:.85rem;
+  width:auto;height:auto;z-index:10000;
+}
+
+/* ── RESPONSIVE TYPOGRAPHY ── */
+@media(max-width:420px){
+  body{font-size:15px;}
+  .prod-name{font-size:.82rem!important;}
+  .price{font-size:.95rem!important;}
+  .dstat-val{font-size:1.25rem!important;}
+}
+@media(min-width:1024px){
+  body{font-size:16px;}
+  .prod-name{font-size:.92rem!important;}
+}
+
+/* ── SCROLL BEHAVIOR ── */
+html{scroll-behavior:smooth;}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+}
+
+/* ── PRICE ROW UPGRADE ── */
+.price{
+  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-weight:800!important;
+  letter-spacing:-.02em!important;
+  color:var(--green)!important;
+}
+.price-unit{
+  font-size:.65em!important;
+  font-weight:600!important;
+  opacity:.8;
+}
+
+/* ── CART DRAWER PRODUCT NAME ── */
+.cart-item-name{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:700!important;
+  font-size:.85rem!important;
+  line-height:1.3!important;
+}
+.cart-item-price{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:800!important;
+  color:var(--green)!important;
+}
+
+/* ── NAVBAR LOGO POLISH ── */
+.logo-txt{
+  font-size:1.65rem!important;
+  letter-spacing:-1.5px!important;
+}
+
+/* ── ADD-TO-CART BUTTON IN CARD ── */
+.add-btn{
+  border-radius:10px!important;
+  font-weight:800!important;
+  font-size:1.1rem!important;
+  transition:all .15s!important;
+}
+.add-btn:not(:disabled):hover{
+  transform:scale(1.12)!important;
+  background:var(--green-mid)!important;
+}
+
+/* ── PRODUCT LOCATION ROW ── */
+.prod-loc{
+  font-size:.7rem!important;
+  font-weight:500!important;
+  color:var(--gray)!important;
+  display:flex;align-items:center;gap:4px;
+  margin:3px 0!important;
+}
+
+/* ── PRODUCT BADGE ROW ── */
+.prod-badge-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0!important;}
+.pb{
+  font-size:.6rem!important;
+  font-weight:700!important;
+  letter-spacing:.02em;
+  border-radius:6px!important;
+  padding:2px 7px!important;
+}
+.pb-fire{background:#fff3e0;color:#e65100;}
+.pb-truck{background:${dark?"rgba(26,107,58,.2)":"#e8f5e9"};color:${dark?"#4fd17d":"#1a6b3a"};}
+.pb-cash{background:${dark?"rgba(252,209,22,.12)":"#fffde7"};color:${dark?"#fcd116":"#7c6200"};}
+
+/* ── ORDER CARD POLISH ── */
+.oc-name{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:700!important;
+  font-size:.83rem!important;
+}
+.oc-meta{
+  font-size:.72rem!important;
+  color:var(--gray)!important;
+  margin-top:2px!important;
+}
+
+/* ── CHECKOUT STEPS ── */
+.checkout-step-label{
+  font-family:'Inter',sans-serif!important;
+  font-size:.7rem!important;
+  font-weight:600!important;
+  letter-spacing:.03em!important;
+}
+
+/* ── HERO HEADLINE ── */
+.hero-title,.hero h1{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:800!important;
+  letter-spacing:-.04em!important;
+  line-height:1.1!important;
+}
+
+/* ── SMOOTH CARD SHADOWS ON DARK MODE ── */
+${dark?`
+.prod-card{box-shadow:0 2px 16px rgba(0,0,0,.32),0 1px 4px rgba(0,0,0,.24)!important;}
+.prod-card:hover{box-shadow:0 24px 56px rgba(0,0,0,.48),0 6px 16px rgba(0,0,0,.32)!important;}
+`:`
+.prod-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04)!important;}
+`}
+
+/* ── LOYALTY CARD HEADLINE ── */
+.reward-name{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:700!important;
+  font-size:.82rem!important;
+}
+.reward-pts{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:800!important;
+  color:var(--green)!important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE BOTTOM NAVIGATION — Persistent 5-tab bar
+   ══════════════════════════════════════════════════════════════ */
+.mobile-bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:800;
+  background:${dark?"rgba(13,26,18,.94)":"rgba(255,255,255,.94)"};
+  backdrop-filter:blur(16px) saturate(180%);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+  border-top:1px solid ${dark?"rgba(255,255,255,.07)":"rgba(0,0,0,.07)"};
+  box-shadow:0 -4px 24px rgba(0,0,0,.08);
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  align-items:center;justify-content:space-around;gap:0;
+}
+@media(max-width:768px){.mobile-bottom-nav{display:flex;}}
+
+.mbn-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:6px 4px;border:none;background:transparent;cursor:pointer;
+  color:var(--gray);transition:color .15s,transform .15s;
+  min-width:44px;min-height:52px;border-radius:12px;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.mbn-item:active{transform:scale(.9);}
+.mbn-item--active{color:var(--green)!important;}
+.mbn-item--active .mbn-icon svg{
+  filter:drop-shadow(0 0 6px rgba(26,107,58,.35));
+}
+.mbn-icon{display:flex;align-items:center;justify-content:center;width:24px;height:24px;transition:transform .2s var(--yorix-ease-spring);}
+.mbn-item--active .mbn-icon{transform:translateY(-2px);}
+.mbn-label{
+  font-family:'Inter',sans-serif;font-size:.55rem;font-weight:600;
+  letter-spacing:.02em;white-space:nowrap;
+  transition:opacity .15s;
+}
+
+/* ── CART FAB in center ── */
+.mbn-cart-btn{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:50%;border:none;
+  background:var(--yorix-green-gradient);
+  color:#fff;cursor:pointer;
+  box-shadow:0 6px 20px rgba(26,107,58,.38);
+  transition:transform .2s var(--yorix-ease-spring),box-shadow .2s;
+  flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  margin-bottom:6px;
+}
+.mbn-cart-btn:active{transform:scale(.88);box-shadow:0 3px 10px rgba(26,107,58,.28);}
+.mbn-cart-badge{
+  position:absolute;top:-3px;right:-3px;
+  background:var(--red);color:#fff;
+  border-radius:50%;min-width:18px;height:18px;
+  font-size:.55rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 3px;
+  border:2px solid ${dark?"#0d1a12":"#fff"};
+  font-family:'Inter',sans-serif;
+}
+
+/* ── BODY PADDING so content doesn't hide behind bottom nav ── */
+@media(max-width:768px){
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))!important;}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE UX IMPROVEMENTS v2
+   ══════════════════════════════════════════════════════════════ */
+
+/* Product grid: 2 columns on phones >= 360px (previously 1 at 360px) */
+@media(max-width:640px) and (min-width:360px){
+  .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;}
+}
+@media(max-width:359px){
+  .prod-grid{grid-template-columns:1fr!important;}
+}
+
+/* Product card — compact on mobile */
+@media(max-width:640px){
+  .prod-card{border-radius:14px!important;}
+  .prod-img-wrap{height:160px!important;}
+  .prod-name{font-size:.78rem!important;}
+  .prod-info{padding:10px 10px 6px!important;}
+  .prod-actions{padding:0 8px 8px!important;}
+  .add-btn-full{padding:7px!important;font-size:.72rem!important;}
+  .price{font-size:.92rem!important;}
+  .prod-desc{display:none!important;}
+  .prod-badge-row{gap:3px!important;}
+  .pb{font-size:.55rem!important;padding:1px 5px!important;}
+}
+
+/* Touch targets — all interactive elements ≥ 44×44 */
+.qty-btn,.notif-mini-btn,.wish-btn,.add-btn,.icon-btn{
+  min-width:44px!important;min-height:44px!important;
+}
+.wish-btn{
+  width:44px!important;height:44px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+}
+.cart-close-btn,[aria-label="Fermer"]{
+  min-width:44px!important;min-height:44px!important;
+}
+
+/* Cart drawer — slide from BOTTOM on mobile */
+@media(max-width:640px){
+  .cart-drawer{
+    top:auto!important;bottom:0!important;left:0!important;right:0!important;
+    width:100%!important;height:92dvh!important;
+    border-radius:24px 24px 0 0!important;
+    transform:translateY(100%)!important;
+    transition:transform .38s cubic-bezier(.32,0,.15,1)!important;
+  }
+  .cart-drawer.open{transform:translateY(0)!important;}
+  /* drag handle pill */
+  .cart-drawer::before{
+    content:'';display:block;width:36px;height:4px;border-radius:2px;
+    background:var(--border);margin:10px auto 4px;flex-shrink:0;
+  }
+  .cart-scroll{border-radius:0!important;overscroll-behavior:contain;}
+}
+
+/* User menu drawer — also from bottom on mobile */
+@media(max-width:640px){
+  .user-menu-drawer{
+    top:auto!important;bottom:0!important;right:0!important;left:0!important;
+    width:100%!important;height:auto!important;max-height:88dvh!important;
+    border-radius:24px 24px 0 0!important;
+    transform:translateY(100%)!important;
+    transition:transform .35s cubic-bezier(.32,0,.15,1)!important;
+  }
+  .user-menu-drawer.open{transform:translateY(0)!important;}
+}
+
+/* Overscroll contain on drawers */
+.cart-drawer,.user-menu-drawer{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+
+/* Prevent layout shift when keyboard opens on Android */
+@supports(height:100dvh){
+  .cart-drawer{height:100dvh;}
+  @media(max-width:640px){.cart-drawer{height:92dvh;}}
+}
+
+/* Form inputs — 16px font prevents iOS zoom */
+@media(max-width:640px){
+  .form-input,.form-select,.form-textarea,.nav-search input,.rcm-sign-input{
+    font-size:16px!important;
+  }
+  /* Scroll padding accounts for sticky header */
+  html{scroll-padding-top:80px;}
+}
+
+/* Nav search on mobile — better UX */
+@media(max-width:640px){
+  .nav-search-wrap{max-width:100%!important;}
+  .nav-search select{display:none;}
+  .nav-search input{padding:9px 11px!important;font-size:16px!important;}
+}
+
+/* Hero section — tighter on mobile */
+@media(max-width:640px){
+  .hero-title,.hero h1{font-size:1.55rem!important;letter-spacing:-.025em!important;}
+}
+
+/* Checkout progress — bigger touch targets */
+@media(max-width:520px){
+  .checkout-progress-node-inner{width:44px!important;height:44px!important;}
+}
+
+/* Dashboard stats — 2-up grid on mobile */
+@media(max-width:520px){
+  .dash-stats{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;}
+  .dstat{padding:14px 10px!important;}
+  .dstat-val{font-size:1.2rem!important;}
+}
+
+/* Consistent product image dimensions prevent reflow (CLS) */
+/* Heights defined above: 160px mobile, 190px default, 220px >= 600px */
+
+/* Notification mini buttons */
+.notif-mini-btn{min-width:44px!important;min-height:44px!important;border-radius:10px!important;}
+
+/* Pull-to-refresh hint on orders page */
+@media(max-width:640px){
+  .dash-page-title{font-size:1.1rem!important;}
+}
+
+/* Page transition fade */
+@keyframes yorix-page-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.yorix-page-flow{animation:yorix-page-in .22s var(--yorix-ease-out);}
+@media(prefers-reduced-motion:reduce){.yorix-page-flow{animation:none;}}
+
+/* Swipe affordance on cards (visual indicator) */
+@media(max-width:640px){
+  .order-card{position:relative;overflow:hidden;}
+  .order-card::after{
+    content:'';position:absolute;right:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(to bottom,transparent,var(--green-pale),transparent);
+    opacity:.3;
+    pointer-events:none;
+  }
+}
+
+/* Better modal on mobile — full screen sheet */
+@media(max-width:600px){
+  .modal-overlay{align-items:flex-end!important;padding:0!important;}
+  .modal{
+    border-radius:24px 24px 0 0!important;
+    max-height:95dvh!important;
+    width:100%!important;
+    margin:0!important;
+    overflow-y:auto!important;
+    padding-bottom:calc(24px + env(safe-area-inset-bottom))!important;
+  }
+}
+
+/* Category chips horizontal scroll on mobile */
+@media(max-width:640px){
+  .cat-pills,.filter-bar{
+    overflow-x:auto!important;
+    flex-wrap:nowrap!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    scroll-snap-type:x mandatory;
+  }
+  .cat-pills::-webkit-scrollbar,.filter-bar::-webkit-scrollbar{display:none;}
+  .cat-pill,.filter-chip{scroll-snap-align:start;flex-shrink:0!important;}
+}
+
+/* Skeleton shimmer improvement */
+@keyframes yorix-sk-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.sk-block{
+  background:linear-gradient(90deg,var(--surface2) 25%,${dark?"rgba(255,255,255,.06)":"rgba(255,255,255,.8)"} 50%,var(--surface2) 75%)!important;
+  background-size:200% 100%!important;
+  animation:yorix-sk-shimmer 1.4s infinite!important;
+  border-radius:8px!important;
+}
+
+/* FAB whatsapp button — stay above bottom nav */
+@media(max-width:768px){
+  .whatsapp-fab,.wa-fab{
+    bottom:calc(80px + env(safe-area-inset-bottom))!important;
+  }
+}
+
+/* Scroll padding for sticky header */
+@media(max-width:640px){
+  :target{scroll-margin-top:80px;}
+}
 `;
 
 

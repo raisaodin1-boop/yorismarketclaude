@@ -504,6 +504,17 @@ export function CheckoutPage({
       } finally {
         setLoading(false);
       }
+      openWhatsAppFallback(intentId, serverRecap);
+      setCartItems([]);
+      idempotencyKeyRef.current = null; // commande aboutie → clé consommée
+      userFacingSuccess("✅ Commande envoyée via WhatsApp — suivez la conversation pour confirmer.", 6000);
+      setOrderDone({
+        mode: "whatsapp",
+        orderGroupId,
+        intentId: intentId || `LOCAL-${Date.now()}`,
+        deliveryTracking,
+      });
+      setLoading(false);
       return;
     }
 
