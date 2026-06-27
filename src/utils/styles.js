@@ -5467,6 +5467,314 @@ button{transition:transform .15s var(--yorix-ease-out,cubic-bezier(.16,1,.3,1)),
 .offline-banner{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:#1c1c1e;color:#fff;font-size:.8rem;font-weight:600;letter-spacing:.01em;animation:yorix-offline-in .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 24px rgba(0,0,0,.35);padding-top:calc(10px + env(safe-area-inset-top));}
 .offline-banner svg{flex-shrink:0;opacity:.9;}
 @media(prefers-color-scheme:light){.offline-banner{background:#1c1c1e;}}
+
+/* ══════════════════════════════════════════════════════════════
+   YORIX DESIGN SYSTEM v5 — Typography + Spacing + Premium Polish
+   Inter (body) · Plus Jakarta Sans (headings) · Syne (brand)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── GLOBAL TYPOGRAPHY UPGRADE ─── */
+body{font-family:'Inter','DM Sans',sans-serif!important;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+/* Headings → Plus Jakarta Sans */
+h1,h2,h3,h4,h5,h6,
+.dash-page-title,.section-title,.hero-title,.cart-page-title,
+.checkout-title,.prod-name,.modal-title,.vendor-title,
+.fiche-title,.fiche-name,.admin-title{
+  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+}
+
+/* Brand elements keep Syne */
+.logo-txt,.nav-cta-onboard,.add-btn-full,.form-submit,
+.btn-green,.btn-cmd,.rcm-legal-logo{
+  font-family:'Syne',sans-serif!important;
+}
+
+/* Body copy → Inter */
+.prod-desc,.prod-loc,.prod-meta,.oc-meta,.order-meta,
+.form-input,.form-select,.form-textarea,.nav-search input,
+.nav-search select,.rcm-check-text,.rcm-sign-input,
+p,li,td,th,.dstat-lbl,.dstat-trend{
+  font-family:'Inter','DM Sans',sans-serif!important;
+}
+
+/* ── PRODUCT CARD IMAGE HEIGHT (desktop 220px, mobile 190px) ── */
+.prod-img-wrap{height:190px!important;}
+@media(min-width:600px){.prod-img-wrap{height:220px!important;}}
+
+/* ── PRODUCT GRID — tighter on wide screens ── */
+@media(min-width:1200px){
+  .prod-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important;gap:20px!important;}
+}
+
+/* ── BUTTON SYSTEM UPGRADE ── */
+.add-btn-full,.form-submit,.btn-green{
+  font-size:.8rem!important;
+  letter-spacing:.03em!important;
+  text-transform:uppercase!important;
+  border-radius:12px!important;
+  transition:all .2s var(--yorix-ease-out)!important;
+}
+.add-btn-full:not(:disabled):hover,.form-submit:hover,.btn-green:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:0 8px 24px rgba(26,107,58,.28)!important;
+}
+.add-btn-full:not(:disabled):active,.form-submit:active,.btn-green:active{
+  transform:translateY(0)!important;
+  box-shadow:0 3px 10px rgba(26,107,58,.18)!important;
+}
+
+/* ── FORM INPUTS UPGRADE ── */
+.form-input,.form-select,.form-textarea,.rcm-sign-input{
+  font-size:.88rem!important;
+  border-radius:12px!important;
+  padding:13px 16px!important;
+  border:1.5px solid var(--border)!important;
+  transition:border-color .15s,box-shadow .15s!important;
+  font-family:'Inter','DM Sans',sans-serif!important;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus,.rcm-sign-input:focus{
+  border-color:var(--green-mid)!important;
+  box-shadow:0 0 0 3px rgba(39,168,90,.12)!important;
+  outline:none!important;
+}
+
+/* ── CARD SYSTEM POLISH ── */
+.order-card,.dstat,.reward-card,.cart-item{
+  border-radius:16px!important;
+  transition:box-shadow .2s,transform .2s!important;
+}
+.order-card:hover{
+  box-shadow:0 8px 28px rgba(0,0,0,.09)!important;
+  transform:translateY(-2px)!important;
+}
+
+/* ── DASHBOARD STATS UPGRADE ── */
+.dstat{
+  padding:18px 14px!important;
+  text-align:center;
+}
+.dstat-val{
+  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-size:1.55rem!important;
+  font-weight:800!important;
+  letter-spacing:-.03em!important;
+  color:var(--ink)!important;
+  line-height:1.1!important;
+}
+.dstat-lbl{
+  font-size:.72rem!important;
+  font-weight:600!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  color:var(--gray)!important;
+  margin-top:4px!important;
+}
+
+/* ── SECTION TITLE POLISH ── */
+.section-title,.dash-page-title{
+  font-size:1.35rem!important;
+  font-weight:800!important;
+  letter-spacing:-.025em!important;
+  line-height:1.2!important;
+}
+
+/* ── STATUS BADGES ── */
+.status-badge{
+  border-radius:20px!important;
+  font-size:.65rem!important;
+  font-weight:700!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  padding:3px 10px!important;
+}
+
+/* ── TOAST UPGRADE ── */
+.app-toast{
+  border-radius:16px!important;
+  font-family:'Inter','DM Sans',sans-serif!important;
+  font-size:.82rem!important;
+  font-weight:600!important;
+  padding:13px 18px!important;
+  backdrop-filter:blur(12px)!important;
+  box-shadow:0 12px 40px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.12)!important;
+}
+
+/* ── MODAL POLISH ── */
+.modal{
+  border-radius:24px!important;
+  box-shadow:0 32px 80px rgba(0,0,0,.22),0 8px 24px rgba(0,0,0,.12)!important;
+}
+.modal-title{
+  font-size:1.15rem!important;
+  font-weight:800!important;
+  letter-spacing:-.025em!important;
+}
+
+/* ── VENDOR BADGES UPGRADE ── */
+.vendor-badge{
+  font-family:'Inter',sans-serif!important;
+  font-size:.6rem!important;
+  font-weight:700!important;
+  letter-spacing:.03em!important;
+  border-radius:6px!important;
+  padding:2px 7px!important;
+}
+
+/* ── FOCUS RING ACCESSIBILITY ── */
+:focus-visible{
+  outline:2.5px solid var(--green-mid)!important;
+  outline-offset:2px!important;
+}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
+  outline:2.5px solid var(--green-mid)!important;
+  outline-offset:2px!important;
+  border-radius:6px!important;
+}
+
+/* ── SKIP TO CONTENT (accessibility) ── */
+.skip-to-main{
+  position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:-1;
+}
+.skip-to-main:focus{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);
+  padding:10px 20px;border-radius:8px;font-weight:700;font-size:.85rem;
+  width:auto;height:auto;z-index:10000;
+}
+
+/* ── RESPONSIVE TYPOGRAPHY ── */
+@media(max-width:420px){
+  body{font-size:15px;}
+  .prod-name{font-size:.82rem!important;}
+  .price{font-size:.95rem!important;}
+  .dstat-val{font-size:1.25rem!important;}
+}
+@media(min-width:1024px){
+  body{font-size:16px;}
+  .prod-name{font-size:.92rem!important;}
+}
+
+/* ── SCROLL BEHAVIOR ── */
+html{scroll-behavior:smooth;}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+}
+
+/* ── PRICE ROW UPGRADE ── */
+.price{
+  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-weight:800!important;
+  letter-spacing:-.02em!important;
+  color:var(--green)!important;
+}
+.price-unit{
+  font-size:.65em!important;
+  font-weight:600!important;
+  opacity:.8;
+}
+
+/* ── CART DRAWER PRODUCT NAME ── */
+.cart-item-name{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:700!important;
+  font-size:.85rem!important;
+  line-height:1.3!important;
+}
+.cart-item-price{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:800!important;
+  color:var(--green)!important;
+}
+
+/* ── NAVBAR LOGO POLISH ── */
+.logo-txt{
+  font-size:1.65rem!important;
+  letter-spacing:-1.5px!important;
+}
+
+/* ── ADD-TO-CART BUTTON IN CARD ── */
+.add-btn{
+  border-radius:10px!important;
+  font-weight:800!important;
+  font-size:1.1rem!important;
+  transition:all .15s!important;
+}
+.add-btn:not(:disabled):hover{
+  transform:scale(1.12)!important;
+  background:var(--green-mid)!important;
+}
+
+/* ── PRODUCT LOCATION ROW ── */
+.prod-loc{
+  font-size:.7rem!important;
+  font-weight:500!important;
+  color:var(--gray)!important;
+  display:flex;align-items:center;gap:4px;
+  margin:3px 0!important;
+}
+
+/* ── PRODUCT BADGE ROW ── */
+.prod-badge-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0!important;}
+.pb{
+  font-size:.6rem!important;
+  font-weight:700!important;
+  letter-spacing:.02em;
+  border-radius:6px!important;
+  padding:2px 7px!important;
+}
+.pb-fire{background:#fff3e0;color:#e65100;}
+.pb-truck{background:${dark?"rgba(26,107,58,.2)":"#e8f5e9"};color:${dark?"#4fd17d":"#1a6b3a"};}
+.pb-cash{background:${dark?"rgba(252,209,22,.12)":"#fffde7"};color:${dark?"#fcd116":"#7c6200"};}
+
+/* ── ORDER CARD POLISH ── */
+.oc-name{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:700!important;
+  font-size:.83rem!important;
+}
+.oc-meta{
+  font-size:.72rem!important;
+  color:var(--gray)!important;
+  margin-top:2px!important;
+}
+
+/* ── CHECKOUT STEPS ── */
+.checkout-step-label{
+  font-family:'Inter',sans-serif!important;
+  font-size:.7rem!important;
+  font-weight:600!important;
+  letter-spacing:.03em!important;
+}
+
+/* ── HERO HEADLINE ── */
+.hero-title,.hero h1{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:800!important;
+  letter-spacing:-.04em!important;
+  line-height:1.1!important;
+}
+
+/* ── SMOOTH CARD SHADOWS ON DARK MODE ── */
+${dark?`
+.prod-card{box-shadow:0 2px 16px rgba(0,0,0,.32),0 1px 4px rgba(0,0,0,.24)!important;}
+.prod-card:hover{box-shadow:0 24px 56px rgba(0,0,0,.48),0 6px 16px rgba(0,0,0,.32)!important;}
+`:`
+.prod-card{box-shadow:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04)!important;}
+`}
+
+/* ── LOYALTY CARD HEADLINE ── */
+.reward-name{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:700!important;
+  font-size:.82rem!important;
+}
+.reward-pts{
+  font-family:'Plus Jakarta Sans',sans-serif!important;
+  font-weight:800!important;
+  color:var(--green)!important;
+}
 `;
 
 
