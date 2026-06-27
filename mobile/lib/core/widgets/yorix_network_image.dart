@@ -23,8 +23,8 @@ class YorixNetworkImage extends StatelessWidget {
         : CachedNetworkImage(
             imageUrl: url!,
             fit: fit,
-            placeholder: (_, __) => const _ShimmerBox(),
-            errorWidget: (_, __, ___) => const _Placeholder(),
+            placeholder: (_, _) => const _ShimmerBox(),
+            errorWidget: (_, _, _) => const _Placeholder(),
           );
 
     if (borderRadius != null) {

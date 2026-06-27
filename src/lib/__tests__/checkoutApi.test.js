@@ -21,6 +21,12 @@ describe("checkoutApi", () => {
     expect(out).toEqual({ intentId: "x" });
   });
 
+  it("createCheckoutIntent throws on data.error", async () => {
+    const { createCheckoutIntent } = await import("../checkoutApi.js");
+    invoke.mockResolvedValueOnce({ data: { error: "Cart is empty" }, error: null });
+    await expect(createCheckoutIntent({})).rejects.toThrow("Cart is empty");
+  });
+
   it("confirmCheckout propagates invoke errors", async () => {
     const { confirmCheckout } = await import("../checkoutApi.js");
     const err = new Error("edge");

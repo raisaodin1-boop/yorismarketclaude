@@ -58,7 +58,7 @@ class HomeTab extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     scrollDirection: Axis.horizontal,
                     itemCount: catalog.flashDeals.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, _) => const SizedBox(width: 12),
                     itemBuilder: (context, i) => ProductCardModern(
                       product: catalog.flashDeals[i],
                       compact: true,
@@ -151,7 +151,11 @@ class _HomeHeader extends StatelessWidget {
                   ),
                 ),
                 IconButton.filledTonal(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notifications — bientôt disponibles sur mobile')),
+                    );
+                  },
                   icon: const Icon(Icons.notifications_outlined, size: 22),
                   style: IconButton.styleFrom(backgroundColor: YorixColors.card),
                 ),
@@ -265,7 +269,7 @@ class _TrustRow extends StatelessWidget {
                     children: [
                       Text(e.$1, style: const TextStyle(fontSize: 18)),
                       const SizedBox(height: 4),
-                      Text(e.$2, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: YorixColors.inkSoft)),
+                      Text(e.$2, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: YorixColors.inkSoft)),
                     ],
                   ),
                 ),
@@ -290,18 +294,18 @@ class _CategoryStrip extends StatelessWidget {
       children: [
         const SectionHeader(title: 'Catégories', subtitle: 'Explorer le catalogue'),
         SizedBox(
-          height: 96,
+          height: 100,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, i) {
               final c = categories[i];
               return GestureDetector(
                 onTap: () => onSelect(c),
                 child: Container(
-                  width: 76,
+                  width: 82,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Color(c.color).withValues(alpha: 0.12),
@@ -318,7 +322,7 @@ class _CategoryStrip extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(c.color)),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(c.color)),
                       ),
                     ],
                   ),

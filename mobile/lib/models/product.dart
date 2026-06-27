@@ -76,6 +76,27 @@ class Product {
   bool get isVisibleOnMarketplace =>
       actif && !isArchived && !hiddenFromMarketplace;
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name_fr': name,
+        if (description != null) 'description_fr': description,
+        'prix': price,
+        if (listPrice != null) 'prix_liste': listPrice,
+        'stock': stock,
+        if (imageUrl != null) 'image': imageUrl,
+        if (imageUrls.isNotEmpty) 'image_urls': imageUrls,
+        if (category != null) 'categorie': category,
+        'sponsorise': sponsored,
+        'verifie': verified,
+        'promo': promo,
+        'flash': flash,
+        if (city != null) 'ville': city,
+        if (vendeurId != null) 'vendeur_id': vendeurId,
+        'actif': actif,
+        'is_archived': isArchived,
+        'hidden_from_marketplace': hiddenFromMarketplace,
+      };
+
   static List<String> _imageUrls(Map<String, dynamic> json) {
     final out = <String>[];
     final direct = json['image']?.toString();

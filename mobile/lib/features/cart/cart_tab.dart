@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/yorix_theme.dart';
 import '../../core/widgets/yorix_network_image.dart';
 import '../../models/cart_line.dart';
 import '../../providers/cart_provider.dart';
 import '../../utils/format.dart';
+import '../auth/auth_screen.dart';
 import 'checkout_sheet.dart';
 
 class CartTab extends StatelessWidget {
@@ -34,7 +36,7 @@ class CartTab extends StatelessWidget {
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
                   itemCount: cart.lines.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, i) => _CartLineCard(line: cart.lines[i]),
                 ),
         ),
@@ -43,8 +45,14 @@ class CartTab extends StatelessWidget {
     );
   }
 
-  void _openCheckout(BuildContext context) {
-    showModalBottomSheet<void>(
+  Future<void> _openCheckout(BuildContext context) async {
+    if (Supabase.instance.client.auth.currentUser == null) {
+      final ok = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+      );
+      if (ok != true || !context.mounted) return;
+    }
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -120,7 +128,14 @@ class _CartLineCard extends StatelessWidget {
                     ),
                     _QtyBtn(
                       icon: Icons.add,
-                      onTap: () => cart.setQuantity(p.id, line.quantity + 1),
+                      onTap: () {
+                        final ok = cart.setQuantity(p.id, line.quantity + 1);
+                        if (!ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Stock max : ${p.stock}')),
+                          );
+                        }
+                      },
                     ),
                     const Spacer(),
                     IconButton(
@@ -149,10 +164,10 @@ class _QtyBtn extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 32,
-        height: 32,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(color: YorixColors.surface, borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 18),
+        child: Icon(icon, size: 20),
       ),
     );
   }

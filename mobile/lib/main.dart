@@ -8,17 +8,22 @@ import 'core/theme/yorix_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'providers/cart_provider.dart';
 import 'providers/catalog_provider.dart';
+import 'services/cart_storage.dart';
 import 'services/category_repository.dart';
 import 'services/product_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: Env.supabaseUrl, anonKey: Env.supabaseAnonKey);
-  runApp(const YorixMarketApp());
+  final cart = CartProvider(CartStorage());
+  await cart.init();
+  runApp(YorixMarketApp(cart: cart));
 }
 
 class YorixMarketApp extends StatelessWidget {
-  const YorixMarketApp({super.key});
+  const YorixMarketApp({super.key, required this.cart});
+
+  final CartProvider cart;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +31,7 @@ class YorixMarketApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider.value(value: cart),
         ChangeNotifierProvider(
           create: (_) => CatalogProvider(
             ProductRepository(client),

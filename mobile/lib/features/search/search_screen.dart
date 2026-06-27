@@ -50,7 +50,7 @@ class _SearchScreenState extends State<SearchScreen> {
           onChanged: catalog.setQuery,
         ),
         actions: [
-          if (_controller.text.isNotEmpty)
+          if (catalog.query.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.clear),
               onPressed: () {
@@ -70,7 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: results.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 final p = results[i];
                 return Material(

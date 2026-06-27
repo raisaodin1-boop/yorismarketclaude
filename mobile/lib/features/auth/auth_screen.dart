@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/yorix_theme.dart';
-import '../../models/user_profile.dart';
 import '../../services/profile_repository.dart';
 import '../../services/user_mutations.dart';
 
