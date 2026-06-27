@@ -21,15 +21,15 @@ import { publishInAppNotification } from "../services/notificationService";
 
 // ─── 1. CATALOGUE OFFICIEL DES STATUTS ──────────────────────────────────────
 export const DELIVERY_STATUTS = {
-  commande_recue:  { label: "En attente",            short: "En attente",     icon: "⏳", color: "#f59e0b", bg: "#fef3c7", order: 1 },
-  livreur_assigne: { label: "Livreur assigné",       short: "Assignée",       icon: "🏍️", color: "#0ea5e9", bg: "#e0f2fe", order: 2 },
-  accepte:         { label: "Acceptée par livreur",  short: "Acceptée",       icon: "✅", color: "#10b981", bg: "#d1fae5", order: 3 },
-  refuse:          { label: "Refusée par livreur",   short: "Refusée",        icon: "❌", color: "#ef4444", bg: "#fee2e2", order: 0 },
-  preparation:     { label: "Préparation",           short: "Préparation",    icon: "📦", color: "#3b82f6", bg: "#dbeafe", order: 4 },
-  collecte:        { label: "Colis collecté",        short: "Collecté",       icon: "🏪", color: "#8b5cf6", bg: "#ede9fe", order: 5 },
-  en_route:        { label: "En route",              short: "En route",       icon: "🏍️", color: "#10b981", bg: "#d1fae5", order: 6 },
-  livre:           { label: "Livré",                 short: "Livré",          icon: "✅", color: "#22c55e", bg: "#dcfce7", order: 7 },
-  annule:          { label: "Annulé",                short: "Annulé",         icon: "❌", color: "#ef4444", bg: "#fee2e2", order: -1 },
+  commande_recue:  { label: "En attente",            short: "En attente",     iconKey: "clock", color: "#f59e0b", bg: "#fef3c7", order: 1 },
+  livreur_assigne: { label: "Livreur assigné",       short: "Assignée",       iconKey: "bike", color: "#0ea5e9", bg: "#e0f2fe", order: 2 },
+  accepte:         { label: "Acceptée par livreur",  short: "Acceptée",       iconKey: "check", color: "#10b981", bg: "#d1fae5", order: 3 },
+  refuse:          { label: "Refusée par livreur",   short: "Refusée",        iconKey: "x", color: "#ef4444", bg: "#fee2e2", order: 0 },
+  preparation:     { label: "Préparation",           short: "Préparation",    iconKey: "package", color: "#3b82f6", bg: "#dbeafe", order: 4 },
+  collecte:        { label: "Colis collecté",        short: "Collecté",       iconKey: "store", color: "#8b5cf6", bg: "#ede9fe", order: 5 },
+  en_route:        { label: "En route",              short: "En route",       iconKey: "bike", color: "#10b981", bg: "#d1fae5", order: 6 },
+  livre:           { label: "Livré",                 short: "Livré",          iconKey: "check", color: "#22c55e", bg: "#dcfce7", order: 7 },
+  annule:          { label: "Annulé",                short: "Annulé",         iconKey: "x", color: "#ef4444", bg: "#fee2e2", order: -1 },
 };
 
 export const STATUT_KEYS_PUBLIC = [
@@ -45,7 +45,7 @@ export const STATUT_KEYS_PUBLIC = [
 export function getStatutConfig(statut) {
   return (
     DELIVERY_STATUTS[statut] ||
-    { label: statut || "—", short: "—", icon: "•", color: "#64748b", bg: "#f1f5f9", order: 0 }
+    { label: statut || "—", short: "—", iconKey: "circleDot", color: "#64748b", bg: "#f1f5f9", order: 0 }
   );
 }
 
@@ -209,7 +209,7 @@ export function buildMsgClientStatusChange(delivery, nouveauStatut) {
   const cfg = getStatutConfig(nouveauStatut);
   const link = absoluteSiteUrl(deliveryTrackingPath(delivery.code_suivi));
   return [
-    `${cfg.icon} *Mise à jour de votre livraison Yorix*`,
+    `${cfg.label} — *Mise à jour de votre livraison Yorix*`,
     "",
     "📦 Code : " + delivery.code_suivi,
     "Statut : *" + cfg.label + "*",
@@ -262,7 +262,7 @@ export async function adminAssignerLivreur({ delivery, livreur, acteurId, openWh
     await pushNotification({
       userId:  updates.livreur_id,
       type:    "delivery_assigned",
-      title:   "🚚 Nouvelle course Yorix",
+      title:   "Nouvelle course Yorix",
       message: `Mission ${newDelivery.code_suivi} : ${newDelivery.adresse_collecte || ""} → ${newDelivery.adresse_livraison || ""}`,
       link:    livreurDashboardPath({ code: newDelivery.code_suivi }),
       payload: { delivery_id: newDelivery.id, code: newDelivery.code_suivi },
@@ -374,7 +374,7 @@ export async function adminAnnulerLivraison({ delivery, motif, acteurId }) {
     await pushNotification({
       userId:  delivery.client_id,
       type:    "delivery_cancelled",
-      title:   "❌ Livraison annulée",
+      title:   "Livraison annulée",
       message: `Votre livraison ${delivery.code_suivi} a été annulée. ${motif ? "Motif : " + motif : ""}`,
       link:    deliveryTrackingPath(delivery.code_suivi),
       payload: { delivery_id: delivery.id, motif },
@@ -433,7 +433,7 @@ export async function livreurAccepter({ delivery, user, userData }) {
     await pushNotification({
       userId:  updated.client_id,
       type:    "delivery_accepted",
-      title:   "✅ Votre livraison a un livreur !",
+      title:   "Votre livraison a un livreur !",
       message: `${updated.livreur_nom || "Votre livreur"} a accepté votre livraison ${updated.code_suivi}.`,
       link:    deliveryTrackingPath(updated.code_suivi),
       payload: { delivery_id: updated.id },
@@ -514,7 +514,7 @@ export async function livreurRefuser({ delivery, user, userData, motif }) {
       await pushNotification({
         userId:  admin.id,
         type:    "delivery_refused",
-        title:   "⚠️ Mission refusée",
+        title:   "Mission refusée",
         message: `${userData?.nom || "Un livreur"} a refusé la mission ${delivery.code_suivi}. ${motif ? "Motif : " + motif : ""}`,
         link:    adminDeliveriesPath(),
         payload: { delivery_id: delivery.id, motif },
@@ -557,7 +557,7 @@ export async function livreurAvancerStatut({ delivery, user, nouveauStatut }) {
     await pushNotification({
       userId:  data.client_id,
       type:    "delivery_status",
-      title:   `${getStatutConfig(nouveauStatut).icon} Livraison ${data.code_suivi}`,
+      title:   `${getStatutConfig(nouveauStatut).label} — Livraison ${data.code_suivi}`,
       message: getStatutConfig(nouveauStatut).label,
       link:    deliveryTrackingPath(data.code_suivi),
       payload: { delivery_id: data.id, statut: nouveauStatut },
@@ -633,7 +633,7 @@ export async function creerDemandeLivraison({
       await pushNotification({
         userId:  admin.id,
         type:    "delivery_request",
-        title:   "🚚 Nouvelle demande de livraison",
+        title:   "Nouvelle demande de livraison",
         message: `${clientNom || "Client"} → ${adresseLivraison} (${code})`,
         link:    adminDeliveriesPath(),
         payload: { delivery_id: data.id, code },

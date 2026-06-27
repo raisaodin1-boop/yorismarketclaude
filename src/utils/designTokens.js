@@ -126,6 +126,16 @@ export const tokens = {
     laptop:  "1024px",
     desktop: "1200px",
   },
+
+  dark: {
+    ink:       "#e8f0eb",
+    bg:        "#0d1a12",
+    surface:   "#152118",
+    surface2:  "#1c2e22",
+    border:    "#2a4030",
+    gray:      "#7a9a82",
+    textMuted: "#9ab0a2",
+  },
 };
 
 export const color = tokens.colors;

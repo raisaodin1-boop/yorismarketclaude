@@ -1,0 +1,104 @@
+/**
+ * YORIX Dashboard UI — Phase 4
+ */
+
+.yx-dash-stat-grid,
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: 14px;
+}
+
+.yx-dash-stat,
+.stat-card,
+.dstat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--yx-radius-card, 16px);
+  padding: 18px 16px;
+  transition: transform 150ms ease, box-shadow 220ms ease, border-color 150ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--green), var(--green-mid, #27a85a));
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.stat-card:hover,
+.dstat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--yorix-sh-md);
+  border-color: color-mix(in srgb, var(--green) 25%, var(--border));
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.yx-dash-stat-icon,
+.stat-card-icon,
+.dstat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  color: var(--green);
+}
+
+.stat-card-icon svg,
+.dstat-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.yx-dash-stat-val,
+.stat-card-val,
+.dstat-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.25rem, 3vw, 1.625rem);
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.yx-dash-stat-lbl,
+.stat-card-lbl,
+.dstat-lbl {
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.yx-dash-stat-trend,
+.stat-card-trend,
+.dstat-trend {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.yx-dash-chart {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--yx-radius-card, 16px);
+  padding: 18px;
+  box-shadow: var(--yorix-sh-sm);
+}
+
+@media (max-width: 768px) {
+  .stat-cards-grid,
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}

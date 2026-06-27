@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
+import { ContentIcon } from "../lib/contentIcons";
 
 // ┌────────────────────────────────────────────────────────────┐
 // │ COMPOSANT : AcademyContactForm (formulaire inscription)    │
@@ -218,7 +219,9 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
             gap: 14,
           }}
         >
-          <span style={{ fontSize: "2.5rem" }}>{course.emoji || "🎓"}</span>
+          <span style={{ display: "flex", color: "var(--green)" }}>
+            <ContentIcon name={course.iconKey || "graduationCap"} size={40} />
+          </span>
           <div style={{ flex: 1 }}>
             <div
               style={{

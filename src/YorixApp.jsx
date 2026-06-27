@@ -143,7 +143,21 @@ export default function YorixApp() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
 
-  const [dark, setDark]           = useState(false);
+  const [dark, setDark] = useState(() => {
+    try {
+      const stored = localStorage.getItem("yorix_theme");
+      if (stored === "dark") return true;
+      if (stored === "light") return false;
+    } catch { /* ignore */ }
+    return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    try {
+      localStorage.setItem("yorix_theme", dark ? "dark" : "light");
+    } catch { /* ignore */ }
+  }, [dark]);
 
   // Produits
   const [produits, setProduits]                 = useState([]);

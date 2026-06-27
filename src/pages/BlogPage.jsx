@@ -13,27 +13,28 @@
 
 import { useMemo, useState } from "react";
 import { BLOG_DATA } from "../lib/constants";
+import { ContentIcon } from "../lib/contentIcons";
 import { supabase } from "../lib/supabase";
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTES
 // ─────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-  BUSINESS:     { icon: "📈", color: "#1565c0", pitch: "Stratégies, lancement, croissance" },
-  LOCAL:        { icon: "🌿", color: "#1a6b3a", pitch: "Produits locaux, terroir & export" },
-  PAIEMENT:     { icon: "💳", color: "#b45309", pitch: "Mobile money, fintech, escrow" },
-  LIVRAISON:    { icon: "🚚", color: "#ea580c", pitch: "Yorix Ride, logistique, suivi" },
-  "SÉCURITÉ":   { icon: "🔐", color: "#7c3aed", pitch: "Escrow, anti-arnaque, confiance" },
-  PRESTATAIRES: { icon: "⚡", color: "#dc2626", pitch: "Services à domicile, BTP, beauté" },
-  MODE:         { icon: "👗", color: "#db2777", pitch: "Style camerounais, wax, tendances" },
-  "CARRIÈRE":   { icon: "🏍️", color: "#0891b2", pitch: "Devenir vendeur, livreur, freelance" },
+  BUSINESS:     { iconKey: "trendingUp", color: "#1565c0", pitch: "Stratégies, lancement, croissance" },
+  LOCAL:        { iconKey: "leaf", color: "#1a6b3a", pitch: "Produits locaux, terroir & export" },
+  PAIEMENT:     { iconKey: "creditCard", color: "#b45309", pitch: "Mobile money, fintech, escrow" },
+  LIVRAISON:    { iconKey: "truck", color: "#ea580c", pitch: "Yorix Ride, logistique, suivi" },
+  "SÉCURITÉ":   { iconKey: "lock", color: "#7c3aed", pitch: "Escrow, anti-arnaque, confiance" },
+  PRESTATAIRES: { iconKey: "zap", color: "#dc2626", pitch: "Services à domicile, BTP, beauté" },
+  MODE:         { iconKey: "shirt", color: "#db2777", pitch: "Style camerounais, wax, tendances" },
+  "CARRIÈRE":   { iconKey: "bike", color: "#0891b2", pitch: "Devenir vendeur, livreur, freelance" },
 };
 
 const EDITORIAL_PILLARS = [
-  { e: "🇨🇲", t: "100 % camerounais",  d: "Rédigé par des journalistes basés à Douala et Yaoundé, sur le terrain." },
-  { e: "✅", t: "Faits vérifiés",       d: "Sources publiques, partenaires officiels, chiffres horodatés." },
-  { e: "🧭", t: "Actionnable",          d: "Chaque guide se termine par une étape concrète à exécuter aujourd'hui." },
-  { e: "🛡️", t: "Indépendant",         d: "Pas d'advertorial déguisé — la transparence éditoriale d'abord." },
+  { iconKey: "flag", t: "100 % camerounais",  d: "Rédigé par des journalistes basés à Douala et Yaoundé, sur le terrain." },
+  { iconKey: "check", t: "Faits vérifiés",       d: "Sources publiques, partenaires officiels, chiffres horodatés." },
+  { iconKey: "target", t: "Actionnable",          d: "Chaque guide se termine par une étape concrète à exécuter aujourd'hui." },
+  { iconKey: "shield", t: "Indépendant",         d: "Pas d'advertorial déguisé — la transparence éditoriale d'abord." },
 ];
 
 const GUIDE_HIGHLIGHTS = ["BUSINESS", "SÉCURITÉ", "LIVRAISON"];
@@ -50,7 +51,7 @@ function openExternal(url) {
 // COMPOSANT : CARTE ARTICLE
 // ─────────────────────────────────────────────────────────────
 function ArticleCard({ p, size = "normal" }) {
-  const meta = CATEGORY_META[p.cat] || { icon: p.emoji, color: "#1a6b3a" };
+  const meta = CATEGORY_META[p.cat] || { iconKey: p.iconKey || "star", color: "#1a6b3a" };
   return (
     <article
       className={`yblog3-card yblog3-card--${size}`}
@@ -73,10 +74,12 @@ function ArticleCard({ p, size = "normal" }) {
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         ) : (
-          <span className="yblog3-card-emoji" aria-hidden>{p.emoji}</span>
+          <span className="yblog3-card-emoji" aria-hidden>
+            <ContentIcon name={p.iconKey || meta.iconKey} size={32} />
+          </span>
         )}
         <span className="yblog3-card-cat" style={{ "--cat-color": meta.color }}>
-          <span aria-hidden>{meta.icon}</span> {p.cat}
+          <ContentIcon name={meta.iconKey} size={12} /> {p.cat}
         </span>
         <span className="yblog3-card-read"><span aria-hidden>⏱</span> {p.read}</span>
       </div>
@@ -189,7 +192,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
   };
 
   const featMeta = featured
-    ? (CATEGORY_META[featured.cat] || { icon: featured.emoji, color: "#1a6b3a" })
+    ? (CATEGORY_META[featured.cat] || { iconKey: featured.iconKey || "star", color: "#1a6b3a" })
     : null;
 
   // ─────────────────────────────────────────────────────────────
@@ -1205,16 +1208,16 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                         className="yblog3-hero-theme"
                         onClick={() => { setBlogFilter(cat); setQuery(""); }}
                       >
-                        <span aria-hidden>{m.icon}</span> {cat}
+                        <ContentIcon name={m.iconKey} size={14} /> {cat}
                       </button>
                     </li>
                   ))}
                 </ul>
 
                 <ul className="yblog3-hero-trust" aria-label="Engagement éditorial">
-                  <li><span aria-hidden>✅</span> Faits vérifiés</li>
-                  <li><span aria-hidden>🇨🇲</span> Rédigé au Cameroun</li>
-                  <li><span aria-hidden>📅</span> Mis à jour chaque semaine</li>
+                  <li style={{ display: "flex", alignItems: "center", gap: 5 }}><ContentIcon name="check" size={14} /> Faits vérifiés</li>
+                  <li style={{ display: "flex", alignItems: "center", gap: 5 }}><ContentIcon name="flag" size={14} /> Rédigé au Cameroun</li>
+                  <li style={{ display: "flex", alignItems: "center", gap: 5 }}><ContentIcon name="calendar" size={14} /> Mis à jour chaque semaine</li>
                 </ul>
               </div>
 
@@ -1246,16 +1249,20 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                           onError={(e) => { e.currentTarget.style.display = "none"; }}
                         />
                       ) : (
-                        <span className="yblog3-hero-feat-fallback" aria-hidden>{featured.emoji}</span>
+                        <span className="yblog3-hero-feat-fallback" aria-hidden>
+                          <ContentIcon name={featured.iconKey || featMeta?.iconKey || "star"} size={40} />
+                        </span>
                       )}
-                      <span className="yblog3-hero-feat-pin">⭐ À la une</span>
+                      <span className="yblog3-hero-feat-pin" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <ContentIcon name="star" size={12} /> À la une
+                      </span>
                     </div>
                     <div className="yblog3-hero-feat-body">
                       <span
                         className="yblog3-hero-feat-kicker"
                         style={{ "--cat-color": featMeta?.color }}
                       >
-                        <span aria-hidden>{featMeta?.icon}</span> {featured.cat}
+                        <ContentIcon name={featMeta?.iconKey || "star"} size={12} /> {featured.cat}
                       </span>
                       <h2 className="yblog3-hero-feat-title">{featured.title}</h2>
                       <p className="yblog3-hero-feat-ex">{featured.excerpt}</p>
@@ -1296,12 +1303,12 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
               className={`yblog3-cat${blogFilter === "TOUT" ? " is-active" : ""}`}
               onClick={() => setBlogFilter("TOUT")}
             >
-              <span className="yblog3-cat-ico" aria-hidden>📚</span>
+              <span className="yblog3-cat-ico" aria-hidden><ContentIcon name="star" size={18} /></span>
               <span className="yblog3-cat-label">Tout</span>
               <span className="yblog3-cat-count">{counts.TOUT}</span>
             </button>
             {categoryOrder.map((cat) => {
-              const m = CATEGORY_META[cat] || { icon: "📰", color: "#1a6b3a" };
+              const m = CATEGORY_META[cat] || { iconKey: "star", color: "#1a6b3a" };
               return (
                 <button
                   key={cat}
@@ -1312,7 +1319,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                   style={{ "--cat-color": m.color }}
                   onClick={() => setBlogFilter(cat)}
                 >
-                  <span className="yblog3-cat-ico" aria-hidden>{m.icon}</span>
+                  <span className="yblog3-cat-ico" aria-hidden><ContentIcon name={m.iconKey} size={18} /></span>
                   <span className="yblog3-cat-label">{cat}</span>
                   <span className="yblog3-cat-count">{counts[cat] || 0}</span>
                 </button>
@@ -1413,7 +1420,9 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
           <div className="yblog3-pillars">
             {EDITORIAL_PILLARS.map((p) => (
               <article key={p.t} className="yblog3-pillar">
-                <div className="yblog3-pillar-emoji" aria-hidden>{p.e}</div>
+                <div className="yblog3-pillar-emoji" aria-hidden>
+                  <ContentIcon name={p.iconKey} size={28} />
+                </div>
                 <h3>{p.t}</h3>
                 <p>{p.d}</p>
               </article>

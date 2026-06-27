@@ -1,4 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from "react";
+import { ShoppingCart, MessageCircle, Lock, Flame, Zap, Star, Trophy, BadgeCheck, Truck, Banknote } from "lucide-react";
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
@@ -55,11 +56,11 @@ export function ProdGrid({
   // ── Badges vendeur
   const getVendeurBadges = (p) => {
     const badges = [];
-    if (p.sponsorise)                   badges.push({ label: "⭐ Top Vendeur",   cls: "badge-top" });
-    if (p.verifie || p.vendeur_verifie) badges.push({ label: "✅ Vérifié",        cls: "badge-verif" });
-    if (isPromoActive(p))               badges.push({ label: "🔥 Promo du jour", cls: "badge-promo" });
-    if (p.flash)                        badges.push({ label: "⚡ Offre flash",   cls: "badge-flash" });
-    if (p.vente_total > 50)             badges.push({ label: "🏆 Best seller",   cls: "badge-best" });
+    if (p.sponsorise)                   badges.push({ label: "Top Vendeur",   cls: "badge-top",   icon: Star });
+    if (p.verifie || p.vendeur_verifie) badges.push({ label: "Vérifié",        cls: "badge-verif", icon: BadgeCheck });
+    if (isPromoActive(p))               badges.push({ label: "Promo du jour", cls: "badge-promo", icon: Flame });
+    if (p.flash)                        badges.push({ label: "Offre flash",   cls: "badge-flash", icon: Zap });
+    if (p.vente_total > 50)             badges.push({ label: "Best seller",   cls: "badge-best",  icon: Trophy });
     return badges;
   };
 
@@ -92,11 +93,11 @@ export function ProdGrid({
                   fallbackEmoji="📦"
                   style={{ width: "100%", height: "100%" }}
                 />
-                {p.flash                             && <span className="pbadge-flash">⚡ Flash</span>}
+                {p.flash                             && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> Flash</span>}
                 {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
-                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
+                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
                 {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
-                {p.escrow                            && <span className="escrow-badge">🔐</span>}
+                {p.escrow                            && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
                 {!buyable && (
                   <span
                     style={{
@@ -133,7 +134,10 @@ export function ProdGrid({
                 {vendBadges.length > 0 && (
                   <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
                     {vendBadges.map(b => (
-                      <span key={b.label} className={`vendor-badge ${b.cls}`}>{b.label}</span>
+                      <span key={b.label} className={`vendor-badge ${b.cls}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {b.icon && <b.icon size={12} strokeWidth={2.25} aria-hidden />}
+                        {b.label}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -146,9 +150,9 @@ export function ProdGrid({
                 <SocialProofLine product={p} locale={siteLocale} />
 
                 <div className="prod-badge-row">
-                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire">🔥 Stock limité</span>}
-                  <span className="pb pb-truck">🚚 Livraison rapide</span>
-                  <span className="pb pb-cash">💰 Paiement livraison</span>
+                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire"><Flame size={11} aria-hidden /> Stock limité</span>}
+                  <span className="pb pb-truck"><Truck size={11} aria-hidden /> Livraison rapide</span>
+                  <span className="pb pb-cash"><Banknote size={11} aria-hidden /> Paiement livraison</span>
                 </div>
 
                 {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
@@ -206,7 +210,7 @@ export function ProdGrid({
                   aria-disabled={!buyable}
                   style={{
                     width: "100%", padding: "8px", borderRadius: 8, fontSize: ".78rem",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 700,
+                    fontFamily: "var(--font-display)", fontWeight: 700,
                     background: addedIds.has(p.id) ? "#0f4a28" : buyable ? "var(--green)" : "var(--surface2)",
                     color: buyable ? "#fff" : "var(--gray)",
                     border: buyable ? "none" : "1px solid var(--border)",
@@ -239,7 +243,7 @@ export function ProdGrid({
                       openWhatsAppShare(buildProductWhatsAppText(p, siteLocale));
                     }}
                   >
-                    💬 {siteLocale === "en" ? "Share" : "Partager"}
+                    <MessageCircle size={14} aria-hidden /> {siteLocale === "en" ? "Share" : "Partager"}
                   </button>
                 )}
               </div>

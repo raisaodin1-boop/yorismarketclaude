@@ -12,14 +12,13 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { BusinessForm } from "../components/BusinessForm";
+import { ContentIcon } from "../lib/contentIcons";
+import { BarChart3, Rocket, GraduationCap, MessageCircle, Shield, TrendingUp, Zap, Briefcase, Flag, CreditCard } from "lucide-react";
 
-// ─────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────
 const PILIERS = [
   {
     id: "sourcing",
-    icon: "🏬",
+    iconKey: "store",
     color: "#1a6b3a",
     title: "Achat groupé & sourcing",
     desc: "Regroupements d'offres marketplace, prix négociés, catalogue vérifié de 500+ fournisseurs camerounais.",
@@ -27,7 +26,7 @@ const PILIERS = [
   },
   {
     id: "visibility",
-    icon: "📣",
+    iconKey: "megaphone",
     color: "#f59e0b",
     title: "Visibilité & campagnes",
     desc: "Mise en avant produits/services, boosts ciblés Douala/Yaoundé/villes secondaires, ads natives.",
@@ -35,7 +34,7 @@ const PILIERS = [
   },
   {
     id: "payment",
-    icon: "🏦",
+    iconKey: "creditCard",
     color: "#2563eb",
     title: "Paiements traçables",
     desc: "MTN MoMo, Orange Money, Escrow Yorix, factures pro automatiques, conformité fiscale.",
@@ -43,7 +42,7 @@ const PILIERS = [
   },
   {
     id: "logistic",
-    icon: "🚚",
+    iconKey: "truck",
     color: "#0891b2",
     title: "Logistique & livraison",
     desc: "Yorix Ride pour vos commandes, tarifs B2B dégressifs, livraison intra-ville et inter-villes.",
@@ -51,7 +50,7 @@ const PILIERS = [
   },
   {
     id: "training",
-    icon: "🎓",
+    iconKey: "graduationCap",
     color: "#7c3aed",
     title: "Formation équipes",
     desc: "Yorix Academy : formez vos commerciaux, magasiniers et livreurs aux outils digitaux modernes.",
@@ -59,7 +58,7 @@ const PILIERS = [
   },
   {
     id: "growth",
-    icon: "📈",
+    iconKey: "trendingUp",
     color: "#dc2626",
     title: "Croissance multi-ville",
     desc: "Expansion régionale, support diaspora business, partenariats stratégiques, audit gratuit.",
@@ -68,88 +67,46 @@ const PILIERS = [
 ];
 
 const SOLUTIONS = [
-  {
-    id: "pme",
-    emoji: "🏢",
-    title: "PME & Startups",
-    desc: "Solutions clé en main : marketplace, paiements, livraison. Lancez votre activité en 7 jours.",
-    perks: ["Setup en 1 semaine", "Paiements MoMo intégrés", "Support dédié 7j/7"],
-    color: "#1a6b3a"
-  },
-  {
-    id: "retail",
-    emoji: "🏪",
-    title: "Boutiques & Retail",
-    desc: "Digitalisez votre boutique physique : catalogue en ligne, click & collect, fidélisation.",
-    perks: ["Catalogue illimité", "Click & collect", "Programme fidélité"],
-    color: "#f59e0b"
-  },
-  {
-    id: "distrib",
-    emoji: "📦",
-    title: "Distributeurs",
-    desc: "Gérez vos réseaux de distribution : commandes en gros, multi-points, livraison optimisée.",
-    perks: ["Tarifs dégressifs", "Multi-livraison", "Gestion stocks"],
-    color: "#2563eb"
-  },
-  {
-    id: "services",
-    emoji: "👷",
-    title: "Réseaux prestataires",
-    desc: "Coordonnez vos équipes terrain : interventions, planning, facturation, satisfaction client.",
-    perks: ["Planning équipes", "Facturation auto", "Suivi terrain"],
-    color: "#7c3aed"
-  },
-  {
-    id: "diaspora",
-    emoji: "✈️",
-    title: "Diaspora business",
-    desc: "Investissez ou lancez au Cameroun depuis l'étranger : pilotage à distance, partenaires locaux.",
-    perks: ["Gestion à distance", "Partenaires vérifiés", "Reporting mensuel"],
-    color: "#dc2626"
-  },
-  {
-    id: "expansion",
-    emoji: "🌍",
-    title: "Expansion régionale",
-    desc: "Étendez votre présence sur tout le Cameroun : Douala, Yaoundé, Bafoussam, Bamenda, Garoua.",
-    perks: ["10 régions", "Logistique inter-villes", "Marketing local"],
-    color: "#0891b2"
-  },
+  { id: "pme", iconKey: "building", title: "PME & Startups", desc: "Solutions clé en main : marketplace, paiements, livraison. Lancez votre activité en 7 jours.", perks: ["Setup en 1 semaine", "Paiements MoMo intégrés", "Support dédié 7j/7"], color: "#1a6b3a" },
+  { id: "retail", iconKey: "store", title: "Boutiques & Retail", desc: "Digitalisez votre boutique physique : catalogue en ligne, click & collect, fidélisation.", perks: ["Catalogue illimité", "Click & collect", "Programme fidélité"], color: "#f59e0b" },
+  { id: "distrib", iconKey: "package", title: "Distributeurs", desc: "Gérez vos réseaux de distribution : commandes en gros, multi-points, livraison optimisée.", perks: ["Tarifs dégressifs", "Multi-livraison", "Gestion stocks"], color: "#2563eb" },
+  { id: "services", iconKey: "hardHat", title: "Réseaux prestataires", desc: "Coordonnez vos équipes terrain : interventions, planning, facturation, satisfaction client.", perks: ["Planning équipes", "Facturation auto", "Suivi terrain"], color: "#7c3aed" },
+  { id: "diaspora", iconKey: "plane", title: "Diaspora business", desc: "Investissez ou lancez au Cameroun depuis l'étranger : pilotage à distance, partenaires locaux.", perks: ["Gestion à distance", "Partenaires vérifiés", "Reporting mensuel"], color: "#dc2626" },
+  { id: "expansion", iconKey: "globe", title: "Expansion régionale", desc: "Étendez votre présence sur tout le Cameroun : Douala, Yaoundé, Bafoussam, Bamenda, Garoua.", perks: ["10 régions", "Logistique inter-villes", "Marketing local"], color: "#0891b2" },
 ];
 
 const ROLES = [
   {
     id: "buyer",
-    icon: "🛒",
+    iconKey: "shoppingCart",
     title: "Acheteur",
     color: "#22c55e",
     gradient: "linear-gradient(135deg, #4ade80, #16a34a)",
-    workflow: ["Catalogue B2B", "Devis groupés", "Commandes récurrentes", "Suivi temps réel"]
+    workflow: ["Catalogue B2B", "Devis groupés", "Commandes récurrentes", "Suivi temps réel"],
   },
   {
     id: "seller",
-    icon: "🏪",
+    iconKey: "store",
     title: "Vendeur",
     color: "#f59e0b",
     gradient: "linear-gradient(135deg, #fbbf24, #d97706)",
-    workflow: ["Boutique en ligne", "Inventaire smart", "Promotions ciblées", "Analytics ventes"]
+    workflow: ["Boutique en ligne", "Inventaire smart", "Promotions ciblées", "Analytics ventes"],
   },
   {
     id: "delivery",
-    icon: "🚚",
+    iconKey: "truck",
     title: "Livreur",
     color: "#3b82f6",
     gradient: "linear-gradient(135deg, #60a5fa, #2563eb)",
-    workflow: ["Missions assignées", "Optimisation tournée", "Preuve livraison", "Paiement quotidien"]
+    workflow: ["Missions assignées", "Optimisation tournée", "Preuve livraison", "Paiement quotidien"],
   },
   {
     id: "provider",
-    icon: "👷",
+    iconKey: "hardHat",
     title: "Prestataire",
     color: "#7c3aed",
     gradient: "linear-gradient(135deg, #a78bfa, #5b21b6)",
-    workflow: ["Planning équipe", "Devis & facturation", "Satisfaction client", "Réputation"]
+    workflow: ["Planning équipe", "Devis & facturation", "Satisfaction client", "Réputation"],
   },
 ];
 
@@ -952,12 +909,14 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       overflow: hidden;
     }
     .ybiz3-growth::before {
-      content: '📈';
+      content: '';
       position: absolute;
       top: 50%; right: 30px;
       transform: translateY(-50%);
-      font-size: 12rem;
-      opacity: .06;
+      width: 12rem;
+      height: 12rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,107,58,.08) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-growth-left {
@@ -1142,12 +1101,14 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       overflow: hidden;
     }
     .ybiz3-form-wrap::before {
-      content: '🚀';
+      content: '';
       position: absolute;
       top: 50%; right: -30px;
       transform: translateY(-50%);
-      font-size: 14rem;
-      opacity: .04;
+      width: 14rem;
+      height: 14rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,209,22,.06) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-form-inner {
@@ -1179,21 +1140,25 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       overflow: hidden;
     }
     .ybiz3-final::before {
-      content: '💼';
+      content: '';
       position: absolute;
       top: 50%; right: -10px;
       transform: translateY(-50%);
-      font-size: 14rem;
-      opacity: .05;
+      width: 14rem;
+      height: 14rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,209,22,.05) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-final::after {
-      content: '📈';
+      content: '';
       position: absolute;
       top: 50%; left: -10px;
       transform: translateY(-50%);
-      font-size: 11rem;
-      opacity: .05;
+      width: 11rem;
+      height: 11rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,107,58,.06) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-final-inner {
@@ -1327,10 +1292,10 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 </p>
 
                 <ul className="ybiz3-args">
-                  <li><span>🏬</span><span>Achats B2B</span></li>
-                  <li><span>📣</span><span>Visibilité ciblée</span></li>
-                  <li><span>🏦</span><span>Paiements tracés</span></li>
-                  <li><span>🚚</span><span>Logistique J+1</span></li>
+                  <li><span><ContentIcon name="store" size={16} /></span><span>Achats B2B</span></li>
+                  <li><span><ContentIcon name="megaphone" size={16} /></span><span>Visibilité ciblée</span></li>
+                  <li><span><ContentIcon name="creditCard" size={16} /></span><span>Paiements tracés</span></li>
+                  <li><span><ContentIcon name="truck" size={16} /></span><span>Logistique J+1</span></li>
                 </ul>
 
                 <div className="ybiz3-hero-cta">
@@ -1339,14 +1304,14 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                     className="ybiz3-btn ybiz3-btn--pri"
                     onClick={scrollToForm}
                   >
-                    🚀 Lancer une demande
+                    <Rocket size={16} strokeWidth={2.25} aria-hidden /> Lancer une demande
                   </button>
                   <button
                     type="button"
                     className="ybiz3-btn ybiz3-btn--sec"
                     onClick={() => goPage?.("academy")}
                   >
-                    🎓 Former mes équipes
+                    <GraduationCap size={16} strokeWidth={2.25} aria-hidden /> Former mes équipes
                   </button>
                 </div>
 
@@ -1395,7 +1360,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
 
                   <div className="ybiz3-dash-chart">
                     <div className="ybiz3-dash-chart-head">
-                      <div className="ybiz3-dash-chart-title">📊 Ventes hebdo</div>
+                      <div className="ybiz3-dash-chart-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <BarChart3 size={14} aria-hidden /> Ventes hebdo
+                      </div>
                       <div className="ybiz3-dash-chart-period">7 derniers jours</div>
                     </div>
                     <div className="ybiz3-dash-bars">
@@ -1447,7 +1414,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 style={{ "--p-color": p.color }}
               >
                 <div className="ybiz3-pilier-head">
-                  <div className="ybiz3-pilier-icon">{p.icon}</div>
+                  <div className="ybiz3-pilier-icon"><ContentIcon name={p.iconKey} size={24} /></div>
                   <span className="ybiz3-pilier-metric">{p.metric}</span>
                 </div>
                 <h3>{p.title}</h3>
@@ -1477,7 +1444,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 style={{ "--sol-color": s.color }}
                 onClick={scrollToForm}
               >
-                <div className="ybiz3-solution-emoji">{s.emoji}</div>
+                <div className="ybiz3-solution-emoji"><ContentIcon name={s.iconKey} size={28} /></div>
                 <h3 className="ybiz3-solution-title">{s.title}</h3>
                 <p className="ybiz3-solution-desc">{s.desc}</p>
                 <ul className="ybiz3-solution-perks">
@@ -1516,7 +1483,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 }}
               >
                 <div className="ybiz3-role-head">
-                  <div className="ybiz3-role-icon">{r.icon}</div>
+                  <div className="ybiz3-role-icon"><ContentIcon name={r.iconKey} size={22} /></div>
                   <div>
                     <div className="ybiz3-role-title">{r.title}</div>
                     <div className="ybiz3-role-sub">Workflow optimisé</div>
@@ -1567,7 +1534,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
               </ul>
             </div>
             <div className="ybiz3-growth-right">
-              <div style={{ fontSize: "4rem", marginBottom: 14 }}>🎓</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14, color: "var(--biz-green)" }}>
+                <GraduationCap size={64} strokeWidth={1.5} aria-hidden />
+              </div>
               <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--biz-ink)", marginBottom: 10, letterSpacing: "-.4px" }}>
                 Yorix Academy Business
               </h3>
@@ -1580,8 +1549,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   type="button"
                   className="ybiz3-btn ybiz3-btn--green"
                   onClick={() => goPage?.("academy")}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
                 >
-                  🎓 Découvrir l'Academy
+                  <GraduationCap size={16} aria-hidden /> Découvrir l'Academy
                 </button>
               </div>
             </div>
@@ -1615,7 +1585,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   </div>
                 </div>
                 <p className="ybiz3-story-quote">{s.quote}</p>
-                <span className="ybiz3-story-metric">📈 {s.metric}</span>
+                <span className="ybiz3-story-metric" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <TrendingUp size={13} aria-hidden /> {s.metric}
+                </span>
               </article>
             ))}
           </div>
@@ -1688,23 +1660,26 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   type="button"
                   className="ybiz3-btn ybiz3-btn--pri"
                   onClick={user ? scrollToForm : () => openRegister("seller")}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
                 >
-                  🚀 {user ? "Demander un audit" : "Créer mon compte pro"}
+                  <Rocket size={16} aria-hidden />
+                  {user ? "Demander un audit" : "Créer mon compte pro"}
                 </button>
                 <button
                   type="button"
                   className="ybiz3-btn ybiz3-btn--sec"
                   onClick={() => goPage?.("contact")}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
                 >
-                  💬 Parler à un expert
+                  <MessageCircle size={16} aria-hidden /> Parler à un expert
                 </button>
               </div>
 
               <ul className="ybiz3-final-trust">
-                <li><span aria-hidden>🇨🇲</span> 100% Cameroun</li>
-                <li><span aria-hidden>🏦</span> Paiements sécurisés</li>
-                <li><span aria-hidden>📈</span> +850 entreprises</li>
-                <li><span aria-hidden>⚡</span> Setup 7 jours</li>
+                <li><Flag size={14} aria-hidden /> 100% Cameroun</li>
+                <li><CreditCard size={14} aria-hidden /> Paiements sécurisés</li>
+                <li><TrendingUp size={14} aria-hidden /> +850 entreprises</li>
+                <li><Zap size={14} aria-hidden /> Setup 7 jours</li>
               </ul>
             </div>
           </div>

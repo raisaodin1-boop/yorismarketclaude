@@ -6,6 +6,7 @@ import {
   PAYMENT_WA_NUMBER,
 } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
+import { ContentIcon } from "../lib/contentIcons";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL ACHAT PACK POINTS
@@ -97,7 +98,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
             background: pack.color_bg, width: 72, height: 72,
             borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
           }}>
-            {pack.emoji}
+            <ContentIcon name={pack.iconKey || "gem"} size={32} />
           </div>
           <div style={{
             fontFamily: "'Syne',sans-serif", fontSize: "1.25rem", fontWeight: 800,

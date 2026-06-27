@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, MapPin, CheckCircle2, AlertTriangle, XCircle, Flame, Shield, Bell, MessageCircle, Store } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
@@ -201,7 +201,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>
                 {avgNote} / 5 ({avis.length} avis)
               </span>
-              {product.ville && <span className="tag">📍 {product.ville}</span>}
+              {product.ville && <span className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} aria-hidden /> {product.ville}</span>}
               {product.categorie && <span className="tag">{product.categorie}</span>}
             </div>
 
@@ -213,12 +213,14 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
 
             {product.stock !== undefined && product.stock !== null && (
               <div style={{ marginBottom: 10 }}>
-                <span className={`prod-stock ${product.stock > 5 ? "stock-ok" : product.stock > 0 ? "stock-low" : "stock-out"}`}>
-                  {product.stock > 5
-                    ? `✅ En stock (${product.stock})`
-                    : product.stock > 0
-                      ? `⚠️ Plus que ${product.stock} en stock !`
-                      : "❌ Rupture de stock"}
+                <span className={`prod-stock ${product.stock > 5 ? "stock-ok" : product.stock > 0 ? "stock-low" : "stock-out"}`} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {product.stock > 5 ? (
+                    <><CheckCircle2 size={14} aria-hidden /> En stock ({product.stock})</>
+                  ) : product.stock > 0 ? (
+                    <><AlertTriangle size={14} aria-hidden /> Plus que {product.stock} en stock !</>
+                  ) : (
+                    <><XCircle size={14} aria-hidden /> Rupture de stock</>
+                  )}
                 </span>
               </div>
             )}
@@ -233,8 +235,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                       {productPromoListPrice(product).toLocaleString()} FCFA
                     </span>
                   )}
-                  <span style={{ display: "block", marginTop: 4, fontSize: ".72rem", fontWeight: 700, color: "#d4520a" }}>
-                    🔥 -{product.promo_pct || 15}% · Alimentation
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: ".72rem", fontWeight: 700, color: "#d4520a" }}>
+                    <Flame size={14} aria-hidden /> -{product.promo_pct || 15}% · Alimentation
                   </span>
                 </>
               ) : (
@@ -246,8 +248,9 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
             </div>
 
             {product.escrow && (
-              <div className="commission-box" style={{ marginBottom: 12 }}>
-                <span>🔐 Paiement protégé Escrow Yorix</span>
+              <div className="commission-box" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <Shield size={16} aria-hidden style={{ color: "var(--green)", flexShrink: 0 }} />
+                <span>Paiement protégé Escrow Yorix</span>
                 <span style={{ fontSize: ".68rem" }}>Fonds libérés à la livraison</span>
               </div>
             )}
@@ -264,7 +267,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 }}
                 onClick={() => { if (buyable) setShowCmdModal(true); }}
               >
-                {buyable ? "✅ Commander" : "❌ Produit indisponible"}
+                {buyable ? "Commander" : "Produit indisponible"}
               </button>
               {onAddToCart && (
                 <button
@@ -307,10 +310,10 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   }}
                 >
                   {restockState === "done"
-                    ? "✅ Vous serez prévenu(e) dès le retour en stock"
+                    ? "Vous serez prévenu(e) dès le retour en stock"
                     : restockState === "pending"
                       ? "Enregistrement..."
-                      : "🔔 Me notifier quand disponible"}
+                      : <><Bell size={14} aria-hidden /> Me notifier quand disponible</>}
                 </button>
                 {restockState === "error" && restockError && (
                   <p style={{ marginTop: 6, fontSize: ".72rem", color: "#ce1126" }}>{restockError}</p>
@@ -353,7 +356,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   e.currentTarget.style.color = "var(--ink)"; 
                 }}
               >
-                💬 Contacter le vendeur{product.vendeur_nom ? ` (${product.vendeur_nom})` : ""}
+                <MessageCircle size={16} aria-hidden />
+                Contacter le vendeur{product.vendeur_nom ? ` (${product.vendeur_nom})` : ""}
               </button>
             )}
 
@@ -370,15 +374,16 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 textAlign: "center",
                 fontWeight: 600,
               }}>
-                🏪 C'est votre produit
+                <Store size={16} aria-hidden style={{ marginRight: 6 }} />
+                C'est votre produit
               </div>
             )}
 
             <div className="divider-h" />
 
             <div className="avis-section">
-              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", marginBottom: 12 }}>
-                💬 Avis clients ({avis.length})
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <MessageCircle size={16} aria-hidden /> Avis clients ({avis.length})
               </div>
               {user && (
                 <FormulaireAvis

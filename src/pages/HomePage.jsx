@@ -7,6 +7,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { FlashCountdown } from "../components/FlashCountdown";
 import { ProdGrid } from "../components/ProdGrid";
 import { CITIES } from "../lib/constants";
+import { ContentIcon } from "../lib/contentIcons";
 import { HomePremiumMerch } from "../components/home/HomePremiumMerch";
 import { HomeCategoryGrid } from "../components/categories/HomeCategoryGrid";
 import { HomeTrendingProducts } from "../components/home/HomeTrendingProducts";
@@ -17,59 +18,41 @@ import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
 import homePremiumCss from "./homePageV3Premium.css?raw";
 
 const QUICK_LINKS = [
-  { key: "produits", label: "Produits", icon: "🛍️", desc: "Catalogue vérifié", color: "#1a6b3a" },
-  { key: "prestataires", label: "Services", icon: "🛠️", desc: "Pros & freelances", color: "#f59e0b" },
-  { key: "livraison", label: "Livraison", icon: "🚚", desc: "Yorix Ride · suivi", color: "#0891b2" },
-  { key: "business", label: "Business", icon: "💼", desc: "B2B & croissance", color: "#7c3aed" },
-  { key: "academy", label: "Academy", icon: "🎓", desc: "Monter en compétence", color: "#dc2626" },
+  { key: "produits", label: "Produits", iconKey: "shoppingBag", desc: "Catalogue vérifié", color: "#1a6b3a" },
+  { key: "prestataires", label: "Services", iconKey: "wrench", desc: "Pros & freelances", color: "#f59e0b" },
+  { key: "livraison", label: "Livraison", iconKey: "truck", desc: "Yorix Ride · suivi", color: "#0891b2" },
+  { key: "business", label: "Business", iconKey: "briefcase", desc: "B2B & croissance", color: "#7c3aed" },
+  { key: "academy", label: "Academy", iconKey: "graduationCap", desc: "Monter en compétence", color: "#dc2626" },
 ];
 
 const ECOSYSTEM = [
-  {
-    key: "produits",
-    icon: "🛍️",
-    title: "Marketplace produits",
-    desc: "Découverte fluide, panier universel, checkout sécurisé — comme les grandes marketplaces africaines.",
-    wide: true,
-  },
-  {
-    key: "prestataires",
-    icon: "🛠️",
-    title: "Services & talents",
-    desc: "Réservez des pros vérifiés : beauté, tech, BTP… expérience marketplace de services.",
-  },
-  {
-    key: "livraison",
-    icon: "🚚",
-    title: "Livraison & logistique",
-    desc: "Suivi, zones prioritaires Douala · Yaoundé, objectifs clairs comme une app de delivery moderne.",
-  },
-  {
-    key: "business",
-    icon: "💼",
-    title: "Yorix Business",
-    desc: "Outils et crédibilité pour VSE, corners digitaux et partenaires B2B.",
-  },
-  {
-    key: "academy",
-    icon: "🎓",
-    title: "Yorix Academy",
-    desc: "Former vos équipes et vos clients aux bonnes pratiques e-commerce & logistique.",
-  },
+  { key: "produits", iconKey: "shoppingBag", title: "Marketplace produits", desc: "Découverte fluide, panier universel, checkout sécurisé — comme les grandes marketplaces africaines.", wide: true },
+  { key: "prestataires", iconKey: "wrench", title: "Services & talents", desc: "Réservez des pros vérifiés : beauté, tech, BTP… expérience marketplace de services." },
+  { key: "livraison", iconKey: "truck", title: "Livraison & logistique", desc: "Suivi, zones prioritaires Douala · Yaoundé, objectifs clairs comme une app de delivery moderne." },
+  { key: "business", iconKey: "briefcase", title: "Yorix Business", desc: "Outils et crédibilité pour VSE, corners digitaux et partenaires B2B." },
+  { key: "academy", iconKey: "graduationCap", title: "Yorix Academy", desc: "Former vos équipes et vos clients aux bonnes pratiques e-commerce & logistique." },
 ];
 
 const WHY = [
-  { icon: "🚀", title: "Vitesse & clarté", desc: "Moins de friction entre l'intention et le paiement — tunnel optimisé mobile." },
-  { icon: "🌍", title: "Local first", desc: "Conçu au Cameroun pour les usages MoMo, WhatsApp et la logistique réelle." },
-  { icon: "🎯", title: "Multi-canal", desc: "Achat catalogue, réservation pros, livraison, business & formation — tout-en-un." },
-  { icon: "💬", title: "Humain accessible", desc: "Support WhatsApp 7j/7 quand il faut trancher vite." },
+  { iconKey: "rocket", title: "Vitesse & clarté", desc: "Moins de friction entre l'intention et le paiement — tunnel optimisé mobile." },
+  { iconKey: "globe", title: "Local first", desc: "Conçu au Cameroun pour les usages MoMo, WhatsApp et la logistique réelle." },
+  { iconKey: "target", title: "Multi-canal", desc: "Achat catalogue, réservation pros, livraison, business & formation — tout-en-un." },
+  { iconKey: "messageCircle", title: "Humain accessible", desc: "Support WhatsApp 7j/7 quand il faut trancher vite." },
 ];
 
 const KPIS = [
-  { val: "10+", lbl: "Villes & hubs", color: "#1a6b3a", icon: "🏙️" },
-  { val: "24/7", lbl: "Support WhatsApp", color: "#f59e0b", icon: "💬" },
-  { val: "100%", lbl: "Mobile money ready", color: "#0891b2", icon: "📱" },
-  { val: "5%", lbl: "Commission plateforme", color: "#7c3aed", icon: "💎" },
+  { val: "10+", lbl: "Villes & hubs", color: "#1a6b3a", iconKey: "building2" },
+  { val: "24/7", lbl: "Support WhatsApp", color: "#f59e0b", iconKey: "messageCircle" },
+  { val: "100%", lbl: "Mobile money ready", color: "#0891b2", iconKey: "smartphone" },
+  { val: "5%", lbl: "Commission plateforme", color: "#7c3aed", iconKey: "gem" },
+];
+
+const TRUST_BADGES = [
+  { iconKey: "truck", t: "Livraison prioritaire" },
+  { iconKey: "smartphone", t: "Mobile money intégré" },
+  { iconKey: "lock", t: "Escrow protection" },
+  { iconKey: "messageCircle", t: "Support WhatsApp 7j/7" },
+  { iconKey: "flag", t: "100% Cameroun" },
 ];
 
 const TESTIMONIALS = [
@@ -94,14 +77,6 @@ const TESTIMONIALS = [
     avatar: "P",
     color: "#7c3aed",
   },
-];
-
-const TRUST_BADGES = [
-  { i: "🚚", t: "Livraison prioritaire" },
-  { i: "📱", t: "Mobile money intégré" },
-  { i: "🔐", t: "Escrow protection" },
-  { i: "💬", t: "Support WhatsApp 7j/7" },
-  { i: "🇨🇲", t: "100% Cameroun" },
 ];
 
 const SEO_FAQS = [
@@ -201,7 +176,7 @@ export function HomePage({
           <div className="yhm3-marquee-track">
             {[...TRUST_BADGES, ...TRUST_BADGES].map((b, i) => (
               <span key={`${b.t}-${i}`} className="yhm3-marquee-item">
-                <span aria-hidden>{b.i}</span> {b.t}
+                <span aria-hidden><ContentIcon name={b.iconKey} size={14} /></span> {b.t}
               </span>
             ))}
           </div>
@@ -214,7 +189,7 @@ export function HomePage({
             <div className="yhm3-hero-grid">
               <div>
                 <span className="yhm3-eyebrow">
-                  <span className="yhm3-eyebrow-dot" /> 🇨🇲 Super-app commerce · Cameroun
+                  <span className="yhm3-eyebrow-dot" /> <ContentIcon name="flag" size={14} style={{ display: "inline", verticalAlign: "middle" }} /> Super-app commerce · Cameroun
                 </span>
 
                 <h1 className="yhm3-h1">
@@ -352,7 +327,7 @@ export function HomePage({
                 </div>
 
                 <button type="button" className="yhm3-search-cta" onClick={handleHeroSearch}>
-                  🔍 Lancer la recherche
+                  <ContentIcon name="search" size={16} /> Lancer la recherche
                 </button>
 
                 <div className="yhm3-search-trends">
@@ -459,7 +434,7 @@ export function HomePage({
                 style={{ "--cat-color": l.color }}
                 onClick={() => goPage(l.key)}
               >
-                <div className="yhm3-cat-icon">{l.icon}</div>
+                <div className="yhm3-cat-icon"><ContentIcon name={l.iconKey} size={22} /></div>
                 <div className="yhm3-cat-label">{l.label}</div>
                 <div className="yhm3-cat-desc">{l.desc}</div>
               </button>
@@ -481,7 +456,7 @@ export function HomePage({
           <div className="yhm3-kpis">
             {KPIS.map((k) => (
               <article key={k.lbl} className="yhm3-kpi" style={{ "--kpi-color": k.color }}>
-                <div className="yhm3-kpi-icon">{k.icon}</div>
+                <div className="yhm3-kpi-icon"><ContentIcon name={k.iconKey} size={22} /></div>
                 <div className="yhm3-kpi-val">{k.val}</div>
                 <div className="yhm3-kpi-lbl">{k.lbl}</div>
               </article>
@@ -492,7 +467,7 @@ export function HomePage({
         <section className="yhm3-section">
           <div className="yhm3-flash-toolbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span className="yhm3-flash-pill">⚡ Temps limité</span>
+              <span className="yhm3-flash-pill"><ContentIcon name="zap" size={12} /> Temps limité</span>
               <h2 className="yhm3-h2" style={{ marginBottom: 0, fontSize: "1.5rem" }}>
                 Offres flash du <em>jour</em>
               </h2>
@@ -505,7 +480,7 @@ export function HomePage({
 
           <div className="yhm3-flash-banner">
             <div className="yhm3-flash-banner-left">
-              <div className="yhm3-flash-title">⚡ Sélection éclair · high-tech & lifestyle</div>
+              <div className="yhm3-flash-title"><ContentIcon name="zap" size={18} style={{ display: "inline", verticalAlign: "middle", marginRight: 6 }} /> Sélection éclair · high-tech & lifestyle</div>
               <div className="yhm3-flash-sub">Paiement MoMo / Orange · stocks limités selon vendeurs partenaires</div>
             </div>
             <button
@@ -559,7 +534,7 @@ export function HomePage({
             </div>
           ) : safeProduits.length === 0 ? (
             <div className="yhm3-empty">
-              <div className="yhm3-empty-ico">🛍️</div>
+              <div className="yhm3-empty-ico"><ContentIcon name="shoppingBag" size={32} /></div>
               <p>Le catalogue se remplit — revenez très vite.</p>
             </div>
           ) : (
@@ -601,7 +576,7 @@ export function HomePage({
                   }
                 }}
               >
-                <div className="yhm3-bento-icon">{e.icon}</div>
+                <div className="yhm3-bento-icon"><ContentIcon name={e.iconKey} size={24} /></div>
                 <h3>{e.title}</h3>
                 <p>{e.desc}</p>
                 <span className="yhm3-bento-link">
@@ -626,7 +601,7 @@ export function HomePage({
           <div className="yhm3-why-grid">
             {WHY.map((w, i) => (
               <article key={w.title} className={`yhm3-why-card yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`}>
-                <div className="yhm3-why-icon">{w.icon}</div>
+                <div className="yhm3-why-icon"><ContentIcon name={w.iconKey} size={22} /></div>
                 <h3>{w.title}</h3>
                 <p>{w.desc}</p>
               </article>
@@ -707,14 +682,14 @@ export function HomePage({
           <div className="yhm3-prest-grid">
             {safeServices.length === 0 ? (
               <div className="yhm3-empty" style={{ gridColumn: "1/-1" }}>
-                <div className="yhm3-empty-ico">🛠️</div>
+                <div className="yhm3-empty-ico"><ContentIcon name="wrench" size={32} /></div>
                 <p>Les talents arrivent — explorez bientôt la vitrine services.</p>
               </div>
             ) : (
               safeServices.slice(0, 3).map((s) => (
                 <article key={s.id} className="yhm3-prest-card">
                   <div className="yhm3-prest-top">
-                    <div className="yhm3-prest-av">🧑‍💼</div>
+                    <div className="yhm3-prest-av"><ContentIcon name="userCircle" size={28} /></div>
                     <div>
                       <div className="yhm3-prest-name">{s.provider_nom || "Prestataire"}</div>
                       <div className="yhm3-prest-meta">{s.nom}</div>
@@ -722,13 +697,13 @@ export function HomePage({
                   </div>
                   <div className="yhm3-prest-tags">
                     {s.categorie && <span className="yhm3-ptag">{s.categorie}</span>}
-                    {s.ville && <span className="yhm3-ptag">📍 {s.ville}</span>}
+                    {s.ville && <span className="yhm3-ptag"><ContentIcon name="mapPin" size={11} /> {s.ville}</span>}
                   </div>
                   <div className="yhm3-prest-foot">
                     <div>
                       <div className="yhm3-prest-price">{Number(s.prix).toLocaleString()} F</div>
-                      <div className="yhm3-prest-note">
-                        ⭐ {s.note || 0} · {s.nombre_avis || 0} avis
+                      <div className="yhm3-prest-note" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <ContentIcon name="star" size={12} /> {s.note || 0} · {s.nombre_avis || 0} avis
                       </div>
                     </div>
                     <button
@@ -768,13 +743,13 @@ export function HomePage({
               </p>
               <ul className="yhm3-nl-perks">
                 <li>
-                  <span aria-hidden>🎁</span> Bons plans exclusifs
+                  <span aria-hidden><ContentIcon name="gift" size={14} /></span> Bons plans exclusifs
                 </li>
                 <li>
-                  <span aria-hidden>📍</span> Nouveaux hubs villes
+                  <span aria-hidden><ContentIcon name="mapPin" size={14} /></span> Nouveaux hubs villes
                 </li>
                 <li>
-                  <span aria-hidden>🎓</span> Masterclass Academy
+                  <span aria-hidden><ContentIcon name="graduationCap" size={14} /></span> Masterclass Academy
                 </li>
               </ul>
             </div>
@@ -788,7 +763,7 @@ export function HomePage({
               noValidate
             >
               {nlSent ? (
-                <div className="yhm3-nl-success">🎉 Merci ! Vous êtes inscrit(e).</div>
+                <div className="yhm3-nl-success"><ContentIcon name="partyPopper" size={18} /> Merci ! Vous êtes inscrit(e).</div>
               ) : (
                 <>
                   <label htmlFor="yhm3-nl-email" className="yhm3-nl-lbl">
@@ -806,10 +781,10 @@ export function HomePage({
                       required
                     />
                     <button type="submit" className="yhm3-btn yhm3-btn--pri">
-                      Rejoindre 🚀
+                      Rejoindre <ContentIcon name="rocket" size={16} />
                     </button>
                   </div>
-                  <p className="yhm3-nl-note">🔒 RGPD · désinscription en un clic depuis chaque envoi.</p>
+                  <p className="yhm3-nl-note"><ContentIcon name="lock" size={12} /> RGPD · désinscription en un clic depuis chaque envoi.</p>
                 </>
               )}
             </form>
@@ -834,25 +809,25 @@ export function HomePage({
 
               <div className="yhm3-final-actions">
                 <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => setOnboardingOpen(true)}>
-                  🚀 Démarrer maintenant
+                  <ContentIcon name="rocket" size={16} /> Démarrer maintenant
                 </button>
                 <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("aide")}>
-                  🆘 Centre d&apos;aide
+                  <ContentIcon name="lifeBuoy" size={16} /> Centre d&apos;aide
                 </button>
               </div>
 
               <ul className="yhm3-final-trust">
                 <li>
-                  <span aria-hidden>🇨🇲</span> 100% Cameroun
+                  <span aria-hidden><ContentIcon name="flag" size={14} /></span> 100% Cameroun
                 </li>
                 <li>
-                  <span aria-hidden>🔐</span> Escrow inclus
+                  <span aria-hidden><ContentIcon name="lock" size={14} /></span> Escrow inclus
                 </li>
                 <li>
-                  <span aria-hidden>📱</span> Mobile money
+                  <span aria-hidden><ContentIcon name="smartphone" size={14} /></span> Mobile money
                 </li>
                 <li>
-                  <span aria-hidden>⚡</span> 30s d&apos;inscription
+                  <span aria-hidden><ContentIcon name="zap" size={14} /></span> 30s d&apos;inscription
                 </li>
               </ul>
             </div>

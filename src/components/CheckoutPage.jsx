@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ShoppingCart, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CITIES } from "../lib/constants";
@@ -650,7 +651,7 @@ export function CheckoutPage({
       {orderDone && (
         <div className="card checkout-confirm-card">
           <div className="checkout-confirm-icon" aria-hidden>
-            ✅
+            <CheckCircle2 size={48} strokeWidth={1.75} style={{ color: "var(--green)" }} />
           </div>
           <h2 className="h2" style={{ fontSize: "1.05rem", marginBottom: 8 }}>
             {orderDone.mode === "whatsapp"
@@ -736,7 +737,7 @@ export function CheckoutPage({
 
       {!hasItems && !orderDone && (
         <div className="empty-state">
-          <div className="empty-icon">🛒</div>
+          <div className="empty-icon"><ShoppingCart size={40} strokeWidth={1.5} aria-hidden style={{ color: "var(--gray)" }} /></div>
           <p>{t("empty.cart")}</p>
           <button className="form-submit" style={{ width: "auto" }} onClick={() => goPage("produits")}>
             {t("empty.browse")}

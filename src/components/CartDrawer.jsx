@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ShoppingCart, X } from "lucide-react";
+import { ShoppingCart, X, Lock, Shield, Truck } from "lucide-react";
 import { OptimizedImage } from "./OptimizedImage";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 
@@ -63,16 +63,16 @@ export function CartDrawer({
         </div>
 
         <div className="cart-trust-bar">
-          <span>🔒 Sécurisé</span>
-          <span>🛡️ Protégé</span>
-          <span>🚚 Suivi</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Lock size={12} aria-hidden /> Sécurisé</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Shield size={12} aria-hidden /> Protégé</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Truck size={12} aria-hidden /> Suivi</span>
         </div>
 
         {cartItems.length > 0 && <FreeShippingProgress summary={cartSummary} variant="cart" />}
 
         {cartItems.length === 0 ? (
           <div className="cart-empty">
-            <div className="cart-empty-icon">🛒</div>
+            <div className="cart-empty-icon"><ShoppingCart size={40} strokeWidth={1.5} aria-hidden /></div>
             <div className="cart-empty-title">Panier vide</div>
             <p className="cart-empty-sub">Ajoutez des produits ou prestations pour commander.</p>
             <button

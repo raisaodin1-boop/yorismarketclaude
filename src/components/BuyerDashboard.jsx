@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT } from "../lib/queryLimits";
 import { DELIVERY_STATUSES, REWARDS_DATA } from "../lib/constants";
+import { ContentIcon } from "../lib/contentIcons";
 import { OrderCardWithTracking } from "./OrderCardWithTracking";
 import { ReferralPanel } from "./ReferralPanel";
 
@@ -220,7 +221,7 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
           <div className="rewards-grid">
             {REWARDS_DATA.map(r => (
               <div key={r.name} className="reward-card">
-                <div className="reward-icon">{r.icon}</div>
+                <div className="reward-icon"><ContentIcon name={r.iconKey} size={22} /></div>
                 <div className="reward-name">{r.name}</div>
                 <div className="reward-pts">{r.pts} pts</div>
                 <button

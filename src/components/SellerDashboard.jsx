@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Package, ShoppingCart, CheckCircle2, DollarSign, AlertTriangle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT, DASHBOARD_PRODUCTS_LIMIT } from "../lib/queryLimits";
 import { uploadSingleImage } from "../utils/helpers";
@@ -19,6 +20,7 @@ import {
 } from "../lib/catalogMutations";
 import { showAppToast } from "../lib/appToast";
 import { ReferralPanel } from "./ReferralPanel";
+import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
@@ -483,15 +485,15 @@ export function SellerDashboard({
         <>
           <div className="dash-page-title">{t("greeting", { name: userData?.nom || "" })}</div>
 
-          <div className="dash-stats">
+          <div className="dash-stats yx-dash-stat-grid">
             {[
-              { icon: "📦", val: mesProduits.length, lbl: t("stats.published"), trend: mesProduits.length > 0 ? "↑ En ligne" : "— Aucun" },
-              { icon: "🛒", val: commandesActives, lbl: t("stats.activeOrders"), trend: commandesActives > 0 ? "↑ À traiter" : "— Aucune" },
-              { icon: "✅", val: mesCommandes.filter(c => c.status === "delivered").length, lbl: t("stats.delivered"), trend: mesCommandes.filter(c => c.status === "delivered").length > 0 ? "↑ Livrées" : "— Aucune" },
-              { icon: "💰", val: `${revenusTotal.toLocaleString("fr-FR")} FCFA`, lbl: t("stats.netRevenue"), trend: revenusTotal > 0 ? "↑ Revenus" : "— Démarrer" },
+              { icon: SELLER_STAT_ICONS.products, val: mesProduits.length, lbl: t("stats.published"), trend: mesProduits.length > 0 ? "↑ En ligne" : "— Aucun" },
+              { icon: SELLER_STAT_ICONS.orders, val: commandesActives, lbl: t("stats.activeOrders"), trend: commandesActives > 0 ? "↑ À traiter" : "— Aucune" },
+              { icon: SELLER_STAT_ICONS.delivered, val: mesCommandes.filter(c => c.status === "delivered").length, lbl: t("stats.delivered"), trend: mesCommandes.filter(c => c.status === "delivered").length > 0 ? "↑ Livrées" : "— Aucune" },
+              { icon: SELLER_STAT_ICONS.revenue, val: `${revenusTotal.toLocaleString("fr-FR")} FCFA`, lbl: t("stats.netRevenue"), trend: revenusTotal > 0 ? "↑ Revenus" : "— Démarrer" },
             ].map(s => (
-              <div key={s.lbl} className="dstat">
-                <div className="dstat-icon">{s.icon}</div>
+              <div key={s.lbl} className="dstat yx-dash-stat">
+                <div className="dstat-icon">{s.icon && <s.icon size={22} strokeWidth={2.25} />}</div>
                 <div className="dstat-val">{s.val}</div>
                 <div className="dstat-lbl">{s.lbl}</div>
                 {s.trend && (
@@ -508,7 +510,9 @@ export function SellerDashboard({
           {ruptureProducts.length > 0 && (
             <div style={{ ...S.card, border: "1.5px solid #ce1126", background: "linear-gradient(180deg,#fff5f5 0%,var(--surface) 60%)" }}>
               <div style={S.row}>
-                <div style={S.secTitle}>⚠️ Produits en rupture ({ruptureProducts.length})</div>
+                <div style={{ ...S.secTitle, display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertTriangle size={18} aria-hidden /> Produits en rupture ({ruptureProducts.length})
+                </div>
                 <span style={{ fontSize: ".7rem", color: "var(--gray)" }}>
                   Archivage auto après {stockSettings.stock_out_grace_days || 30}j sans stock
                 </span>

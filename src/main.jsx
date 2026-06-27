@@ -1,4 +1,7 @@
 import './styles/yorix-design-system.css'
+import './styles/yorix-dark.css'
+import './styles/yorix-dashboard.css'
+import './styles/yorix-pages-shared.css'
 import './styles/yorix-mobile.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'

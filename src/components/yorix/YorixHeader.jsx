@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
+import { Moon, Sun, Rocket, Phone, LifeBuoy, LogIn, User, Package, Truck, Smartphone, CreditCard, Banknote, Shield, Search } from "lucide-react";
 import { roleLabel } from "../../i18n/index.js";
 import { EMOTIONAL_NAV } from "../../lib/merchHubs";
 import { categoryLabel } from "../../lib/marketplaceCategories";
+import { NAV_QUICK_ICONS, PAY_STRIP_ICONS, LucideIcon } from "../../lib/lucideNavIcons";
 import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
 import { CategoryMobileNav } from "../categories/CategoryMobileNav";
 import { NotificationBell } from "../NotificationBell";
+import { Button } from "../ui/Button";
 import "../categories/categoryUi.css";
 
 export function YorixHeader({
@@ -96,21 +99,24 @@ export function YorixHeader({
               EN
             </span>
           </span>
-          <span>📞 +237 696 56 56 54</span>
+          <span><LucideIcon icon={Phone} size={14} /> +237 696 56 56 54</span>
         </div>
         <div className="topbar-r">
-          <span onClick={() => goPage("aide")}>🆘 {t("topbar.help")}</span>
-          <span onClick={() => goPage("contact")}>📞 {t("topbar.contact")}</span>
+          <span onClick={() => goPage("aide")}><LucideIcon icon={LifeBuoy} size={14} /> {t("topbar.help")}</span>
+          <span onClick={() => goPage("contact")}><LucideIcon icon={Phone} size={14} /> {t("topbar.contact")}</span>
           {user ? (
-            <span style={{ color: "#b7e4c7" }}>👤 {userData?.nom || user.email?.split("@")[0]}</span>
+            <span style={{ color: "#b7e4c7", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <LucideIcon icon={User} size={14} /> {userData?.nom || user.email?.split("@")[0]}
+            </span>
           ) : (
             <span
               onClick={() => {
                 setAuthTab("login");
                 setAuthOpen(true);
               }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
             >
-              🔑 {t("topbar.login")}
+              <LucideIcon icon={LogIn} size={14} /> {t("topbar.login")}
             </span>
           )}
         </div>
@@ -207,7 +213,7 @@ export function YorixHeader({
                         />
                       ) : (
                         <span className="nav-search-dd-img nav-search-dd-ph" aria-hidden>
-                          📦
+                          <Package size={18} strokeWidth={2} />
                         </span>
                       )}
                       <div style={{ minWidth: 0 }}>
@@ -224,22 +230,18 @@ export function YorixHeader({
               </div>
             )}
             <button type="button" onClick={() => goPage("produits")} aria-label={t("search.ariaSubmit")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <Search size={16} strokeWidth={2.5} aria-hidden="true" />
             </button>
           </div>
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-cta-onboard" onClick={() => setOnboardingOpen(true)} title={t("actions.getStartedTitle")}>
-            🚀 {t("actions.getStarted")}
-          </button>
+          <Button type="button" variant="primary" size="sm" className="nav-cta-onboard" icon={Rocket} onClick={() => setOnboardingOpen(true)} title={t("actions.getStartedTitle")}>
+            {t("actions.getStarted")}
+          </Button>
 
-          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? t("actions.lightMode") : t("actions.darkMode")}>
-            {dark ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            )}
+          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? t("actions.lightMode") : t("actions.darkMode")} aria-label={dark ? t("actions.lightMode") : t("actions.darkMode")}>
+            {dark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
           </button>
 
           {user && (
@@ -353,12 +355,14 @@ export function YorixHeader({
                   <h4>{t("quickNav.marketplace")}</h4>
                   <div className="nav-quick-links">
                     {[
-                      { ic: "🏠", l: t("quickNav.home"), p: "home" },
-                      { ic: "🛍️", l: t("quickNav.catalog"), p: "produits" },
-                      { ic: "🛒", l: t("quickNav.cartSecure"), p: "cart" },
-                      { ic: "🏷️", l: t("quickNav.dealsNow"), p: "bonsPlans" },
-                      { ic: "🚚", l: t("quickNav.deliveryTrack"), p: "livraison" },
-                    ].map((x) => (
+                      { key: "home", l: t("quickNav.home"), p: "home" },
+                      { key: "produits", l: t("quickNav.catalog"), p: "produits" },
+                      { key: "cart", l: t("quickNav.cartSecure"), p: "cart" },
+                      { key: "bonsPlans", l: t("quickNav.dealsNow"), p: "bonsPlans" },
+                      { key: "livraison", l: t("quickNav.deliveryTrack"), p: "livraison" },
+                    ].map((x) => {
+                      const Icon = NAV_QUICK_ICONS[x.key];
+                      return (
                       <button
                         key={x.p}
                         type="button"
@@ -367,23 +371,25 @@ export function YorixHeader({
                           goPage(x.p);
                         }}
                       >
-                        <span className="nav-quick-ico">{x.ic}</span>
+                        <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
                         <span>{x.l}</span>
                       </button>
-                    ))}
+                    );})}
                   </div>
                 </div>
                 <div className="nav-quick-section">
                   <h4>{t("quickNav.trust")}</h4>
                   <div className="nav-quick-links">
                     {[
-                      { ic: "🔐", l: t("quickNav.escrowBuyer"), p: "escrow" },
-                      { ic: "🧑‍🔧", l: t("quickNav.providersVerified"), p: "prestataires" },
-                      { ic: "💼", l: t("tabs.business"), p: "business" },
-                      { ic: "🎓", l: t("tabs.academy"), p: "academy" },
-                      { ic: "📰", l: t("quickNav.blogTrends"), p: "blog" },
-                      { ic: "⭐", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
-                    ].map((x) => (
+                      { key: "escrow", l: t("quickNav.escrowBuyer"), p: "escrow" },
+                      { key: "prestataires", l: t("quickNav.providersVerified"), p: "prestataires" },
+                      { key: "business", l: t("tabs.business"), p: "business" },
+                      { key: "academy", l: t("tabs.academy"), p: "academy" },
+                      { key: "blog", l: t("quickNav.blogTrends"), p: "blog" },
+                      { key: "loyalty", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
+                    ].map((x) => {
+                      const Icon = NAV_QUICK_ICONS[x.key];
+                      return (
                       <button
                         key={x.p}
                         type="button"
@@ -392,10 +398,10 @@ export function YorixHeader({
                           goPage(x.p);
                         }}
                       >
-                        <span className="nav-quick-ico">{x.ic}</span>
+                        <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
                         <span>{x.l}</span>
                       </button>
-                    ))}
+                    );})}
                   </div>
                 </div>
                 <div className="nav-quick-section">
@@ -408,7 +414,7 @@ export function YorixHeader({
                         goPage("contact");
                       }}
                     >
-                      <span className="nav-quick-ico">📞</span>
+                      <span className="nav-quick-ico"><Phone size={16} strokeWidth={2.25} /></span>
                       <span>{t("quickNav.contactSupport")}</span>
                     </button>
                     <button
@@ -418,7 +424,7 @@ export function YorixHeader({
                         goPage("aide");
                       }}
                     >
-                      <span className="nav-quick-ico">🆘</span>
+                      <span className="nav-quick-ico"><LifeBuoy size={16} strokeWidth={2.25} /></span>
                       <span>{t("quickNav.helpSos")}</span>
                     </button>
                     <button
@@ -428,7 +434,7 @@ export function YorixHeader({
                         goPage("faq");
                       }}
                     >
-                      <span className="nav-quick-ico">❓</span>
+                      <span className="nav-quick-ico"><LucideIcon icon={NAV_QUICK_ICONS.faq} size={16} /></span>
                       <span>{t("quickNav.faqMarketplace")}</span>
                     </button>
                   </div>
@@ -458,13 +464,13 @@ export function YorixHeader({
       <div className="pay-strip">
         <b style={{ color: "var(--ink)" }}>{t("payStrip.payment")}</b>
         <div className="pay-methods">
-          <span className="pm mtn-b">📱 {t("payStrip.momo")}</span>
-          <span className="pm ora-b">🔶 {t("payStrip.orange")}</span>
-          <span className="pm">💳 {t("payStrip.card")}</span>
-          <span className="pm">💵 {t("payStrip.cash")}</span>
+          <span className="pm mtn-b"><LucideIcon icon={PAY_STRIP_ICONS.momo} size={14} /> {t("payStrip.momo")}</span>
+          <span className="pm ora-b"><LucideIcon icon={PAY_STRIP_ICONS.orange} size={14} /> {t("payStrip.orange")}</span>
+          <span className="pm"><LucideIcon icon={PAY_STRIP_ICONS.card} size={14} /> {t("payStrip.card")}</span>
+          <span className="pm"><LucideIcon icon={PAY_STRIP_ICONS.cash} size={14} /> {t("payStrip.cash")}</span>
         </div>
         <div className="strip-right">
-          <span>🚚 {t("payStrip.deliveryJ1")}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LucideIcon icon={PAY_STRIP_ICONS.delivery} size={14} /> {t("payStrip.deliveryJ1")}</span>
           <span
             role="link"
             tabIndex={0}
@@ -479,8 +485,12 @@ export function YorixHeader({
           >
             {t("payStrip.freeShippingFrom", { amount: freeShip })}
           </span>
-          <span>🔐 {t("payStrip.escrowSecure")}</span>
-          {user && <span style={{ color: "var(--gold)" }}>👤 {userData?.nom || user.email}</span>}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LucideIcon icon={PAY_STRIP_ICONS.escrow} size={14} /> {t("payStrip.escrowSecure")}</span>
+          {user && (
+            <span style={{ color: "var(--gold)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <LucideIcon icon={User} size={14} /> {userData?.nom || user.email}
+            </span>
+          )}
         </div>
       </div>
     </div>

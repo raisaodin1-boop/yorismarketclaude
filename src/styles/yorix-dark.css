@@ -1,0 +1,61 @@
+/**
+ * YORIX Dark Mode — tokens unifiés (Phase 6)
+ * Complète makeCSS(dark) via data-theme sur <html>
+ */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8f0eb;
+  --green-pale: #1a3a24;
+  --bg: #0d1a12;
+  --surface: #152118;
+  --surface2: #1c2e22;
+  --sand: #1a2e1e;
+  --border: #2a4030;
+  --gray: #7a9a82;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --yorix-sh-sm: 0 4px 20px rgba(0, 0, 0, 0.28);
+  --yorix-sh-md: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --yorix-sh-lg: 0 24px 64px rgba(0, 0, 0, 0.48);
+  --yorix-glass: rgba(21, 33, 24, 0.72);
+  --yorix-glass-border: rgba(255, 255, 255, 0.08);
+  --yx-ink-muted: #9ab0a2;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink: #e8f0eb;
+    --green-pale: #1a3a24;
+    --bg: #0d1a12;
+    --surface: #152118;
+    --surface2: #1c2e22;
+    --sand: #1a2e1e;
+    --border: #2a4030;
+    --gray: #7a9a82;
+    --shadow: rgba(0, 0, 0, 0.45);
+    --yorix-sh-sm: 0 4px 20px rgba(0, 0, 0, 0.28);
+    --yorix-sh-md: 0 12px 40px rgba(0, 0, 0, 0.35);
+    --yorix-sh-lg: 0 24px 64px rgba(0, 0, 0, 0.48);
+    --yorix-glass: rgba(21, 33, 24, 0.72);
+    --yorix-glass-border: rgba(255, 255, 255, 0.08);
+    --yx-ink-muted: #9ab0a2;
+  }
+}
+
+[data-theme="dark"] .trust-strip,
+html:not([data-theme="light"]) .trust-strip {
+  background: linear-gradient(90deg, #0f2418 0%, var(--surface) 50%, #0f2418 100%);
+  border-color: rgba(79, 209, 125, 0.15);
+}
+
+[data-theme="dark"] .trust-strip__item,
+html:not([data-theme="light"]) .trust-strip__item {
+  background: var(--surface2);
+  color: var(--ink);
+  border-color: var(--border);
+}

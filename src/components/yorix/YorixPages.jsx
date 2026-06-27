@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Home, ShoppingBag, ShoppingCart, Bell, User, LogIn, Rocket } from "lucide-react";
+import { Home, ShoppingBag, ShoppingCart, Bell, User, LogIn, Rocket, Settings, Eye } from "lucide-react";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { WhatsAppFab } from "../WhatsAppFab";
 import { supabase, YORIX_WA_NUMBER, MOMO_NUMBER, ORANGE_NUMBER, PAYMENT_WA_NUMBER } from "../../lib/supabase";
@@ -554,8 +554,8 @@ export function YorixPages({ ctx }) {
 
       <div className="yorix-fab-stack" aria-live="polite">
         {user && isAdminViewer(userData) && page !== "admin" && (
-          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title={canWriteAdmin(userData) ? "Ouvrir l’administration" : "Consultation partenaire"}>
-            {canWriteAdmin(userData) ? "⚙️ Admin Yorix" : "👁️ Consultation Yorix"}
+          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title={canWriteAdmin(userData) ? "Ouvrir l'administration" : "Consultation partenaire"}>
+            {canWriteAdmin(userData) ? <><Settings size={14} aria-hidden /> Admin Yorix</> : <><Eye size={14} aria-hidden /> Consultation Yorix</>}
           </button>
         )}
         <WhatsAppFab />

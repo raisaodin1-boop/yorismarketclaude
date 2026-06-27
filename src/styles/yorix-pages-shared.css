@@ -1,0 +1,68 @@
+/**
+ * YORIX Marketing Pages — styles partagés (Phase 5)
+ */
+
+:root {
+  --yx-mkt-green: #1a6b3a;
+  --yx-mkt-green-deep: #0f4a28;
+  --yx-mkt-yellow: #fcd116;
+  --yx-mkt-ink: #0d1f14;
+  --yx-mkt-gray: #5c6b63;
+  --yx-mkt-surface: #ffffff;
+  --yx-mkt-surface2: #f5f2ed;
+  --yx-mkt-border: #e2ddd6;
+}
+
+.yx-mkt-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--yx-mkt-gray);
+}
+
+.yx-mkt-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--yx-mkt-border);
+  border-top-color: var(--yx-mkt-green);
+  border-radius: 50%;
+  animation: yx-mkt-spin 0.7s linear infinite;
+}
+
+@keyframes yx-mkt-spin {
+  to { transform: rotate(360deg); }
+}
+
+.yx-mkt-empty {
+  text-align: center;
+  padding: 50px 20px;
+  background: var(--yx-mkt-surface);
+  border: 1.5px dashed var(--yx-mkt-border);
+  border-radius: 14px;
+}
+
+.yx-mkt-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  background: var(--yx-mkt-surface2);
+  color: var(--yx-mkt-gray);
+}
+
+.yloy3-btn,
+.yacad3-btn,
+.ybiz3-btn {
+  font-family: var(--font-display) !important;
+}
+
+.yloy3-h1,
+.yacad3-h1,
+.ybiz3-h1 {
+  font-family: var(--font-display) !important;
+}
