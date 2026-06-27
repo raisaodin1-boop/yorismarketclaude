@@ -179,9 +179,7 @@ export async function creditReferralBonusIfEligible(userId, orderId) {
   if (wallet) {
     await supabase.from("wallets").update({
       solde: Number(wallet.solde) + REFERRAL_BONUS_AMOUNT,
-      total_gagne: supabase.rpc
-        ? undefined
-        : Number(wallet.total_gagne || 0) + REFERRAL_BONUS_AMOUNT,
+      total_gagne: Number(wallet.total_gagne || 0) + REFERRAL_BONUS_AMOUNT,
     }).eq("id", wallet.id);
   } else {
     await supabase.from("wallets").insert({

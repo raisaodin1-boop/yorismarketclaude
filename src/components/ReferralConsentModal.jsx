@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
-import { REFERRAL_BONUS_AMOUNT, REFERRAL_ELIGIBLE_CATEGORIES, signConsentAndGetCode } from "../lib/referralApi";
+import { REFERRAL_BONUS_AMOUNT, REFERRAL_ELIGIBLE_CATEGORIES, REFERRAL_CONSENT_VERSION, signConsentAndGetCode } from "../lib/referralApi";
+
+const REFERRAL_CONSENT_VERSION_LABEL = REFERRAL_CONSENT_VERSION;
 
 const ELIGIBLE_LABELS = {
   "electronique":   "Électronique & Technologie",
@@ -348,5 +350,3 @@ export function ReferralConsentModal({ user, userData, onClose, onCodeGenerated 
     </div>
   );
 }
-
-const REFERRAL_CONSENT_VERSION_LABEL = "v1.0-2026";
