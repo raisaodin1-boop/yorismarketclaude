@@ -1,4 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from "react";
+import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
 import { resolveMadeInCameroon } from "../lib/madeInCameroon";
@@ -35,6 +36,7 @@ export function ProdGrid({
   const handleAdd = useCallback((p) => {
     if (!isPurchasable(p)) return;
     onAddToCart(p);
+    showAppToast(`✓ ${(p.name_fr || "Produit").slice(0, 32)} ajouté au panier`, "success", 2200);
     setAddedIds((prev) => {
       const next = new Set(prev);
       next.add(p.id);

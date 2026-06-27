@@ -45,7 +45,7 @@ export async function validateCoupon(code, userId) {
     const { count } = await supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
-      .eq("customer_id", userId);
+      .eq("client_id", userId);
 
     if (count && count > 0) {
       return { ok: false, error: "Ce code est réservé à votre première commande." };

@@ -1,25 +1,72 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { DASHBOARD_ORDERS_LIMIT } from "../lib/queryLimits";
 import { DELIVERY_STATUSES, REWARDS_DATA } from "../lib/constants";
 import { OrderCardWithTracking } from "./OrderCardWithTracking";
 import { ReferralPanel } from "./ReferralPanel";
 
+const PULL_THRESHOLD = 64; // px pour déclencher le refresh
+
+function SkeletonOrderRow() {
+  return (
+    <div className="order-card" style={{ alignItems: "center" }}>
+      <div className="sk-block" style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0 }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+        <div className="sk-block" style={{ height: 12, width: "55%", borderRadius: 6 }} />
+        <div className="sk-block" style={{ height: 10, width: "38%", borderRadius: 6 }} />
+      </div>
+      <div className="sk-block" style={{ width: 68, height: 22, borderRadius: 20, flexShrink: 0 }} />
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : DASHBOARD ACHETEUR (BUYER)
 // ─────────────────────────────────────────────────────────────
 export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts, setLoyaltyPts, dashTab, goPage }) {
   const [mesCommandes, setMesCommandes] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
 
-  useEffect(() => {
-    supabase
+  const fetchOrders = useCallback(async () => {
+    const { data } = await supabase
       .from("orders")
       .select("*")
       .eq("client_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(DASHBOARD_ORDERS_LIMIT)
-      .then(({ data }) => setMesCommandes(data || []));
+      .limit(DASHBOARD_ORDERS_LIMIT);
+    setMesCommandes(data || []);
+    setLoadingOrders(false);
+    setRefreshing(false);
   }, [user.id]);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  // ── Pull-to-refresh ──────────────────────────────────────────
+  const listRef       = useRef(null);
+  const touchStartY   = useRef(0);
+  const [pullDelta, setPullDelta] = useState(0);
+
+  const onTouchStart = useCallback((e) => {
+    if (listRef.current?.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (!touchStartY.current) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0 && delta < 110) setPullDelta(delta);
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (pullDelta >= PULL_THRESHOLD && !refreshing) {
+      setRefreshing(true);
+      fetchOrders();
+    }
+    touchStartY.current = 0;
+    setPullDelta(0);
+  }, [pullDelta, refreshing, fetchOrders]);
 
   return (
     <>
@@ -30,7 +77,7 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
           </div>
           <div className="dash-stats">
             {[
-              { icon: "📦", val: mesCommandes.length, lbl: "Commandes", trend: mesCommandes.length > 0 ? "↑ Actif" : "— Aucune" },
+              { icon: "📦", val: loadingOrders ? "—" : mesCommandes.length, lbl: "Commandes", trend: mesCommandes.length > 0 ? "↑ Actif" : "— Aucune" },
               { icon: "❤️", val: wishlist.size,       lbl: "Favoris",   trend: wishlist.size > 0 ? `${wishlist.size} sauvegardé${wishlist.size > 1 ? "s" : ""}` : "— Vide" },
               { icon: "🛒", val: totalQty,            lbl: "Panier",    trend: totalQty > 0 ? "↑ En cours" : "— Vide" },
               { icon: "🌟", val: `${loyaltyPts} pts`, lbl: "Points fidélité", trend: loyaltyPts > 0 ? "↑ Cumulés" : "— Démarrer" },
@@ -55,7 +102,11 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
           }}>
             Mes dernières commandes
           </div>
-          {mesCommandes.length === 0 ? (
+          {loadingOrders ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[1, 2, 3].map(i => <SkeletonOrderRow key={i} />)}
+            </div>
+          ) : mesCommandes.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">🛍️</div>
               <p>Aucune commande</p>
@@ -93,16 +144,52 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
       {dashTab === "commandes" && (
         <>
           <div className="dash-page-title">📦 Mes commandes</div>
-          {mesCommandes.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">📦</div>
-              <p>Aucune commande</p>
+
+          {/* Pull-to-refresh indicator */}
+          {(pullDelta > 0 || refreshing) && (
+            <div
+              aria-live="polite"
+              style={{
+                textAlign: "center",
+                padding: "8px 0",
+                fontSize: ".78rem",
+                color: "var(--green)",
+                fontWeight: 600,
+                transform: `translateY(${Math.min(pullDelta * 0.4, 24)}px)`,
+                transition: pullDelta === 0 ? "transform .3s" : "none",
+                opacity: refreshing ? 1 : Math.min(pullDelta / PULL_THRESHOLD, 1),
+              }}
+            >
+              {refreshing
+                ? "Actualisation…"
+                : pullDelta >= PULL_THRESHOLD
+                  ? "↑ Relâcher pour actualiser"
+                  : "↓ Tirer pour actualiser"}
             </div>
-          ) : (
-            mesCommandes.map(c => (
-              <OrderCardWithTracking key={c.id} commande={c} goPage={goPage} />
-            ))
           )}
+
+          <div
+            ref={listRef}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            style={{ overflowY: "auto" }}
+          >
+            {loadingOrders ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[1, 2, 3, 4].map(i => <SkeletonOrderRow key={i} />)}
+              </div>
+            ) : mesCommandes.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📦</div>
+                <p>Aucune commande</p>
+              </div>
+            ) : (
+              mesCommandes.map(c => (
+                <OrderCardWithTracking key={c.id} commande={c} goPage={goPage} />
+              ))
+            )}
+          </div>
         </>
       )}
 
