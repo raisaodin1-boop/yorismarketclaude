@@ -20,6 +20,7 @@ import {
 import { showAppToast } from "../lib/appToast";
 import { ReferralPanel } from "./ReferralPanel";
 import { WalletWithdrawal } from "./WalletWithdrawal";
+import { SellerKYC } from "./SellerKYC";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
@@ -202,6 +203,9 @@ export function SellerDashboard({
       isPack: false,
       packDescription: "",
       linkedProductIds: [],
+      b2bEnabled: false,
+      prixGros: "",
+      minQtyGros: "",
     });
     setImages([]); setPreviews([]); setProgress(0);
     setHasVariants(false);
@@ -313,6 +317,9 @@ export function SellerDashboard({
         pack_linked_product_ids: isPack ? form.linkedProductIds : [],
         pack_submitted_at: isPack ? new Date().toISOString() : null,
         ...micPayload,
+        b2b_enabled: Boolean(form.b2bEnabled),
+        prix_gros: form.b2bEnabled && form.prixGros ? Number(form.prixGros) : null,
+        min_qty_gros: form.b2bEnabled && form.minQtyGros ? Number(form.minQtyGros) : 10,
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;
@@ -991,6 +998,25 @@ export function SellerDashboard({
               </label>
             </div>
 
+            <div className="form-group full">
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:".82rem", fontWeight:600, color:"var(--ink)" }}>
+                <input type="checkbox" checked={form.b2bEnabled||false} onChange={e => setForm(f => ({...f, b2bEnabled: e.target.checked}))} />
+                🏭 Activer la vente en gros (B2B)
+              </label>
+              {form.b2bEnabled && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10 }}>
+                  <div className="form-group">
+                    <label className="form-label">Prix de gros (FCFA/unité)</label>
+                    <input className="form-input" type="number" min="0" placeholder="Ex: 18000" value={form.prixGros||""} onChange={e => setForm(f => ({...f, prixGros: e.target.value}))} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Quantité minimum</label>
+                    <input className="form-input" type="number" min="2" placeholder="Ex: 10" value={form.minQtyGros||""} onChange={e => setForm(f => ({...f, minQtyGros: e.target.value}))} />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="form-group full seller-pack-panel">
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: ".82rem", fontWeight: 700, color: "var(--ink)" }}>
                 <input
@@ -1146,6 +1172,17 @@ export function SellerDashboard({
       {/* ════ PARRAINAGE ════ */}
       {dashTab === "parrainage" && (
         <ReferralPanel user={user} userData={userData} />
+      )}
+
+      {/* ════ KYC ════ */}
+      {dashTab === "kyc" && (
+        <>
+          <div className="dash-page-title">🛡 Vérification d'identité (KYC)</div>
+          <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 16, lineHeight: 1.6 }}>
+            La vérification KYC renforce la confiance des acheteurs et débloque des fonctionnalités avancées (B2B, Escrow prioritaire, badge vendeur vérifié).
+          </p>
+          <SellerKYC userId={user.id} />
+        </>
       )}
 
       {/* ════ WALLET ════ */}

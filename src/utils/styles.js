@@ -6085,6 +6085,47 @@ ${dark?`
 .withdrawal-done__icon{margin-bottom:12px;}
 .withdrawal-done__title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
 .withdrawal-done__sub{font-size:.82rem;color:var(--gray);line-height:1.5;}
+
+/* ════════════════════════════════════════
+   KYC SELLER VERIFICATION
+   ════════════════════════════════════════ */
+.kyc-status{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;margin-bottom:16px;font-size:.85rem;font-weight:700;}
+.kyc-status--none{background:var(--surface2);border:1px solid var(--border);color:var(--gray);}
+.kyc-status--pending{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;}
+.kyc-status--verified{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;}
+.kyc-status--rejected{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;}
+.kyc-upload-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface);}
+.kyc-upload-zone:hover{border-color:var(--green);background:var(--green-pale,#f0fdf4);}
+.kyc-upload-zone input{display:none;}
+.kyc-doc-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:.75rem;color:var(--ink);}
+
+/* ════════════════════════════════════════
+   B2B ORDER FORM
+   ════════════════════════════════════════ */
+.b2b-modal{max-width:480px;width:calc(100vw - 32px);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;max-height:90dvh;}
+.b2b-header{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#eff6ff,#fff);}
+.b2b-header__img{width:56px;height:56px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--surface2);}
+.b2b-header__info{flex:1;min-width:0;}
+.b2b-header__name{font-size:.88rem;font-weight:700;color:var(--ink);line-height:1.3;}
+.b2b-header__badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:800;background:#1d4ed8;color:#fff;padding:2px 8px;border-radius:10px;margin-top:3px;}
+.b2b-body{padding:16px;overflow-y:auto;flex:1;}
+.b2b-price-hint{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:.78rem;color:#1d4ed8;margin-bottom:14px;font-weight:600;}
+.b2b-footer{padding:12px 16px 16px;border-top:1px solid var(--border);}
+.b2b-success{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px;}
+.b2b-success__icon{width:56px;height:56px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.b2b-success__title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--ink);margin-bottom:6px;}
+.b2b-success__sub{font-size:.8rem;color:var(--gray);line-height:1.5;}
+
+/* ════════════════════════════════════════
+   ENHANCED REVIEWS
+   ════════════════════════════════════════ */
+.avis-verified{font-size:.62rem;background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:6px;vertical-align:middle;}
+.avis-char-count{font-size:.65rem;color:var(--gray);text-align:right;margin-top:3px;}
+.avis-star-label{font-size:.72rem;font-weight:600;margin-top:4px;min-height:16px;}
+.avis-star-label--1{color:#dc2626;} .avis-star-label--2{color:#f97316;} .avis-star-label--3{color:#ca8a04;} .avis-star-label--4{color:#16a34a;} .avis-star-label--5{color:#059669;}
+
+/* B2B badge on product cards */
+.b2b-card-badge{position:absolute;top:6px;left:6px;background:#1d4ed8;color:#fff;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:6px;letter-spacing:.03em;z-index:2;}
 `;
 
 
