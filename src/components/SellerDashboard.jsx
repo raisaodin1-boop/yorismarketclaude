@@ -23,7 +23,7 @@ import { ReferralPanel } from "./ReferralPanel";
 import { WalletWithdrawal } from "./WalletWithdrawal";
 import { SellerKYC } from "./SellerKYC";
 import { BusinessAiAssistant } from "./seller/BusinessAiAssistant";
-import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons";
+import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons.jsx";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
@@ -551,8 +551,8 @@ export function SellerDashboard({
                       flexWrap: "wrap",
                     }}
                   >
-                    {p.image ? (
-                      <img src={p.image} alt="" style={{ width: 46, height: 46, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={(e) => (e.currentTarget.style.display = "none")} />
+                    {(p.image || p.image_urls?.[0]) ? (
+                      <img src={p.image || p.image_urls?.[0]} alt="" style={{ width: 46, height: 46, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={(e) => (e.currentTarget.style.display = "none")} />
                     ) : (
                       <div style={{ width: 46, height: 46, borderRadius: 8, background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", flexShrink: 0 }}>📦</div>
                     )}
@@ -620,8 +620,8 @@ export function SellerDashboard({
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {mesProduits.slice(0, 4).map(p => (
                   <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "var(--surface2)", borderRadius: 10, border: "1px solid var(--border)" }}>
-                    {p.image ? (
-                      <img src={p.image} alt="" style={{ width: 46, height: 46, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />
+                    {(p.image || p.image_urls?.[0]) ? (
+                      <img src={p.image || p.image_urls?.[0]} alt="" style={{ width: 46, height: 46, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />
                     ) : (
                       <div style={{ width: 46, height: 46, borderRadius: 8, background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", flexShrink: 0 }}>📦</div>
                     )}
@@ -729,8 +729,8 @@ export function SellerDashboard({
                 ) : (
                   <>
                     <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                      {p.image ? (
-                        <img src={p.image} alt="" style={{ width: 64, height: 64, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />
+                      {(p.image || p.image_urls?.[0]) ? (
+                        <img src={p.image || p.image_urls?.[0]} alt="" style={{ width: 64, height: 64, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} onError={e => e.currentTarget.style.display = "none"} />
                       ) : (
                         <div style={{ width: 64, height: 64, borderRadius: 10, background: "var(--surface2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem", flexShrink: 0 }}>📦</div>
                       )}
