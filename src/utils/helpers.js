@@ -101,12 +101,26 @@ export function cloudinaryPlaceholder(url) {
   return optimizeCloudinaryUrl(url, { width: 20, quality: "auto:low" });
 }
 export async function uploadSingleImage(file) {
+  return uploadCloudinaryFile(file);
+}
+
+/** Upload image ou PDF vers Cloudinary (KYC, documents vendeur). */
+export async function uploadCloudinaryFile(file, opts = {}) {
+  if (!file) throw new Error("Fichier manquant");
+  const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+  const resourceType = isPdf ? "raw" : "image";
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", UPLOAD_PRESET);
-  const res  = await fetch(`https://api.cloudinary.com/v1_1/dulwb03nf/image/upload`, { method:"POST", body:fd });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+  if (opts.folder) fd.append("folder", opts.folder);
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+    { method: "POST", body: fd }
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.error) {
+    throw new Error(data.error?.message || "Échec de l'envoi du fichier");
+  }
   return data.secure_url;
 }
 
