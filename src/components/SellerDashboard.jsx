@@ -666,7 +666,7 @@ export function SellerDashboard({
       {/* ════ MES PRODUITS ════ */}
       {dashTab === "mesProduits" && (
         <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }} className="dash-page-toolbar">
             <div className="dash-page-title" style={{ marginBottom: 0 }}>📦 {t("products.titleCount", { count: mesProduits.length })}</div>
             <button style={S.btnGreen} onClick={() => setDashTab("ajouterProduit")}>+ {t("products.add")}</button>
           </div>
@@ -1196,7 +1196,7 @@ export function SellerDashboard({
       {dashTab === "wallet" && (
         <>
           <div className="dash-page-title">💰 Mon portefeuille</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }} className="dash-wallet-grid">
             <div style={{ padding: 20, background: "var(--green-pale)", border: "1px solid var(--green-light)", borderRadius: 12 }}>
               <div style={{ fontSize: ".72rem", color: "var(--gray)", fontWeight: 600, marginBottom: 6 }}>SOLDE DISPONIBLE</div>
               <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.8rem", fontWeight: 800, color: "var(--green)" }}>

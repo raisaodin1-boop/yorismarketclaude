@@ -964,6 +964,20 @@ export function AdminDashboard({ user, userData, goPage }) {
       <div className="admin-layout-inner">
       {/* ── SIDEBAR ── */}
       <div className="admin-sidebar">
+        <div className="admin-mobile-quickbar" aria-label="Statistiques rapides">
+          {[
+            { lbl: "Users", v: stats.users, c: "#4fd17d" },
+            { lbl: "Vendeurs", v: stats.vendeurs, c: "#60a5fa" },
+            { lbl: "Commandes", v: stats.orders, c: "#34d399" },
+            { lbl: "Produits", v: stats.products, c: "#fb7185" },
+          ].map((s) => (
+            <div key={s.lbl} className="admin-quick-stat">
+              <span className="admin-quick-stat-val" style={{ color: s.c }}>{s.v}</span>
+              <span className="admin-quick-stat-lbl">{s.lbl}</span>
+            </div>
+          ))}
+        </div>
+
         <div className="admin-sidebar-logo">
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <div style={{ width: 32, height: 32, background: "var(--green)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>⚙️</div>
@@ -977,17 +991,28 @@ export function AdminDashboard({ user, userData, goPage }) {
           </div>
         </div>
 
+        <nav className="admin-nav-scroll" aria-label="Navigation admin">
         {NAV.map(n => {
           const NavIcon = ADMIN_NAV_ICONS[n.id];
           return (
-          <div key={n.id} className={`admin-nav-item${adminTab === n.id ? " active" : ""}`} onClick={() => setAdminTab(n.id)}>
+          <button type="button" key={n.id} className={`admin-nav-item${adminTab === n.id ? " active" : ""}`} onClick={() => setAdminTab(n.id)}>
             <span style={{ display: "flex", alignItems: "center" }}>{NavIcon ? <NavIcon size={18} strokeWidth={2.25} /> : null}</span>
             <span style={{ flex: 1 }}>{n.label}</span>
             {n.badge ? <span style={{ background: "#ce1126", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "1px 6px", borderRadius: 50, minWidth: 18, textAlign: "center" }}>{n.badge}</span> : null}
-          </div>
+          </button>
         );})}
+        </nav>
 
-        <div style={{ padding: "14px 16px 0", borderTop: "1px solid rgba(255,255,255,.07)", marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className="admin-mobile-actions">
+          <button type="button" onClick={() => setRefreshKey(k => k + 1)} style={{ background: "rgba(79,209,125,.12)", color: "#4fd17d", border: "1px solid rgba(79,209,125,.2)" }}>
+            🔄 Actualiser
+          </button>
+          <button type="button" onClick={() => goPage("home")} style={{ background: "rgba(255,255,255,.05)", color: "rgba(255,255,255,.7)", border: "1px solid rgba(255,255,255,.1)" }}>
+            ← Site
+          </button>
+        </div>
+
+        <div className="admin-sidebar-footer">
           <button onClick={() => setRefreshKey(k => k + 1)} style={{ width: "100%", background: "rgba(79,209,125,.12)", color: "#4fd17d", border: "1px solid rgba(79,209,125,.2)", borderRadius: 7, padding: "8px", fontSize: ".75rem", cursor: "pointer" }}>
             🔄 Actualiser les données
           </button>
@@ -997,7 +1022,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         </div>
 
         {/* Mini stats */}
-        <div style={{ padding: "14px 16px", marginTop: 12, borderTop: "1px solid rgba(255,255,255,.07)" }}>
+        <div className="admin-sidebar-stats" style={{ padding: "14px 16px", marginTop: 12, borderTop: "1px solid rgba(255,255,255,.07)" }}>
           <div style={{ fontSize: ".62rem", color: "rgba(255,255,255,.3)", fontWeight: 700, letterSpacing: ".1em", marginBottom: 6 }}>
             STATS RAPIDES
           </div>
