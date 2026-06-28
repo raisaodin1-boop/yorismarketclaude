@@ -873,6 +873,7 @@ export default function YorixApp() {
         dn("📦", "commandes", "orders"),
         dn("💰", "wallet", "wallet"),
         { icon: "🤝", id: "parrainage", label: "Parrainage" },
+        { icon: "🛡", id: "kyc", label: "Vérification" },
       ];
     }
     if (userRole === "delivery") {

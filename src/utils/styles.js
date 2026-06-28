@@ -6027,6 +6027,106 @@ ${dark?`
 @media(max-width:640px){
   :target{scroll-margin-top:80px;}
 }
+
+/* ════════════════════════════════════════
+   VARIANT SELECTOR + PICKER MODAL
+   ════════════════════════════════════════ */
+.variant-selector{margin:0 0 12px;}
+.variant-selector__label{font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:8px;}
+.variant-selector__required{color:var(--red,#e53e3e);}
+.variant-selector__grid{display:flex;flex-wrap:wrap;gap:8px;}
+.variant-chip{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid var(--border);border-radius:20px;background:var(--surface);cursor:pointer;font-size:.78rem;font-weight:600;color:var(--ink);transition:border-color .15s,background .15s,box-shadow .15s;position:relative;min-height:36px;}
+.variant-chip:hover:not(:disabled){border-color:var(--green);box-shadow:0 0 0 2px var(--green-light,#d1fae5);}
+.variant-chip--active{border-color:var(--green);background:var(--green-pale,#f0fdf4);color:var(--green);}
+.variant-chip--sold-out{opacity:.45;cursor:not-allowed;text-decoration:line-through;}
+.variant-chip__img{width:22px;height:22px;border-radius:4px;object-fit:cover;}
+.variant-chip__label{line-height:1;}
+.variant-chip__price{font-size:.68rem;font-weight:700;color:var(--green);margin-left:2px;}
+.variant-chip__oos{font-size:.6rem;color:var(--red,#e53e3e);font-weight:700;position:absolute;top:2px;right:4px;}
+
+.variant-modal{max-width:420px;width:calc(100vw - 32px);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;}
+.variant-modal__header{display:flex;align-items:flex-start;gap:12px;padding:16px 16px 12px;border-bottom:1px solid var(--border);}
+.variant-modal__img{width:72px;height:72px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--surface2);}
+.variant-modal__info{flex:1;min-width:0;}
+.variant-modal__name{font-size:.9rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:4px;}
+.variant-modal__price{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);}
+.variant-modal__stock-warn{font-size:.68rem;color:#d97706;font-weight:600;margin-top:3px;}
+.variant-modal__body{padding:16px;overflow-y:auto;max-height:280px;}
+.variant-modal__hint{font-size:.75rem;color:var(--gray);text-align:center;margin-top:8px;}
+.variant-modal__footer{padding:12px 16px 16px;border-top:1px solid var(--border);}
+
+/* ════════════════════════════════════════
+   WALLET WITHDRAWAL FORM
+   ════════════════════════════════════════ */
+.withdrawal-form{display:flex;flex-direction:column;gap:0;}
+.withdrawal-section{margin-bottom:16px;}
+.withdrawal-label{font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:8px;display:block;}
+.withdrawal-methods{display:flex;flex-direction:column;gap:8px;}
+.withdrawal-method-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;text-align:left;transition:border-color .15s,background .15s;position:relative;width:100%;}
+.withdrawal-method-btn:hover{border-color:var(--green);}
+.withdrawal-method-btn--active{border-color:var(--green);background:var(--green-pale,#f0fdf4);}
+.withdrawal-method-name{font-size:.85rem;font-weight:700;color:var(--ink);}
+.withdrawal-method-hint{font-size:.68rem;color:var(--gray);margin-top:1px;}
+.withdrawal-method-check{margin-left:auto;flex-shrink:0;}
+.withdrawal-quick-btn{padding:5px 10px;border:1px solid var(--green-light,#86efac);border-radius:16px;background:var(--green-pale,#f0fdf4);color:var(--green);font-size:.72rem;font-weight:700;cursor:pointer;transition:background .15s;}
+.withdrawal-quick-btn:hover{background:var(--green);color:#fff;}
+.withdrawal-recap{background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px;}
+.withdrawal-recap__row{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--ink);}
+.withdrawal-recap__row--total{border-top:1px dashed var(--border);padding-top:6px;margin-top:2px;}
+.withdrawal-info{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--gray);margin-bottom:8px;}
+.withdrawal-history{margin-top:16px;border-top:1px solid var(--border);padding-top:12px;}
+.withdrawal-history-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.withdrawal-history-row:last-child{border-bottom:none;}
+.withdrawal-status{font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:12px;}
+.withdrawal-status--pending{background:#fef3c7;color:#92400e;}
+.withdrawal-status--completed{background:#d1fae5;color:#065f46;}
+.withdrawal-status--failed,.withdrawal-status--rejected{background:#fee2e2;color:#991b1b;}
+.withdrawal-done{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 0;}
+.withdrawal-done__icon{margin-bottom:12px;}
+.withdrawal-done__title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
+.withdrawal-done__sub{font-size:.82rem;color:var(--gray);line-height:1.5;}
+
+/* ════════════════════════════════════════
+   KYC SELLER VERIFICATION
+   ════════════════════════════════════════ */
+.kyc-status{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;margin-bottom:16px;font-size:.85rem;font-weight:700;}
+.kyc-status--none{background:var(--surface2);border:1px solid var(--border);color:var(--gray);}
+.kyc-status--pending{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;}
+.kyc-status--verified{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;}
+.kyc-status--rejected{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;}
+.kyc-upload-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface);}
+.kyc-upload-zone:hover{border-color:var(--green);background:var(--green-pale,#f0fdf4);}
+.kyc-upload-zone input{display:none;}
+.kyc-doc-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:.75rem;color:var(--ink);}
+
+/* ════════════════════════════════════════
+   B2B ORDER FORM
+   ════════════════════════════════════════ */
+.b2b-modal{max-width:480px;width:calc(100vw - 32px);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;max-height:90dvh;}
+.b2b-header{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#eff6ff,#fff);}
+.b2b-header__img{width:56px;height:56px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--surface2);}
+.b2b-header__info{flex:1;min-width:0;}
+.b2b-header__name{font-size:.88rem;font-weight:700;color:var(--ink);line-height:1.3;}
+.b2b-header__badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:800;background:#1d4ed8;color:#fff;padding:2px 8px;border-radius:10px;margin-top:3px;}
+.b2b-body{padding:16px;overflow-y:auto;flex:1;}
+.b2b-price-hint{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:.78rem;color:#1d4ed8;margin-bottom:14px;font-weight:600;}
+.b2b-footer{padding:12px 16px 16px;border-top:1px solid var(--border);}
+.b2b-success{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px;}
+.b2b-success__icon{width:56px;height:56px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.b2b-success__title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--ink);margin-bottom:6px;}
+.b2b-success__sub{font-size:.8rem;color:var(--gray);line-height:1.5;}
+
+/* ════════════════════════════════════════
+   ENHANCED REVIEWS
+   ════════════════════════════════════════ */
+.avis-verified{font-size:.62rem;background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:6px;vertical-align:middle;}
+.avis-char-count{font-size:.65rem;color:var(--gray);text-align:right;margin-top:3px;}
+.avis-star-label{font-size:.72rem;font-weight:600;margin-top:4px;min-height:16px;}
+.avis-star-label--1{color:#dc2626;} .avis-star-label--2{color:#f97316;} .avis-star-label--3{color:#ca8a04;} .avis-star-label--4{color:#16a34a;} .avis-star-label--5{color:#059669;}
+
+/* B2B badge on product cards */
+.b2b-card-badge{position:absolute;top:6px;left:6px;background:#1d4ed8;color:#fff;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:6px;letter-spacing:.03em;z-index:2;}
 `;
+
 
 

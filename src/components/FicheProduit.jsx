@@ -15,6 +15,7 @@ import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import { YorixToast, useYorixToast } from "./ui/YorixToast";
+import { B2BOrderForm } from "./B2BOrderForm";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL
@@ -26,6 +27,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
   const [avis, setAvis]                     = useState([]);
   const [showCmdModal, setShowCmdModal]     = useState(false);
   const [showChatModal, setShowChatModal]   = useState(false);
+  const [showB2B, setShowB2B]               = useState(false);
+  const [hasVerifiedPurchase, setHasVerifiedPurchase] = useState(false);
   const { toast, showToast, clearToast } = useYorixToast();
 
   const parseImageUrls = (val) => {
@@ -51,6 +54,17 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
       .order("created_at", { ascending: false })
       .then(({ data }) => setAvis(data || []));
   }, [product.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("orders")
+      .select("id")
+      .eq("user_id", user.id)
+      .contains("items", [{ product_id: product.id }])
+      .limit(1)
+      .then(({ data }) => setHasVerifiedPurchase((data || []).length > 0));
+  }, [user?.id, product.id]);
 
   const avgNote = avis.length
     ? (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1)
@@ -397,6 +411,21 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               </button>
             )}
 
+            {product.b2b_enabled && (
+              <button
+                onClick={() => setShowB2B(true)}
+                style={{
+                  display:"flex", alignItems:"center", gap:8, width:"100%", padding:"11px 14px",
+                  background:"#eff6ff", border:"1.5px solid #bfdbfe", borderRadius:10,
+                  cursor:"pointer", fontSize:".82rem", fontWeight:700, color:"#1d4ed8",
+                  marginBottom:12, justifyContent:"center",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                Commander en gros — {Number(product.prix_gros || product.prix).toLocaleString()} FCFA/unité (min {product.min_qty_gros || 10})
+              </button>
+            )}
+
             {/* Si c'est son propre produit, afficher un message informatif */}
             {user?.id && product.vendeur_id === user.id && (
               <div style={{
@@ -427,6 +456,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   userId={user.id}
                   userName={userData?.nom || user.email}
                   onSubmit={newAvis => setAvis(prev => [{ ...newAvis, id: Date.now() }, ...prev])}
+                  verifiedPurchase={hasVerifiedPurchase}
                 />
               )}
               {avis.length === 0 ? (
@@ -440,6 +470,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                       <div>
                         <span className="avis-auteur">{a.auteur}</span>
                         <Stars value={a.note} />
+                        {a.verified_purchase && <span style={{ fontSize:".62rem", background:"#d1fae5", color:"#065f46", padding:"1px 6px", borderRadius:10, fontWeight:700, marginLeft:6 }}>Achat vérifié</span>}
                       </div>
                       <span className="avis-date">
                         {a.created_at ? new Date(a.created_at).toLocaleDateString("fr-FR") : ""}
@@ -457,6 +488,15 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 user={user}
                 userData={userData}
                 onClose={() => setShowCmdModal(false)}
+              />
+            )}
+            {showB2B && (
+              <B2BOrderForm
+                product={product}
+                user={user}
+                userData={userData}
+                onClose={() => setShowB2B(false)}
+                onSuccess={() => setShowB2B(false)}
               />
             )}
           </div>

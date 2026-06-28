@@ -20,6 +20,8 @@ import {
 } from "../lib/catalogMutations";
 import { showAppToast } from "../lib/appToast";
 import { ReferralPanel } from "./ReferralPanel";
+import { WalletWithdrawal } from "./WalletWithdrawal";
+import { SellerKYC } from "./SellerKYC";
 import { BusinessAiAssistant } from "./seller/BusinessAiAssistant";
 import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons";
 
@@ -70,6 +72,10 @@ export function SellerDashboard({
   const [progress, setProgress] = useState(0);
   const [saving, setSaving]     = useState(false);
   const inputRef                = useRef(null);
+
+  // ── Variantes produit ──
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variantRows, setVariantRows] = useState([{ id: crypto.randomUUID(), label: "", prix: "", stock: "" }]);
 
   // ── Édition inline produit ──
   const [editingId, setEditingId] = useState(null);
@@ -200,8 +206,13 @@ export function SellerDashboard({
       isPack: false,
       packDescription: "",
       linkedProductIds: [],
+      b2bEnabled: false,
+      prixGros: "",
+      minQtyGros: "",
     });
     setImages([]); setPreviews([]); setProgress(0);
+    setHasVariants(false);
+    setVariantRows([{ id: crypto.randomUUID(), label: "", prix: "", stock: "" }]);
   };
 
   const saveNewProduct = async () => {
@@ -280,12 +291,20 @@ export function SellerDashboard({
           })
         : catPayload;
 
+      const validVariants = hasVariants
+        ? variantRows
+            .filter((v) => v.label.trim() && v.prix && !isNaN(Number(v.prix)))
+            .map((v) => ({ id: v.id, label: v.label.trim(), prix: Number(v.prix), stock: Number(v.stock || 0) }))
+        : [];
+
       const { error } = await supabase.from("products").insert({
         name_fr:        form.name_fr,
         name_en:        form.name_en || form.name_fr,
         description_fr: form.description_fr,
         prix:           Number(form.prix),
-        stock:          Number(form.stock || 0),
+        stock:          hasVariants ? validVariants.reduce((s, v) => s + v.stock, 0) : Number(form.stock || 0),
+        has_variants:   hasVariants && validVariants.length > 0,
+        variants:       validVariants,
         categorie:      packCatPayload.categorie || "Autre",
         category_id:    packCatPayload.category_id,
         ville:          form.ville || "Douala",
@@ -301,6 +320,9 @@ export function SellerDashboard({
         pack_linked_product_ids: isPack ? form.linkedProductIds : [],
         pack_submitted_at: isPack ? new Date().toISOString() : null,
         ...micPayload,
+        b2b_enabled: Boolean(form.b2bEnabled),
+        prix_gros: form.b2bEnabled && form.prixGros ? Number(form.prixGros) : null,
+        min_qty_gros: form.b2bEnabled && form.minQtyGros ? Number(form.minQtyGros) : 10,
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;
@@ -835,10 +857,71 @@ export function SellerDashboard({
                 </span>
               )}
             </div>
-            <div className="form-group">
-              <label className="form-label">Stock disponible</label>
-              <input className="form-input" type="number" min="0" placeholder="Ex: 10" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
+            {!hasVariants && (
+              <div className="form-group">
+                <label className="form-label">Stock disponible</label>
+                <input className="form-input" type="number" min="0" placeholder="Ex: 10" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
+              </div>
+            )}
+
+            {/* Variantes */}
+            <div className="form-group full">
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: ".82rem", fontWeight: 600, color: "var(--ink)" }}>
+                <input type="checkbox" checked={hasVariants} onChange={e => setHasVariants(e.target.checked)} />
+                🎨 Ce produit a des variantes (taille, couleur, modèle…)
+              </label>
+              {hasVariants && (
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <p style={{ fontSize: ".72rem", color: "var(--gray)", margin: 0 }}>
+                    Définissez chaque variante avec un libellé (ex: Rouge XL), un prix et un stock.
+                  </p>
+                  {variantRows.map((v, i) => (
+                    <div key={v.id} style={{ display: "grid", gridTemplateColumns: "1fr 100px 80px 32px", gap: 6, alignItems: "center" }}>
+                      <input
+                        className="form-input"
+                        placeholder="Ex: Rouge / XL / 500ml"
+                        value={v.label}
+                        onChange={e => setVariantRows(rows => rows.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))}
+                        style={{ fontSize: ".8rem" }}
+                      />
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0"
+                        placeholder="Prix"
+                        value={v.prix}
+                        onChange={e => setVariantRows(rows => rows.map((r, idx) => idx === i ? { ...r, prix: e.target.value } : r))}
+                        style={{ fontSize: ".8rem" }}
+                      />
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0"
+                        placeholder="Stock"
+                        value={v.stock}
+                        onChange={e => setVariantRows(rows => rows.map((r, idx) => idx === i ? { ...r, stock: e.target.value } : r))}
+                        style={{ fontSize: ".8rem" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setVariantRows(rows => rows.filter((_, idx) => idx !== i))}
+                        style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", color: "var(--gray)", fontSize: "1rem", width: 32, height: 32 }}
+                        disabled={variantRows.length <= 1}
+                        aria-label="Supprimer variante"
+                      >×</button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setVariantRows(rows => [...rows, { id: crypto.randomUUID(), label: "", prix: form.prix || "", stock: "" }])}
+                    style={{ background: "none", border: "1px dashed var(--green)", borderRadius: 8, color: "var(--green)", fontSize: ".78rem", fontWeight: 700, padding: "8px 12px", cursor: "pointer", width: "fit-content" }}
+                  >
+                    + Ajouter une variante
+                  </button>
+                </div>
+              )}
             </div>
+
             {!form.isPack ? (
               <div className="form-group full">
                 <label className="form-label">Catégorie <span>*</span></label>
@@ -920,6 +1003,25 @@ export function SellerDashboard({
                 <input type="checkbox" checked={form.escrow} onChange={e => setForm(f => ({ ...f, escrow: e.target.checked }))} />
                 🔐 Activer la protection Escrow (recommandé)
               </label>
+            </div>
+
+            <div className="form-group full">
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:".82rem", fontWeight:600, color:"var(--ink)" }}>
+                <input type="checkbox" checked={form.b2bEnabled||false} onChange={e => setForm(f => ({...f, b2bEnabled: e.target.checked}))} />
+                🏭 Activer la vente en gros (B2B)
+              </label>
+              {form.b2bEnabled && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10 }}>
+                  <div className="form-group">
+                    <label className="form-label">Prix de gros (FCFA/unité)</label>
+                    <input className="form-input" type="number" min="0" placeholder="Ex: 18000" value={form.prixGros||""} onChange={e => setForm(f => ({...f, prixGros: e.target.value}))} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Quantité minimum</label>
+                    <input className="form-input" type="number" min="2" placeholder="Ex: 10" value={form.minQtyGros||""} onChange={e => setForm(f => ({...f, minQtyGros: e.target.value}))} />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-group full seller-pack-panel">
@@ -1079,6 +1181,17 @@ export function SellerDashboard({
         <ReferralPanel user={user} userData={userData} />
       )}
 
+      {/* ════ KYC ════ */}
+      {dashTab === "kyc" && (
+        <>
+          <div className="dash-page-title">🛡 Vérification d'identité (KYC)</div>
+          <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 16, lineHeight: 1.6 }}>
+            La vérification KYC renforce la confiance des acheteurs et débloque des fonctionnalités avancées (B2B, Escrow prioritaire, badge vendeur vérifié).
+          </p>
+          <SellerKYC userId={user.id} />
+        </>
+      )}
+
       {/* ════ WALLET ════ */}
       {dashTab === "wallet" && (
         <>
@@ -1097,24 +1210,11 @@ export function SellerDashboard({
               </div>
             </div>
           </div>
-          <div style={S.card}>
-            <div style={S.secTitle}>💸 Retrait</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-              <button style={{ ...S.btnGhost, padding: 14, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: "1.4rem" }}>📱</span>
-                <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem" }}>MTN MoMo</span>
-                <span style={{ fontSize: ".7rem", color: "var(--gray)" }}>676 935 195</span>
-              </button>
-              <button style={{ ...S.btnGhost, padding: 14, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: "1.4rem" }}>🔶</span>
-                <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem" }}>Orange Money</span>
-                <span style={{ fontSize: ".7rem", color: "var(--gray)" }}>696 565 654</span>
-              </button>
-            </div>
-            <div style={{ background: "var(--surface2)", borderRadius: 8, padding: "10px 14px", fontSize: ".75rem", color: "var(--gray)" }}>
-              ℹ️ Retrait minimum : 5 000 FCFA · Commission Yorix (5%) déduite automatiquement à la vente
-            </div>
-          </div>
+          <WalletWithdrawal
+            userId={user.id}
+            solde={wallet.solde}
+            onSuccess={(amt) => setWallet(w => ({ ...w, solde: w.solde - amt }))}
+          />
         </>
       )}
     </>
