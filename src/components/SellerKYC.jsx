@@ -145,14 +145,22 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     }));
   };
 
-  const uploadFile = async (file, slot) => {
+  const uploadFile = async (file, slot, attempt = 0) => {
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `${userId}/${slot}_${Date.now()}.${ext}`;
-    const { data, error } = await supabase.storage.from("kyc-docs").upload(path, file, { upsert: true, contentType: file.type });
-    if (error) throw error;
-    const { data: signed, error: signErr } = await supabase.storage.from("kyc-docs").createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
-    if (signErr) throw signErr;
-    return signed.signedUrl;
+    try {
+      const { data, error } = await supabase.storage.from("kyc-docs").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: signed, error: signErr } = await supabase.storage.from("kyc-docs").createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
+      if (signErr) throw signErr;
+      return signed.signedUrl;
+    } catch (e) {
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        return uploadFile(file, slot, attempt + 1);
+      }
+      throw e;
+    }
   };
 
   const handleSubmit = async () => {
@@ -160,19 +168,31 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     if (!fileCniR && !kyc?.doc_url)  { showAppToast("La photo recto de la CNI est obligatoire", "error"); return; }
     setSaving(true);
     try {
-      const [url1, url2, urlSelfie, urlShop] = await Promise.all([
-        fileCniR   ? uploadFile(fileCniR,   "cni_recto")  : Promise.resolve(kyc?.doc_url       || null),
-        fileCniV   ? uploadFile(fileCniV,   "cni_verso")  : Promise.resolve(kyc?.doc_url2      || null),
-        fileSelfie ? uploadFile(fileSelfie, "selfie")     : Promise.resolve(kyc?.selfie_url    || null),
-        fileShop   ? uploadFile(fileShop,   "shop")       : Promise.resolve(kyc?.shop_photo_url|| null),
-      ]);
+      // Uploads séquentiels pour éviter les timeouts sur connexion mobile
+      const url1      = fileCniR   ? await uploadFile(fileCniR,   "cni_recto") : (kyc?.doc_url        || null);
+      const url2      = fileCniV   ? await uploadFile(fileCniV,   "cni_verso") : (kyc?.doc_url2       || null);
+      const urlSelfie = fileSelfie ? await uploadFile(fileSelfie, "selfie")    : (kyc?.selfie_url     || null);
+      const urlShop   = fileShop   ? await uploadFile(fileShop,   "shop")      : (kyc?.shop_photo_url || null);
 
       const isFullKyc = Boolean(urlSelfie && urlShop && (form.seller_type === "particulier" || form.rccm));
       const payload = {
         user_id:        userId,
-        ...form,
+        full_name:      form.full_name,
         birth_date:     form.birth_date   || null,
+        birth_place:    form.birth_place,
+        cni_number:     form.cni_number,
         cni_expiry:     form.cni_expiry   || null,
+        phone:          form.phone,
+        email:          form.email,
+        whatsapp:       form.whatsapp     || null,
+        seller_type:    form.seller_type,
+        company_name:   form.company_name || null,
+        rccm:           form.rccm         || null,
+        country:        form.country,
+        city:           form.city,
+        quartier:       form.quartier,
+        address:        form.address,
+        declaration:    form.declaration,
         doc_url:        url1,
         doc_url2:       url2,
         selfie_url:     urlSelfie,
@@ -184,9 +204,9 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         reviewer_note:  null,
       };
 
-      await supabase.from("seller_kyc").upsert(payload, { onConflict: "user_id" });
+      const { error: upsertErr } = await supabase.from("seller_kyc").upsert(payload, { onConflict: "user_id" });
+      if (upsertErr) throw upsertErr;
 
-      // Notification admin
       await supabase.from("notifications").insert({
         user_id: userId,
         type: "kyc",
@@ -198,7 +218,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       setKyc({ ...payload, status: "pending" });
       showAppToast("Dossier envoyé — vérification sous 24–48h", "success", 5000);
     } catch (e) {
-      showAppToast("Erreur : " + e.message, "error");
+      showAppToast("Erreur : " + (e?.message || "Connexion interrompue, réessayez"), "error");
     }
     setSaving(false);
   };
