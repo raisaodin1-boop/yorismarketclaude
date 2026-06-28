@@ -40,21 +40,31 @@ export function SellerKYC({ userId }) {
       .then(({ data }) => { setKyc(data); setLoading(false); });
   }, [userId]);
 
-  const uploadFile = async (file, path) => {
-    const { data, error } = await supabase.storage.from("kyc-docs").upload(path, file, { upsert: true });
+  const sanitizeFileName = (name) =>
+    name.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_{2,}/g, "_").slice(0, 80);
+
+  const uploadFile = async (file, slot) => {
+    const ext = file.name.split(".").pop().toLowerCase() || "jpg";
+    const safeName = `${userId}/${slot}_${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from("kyc-docs")
+      .upload(safeName, file, { upsert: true, contentType: file.type });
     if (error) throw error;
-    const { data: urlData } = supabase.storage.from("kyc-docs").getPublicUrl(data.path);
-    return urlData.publicUrl;
+    // Bucket privé → signed URL valable 10 ans
+    const { data: signed, error: signErr } = await supabase.storage
+      .from("kyc-docs")
+      .createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
+    if (signErr) throw signErr;
+    return signed.signedUrl;
   };
 
   const handleSubmit = async () => {
     if (!file1) { showAppToast("Ajoutez au moins le recto du document", "error"); return; }
     setSaving(true);
     try {
-      const ts = Date.now();
-      const url1 = await uploadFile(file1, `${userId}/doc1_${ts}_${file1.name}`);
+      const url1 = await uploadFile(file1, "doc1");
       let url2 = null;
-      if (file2) url2 = await uploadFile(file2, `${userId}/doc2_${ts}_${file2.name}`);
+      if (file2) url2 = await uploadFile(file2, "doc2");
       await supabase.from("seller_kyc").upsert({
         user_id:      userId,
         doc_type:     docType,
