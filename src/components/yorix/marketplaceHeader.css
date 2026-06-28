@@ -1,0 +1,213 @@
+/* Marketplace header — recherche large, barre catégories, strip confiance */
+
+.navbar--marketplace .nav-search-wrap {
+  flex: 1 1 auto;
+  max-width: min(680px, 52vw);
+  min-width: 120px;
+}
+
+@media (min-width: 900px) {
+  .navbar--marketplace .nav-search-wrap {
+    max-width: 720px;
+  }
+}
+
+.navbar--marketplace .nav-search input {
+  font-size: 0.88rem;
+  padding: 10px 12px;
+}
+
+.yorix-trust-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 7px 16px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 8%, var(--surface)), var(--surface2));
+  border-bottom: 1px solid var(--border);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.yorix-trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--green) 22%, var(--border));
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.yorix-trust-pill:hover {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+}
+
+.yorix-trust-pill--static {
+  cursor: default;
+}
+
+.yorix-trust-pill--static:hover {
+  border-color: color-mix(in srgb, var(--green) 22%, var(--border));
+  background: var(--surface);
+}
+
+.yorix-trust-dot {
+  opacity: 0.35;
+  font-weight: 400;
+}
+
+.yorix-cat-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  min-height: 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 769px) {
+  .yorix-cat-bar {
+    display: flex;
+  }
+}
+
+.yorix-cat-bar-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: none;
+  padding: 6px 0;
+}
+
+.yorix-cat-bar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.yorix-cat-pill {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.yorix-cat-pill:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.yorix-cat-pill--wholesale {
+  border-color: color-mix(in srgb, #f59e0b 35%, var(--border));
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 8%, var(--surface));
+}
+
+.yorix-cat-pill--wholesale:hover {
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* Cartes produit enrichies */
+.prod-enriched-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 4px;
+}
+
+.prod-enriched-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.3;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--gray);
+}
+
+.prod-enriched-chip--moq {
+  border-color: color-mix(in srgb, #f59e0b 25%, var(--border));
+  color: #b45309;
+}
+
+.prod-enriched-chip--protect {
+  border-color: color-mix(in srgb, var(--green) 25%, var(--border));
+  color: var(--green);
+}
+
+.prod-enriched-chip--delivery {
+  border-color: color-mix(in srgb, #0891b2 22%, var(--border));
+  color: #0e7490;
+}
+
+.prod-enriched-chip--verified {
+  border-color: color-mix(in srgb, var(--green) 30%, var(--border));
+  color: var(--green);
+}
+
+.prod-seller-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  color: var(--green);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prod-seller-link:hover {
+  color: var(--green-mid, #1a6b3a);
+}
+
+.mhub-moq-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0 4px;
+}
+
+.mhub-moq-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.mhub-moq-btn.is-active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}

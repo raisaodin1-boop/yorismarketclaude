@@ -11,6 +11,7 @@ const HREFLANG_SLUG_PAIRS = [
   ["achat-en-ligne-cameroun", "buy-online-cameroon"],
   ["services-cameroun", "services-cameroon"],
   ["immobilier-cameroun", "properties-cameroon"],
+  ["emploi-cameroun", "jobs-cameroon"],
   ["ecommerce-cameroun", "online-shopping-cameroon"],
   ["livraison-cameroun", "delivery-cameroon"],
   ["vendre-en-ligne-cameroun", "sell-online-cameroon"],
@@ -106,6 +107,24 @@ export const SEO_URL_ALIASES = {
     description:
       "Cameroon property hub on Yorix.cm: verified professionals, visibility programs and curated housing supply over time.",
     keywords: "real estate Cameroon, property Cameroon, Douala Yaoundé housing, Yorix",
+  },
+  "emploi-cameroun": {
+    lang: "fr",
+    page: "business",
+    pathBare: "/emploi-cameroun",
+    title: "Emploi & carrières Cameroun | Vendeur, livreur, prestataire | Yorix.cm",
+    description:
+      "Rejoignez Yorix au Cameroun : devenez vendeur, livreur ou prestataire, développez votre activité sur la marketplace locale.",
+    keywords: "emploi Cameroun, recrutement marketplace, vendeur livreur prestataire Douala Yaoundé",
+  },
+  "jobs-cameroon": {
+    lang: "en",
+    page: "business",
+    pathBare: "/jobs-cameroon",
+    title: "Jobs & careers in Cameroon | Yorix marketplace",
+    description:
+      "Join Yorix in Cameroon as a seller, delivery partner or service provider on the local marketplace.",
+    keywords: "jobs Cameroon, marketplace careers, seller delivery provider Yorix",
   },
   "ecommerce-cameroun": {
     lang: "fr",

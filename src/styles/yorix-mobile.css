@@ -1,0 +1,682 @@
+/**
+ * YORIX Mobile Layer — fixes visuels + responsive propre
+ * Chargé après yorix-design-system.css
+ */
+
+/* ─── Base mobile shell ─── */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body,
+#root {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+button,
+[role="button"],
+.yx-btn,
+.prod-card,
+.tab,
+.cart-suggestion-add,
+.qty-btn {
+  touch-action: manipulation;
+}
+
+/* Pas de hover “desktop” sur tactile */
+@media (hover: none) and (pointer: coarse) {
+  .prod-card:hover,
+  .yx-card--interactive:hover,
+  .dash-stat-card:hover,
+  .stat-card:hover {
+    transform: none !important;
+    box-shadow: var(--yorix-sh-sm) !important;
+  }
+
+  .prod-card:hover .prod-img-wrap img {
+    transform: none !important;
+  }
+}
+
+/* ─── Product cards mobile ─── */
+@media (max-width: 768px) {
+  .prod-img-wrap {
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    min-height: 0 !important;
+  }
+
+  .prod-info {
+    padding: 10px !important;
+    gap: 4px !important;
+  }
+
+  .prod-name {
+    font-size: 0.8125rem !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  .price {
+    font-size: 0.9375rem !important;
+  }
+
+  .add-btn,
+  .wish-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .prod-actions .btn-cmd-sm,
+  .prod-actions button {
+    min-height: 44px !important;
+    font-size: 0.8125rem !important;
+  }
+
+  .pbadge-r,
+  .pbadge-y,
+  .pbadge-flash,
+  .pbadge-promo {
+    font-size: 0.625rem !important;
+    padding: 3px 8px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .prod-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+/* ─── Header mobile ─── */
+@media (max-width: 768px) {
+  .topbar {
+    display: none !important;
+  }
+
+  .nav-tabs-row {
+    padding: 0 8px !important;
+  }
+
+  .tab {
+    padding: 10px 12px !important;
+    font-size: 0.75rem !important;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .yorix-emotional-nav {
+    padding: 6px 10px !important;
+    gap: 4px !important;
+  }
+
+  .yorix-emotional-nav-btn {
+    min-height: 36px !important;
+    padding: 8px 12px !important;
+    font-size: 0.6875rem !important;
+  }
+
+  .pay-strip {
+    font-size: 0.625rem !important;
+    padding: 6px 10px !important;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  .navbar .icon-btn,
+  .navbar .dark-toggle {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .nav-search input {
+    font-size: 16px !important;
+    min-height: 44px !important;
+  }
+
+  .nav-search button.nav-search-submit {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ─── Sections & typography mobile ─── */
+@media (max-width: 768px) {
+  .sec {
+    padding: 16px 12px !important;
+  }
+
+  .sec-title {
+    font-size: clamp(1.25rem, 5vw, 1.5rem) !important;
+    line-height: 1.2 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .yorix-ds-lead {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .yorix-trust-strip,
+  .yx-trust-strip {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 12px 14px !important;
+  }
+
+  .trust-strip {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .trust-strip__item {
+    font-size: 0.6875rem !important;
+  }
+}
+
+/* ─── Fiche produit mobile ─── */
+@media (max-width: 768px) {
+  .fiche-produit-grid {
+    gap: 20px !important;
+  }
+
+  .fiche-produit-hero-img {
+    min-height: 240px !important;
+    border-radius: var(--yx-radius-card) !important;
+  }
+
+  .img-main {
+    min-height: 240px !important;
+    max-height: 360px !important;
+    object-fit: contain !important;
+  }
+
+  .img-gallery {
+    scroll-snap-type: x mandatory !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 8px !important;
+  }
+
+  .img-gallery-thumb {
+    scroll-snap-align: start !important;
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  .fp-title,
+  .fiche-produit-title {
+    font-size: clamp(1.125rem, 4.5vw, 1.375rem) !important;
+    line-height: 1.25 !important;
+  }
+
+  .fp-price,
+  .product-price {
+    font-size: clamp(1.375rem, 5vw, 1.625rem) !important;
+  }
+
+  /* Barre sticky achat mobile */
+  .yx-pdp-sticky-bar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(62px + env(safe-area-inset-bottom));
+    z-index: 510;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
+  }
+
+  .yx-pdp-sticky-bar__price {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--green);
+    line-height: 1.15;
+  }
+
+  .yx-pdp-sticky-bar__price small {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--gray);
+  }
+
+  .yx-pdp-sticky-bar__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .yx-pdp-sticky-bar__btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 16px;
+    border-radius: var(--yx-radius-btn);
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    touch-action: manipulation;
+  }
+
+  .yx-pdp-sticky-bar__btn--primary {
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(26, 107, 58, 0.28);
+  }
+
+  .yx-pdp-sticky-bar__btn--cart {
+    background: var(--surface2);
+    color: var(--green);
+    border: 1.5px solid var(--border);
+    padding: 0 12px;
+  }
+
+  .yx-pdp-sticky-bar__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Espace pour barre sticky + bottom nav */
+  .yx-pdp-page {
+    padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .yx-pdp-sticky-bar {
+    display: none !important;
+  }
+}
+
+/* ─── Checkout mobile ─── */
+@media (max-width: 768px) {
+  .checkout-page-wrap {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .card.checkout-form-card {
+    padding: 14px !important;
+  }
+
+  .checkout-trust-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .checkout-trust-row span {
+    text-align: center;
+  }
+
+  .checkout-pay-recap-total {
+    font-size: 1rem !important;
+  }
+
+  .form-submit,
+  .checkout-page-wrap .btn-green {
+    min-height: 48px !important;
+    font-size: 0.9375rem !important;
+  }
+}
+
+/* ─── Cart mobile ─── */
+@media (max-width: 768px) {
+  .cart-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .cart-footer .btn-green,
+  .cart-footer button {
+    min-height: 48px !important;
+  }
+
+  .ci-qty button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .cart-page-grid {
+    gap: 16px !important;
+  }
+}
+
+/* ─── Mobile bottom nav ─── */
+@media (max-width: 768px) {
+  .mobile-nav {
+    display: block !important;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--surface) 92%, transparent) !important;
+  }
+
+  .mn-inner {
+    height: 62px !important;
+  }
+
+  .mn-item {
+    min-height: 52px !important;
+    padding: 6px 4px !important;
+  }
+
+  .mn-icon-wrap {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .mn-label {
+    font-size: 0.625rem !important;
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .yx-mobile-auth-strip {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .yx-mobile-auth-strip__btn {
+    flex: 1;
+    min-height: 44px;
+    border-radius: var(--yx-radius-btn);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    touch-action: manipulation;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .yx-mobile-auth-strip__btn--ghost {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .yx-mobile-auth-strip__btn--primary {
+    background: var(--green);
+    border: none;
+    color: #fff;
+    flex: 2;
+    box-shadow: 0 4px 14px rgba(26, 107, 58, 0.25);
+  }
+
+  /* FAB au-dessus de la nav + bande auth */
+  .yorix-fab-stack {
+    bottom: calc(
+      72px + env(safe-area-inset-bottom) +
+      var(--yx-mobile-auth-extra, 0px)
+    ) !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+  }
+
+  body:has(.yx-mobile-auth-strip) {
+    --yx-mobile-auth-extra: 52px;
+  }
+
+  body:has(.yx-pdp-sticky-bar) .yorix-fab-stack {
+    bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .mn-icon svg {
+    display: block;
+    stroke: currentColor;
+  }
+
+  .mn-item.active .mn-icon svg {
+    color: var(--green);
+  }
+
+  .mn-badge--new {
+    background: var(--green) !important;
+    font-size: 0.45rem !important;
+    min-width: 20px !important;
+    height: 14px !important;
+  }
+
+  /* Contenu principal — espace pour bottom nav */
+  main#main-content {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body:has(.yx-mobile-auth-strip) main#main-content {
+    padding-bottom: calc(124px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ─── Modals mobile ─── */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92dvh !important;
+  }
+
+  .modal-close {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ─── Dashboard mobile ─── */
+@media (max-width: 768px) {
+  .dash-layout {
+    flex-direction: column !important;
+  }
+
+  .dash-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 40 !important;
+    border-radius: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .dash-stat-card,
+  .stat-card {
+    padding: 14px !important;
+  }
+
+  .msg-hub {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 70dvh !important;
+  }
+}
+
+/* ─── Footer mobile ─── */
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    padding-top: 16px !important;
+  }
+
+  .footer-trust-strip {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+}
+
+/* ─── Bonus: Back to top ─── */
+.yx-back-to-top {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 515;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--green);
+  box-shadow: var(--yorix-sh-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity var(--yorix-t-base),
+    visibility var(--yorix-t-base),
+    transform var(--yorix-t-base);
+  touch-action: manipulation;
+}
+
+.yx-back-to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (min-width: 901px) {
+  .yx-back-to-top {
+    bottom: calc(24px + env(safe-area-inset-bottom));
+    right: max(20px, env(safe-area-inset-right));
+  }
+}
+
+body:has(.yx-mobile-auth-strip) .yx-back-to-top {
+  bottom: calc(124px + env(safe-area-inset-bottom));
+}
+
+body:has(.yx-pdp-sticky-bar) .yx-back-to-top {
+  bottom: calc(130px + env(safe-area-inset-bottom));
+}
+
+/* ─── Bonus: scroll progress ─── */
+.yx-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green), var(--yx-gold));
+  z-index: 9999;
+  transform-origin: left;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+
+/* ─── Hero mobile ─── */
+@media (max-width: 768px) {
+  .hero {
+    padding: 32px 16px 40px !important;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem) !important;
+  }
+
+  .sf input {
+    font-size: 16px !important;
+    min-height: 48px !important;
+  }
+}
+
+/* ─── Fix overflow tables ─── */
+.table-wrap,
+.admin-table-wrap,
+.dash-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* ─── Notification drawer mobile ─── */
+@media (max-width: 768px) {
+  .notif-drawer {
+    top: auto !important;
+    bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-height: min(70dvh, 520px) !important;
+  }
+}
+
+/* ─── Commission / escrow boxes ─── */
+.commission-box {
+  border-radius: var(--yx-radius-btn) !important;
+  padding: 12px 14px !important;
+}
+
+/* ─── User menu drawer ─── */
+@media (max-width: 768px) {
+  .umd-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ─── AI panels (Business / Logistics / Credit / Protect+) ─── */
+@media (max-width: 768px) {
+  .dash-content .yai-panel,
+  .prod-form .yai-panel,
+  .sec .yai-panel {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .dash-content .yai-panel--credit {
+    order: -1;
+  }
+
+  .fiche-produit-grid .protect-plus {
+    grid-column: 1 / -1;
+  }
+
+  .livraison-page .yai-panel,
+  .checkout-page .yai-panel {
+    margin-top: 12px;
+  }
+}

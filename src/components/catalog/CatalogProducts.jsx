@@ -66,6 +66,7 @@ export function CatalogProducts({
   addToCart,
   toggleWish,
   openProductUrl,
+  openSellerUrl,
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const debouncedSearch = useDebounced(search || "", 350);
@@ -192,6 +193,7 @@ export function CatalogProducts({
             onWish={toggleWish}
             wishlist={wishlist}
             onOpenProductUrl={openProductUrl}
+            onOpenSellerUrl={openSellerUrl}
             siteLocale={siteLocale}
           />
           {isPlaceholder && <SkeletonRow count={4} />}

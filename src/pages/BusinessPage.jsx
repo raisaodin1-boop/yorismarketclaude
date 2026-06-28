@@ -12,14 +12,13 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { BusinessForm } from "../components/BusinessForm";
+import { ContentIcon } from "../lib/contentIcons";
+import { BarChart3, Rocket, GraduationCap, MessageCircle, Shield, TrendingUp, Zap, Briefcase, Flag, CreditCard, Package } from "lucide-react";
 
-// ─────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────
 const PILIERS = [
   {
     id: "sourcing",
-    icon: "🏬",
+    iconKey: "store",
     color: "#1a6b3a",
     title: "Achat groupé & sourcing",
     desc: "Regroupements d'offres marketplace, prix négociés, catalogue vérifié de 500+ fournisseurs camerounais.",
@@ -27,7 +26,7 @@ const PILIERS = [
   },
   {
     id: "visibility",
-    icon: "📣",
+    iconKey: "megaphone",
     color: "#f59e0b",
     title: "Visibilité & campagnes",
     desc: "Mise en avant produits/services, boosts ciblés Douala/Yaoundé/villes secondaires, ads natives.",
@@ -35,7 +34,7 @@ const PILIERS = [
   },
   {
     id: "payment",
-    icon: "🏦",
+    iconKey: "creditCard",
     color: "#2563eb",
     title: "Paiements traçables",
     desc: "MTN MoMo, Orange Money, Escrow Yorix, factures pro automatiques, conformité fiscale.",
@@ -43,7 +42,7 @@ const PILIERS = [
   },
   {
     id: "logistic",
-    icon: "🚚",
+    iconKey: "truck",
     color: "#0891b2",
     title: "Logistique & livraison",
     desc: "Yorix Ride pour vos commandes, tarifs B2B dégressifs, livraison intra-ville et inter-villes.",
@@ -51,7 +50,7 @@ const PILIERS = [
   },
   {
     id: "training",
-    icon: "🎓",
+    iconKey: "graduationCap",
     color: "#7c3aed",
     title: "Formation équipes",
     desc: "Yorix Academy : formez vos commerciaux, magasiniers et livreurs aux outils digitaux modernes.",
@@ -59,7 +58,7 @@ const PILIERS = [
   },
   {
     id: "growth",
-    icon: "📈",
+    iconKey: "trendingUp",
     color: "#dc2626",
     title: "Croissance multi-ville",
     desc: "Expansion régionale, support diaspora business, partenariats stratégiques, audit gratuit.",
@@ -68,88 +67,46 @@ const PILIERS = [
 ];
 
 const SOLUTIONS = [
-  {
-    id: "pme",
-    emoji: "🏢",
-    title: "PME & Startups",
-    desc: "Solutions clé en main : marketplace, paiements, livraison. Lancez votre activité en 7 jours.",
-    perks: ["Setup en 1 semaine", "Paiements MoMo intégrés", "Support dédié 7j/7"],
-    color: "#1a6b3a"
-  },
-  {
-    id: "retail",
-    emoji: "🏪",
-    title: "Boutiques & Retail",
-    desc: "Digitalisez votre boutique physique : catalogue en ligne, click & collect, fidélisation.",
-    perks: ["Catalogue illimité", "Click & collect", "Programme fidélité"],
-    color: "#f59e0b"
-  },
-  {
-    id: "distrib",
-    emoji: "📦",
-    title: "Distributeurs",
-    desc: "Gérez vos réseaux de distribution : commandes en gros, multi-points, livraison optimisée.",
-    perks: ["Tarifs dégressifs", "Multi-livraison", "Gestion stocks"],
-    color: "#2563eb"
-  },
-  {
-    id: "services",
-    emoji: "👷",
-    title: "Réseaux prestataires",
-    desc: "Coordonnez vos équipes terrain : interventions, planning, facturation, satisfaction client.",
-    perks: ["Planning équipes", "Facturation auto", "Suivi terrain"],
-    color: "#7c3aed"
-  },
-  {
-    id: "diaspora",
-    emoji: "✈️",
-    title: "Diaspora business",
-    desc: "Investissez ou lancez au Cameroun depuis l'étranger : pilotage à distance, partenaires locaux.",
-    perks: ["Gestion à distance", "Partenaires vérifiés", "Reporting mensuel"],
-    color: "#dc2626"
-  },
-  {
-    id: "expansion",
-    emoji: "🌍",
-    title: "Expansion régionale",
-    desc: "Étendez votre présence sur tout le Cameroun : Douala, Yaoundé, Bafoussam, Bamenda, Garoua.",
-    perks: ["10 régions", "Logistique inter-villes", "Marketing local"],
-    color: "#0891b2"
-  },
+  { id: "pme", iconKey: "building", title: "PME & Startups", desc: "Solutions clé en main : marketplace, paiements, livraison. Lancez votre activité en 7 jours.", perks: ["Setup en 1 semaine", "Paiements MoMo intégrés", "Support dédié 7j/7"], color: "#1a6b3a" },
+  { id: "retail", iconKey: "store", title: "Boutiques & Retail", desc: "Digitalisez votre boutique physique : catalogue en ligne, click & collect, fidélisation.", perks: ["Catalogue illimité", "Click & collect", "Programme fidélité"], color: "#f59e0b" },
+  { id: "distrib", iconKey: "package", title: "Distributeurs", desc: "Gérez vos réseaux de distribution : commandes en gros, multi-points, livraison optimisée.", perks: ["Tarifs dégressifs", "Multi-livraison", "Gestion stocks"], color: "#2563eb" },
+  { id: "services", iconKey: "hardHat", title: "Réseaux prestataires", desc: "Coordonnez vos équipes terrain : interventions, planning, facturation, satisfaction client.", perks: ["Planning équipes", "Facturation auto", "Suivi terrain"], color: "#7c3aed" },
+  { id: "diaspora", iconKey: "plane", title: "Diaspora business", desc: "Investissez ou lancez au Cameroun depuis l'étranger : pilotage à distance, partenaires locaux.", perks: ["Gestion à distance", "Partenaires vérifiés", "Reporting mensuel"], color: "#dc2626" },
+  { id: "expansion", iconKey: "globe", title: "Expansion régionale", desc: "Étendez votre présence sur tout le Cameroun : Douala, Yaoundé, Bafoussam, Bamenda, Garoua.", perks: ["10 régions", "Logistique inter-villes", "Marketing local"], color: "#0891b2" },
 ];
 
 const ROLES = [
   {
     id: "buyer",
-    icon: "🛒",
+    iconKey: "shoppingCart",
     title: "Acheteur",
     color: "#22c55e",
     gradient: "linear-gradient(135deg, #4ade80, #16a34a)",
-    workflow: ["Catalogue B2B", "Devis groupés", "Commandes récurrentes", "Suivi temps réel"]
+    workflow: ["Catalogue B2B", "Devis groupés", "Commandes récurrentes", "Suivi temps réel"],
   },
   {
     id: "seller",
-    icon: "🏪",
+    iconKey: "store",
     title: "Vendeur",
     color: "#f59e0b",
     gradient: "linear-gradient(135deg, #fbbf24, #d97706)",
-    workflow: ["Boutique en ligne", "Inventaire smart", "Promotions ciblées", "Analytics ventes"]
+    workflow: ["Boutique en ligne", "Inventaire smart", "Promotions ciblées", "Analytics ventes"],
   },
   {
     id: "delivery",
-    icon: "🚚",
+    iconKey: "truck",
     title: "Livreur",
     color: "#3b82f6",
     gradient: "linear-gradient(135deg, #60a5fa, #2563eb)",
-    workflow: ["Missions assignées", "Optimisation tournée", "Preuve livraison", "Paiement quotidien"]
+    workflow: ["Missions assignées", "Optimisation tournée", "Preuve livraison", "Paiement quotidien"],
   },
   {
     id: "provider",
-    icon: "👷",
+    iconKey: "hardHat",
     title: "Prestataire",
     color: "#7c3aed",
     gradient: "linear-gradient(135deg, #a78bfa, #5b21b6)",
-    workflow: ["Planning équipe", "Devis & facturation", "Satisfaction client", "Réputation"]
+    workflow: ["Planning équipe", "Devis & facturation", "Satisfaction client", "Réputation"],
   },
 ];
 
@@ -249,8 +206,8 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     .yorix-biz-v3 {
       --biz-green: #1a6b3a;
       --biz-green-deep: #0d4d28;
-      --biz-green-pale: #e8f5e9;
-      --biz-green-light: #86efac;
+      --biz-green-pale: var(--yx-mkt-green-pale, #e8f5e9);
+      --biz-green-light: var(--yx-mkt-green-light, #86efac);
       --biz-yellow: #fcd116;
       --biz-gold: #f59e0b;
       --biz-blue: #2563eb;
@@ -263,7 +220,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       --biz-shadow: 0 12px 30px rgba(0,0,0,.08);
       --biz-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--biz-ink);
     }
     .yorix-biz-v3 * { box-sizing: border-box; }
@@ -349,7 +306,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       50%      { opacity: .5; transform: scale(1.4); }
     }
     .ybiz3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -417,7 +374,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       border-top: 1px solid rgba(255,255,255,.1);
     }
     .ybiz3-hero-stat-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.5rem;
       font-weight: 800;
       color: var(--biz-yellow);
@@ -469,12 +426,12 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: 1.1rem;
     }
     .ybiz3-dash-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .85rem;
       letter-spacing: -.2px;
@@ -492,7 +449,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       color: var(--biz-green);
       padding: 4px 10px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .64rem;
       letter-spacing: .04em;
@@ -532,7 +489,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       text-transform: uppercase;
     }
     .ybiz3-dash-kpi-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.2rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -609,7 +566,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .68rem;
       color: #fff;
@@ -662,7 +619,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       margin-bottom: 12px;
     }
     .ybiz3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -728,7 +685,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     }
     .ybiz3-pilier-icon {
       width: 50px; height: 50px;
-      background: linear-gradient(135deg, var(--biz-green-pale), #fff9e6);
+      background: linear-gradient(135deg, var(--biz-green-pale), var(--yx-mkt-cream, #fff9e6));
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -745,13 +702,13 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       border: 1px solid var(--biz-green-light);
       padding: 4px 10px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .68rem;
       letter-spacing: -.1px;
     }
     .ybiz3-pilier h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -807,7 +764,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       transform: scale(1.12) rotate(-4deg);
     }
     .ybiz3-solution-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -842,7 +799,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 700;
       font-size: .78rem;
       color: var(--sol-color, var(--biz-green));
@@ -896,7 +853,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       box-shadow: 0 6px 18px var(--role-color);
     }
     .ybiz3-role-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.15rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -940,7 +897,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
 
     /* ━━━ GROWTH SECTION ━━━ */
     .ybiz3-growth {
-      background: linear-gradient(135deg, #fff9e6 0%, #fffbeb 100%);
+      background: linear-gradient(135deg, var(--yx-mkt-cream, #fff9e6) 0%, var(--surface, #fffbeb) 100%);
       border: 2px solid var(--biz-yellow);
       border-radius: 20px;
       padding: 36px 32px;
@@ -952,12 +909,14 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       overflow: hidden;
     }
     .ybiz3-growth::before {
-      content: '📈';
+      content: '';
       position: absolute;
       top: 50%; right: 30px;
       transform: translateY(-50%);
-      font-size: 12rem;
-      opacity: .06;
+      width: 12rem;
+      height: 12rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,107,58,.08) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-growth-left {
@@ -979,7 +938,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       padding: 14px 16px;
     }
     .ybiz3-growth-stat-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.6rem;
       font-weight: 800;
       color: var(--biz-green);
@@ -1019,7 +978,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       content: '"';
       position: absolute;
       top: 12px; right: 18px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 4rem;
       color: var(--biz-green-pale);
       line-height: 1;
@@ -1046,13 +1005,13 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: 1.1rem;
       box-shadow: 0 4px 14px rgba(0,0,0,.1);
     }
     .ybiz3-story-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .95rem;
       color: var(--biz-ink);
@@ -1075,12 +1034,12 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     }
     .ybiz3-story-metric {
       display: inline-block;
-      background: linear-gradient(135deg, var(--biz-green-pale), #fff9e6);
+      background: linear-gradient(135deg, var(--biz-green-pale), var(--yx-mkt-cream, #fff9e6));
       color: var(--biz-green);
       border: 1px solid var(--biz-green-light);
       padding: 5px 12px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .76rem;
     }
@@ -1117,7 +1076,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     }
     .ybiz3-faq-item summary::after {
       content: '+';
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.6rem;
       color: var(--biz-green);
       transition: transform .25s;
@@ -1142,12 +1101,14 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       overflow: hidden;
     }
     .ybiz3-form-wrap::before {
-      content: '🚀';
+      content: '';
       position: absolute;
       top: 50%; right: -30px;
       transform: translateY(-50%);
-      font-size: 14rem;
-      opacity: .04;
+      width: 14rem;
+      height: 14rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,209,22,.06) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-form-inner {
@@ -1179,21 +1140,25 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       overflow: hidden;
     }
     .ybiz3-final::before {
-      content: '💼';
+      content: '';
       position: absolute;
       top: 50%; right: -10px;
       transform: translateY(-50%);
-      font-size: 14rem;
-      opacity: .05;
+      width: 14rem;
+      height: 14rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,209,22,.05) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-final::after {
-      content: '📈';
+      content: '';
       position: absolute;
       top: 50%; left: -10px;
       transform: translateY(-50%);
-      font-size: 11rem;
-      opacity: .05;
+      width: 11rem;
+      height: 11rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,107,58,.06) 0%, transparent 70%);
       pointer-events: none;
     }
     .ybiz3-final-inner {
@@ -1232,7 +1197,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     .ybiz3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;
@@ -1327,10 +1292,10 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 </p>
 
                 <ul className="ybiz3-args">
-                  <li><span>🏬</span><span>Achats B2B</span></li>
-                  <li><span>📣</span><span>Visibilité ciblée</span></li>
-                  <li><span>🏦</span><span>Paiements tracés</span></li>
-                  <li><span>🚚</span><span>Logistique J+1</span></li>
+                  <li><span><ContentIcon name="store" size={16} /></span><span>Achats B2B</span></li>
+                  <li><span><ContentIcon name="megaphone" size={16} /></span><span>Visibilité ciblée</span></li>
+                  <li><span><ContentIcon name="creditCard" size={16} /></span><span>Paiements tracés</span></li>
+                  <li><span><ContentIcon name="truck" size={16} /></span><span>Logistique J+1</span></li>
                 </ul>
 
                 <div className="ybiz3-hero-cta">
@@ -1339,14 +1304,14 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                     className="ybiz3-btn ybiz3-btn--pri"
                     onClick={scrollToForm}
                   >
-                    🚀 Lancer une demande
+                    <Rocket size={16} strokeWidth={2.25} aria-hidden /> Lancer une demande
                   </button>
                   <button
                     type="button"
                     className="ybiz3-btn ybiz3-btn--sec"
-                    onClick={() => goPage?.("academy")}
+                    onClick={() => goPage?.("merchHub", { merchHub: "sourcer-en-gros" })}
                   >
-                    🎓 Former mes équipes
+                    <Package size={16} strokeWidth={2.25} aria-hidden /> Sourcer en gros
                   </button>
                 </div>
 
@@ -1395,7 +1360,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
 
                   <div className="ybiz3-dash-chart">
                     <div className="ybiz3-dash-chart-head">
-                      <div className="ybiz3-dash-chart-title">📊 Ventes hebdo</div>
+                      <div className="ybiz3-dash-chart-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <BarChart3 size={14} aria-hidden /> Ventes hebdo
+                      </div>
                       <div className="ybiz3-dash-chart-period">7 derniers jours</div>
                     </div>
                     <div className="ybiz3-dash-bars">
@@ -1447,7 +1414,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 style={{ "--p-color": p.color }}
               >
                 <div className="ybiz3-pilier-head">
-                  <div className="ybiz3-pilier-icon">{p.icon}</div>
+                  <div className="ybiz3-pilier-icon"><ContentIcon name={p.iconKey} size={24} /></div>
                   <span className="ybiz3-pilier-metric">{p.metric}</span>
                 </div>
                 <h3>{p.title}</h3>
@@ -1477,7 +1444,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 style={{ "--sol-color": s.color }}
                 onClick={scrollToForm}
               >
-                <div className="ybiz3-solution-emoji">{s.emoji}</div>
+                <div className="ybiz3-solution-emoji"><ContentIcon name={s.iconKey} size={28} /></div>
                 <h3 className="ybiz3-solution-title">{s.title}</h3>
                 <p className="ybiz3-solution-desc">{s.desc}</p>
                 <ul className="ybiz3-solution-perks">
@@ -1516,7 +1483,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                 }}
               >
                 <div className="ybiz3-role-head">
-                  <div className="ybiz3-role-icon">{r.icon}</div>
+                  <div className="ybiz3-role-icon"><ContentIcon name={r.iconKey} size={22} /></div>
                   <div>
                     <div className="ybiz3-role-title">{r.title}</div>
                     <div className="ybiz3-role-sub">Workflow optimisé</div>
@@ -1567,8 +1534,10 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
               </ul>
             </div>
             <div className="ybiz3-growth-right">
-              <div style={{ fontSize: "4rem", marginBottom: 14 }}>🎓</div>
-              <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--biz-ink)", marginBottom: 10, letterSpacing: "-.4px" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14, color: "var(--biz-green)" }}>
+                <GraduationCap size={64} strokeWidth={1.5} aria-hidden />
+              </div>
+              <h3 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--biz-ink)", marginBottom: 10, letterSpacing: "-.4px" }}>
                 Yorix Academy Business
               </h3>
               <p style={{ fontSize: ".88rem", color: "var(--biz-gray)", lineHeight: 1.65, marginBottom: 16, maxWidth: 320, margin: "0 auto 16px" }}>
@@ -1580,8 +1549,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   type="button"
                   className="ybiz3-btn ybiz3-btn--green"
                   onClick={() => goPage?.("academy")}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
                 >
-                  🎓 Découvrir l'Academy
+                  <GraduationCap size={16} aria-hidden /> Découvrir l'Academy
                 </button>
               </div>
             </div>
@@ -1615,7 +1585,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   </div>
                 </div>
                 <p className="ybiz3-story-quote">{s.quote}</p>
-                <span className="ybiz3-story-metric">📈 {s.metric}</span>
+                <span className="ybiz3-story-metric" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <TrendingUp size={13} aria-hidden /> {s.metric}
+                </span>
               </article>
             ))}
           </div>
@@ -1688,23 +1660,26 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   type="button"
                   className="ybiz3-btn ybiz3-btn--pri"
                   onClick={user ? scrollToForm : () => openRegister("seller")}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
                 >
-                  🚀 {user ? "Demander un audit" : "Créer mon compte pro"}
+                  <Rocket size={16} aria-hidden />
+                  {user ? "Demander un audit" : "Créer mon compte pro"}
                 </button>
                 <button
                   type="button"
                   className="ybiz3-btn ybiz3-btn--sec"
                   onClick={() => goPage?.("contact")}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
                 >
-                  💬 Parler à un expert
+                  <MessageCircle size={16} aria-hidden /> Parler à un expert
                 </button>
               </div>
 
               <ul className="ybiz3-final-trust">
-                <li><span aria-hidden>🇨🇲</span> 100% Cameroun</li>
-                <li><span aria-hidden>🏦</span> Paiements sécurisés</li>
-                <li><span aria-hidden>📈</span> +850 entreprises</li>
-                <li><span aria-hidden>⚡</span> Setup 7 jours</li>
+                <li><Flag size={14} aria-hidden /> 100% Cameroun</li>
+                <li><CreditCard size={14} aria-hidden /> Paiements sécurisés</li>
+                <li><TrendingUp size={14} aria-hidden /> +850 entreprises</li>
+                <li><Zap size={14} aria-hidden /> Setup 7 jours</li>
               </ul>
             </div>
           </div>

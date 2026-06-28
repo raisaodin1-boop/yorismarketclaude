@@ -8,6 +8,21 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { YORIX_WA_NUMBER } from "../lib/supabase";
+import { ContentIcon, prestIconKey } from "../lib/contentIcons";
+import {
+  MapPin,
+  Star,
+  CircleDot,
+  AlertTriangle,
+  Zap,
+  Gem,
+  Package,
+  Clock3,
+  MessageCircle,
+  Phone,
+  Calendar,
+  CheckCircle2,
+} from "lucide-react";
 
 // ── PRIX HARMONISÉS YORIX ──
 // 10 000 F / projet (forfait)
@@ -121,7 +136,7 @@ export function PrestCard({ p, onClick }) {
               flexShrink: 0,
             }}
           >
-            {p.emoji || "👷"}
+            <ContentIcon name={prestIconKey(p)} size={28} />
           </div>
         )}
 
@@ -129,7 +144,7 @@ export function PrestCard({ p, onClick }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 800,
               fontSize: ".98rem",
               color: "var(--ink, #111)",
@@ -145,9 +160,7 @@ export function PrestCard({ p, onClick }) {
           >
             <span>{p.name}</span>
             {p.verifie && (
-              <span title="Vérifié Yorix" style={{ fontSize: ".82rem", color: "#0066cc" }}>
-                ✓
-              </span>
+              <CheckCircle2 size={14} title="Vérifié Yorix" style={{ color: "#0066cc", flexShrink: 0 }} aria-hidden />
             )}
           </div>
           <div
@@ -166,9 +179,13 @@ export function PrestCard({ p, onClick }) {
               fontSize: ".68rem",
               color: "var(--gray, #666)",
               marginTop: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
             }}
           >
-            📍 {p.ville}{p.quartier ? `, ${p.quartier}` : ""}
+            <MapPin size={11} aria-hidden />
+            {p.ville}{p.quartier ? `, ${p.quartier}` : ""}
             {p.distance && ` · ${p.distance}`}
           </div>
         </div>
@@ -186,12 +203,15 @@ export function PrestCard({ p, onClick }) {
               borderRadius: 50,
               fontSize: ".58rem",
               fontWeight: 800,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               letterSpacing: ".05em",
               boxShadow: "0 2px 6px rgba(0,0,0,.15)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 3,
             }}
           >
-            ⭐ TOP
+            <Star size={9} fill="#0d1f14" aria-hidden /> TOP
           </span>
         )}
       </div>
@@ -210,9 +230,12 @@ export function PrestCard({ p, onClick }) {
                 fontSize: ".6rem",
                 fontWeight: 700,
                 border: "1px solid #bae6fd",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
               }}
             >
-              ✓ Vérifié
+              <CheckCircle2 size={10} aria-hidden /> Vérifié
             </span>
           )}
           {p.dispo && (
@@ -225,9 +248,12 @@ export function PrestCard({ p, onClick }) {
                 fontSize: ".6rem",
                 fontWeight: 700,
                 border: "1px solid #86efac",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
               }}
             >
-              🟢 Disponible
+              <CircleDot size={10} aria-hidden /> Disponible
             </span>
           )}
           {p.urgent_24h && (
@@ -240,9 +266,12 @@ export function PrestCard({ p, onClick }) {
                 fontSize: ".6rem",
                 fontWeight: 700,
                 border: "1px solid #fecaca",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
               }}
             >
-              🚨 24h
+              <AlertTriangle size={10} aria-hidden /> 24h
             </span>
           )}
           {p.reponse_rapide && (
@@ -255,9 +284,12 @@ export function PrestCard({ p, onClick }) {
                 fontSize: ".6rem",
                 fontWeight: 700,
                 border: "1px solid #fde68a",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
               }}
             >
-              ⚡ Rapide
+              <Zap size={10} aria-hidden /> Rapide
             </span>
           )}
           {p.premium && (
@@ -270,9 +302,12 @@ export function PrestCard({ p, onClick }) {
                 fontSize: ".6rem",
                 fontWeight: 700,
                 border: "1px solid #d8b4fe",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
               }}
             >
-              💎 Premium
+              <Gem size={10} aria-hidden /> Premium
             </span>
           )}
         </div>
@@ -289,18 +324,18 @@ export function PrestCard({ p, onClick }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <span style={{ color: "#fcd116" }}>★</span>
+            <Star size={12} fill="#fcd116" color="#fcd116" aria-hidden />
             <strong>{p.note || "—"}</strong>
             <span style={{ color: "var(--gray, #666)" }}>({p.avis || 0})</span>
           </div>
           {p.realisations > 0 && (
-            <div style={{ color: "var(--gray, #666)" }}>
-              📦 {p.realisations} missions
+            <div style={{ color: "var(--gray, #666)", display: "flex", alignItems: "center", gap: 3 }}>
+              <Package size={11} aria-hidden /> {p.realisations} missions
             </div>
           )}
           {p.temps_reponse && (
-            <div style={{ color: "var(--green, #1a6b3a)", fontWeight: 600 }}>
-              ⏱ {p.temps_reponse}
+            <div style={{ color: "var(--green, #1a6b3a)", fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+              <Clock3 size={11} aria-hidden /> {p.temps_reponse}
             </div>
           )}
         </div>
@@ -345,7 +380,7 @@ export function PrestCard({ p, onClick }) {
             </div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: ".95rem",
                 color: "var(--green, #1a6b3a)",
@@ -358,7 +393,6 @@ export function PrestCard({ p, onClick }) {
 
         {/* ═══ 3 BOUTONS D'ACTION ═══ */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5, marginTop: "auto" }}>
-          {/* WhatsApp */}
           <button
             onClick={handleWhatsApp}
             title="Contacter via WhatsApp"
@@ -368,7 +402,7 @@ export function PrestCard({ p, onClick }) {
               border: "none",
               padding: "8px 4px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 700,
               fontSize: ".68rem",
               cursor: "pointer",
@@ -378,10 +412,9 @@ export function PrestCard({ p, onClick }) {
               gap: 3,
             }}
           >
-            💬 WhatsApp
+            <MessageCircle size={12} aria-hidden /> WhatsApp
           </button>
 
-          {/* Appeler */}
           <button
             onClick={handleCall}
             title="Appeler directement"
@@ -391,7 +424,7 @@ export function PrestCard({ p, onClick }) {
               border: "none",
               padding: "8px 4px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 700,
               fontSize: ".68rem",
               cursor: "pointer",
@@ -401,10 +434,9 @@ export function PrestCard({ p, onClick }) {
               gap: 3,
             }}
           >
-            📞 Appeler
+            <Phone size={12} aria-hidden /> Appeler
           </button>
 
-          {/* Réserver */}
           <button
             onClick={handleReserve}
             title="Réserver via Yorix"
@@ -414,7 +446,7 @@ export function PrestCard({ p, onClick }) {
               border: "none",
               padding: "8px 4px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 700,
               fontSize: ".68rem",
               cursor: "pointer",
@@ -424,7 +456,7 @@ export function PrestCard({ p, onClick }) {
               gap: 3,
             }}
           >
-            📅 Réserver
+            <Calendar size={12} aria-hidden /> Réserver
           </button>
         </div>
       </div>

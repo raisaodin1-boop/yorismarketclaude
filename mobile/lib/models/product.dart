@@ -1,3 +1,5 @@
+import '../utils/product_meta.dart';
+
 class Product {
   Product({
     required this.id,
@@ -14,6 +16,10 @@ class Product {
     this.flash = false,
     this.city,
     this.vendeurId,
+    this.vendeurNom,
+    this.moq = 1,
+    this.escrow = false,
+    this.salesTotal = 0,
     this.imageUrls = const [],
     this.actif = true,
     this.isArchived = false,
@@ -43,6 +49,10 @@ class Product {
       flash: json['flash'] == true,
       city: json['ville']?.toString(),
       vendeurId: json['vendeur_id']?.toString(),
+      vendeurNom: json['vendeur_nom']?.toString(),
+      moq: ProductMeta.moq(json),
+      escrow: json['escrow'] == true,
+      salesTotal: int.tryParse('${json['vente_total'] ?? 0}') ?? 0,
       imageUrls: _imageUrls(json),
       actif: json['actif'] != false,
       isArchived: json['is_archived'] == true,
@@ -64,6 +74,10 @@ class Product {
   final bool flash;
   final String? city;
   final String? vendeurId;
+  final String? vendeurNom;
+  final int moq;
+  final bool escrow;
+  final int salesTotal;
   final List<String> imageUrls;
   final bool actif;
   final bool isArchived;
@@ -92,6 +106,11 @@ class Product {
         'flash': flash,
         if (city != null) 'ville': city,
         if (vendeurId != null) 'vendeur_id': vendeurId,
+        if (vendeurNom != null) 'vendeur_nom': vendeurNom,
+        'moq': moq,
+        'escrow': escrow,
+        'vente_total': salesTotal,
+        'vendeur_verifie': verified,
         'actif': actif,
         'is_archived': isArchived,
         'hidden_from_marketplace': hiddenFromMarketplace,

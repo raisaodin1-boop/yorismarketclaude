@@ -7,6 +7,8 @@ import { AcademyPage } from "./AcademyPage";
 import { BusinessPage } from "./BusinessPage";
 import { ContactPage } from "./ContactPage";
 import { SellerLanding } from "../components/conversion/SellerLanding";
+import { SeoAliasHubSection } from "../components/marketing/SeoAliasHubSection";
+import { SEO_HUB_ALIAS_KEYS } from "../lib/merchHubs";
 
 export function SiteMarketingPages({
   page,
@@ -34,6 +36,12 @@ export function SiteMarketingPages({
   user,
   userData,
   siteLocale = "fr",
+  seoAliasKey,
+  wishlist,
+  addToCart,
+  toggleWish,
+  openProductUrl,
+  openSellerUrl,
 }) {
   switch (page) {
     case "faq":
@@ -144,6 +152,22 @@ export function SiteMarketingPages({
       );
 
     case "business":
+      if (seoAliasKey && SEO_HUB_ALIAS_KEYS.has(seoAliasKey)) {
+        return (
+          <SeoAliasHubSection
+            seoAliasKey={seoAliasKey}
+            locale={siteLocale}
+            goPage={goPage}
+            user={user}
+            userData={userData}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
+          />
+        );
+      }
       return (
         <BusinessPage
           goPage={goPage}

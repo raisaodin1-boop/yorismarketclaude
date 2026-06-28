@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Users, Bike, Package, Truck, ShoppingBag, DollarSign, Calendar, TrendingUp, BarChart3 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { ROLE_LABELS, CATS } from "../lib/constants";
 import { deliveryTrackingPath } from "../lib/seoRoutes";
@@ -17,6 +18,7 @@ import { AdminCategoryManager } from "./admin/AdminCategoryManager";
 import { AdminBroadcastPanel } from "./admin/AdminBroadcastPanel";
 import { AdminPackModeration } from "./admin/AdminPackModeration";
 import "./admin/adminPackModeration.css";
+import { DeliveryStatusIcon } from "../lib/contentIcons";
 import {
   getStatutConfig,
   adminAssignerLivreur,
@@ -38,6 +40,7 @@ import {
   softBanUser,
   hardDeleteUser,
 } from "../lib/userMutations";
+import { ADMIN_NAV_ICONS } from "../lib/lucideNavIcons";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : ADMIN DASHBOARD — Yorix CM (version pro complète)
@@ -726,22 +729,22 @@ export function AdminDashboard({ user, userData, goPage }) {
   const NAV = useMemo(
     () => {
       const items = [
-        { id: "overview", icon: "📊", label: t("nav.overview") },
-        { id: "deliveries", icon: "🚚", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
-        { id: "categories", icon: "🏷️", label: "Catégories" },
-        { id: "packs", icon: "📦", label: "Packs à modérer", badge: pendingPacksCount || null },
-        { id: "produits", icon: "📦", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
-        { id: "commandes", icon: "🛍️", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
-        { id: "utilisateurs", icon: "👥", label: t("nav.users") },
-        { id: "vendeurs", icon: "🏪", label: t("nav.sellers") },
-        { id: "livreurs", icon: "🏍️", label: t("nav.couriers") },
-        { id: "prestataires", icon: "👷", label: t("nav.providers"), badge: prestPending || null },
-        { id: "revenus", icon: "💰", label: t("nav.revenue") },
-        { id: "commerce_promo", icon: "🎁", label: t("nav.promoShipping") },
-        { id: "messagerie", icon: "💬", label: "Messagerie" },
-        { id: "notif_center", icon: "📣", label: t("nav.notifNetwork") },
-        { id: "loyalty", icon: "🌟", label: t("nav.loyalty") },
-        { id: "alertes", icon: "🔔", label: t("nav.alerts"), badge: alertes.length || null },
+        { id: "overview", label: t("nav.overview") },
+        { id: "deliveries", label: t("nav.deliveries"), badge: deliveriesEnAttente || null },
+        { id: "categories", label: "Catégories" },
+        { id: "packs", label: "Packs à modérer", badge: pendingPacksCount || null },
+        { id: "produits", label: t("nav.products"), badge: produits.filter((p) => (p.stock || 0) === 0).length || null },
+        { id: "commandes", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
+        { id: "utilisateurs", label: t("nav.users") },
+        { id: "vendeurs", label: t("nav.sellers") },
+        { id: "livreurs", label: t("nav.couriers") },
+        { id: "prestataires", label: t("nav.providers"), badge: prestPending || null },
+        { id: "revenus", label: t("nav.revenue") },
+        { id: "commerce_promo", label: t("nav.promoShipping") },
+        { id: "messagerie", label: "Messagerie" },
+        { id: "notif_center", label: t("nav.notifNetwork") },
+        { id: "loyalty", label: t("nav.loyalty") },
+        { id: "alertes", label: t("nav.alerts"), badge: alertes.length || null },
       ];
       return items.filter((n) => canWrite || n.id !== "messagerie");
     },
@@ -754,15 +757,15 @@ export function AdminDashboard({ user, userData, goPage }) {
   );
 
   // ═══════════ HELPERS UI ═══════════
-  const StatCard = ({ icon, val, lbl, trend, col, ic, onClick }) => (
+  const StatCard = ({ icon: Icon, val, lbl, trend, col, ic, onClick }) => (
     <div
-      className="stat-card"
-      style={{ cursor: onClick ? "pointer" : "default", transition: "transform .15s,box-shadow .15s" }}
+      className={`stat-card yx-dash-stat${onClick ? " yx-dash-stat--clickable" : ""}`}
+      style={{ cursor: onClick ? "pointer" : "default" }}
       onClick={onClick}
-      onMouseOver={e => { if (onClick) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,.1)"; } }}
-      onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
     >
-      <div className="stat-card-icon" style={{ background: col || "var(--surface2)" }}><span>{icon}</span></div>
+      <div className="stat-card-icon" style={{ background: col || "var(--surface2)" }}>
+        {Icon ? <Icon size={22} strokeWidth={2.25} /> : null}
+      </div>
       <div className="stat-card-val">{val}</div>
       <div className="stat-card-lbl">{lbl}</div>
       {trend && <div className="stat-card-trend" style={{ color: ic || "var(--green)" }}>{trend}</div>}
@@ -789,7 +792,8 @@ export function AdminDashboard({ user, userData, goPage }) {
         display: "inline-flex", alignItems: "center", gap: 4,
         whiteSpace: "nowrap",
       }}>
-        <span>{cfg.icon}</span><span>{cfg.label}</span>
+        <DeliveryStatusIcon statut={statut} size={14} />
+        <span>{cfg.label}</span>
       </span>
     );
   };
@@ -973,13 +977,15 @@ export function AdminDashboard({ user, userData, goPage }) {
           </div>
         </div>
 
-        {NAV.map(n => (
+        {NAV.map(n => {
+          const NavIcon = ADMIN_NAV_ICONS[n.id];
+          return (
           <div key={n.id} className={`admin-nav-item${adminTab === n.id ? " active" : ""}`} onClick={() => setAdminTab(n.id)}>
-            <span style={{ fontSize: "1rem" }}>{n.icon}</span>
+            <span style={{ display: "flex", alignItems: "center" }}>{NavIcon ? <NavIcon size={18} strokeWidth={2.25} /> : null}</span>
             <span style={{ flex: 1 }}>{n.label}</span>
             {n.badge ? <span style={{ background: "#ce1126", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "1px 6px", borderRadius: 50, minWidth: 18, textAlign: "center" }}>{n.badge}</span> : null}
           </div>
-        ))}
+        );})}
 
         <div style={{ padding: "14px 16px 0", borderTop: "1px solid rgba(255,255,255,.07)", marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
           <button onClick={() => setRefreshKey(k => k + 1)} style={{ width: "100%", background: "rgba(79,209,125,.12)", color: "#4fd17d", border: "1px solid rgba(79,209,125,.2)", borderRadius: 7, padding: "8px", fontSize: ".75rem", cursor: "pointer" }}>
@@ -1032,22 +1038,22 @@ export function AdminDashboard({ user, userData, goPage }) {
         {/* ════════ VUE D'ENSEMBLE ════════ */}
         {adminTab === "overview" && (
           <>
-            <div className="admin-page-title">
-              📊 {t("overviewTitle")}
+            <div className="admin-page-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <BarChart3 size={22} strokeWidth={2.25} aria-hidden /> {t("overviewTitle")}
               <span style={{ fontSize: ".72rem", color: "var(--gray)", fontWeight: 400, marginLeft: "auto" }}>
                 {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </span>
             </div>
 
-            <div className="stat-cards-grid">
-              <StatCard icon="👥" val={stats.users.toLocaleString()} lbl="Utilisateurs total" trend={`${stats.buyers} acheteurs · ${stats.vendeurs} vendeurs`} col="#e6f0ff" ic="#1a4a9a" onClick={() => setAdminTab("utilisateurs")} />
-              <StatCard icon="🏍️" val={stats.livreurs} lbl="Livreurs inscrits" trend={`${adminDeliveries.filter(d => !d.livreur_id).length} en attente d'assignation`} col="#fff9e6" ic="#b8860b" onClick={() => setAdminTab("livreurs")} />
-              <StatCard icon="📦" val={stats.products.toLocaleString()} lbl="Produits" trend={`${produits.filter(p => p.actif).length} actifs · ${stats.ruptures} en rupture`} col="#e6fff0" ic="#1a6b3a" onClick={() => setAdminTab("produits")} />
-              <StatCard icon="🚚" val={stats.deliveries.toLocaleString()} lbl="Livraisons" trend={`${adminDeliveries.filter(d => d.statut === "livre").length} livrées`} col="#f3e8ff" ic="#7c3aed" onClick={() => setAdminTab("deliveries")} />
-              <StatCard icon="🛍️" val={stats.orders.toLocaleString()} lbl="Commandes" trend={`${stats.enAttente} en attente · ${stats.livrees} livrées`} col="#ecfdf5" ic="#059669" onClick={() => setAdminTab("commandes")} />
-              <StatCard icon="💰" val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions Yorix" trend="5% par transaction" col="#fff0f6" ic="#a0105a" onClick={() => setAdminTab("revenus")} />
-              <StatCard icon="📅" val={`${stats.revenueToday.toLocaleString()} F`} lbl="Revenus aujourd'hui" trend="Commissions du jour" col="#f0fff4" ic="#276749" />
-              <StatCard icon="📈" val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Revenus 7 jours" trend="Cette semaine" col="#fef9f0" ic="#7b5a10" />
+            <div className="stat-cards-grid yx-dash-stat-grid">
+              <StatCard icon={Users} val={stats.users.toLocaleString()} lbl="Utilisateurs total" trend={`${stats.buyers} acheteurs · ${stats.vendeurs} vendeurs`} col="#e6f0ff" ic="#1a4a9a" onClick={() => setAdminTab("utilisateurs")} />
+              <StatCard icon={Bike} val={stats.livreurs} lbl="Livreurs inscrits" trend={`${adminDeliveries.filter(d => !d.livreur_id).length} en attente d'assignation`} col="#fff9e6" ic="#b8860b" onClick={() => setAdminTab("livreurs")} />
+              <StatCard icon={Package} val={stats.products.toLocaleString()} lbl="Produits" trend={`${produits.filter(p => p.actif).length} actifs · ${stats.ruptures} en rupture`} col="#e6fff0" ic="#1a6b3a" onClick={() => setAdminTab("produits")} />
+              <StatCard icon={Truck} val={stats.deliveries.toLocaleString()} lbl="Livraisons" trend={`${adminDeliveries.filter(d => d.statut === "livre").length} livrées`} col="#f3e8ff" ic="#7c3aed" onClick={() => setAdminTab("deliveries")} />
+              <StatCard icon={ShoppingBag} val={stats.orders.toLocaleString()} lbl="Commandes" trend={`${stats.enAttente} en attente · ${stats.livrees} livrées`} col="#ecfdf5" ic="#059669" onClick={() => setAdminTab("commandes")} />
+              <StatCard icon={DollarSign} val={`${stats.commissionTotal.toLocaleString()} F`} lbl="Commissions Yorix" trend="5% par transaction" col="#fff0f6" ic="#a0105a" onClick={() => setAdminTab("revenus")} />
+              <StatCard icon={Calendar} val={`${stats.revenueToday.toLocaleString()} F`} lbl="Revenus aujourd'hui" trend="Commissions du jour" col="#f0fff4" ic="#276749" />
+              <StatCard icon={TrendingUp} val={`${stats.revenueWeek.toLocaleString()} F`} lbl="Revenus 7 jours" trend="Cette semaine" col="#fef9f0" ic="#7b5a10" />
             </div>
 
             {pendingPacksCount > 0 && (

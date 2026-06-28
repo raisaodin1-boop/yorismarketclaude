@@ -1,6 +1,8 @@
 // ┌────────────────────────────────────────────────────────────┐
 // │ COMPOSANT : AcademyDetail (page d'article)                 │
 // └────────────────────────────────────────────────────────────┘
+import { ContentIcon } from "../lib/contentIcons";
+
 export function AcademyDetail({ course, goPage, goContact }) {
   if (!course) return null;
 
@@ -51,7 +53,9 @@ export function AcademyDetail({ course, goPage, goContact }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-            <span style={{ fontSize: "3rem" }}>{course.emoji || "🎓"}</span>
+            <span style={{ display: "flex", color: "var(--green)" }}>
+              <ContentIcon name={course.iconKey || "graduationCap"} size={48} />
+            </span>
             <div>
               <span
                 style={{

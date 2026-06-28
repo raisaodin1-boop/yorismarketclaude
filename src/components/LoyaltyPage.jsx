@@ -10,6 +10,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useMemo } from "react";
+import { Gift, Gem, ScrollText } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { LOYALTY_CATALOG_LIMIT } from "../lib/queryLimits";
 import { LevelBadge } from "./LevelBadge";
@@ -1342,42 +1343,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       z-index: 2;
     }
 
-    /* ━━━ EMPTY / LOADING ━━━ */
-    .yloy3-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 60px 20px;
-      color: var(--loy-gray);
-    }
-    .yloy3-spinner {
-      width: 22px; height: 22px;
-      border: 3px solid var(--loy-border);
-      border-top-color: var(--loy-green);
-      border-radius: 50%;
-      animation: yloy3Spin .7s linear infinite;
-    }
-    @keyframes yloy3Spin { to { transform: rotate(360deg); } }
-    .yloy3-empty {
-      text-align: center;
-      padding: 50px 20px;
-      background: var(--loy-surface);
-      border: 1.5px dashed var(--loy-border);
-      border-radius: 14px;
-    }
-    .yloy3-empty-ico {
-      font-size: 3rem;
-      margin-bottom: 10px;
-      opacity: .6;
-    }
-    .yloy3-empty p {
-      color: var(--loy-gray);
-      font-size: .88rem;
-      line-height: 1.65;
-      margin: 0 auto 8px;
-      max-width: 380px;
-    }
+    /* Empty / loading → yorix-pages-shared.css (.yx-mkt-*) */
 
     /* ━━━ RESPONSIVE ━━━ */
     @media (max-width: 900px) {
@@ -1654,10 +1620,10 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           {/* TAB : RÉCOMPENSES */}
           {tab === "rewards" && (
             loading ? (
-              <div className="yloy3-loading"><div className="yloy3-spinner" />Chargement...</div>
+              <div className="yx-mkt-loading"><div className="yx-mkt-spinner" />Chargement...</div>
             ) : rewards.length === 0 ? (
-              <div className="yloy3-empty">
-                <div className="yloy3-empty-ico">🎁</div>
+              <div className="yx-mkt-empty">
+                <div className="yx-mkt-empty-icon"><Gift size={28} strokeWidth={1.75} aria-hidden /></div>
                 <p>Aucune récompense disponible pour le moment.</p>
               </div>
             ) : (
@@ -1695,10 +1661,10 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           {/* TAB : PACKS */}
           {tab === "packs" && (
             loading ? (
-              <div className="yloy3-loading"><div className="yloy3-spinner" />Chargement...</div>
+              <div className="yx-mkt-loading"><div className="yx-mkt-spinner" />Chargement...</div>
             ) : packs.length === 0 ? (
-              <div className="yloy3-empty">
-                <div className="yloy3-empty-ico">💎</div>
+              <div className="yx-mkt-empty">
+                <div className="yx-mkt-empty-icon"><Gem size={28} strokeWidth={1.75} aria-hidden /></div>
                 <p>Aucun pack disponible pour le moment.</p>
               </div>
             ) : (
@@ -1744,8 +1710,8 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
           {/* TAB : HISTORIQUE */}
           {tab === "history" && (
             !user ? (
-              <div className="yloy3-empty">
-                <div className="yloy3-empty-ico">📜</div>
+              <div className="yx-mkt-empty">
+                <div className="yx-mkt-empty-icon"><ScrollText size={28} strokeWidth={1.75} aria-hidden /></div>
                 <p>Créez un compte pour suivre l'historique de vos points.</p>
                 <div style={{ marginTop: 14, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
                   <button className="yloy3-btn yloy3-btn--pri" onClick={openRegister}>Créer mon compte</button>
@@ -1753,10 +1719,10 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
                 </div>
               </div>
             ) : loading ? (
-              <div className="yloy3-loading"><div className="yloy3-spinner" />Chargement...</div>
+              <div className="yx-mkt-loading"><div className="yx-mkt-spinner" />Chargement...</div>
             ) : transactions.length === 0 ? (
-              <div className="yloy3-empty">
-                <div className="yloy3-empty-ico">📜</div>
+              <div className="yx-mkt-empty">
+                <div className="yx-mkt-empty-icon"><ScrollText size={28} strokeWidth={1.75} aria-hidden /></div>
                 <p>Aucune transaction pour l'instant.</p>
                 <p style={{ fontSize: ".78rem", marginTop: 8 }}>
                   Passez une commande ou laissez un avis pour voir vos points apparaître ici.

@@ -13,6 +13,7 @@ export function HomeTrendingProducts({
   toggleWish,
   wishlist,
   openProductUrl,
+  openSellerUrl,
   onSeeAll,
 }) {
   const trending = useMemo(
@@ -53,6 +54,7 @@ export function HomeTrendingProducts({
         onWish={toggleWish}
         wishlist={wishlist}
         onOpenProductUrl={openProductUrl}
+        onOpenSellerUrl={openSellerUrl}
         siteLocale={locale}
         showShare
       />

@@ -12,44 +12,65 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { YORIX_WA_NUMBER } from "../lib/supabase";
+import { ContentIcon, prestIconKey, PREST_CATEGORY_ICON_KEYS } from "../lib/contentIcons";
+import { Search, MapPin, Rocket, Shield, Star, CheckCircle2, AlertTriangle, RefreshCw, Phone, MessageCircle, Calendar, X, HardHat, Wrench, Zap, Users, CircleDot, Gem, Package, Briefcase, Clock3, Plus, FileText, Tag } from "lucide-react";
 import { CITIES, PREST_DATA } from "../lib/constants";
 import { showAppToast } from "../lib/appToast";
 import { PrestCard, PREST_PRIX, formatPrestPrix } from "./PrestCard";
 
 // ── CATÉGORIES PRIORITAIRES (forte demande quotidienne) ──
 const CATEGORIES_PRIORITAIRES = [
-  { cat: "",             label: "🌟 Tous",         color: "var(--green)" },
-  { cat: "Plomberie",    label: "🔧 Plomberie",     color: "#3b82f6" },
-  { cat: "Électricité",  label: "⚡ Électricité",   color: "#f59e0b" },
-  { cat: "Nettoyage",    label: "🧹 Ménage",        color: "#10b981" },
-  { cat: "Beauté",       label: "💇‍♀️ Beauté",       color: "#d946ef" },
-  { cat: "Réparation",   label: "🔨 Réparation",    color: "#f97316" },
-  { cat: "Photographie", label: "📸 Photo",         color: "#8b5cf6" },
-  { cat: "Cuisine",      label: "👩‍🍳 Traiteur",     color: "#ef4444" },
-  { cat: "Menuiserie",   label: "🪚 Menuiserie",    color: "#a855f7" },
-  { cat: "Informatique", label: "💻 Tech",          color: "#06b6d4" },
-  { cat: "Transport",    label: "🚚 Transport",     color: "#0ea5e9" },
-  { cat: "Couture",      label: "🧵 Couture",       color: "#ec4899" },
+  { cat: "", iconKey: "star", label: "Tous", color: "var(--green)" },
+  { cat: "Plomberie", iconKey: "wrench", label: "Plomberie", color: "#3b82f6" },
+  { cat: "Électricité", iconKey: "zap", label: "Électricité", color: "#f59e0b" },
+  { cat: "Nettoyage", iconKey: "sparkles", label: "Ménage", color: "#10b981" },
+  { cat: "Beauté", iconKey: "scissors", label: "Beauté", color: "#d946ef" },
+  { cat: "Réparation", iconKey: "hammer", label: "Réparation", color: "#f97316" },
+  { cat: "Photographie", iconKey: "camera", label: "Photo", color: "#8b5cf6" },
+  { cat: "Cuisine", iconKey: "chefHat", label: "Traiteur", color: "#ef4444" },
+  { cat: "Menuiserie", iconKey: "hammer", label: "Menuiserie", color: "#a855f7" },
+  { cat: "Informatique", iconKey: "laptop", label: "Tech", color: "#06b6d4" },
+  { cat: "Transport", iconKey: "truck", label: "Transport", color: "#0ea5e9" },
+  { cat: "Couture", iconKey: "scissors", label: "Couture", color: "#ec4899" },
 ];
 
-// ── RACCOURCIS URGENTS (en haut du hero) ──
 const RACCOURCIS_URGENTS = [
-  { id: "plombier_urgent",     label: "🚨 Plombier urgent",     cat: "Plomberie",   urgent: true },
-  { id: "electricien_urgent",  label: "⚡ Électricien urgent",  cat: "Électricité", urgent: true },
-  { id: "menage",              label: "🧹 Ménage",              cat: "Nettoyage" },
-  { id: "beaute_domicile",     label: "💇‍♀️ Beauté à domicile",  cat: "Beauté" },
-  { id: "depannage",           label: "🔧 Dépannage",           cat: "Réparation" },
-  { id: "livraison",           label: "📦 Livraison",           cat: "Transport" },
+  { id: "plombier_urgent", label: "Plombier urgent", cat: "Plomberie", urgent: true, iconKey: "alert" },
+  { id: "electricien_urgent", label: "Électricien urgent", cat: "Électricité", urgent: true, iconKey: "zap" },
+  { id: "menage", label: "Ménage", cat: "Nettoyage", iconKey: "sparkles" },
+  { id: "beaute_domicile", label: "Beauté à domicile", cat: "Beauté", iconKey: "scissors" },
+  { id: "depannage", label: "Dépannage", cat: "Réparation", iconKey: "wrench" },
+  { id: "livraison", label: "Livraison", cat: "Transport", iconKey: "package" },
 ];
 
-// ── OPTIONS DE TRI ──
 const TRI_OPTIONS = [
-  { id: "proches",     label: "📍 Plus proches" },
-  { id: "dispo",       label: "🟢 Disponibles" },
-  { id: "notes",       label: "⭐ Mieux notés" },
-  { id: "moins_cher",  label: "💰 Moins chers" },
-  { id: "premium",     label: "💎 Premium" },
-  { id: "urgent",      label: "🚨 Urgence" },
+  { id: "proches", label: "Plus proches", iconKey: "mapPin" },
+  { id: "dispo", label: "Disponibles", iconKey: "circleDot" },
+  { id: "notes", label: "Mieux notés", iconKey: "star" },
+  { id: "moins_cher", label: "Moins chers", iconKey: "dollarSign" },
+  { id: "premium", label: "Premium", iconKey: "gem" },
+  { id: "urgent", label: "Urgence", iconKey: "alert" },
+];
+
+const PROTECT_BADGES = [
+  { iconKey: "lock", label: "Paiement sécurisé" },
+  { iconKey: "check", label: "Pro vérifié" },
+  { iconKey: "lifeBuoy", label: "Support Yorix" },
+  { iconKey: "shield", label: "Anti-arnaque" },
+];
+
+const WORKFLOW_STEPS = [
+  { n: 1, iconKey: "search", t: "Cherchez", d: "Filtrez par métier, quartier ou note" },
+  { n: 2, iconKey: "scale", t: "Comparez", d: "Profils, tarifs, avis et disponibilité" },
+  { n: 3, iconKey: "calendar", t: "Réservez", d: "WhatsApp, appel ou réservation Yorix" },
+  { n: 4, iconKey: "check", t: "Service terminé", d: "Évaluez et payez en toute sécurité" },
+];
+
+const PRO_PERKS = [
+  { iconKey: "check", label: "Inscription gratuite" },
+  { iconKey: "dollarSign", label: "Revenus 50K-300K/mois" },
+  { iconKey: "smartphone", label: "Clients via WhatsApp" },
+  { iconKey: "star", label: "Réputation en ligne" },
 ];
 
 export function PrestPage({
@@ -114,7 +135,7 @@ export function PrestPage({
       categorie: s.categorie || "Autre",
       ville: s.ville || "Cameroun",
       quartier: "",
-      emoji: "🛠️",
+      iconKey: PREST_CATEGORY_ICON_KEYS[s.categorie] || "wrench",
       photo: null,
       color_bg: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
       tags: [s.categorie || "Service"].filter(Boolean),
@@ -241,11 +262,11 @@ export function PrestPage({
               fontSize: ".7rem", fontWeight: 700, marginBottom: 14,
             }}
           >
-            👷 Yorix Pros — Trouvez un pro fiable
+            <HardHat size={14} aria-hidden /> Yorix Pros — Trouvez un pro fiable
           </div>
           <h1
             style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "1.75rem", fontWeight: 800,
+              fontFamily: "var(--font-display), sans-serif", fontSize: "1.75rem", fontWeight: 800,
               marginBottom: 8, letterSpacing: "-.5px", lineHeight: 1.18,
             }}
           >
@@ -282,7 +303,7 @@ export function PrestPage({
             >
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <div style={{ position: "relative", flex: "2 1 200px", minWidth: 180 }}>
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: ".9rem" }}>🔍</span>
+                  <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.85 }} aria-hidden />
                   <input
                     type="text"
                     placeholder="Métier ou prestation (ex: plombier, coiffeuse...)"
@@ -296,14 +317,14 @@ export function PrestPage({
                       background: "rgba(255,255,255,.08)",
                       color: "#fff",
                       fontSize: ".84rem",
-                      fontFamily: "'DM Sans',sans-serif",
+                      fontFamily: "var(--font-body)",
                       outline: "none",
                       boxSizing: "border-box",
                     }}
                   />
                 </div>
                 <div style={{ position: "relative", flex: "1 1 140px", minWidth: 140 }}>
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: ".9rem" }}>📍</span>
+                  <MapPin size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.85 }} aria-hidden />
                   <input
                     type="text"
                     placeholder="Quartier"
@@ -317,7 +338,7 @@ export function PrestPage({
                       background: "rgba(255,255,255,.08)",
                       color: "#fff",
                       fontSize: ".84rem",
-                      fontFamily: "'DM Sans',sans-serif",
+                      fontFamily: "var(--font-body)",
                       outline: "none",
                       boxSizing: "border-box",
                     }}
@@ -335,7 +356,7 @@ export function PrestPage({
                     background: "rgba(255,255,255,.08)",
                     color: "#fff",
                     fontSize: ".84rem",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--font-body)",
                     outline: "none",
                     cursor: "pointer",
                   }}
@@ -361,14 +382,14 @@ export function PrestPage({
                   border: "none",
                   padding: "12px 18px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: ".88rem",
                   cursor: "pointer",
                   boxShadow: "0 4px 14px rgba(252,209,22,.3)",
                 }}
               >
-                🚀 Trouver maintenant
+                <Rocket size={16} aria-hidden /> Trouver maintenant
               </button>
               <button
                 onClick={activerGeo}
@@ -379,13 +400,13 @@ export function PrestPage({
                   border: `1.5px solid ${geoActive ? "#4fd17d" : "rgba(255,255,255,.15)"}`,
                   padding: "12px 18px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 700,
                   fontSize: ".82rem",
                   cursor: "pointer",
                 }}
               >
-                {geoActive ? "✓ Position activée" : "📍 Près de moi"}
+                {geoActive ? <><CheckCircle2 size={14} aria-hidden /> Position activée</> : <><MapPin size={14} aria-hidden /> Près de moi</>}
               </button>
             </div>
           </div>
@@ -401,7 +422,7 @@ export function PrestPage({
                 letterSpacing: ".05em",
               }}
             >
-              ⚡ BESOIN URGENT ?
+              <Zap size={14} aria-hidden /> BESOIN URGENT ?
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {RACCOURCIS_URGENTS.map((r) => (
@@ -417,11 +438,14 @@ export function PrestPage({
                     fontSize: ".72rem",
                     fontWeight: 600,
                     cursor: "pointer",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--font-body)",
                     transition: "all .15s",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
                   }}
                 >
-                  {r.label}
+                  <ContentIcon name={r.iconKey} size={13} /> {r.label}
                 </button>
               ))}
             </div>
@@ -446,7 +470,7 @@ export function PrestPage({
               <div key={s.lbl}>
                 <div
                   style={{
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display), sans-serif",
                     fontSize: ".95rem",
                     fontWeight: 800,
                     color: "var(--yellow, #fcd116)",
@@ -477,11 +501,13 @@ export function PrestPage({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ fontSize: "2rem" }}>🛡️</div>
+          <div style={{ color: "var(--green, #1a6b3a)" }}>
+            <Shield size={32} strokeWidth={2.25} aria-hidden />
+          </div>
           <div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: ".95rem",
                 color: "var(--ink, #111)",
@@ -496,14 +522,9 @@ export function PrestPage({
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[
-            "🔒 Paiement sécurisé",
-            "✓ Pro vérifié",
-            "🆘 Support Yorix",
-            "🛡️ Anti-arnaque",
-          ].map((t) => (
+          {PROTECT_BADGES.map((b) => (
             <span
-              key={t}
+              key={b.label}
               style={{
                 background: "var(--surface, #fff)",
                 color: "var(--ink, #111)",
@@ -512,9 +533,12 @@ export function PrestPage({
                 fontSize: ".68rem",
                 fontWeight: 600,
                 border: "1px solid var(--border, #e5e5e5)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
               }}
             >
-              {t}
+              <ContentIcon name={b.iconKey} size={12} /> {b.label}
             </span>
           ))}
         </div>
@@ -541,16 +565,19 @@ export function PrestPage({
               border: `1.5px solid ${prestCatFilter === c.cat ? c.color : "var(--border, #e5e5e5)"}`,
               borderRadius: 50,
               padding: "8px 16px",
-              fontFamily: "'DM Sans',sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: ".78rem",
               cursor: "pointer",
               whiteSpace: "nowrap",
               transition: "all .2s",
               flexShrink: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            {c.label}
+            <ContentIcon name={c.iconKey} size={14} /> {c.label}
           </button>
         ))}
       </div>
@@ -584,13 +611,16 @@ export function PrestPage({
               border: "none",
               padding: "5px 12px",
               borderRadius: 50,
-              fontFamily: "'DM Sans',sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: ".7rem",
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
             }}
           >
-            {t.label}
+            <ContentIcon name={t.iconKey} size={12} /> {t.label}
           </button>
         ))}
         {(prestSearch || prestQuartier || prestCatFilter || prestVilleFilter) && (
@@ -613,7 +643,7 @@ export function PrestPage({
               cursor: "pointer",
             }}
           >
-            ✕ Effacer filtres
+            <X size={12} aria-hidden /> Effacer filtres
           </button>
         )}
       </div>
@@ -622,7 +652,7 @@ export function PrestPage({
       <div id="prest-results">
         <div
           style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "var(--font-display), sans-serif",
             fontWeight: 700,
             fontSize: ".95rem",
             color: "var(--ink, #111)",
@@ -636,10 +666,10 @@ export function PrestPage({
         {topPrests.length > 0 && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: "1.1rem" }}>⭐</span>
+              <Star size={18} fill="#fcd116" color="#fcd116" aria-hidden />
               <h3
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: "1rem",
                   color: "var(--ink, #111)",
@@ -682,14 +712,14 @@ export function PrestPage({
             {topPrests.length > 0 && (
               <h3
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: "1rem",
                   color: "var(--ink, #111)",
                   marginBottom: 12,
                 }}
               >
-                👷 Tous les prestataires
+                <HardHat size={16} aria-hidden /> Tous les prestataires
               </h3>
             )}
             <div
@@ -709,7 +739,9 @@ export function PrestPage({
         {/* Aucun résultat */}
         {filteredPrests.length === 0 && (
           <div className="empty-state" style={{ padding: "60px 20px" }}>
-            <div className="empty-icon">🔍</div>
+            <div className="empty-icon" style={{ display: "flex", justifyContent: "center" }}>
+              <Search size={40} strokeWidth={1.75} aria-hidden />
+            </div>
             <p>Aucun prestataire ne correspond à votre recherche.</p>
             <button
               onClick={() => {
@@ -725,13 +757,16 @@ export function PrestPage({
                 padding: "10px 22px",
                 borderRadius: 9,
                 marginTop: 14,
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 700,
                 fontSize: ".82rem",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              🔄 Voir tous les prestataires
+              <RefreshCw size={14} aria-hidden /> Voir tous les prestataires
             </button>
           </div>
         )}
@@ -749,7 +784,7 @@ export function PrestPage({
       >
         <h3
           style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "var(--font-display), sans-serif",
             fontWeight: 800,
             fontSize: "1.05rem",
             color: "var(--ink, #111)",
@@ -758,7 +793,8 @@ export function PrestPage({
             letterSpacing: "-.3px",
           }}
         >
-          🗺️ Comment ça fonctionne ?
+          <MapPin size={18} aria-hidden style={{ verticalAlign: "middle", marginRight: 6 }} />
+          Comment ça fonctionne ?
         </h3>
         <div
           style={{
@@ -767,12 +803,7 @@ export function PrestPage({
             gap: 12,
           }}
         >
-          {[
-            { n: 1, icon: "🔍", t: "Cherchez", d: "Filtrez par métier, quartier ou note" },
-            { n: 2, icon: "⚖️", t: "Comparez", d: "Profils, tarifs, avis et disponibilité" },
-            { n: 3, icon: "📅", t: "Réservez", d: "WhatsApp, appel ou réservation Yorix" },
-            { n: 4, icon: "✅", t: "Service terminé", d: "Évaluez et payez en toute sécurité" },
-          ].map((s) => (
+          {WORKFLOW_STEPS.map((s) => (
             <div
               key={s.n}
               style={{
@@ -793,7 +824,7 @@ export function PrestPage({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: ".78rem",
                   margin: "0 auto 10px",
@@ -801,10 +832,12 @@ export function PrestPage({
               >
                 {s.n}
               </div>
-              <div style={{ fontSize: "1.5rem", marginBottom: 5 }}>{s.icon}</div>
+              <div style={{ marginBottom: 5, color: "var(--green, #1a6b3a)", display: "flex", justifyContent: "center" }}>
+                <ContentIcon name={s.iconKey} size={24} />
+              </div>
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 700,
                   fontSize: ".82rem",
                   color: "var(--ink, #111)",
@@ -866,11 +899,11 @@ export function PrestPage({
                 marginBottom: 10,
               }}
             >
-              💼 Devenez pro Yorix
+              <Briefcase size={13} aria-hidden /> Devenez pro Yorix
             </div>
             <h3
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: "1.4rem",
                 marginBottom: 8,
@@ -892,14 +925,9 @@ export function PrestPage({
             </p>
 
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-              {[
-                "✅ Inscription gratuite",
-                "💰 Revenus 50K-300K/mois",
-                "📱 Clients via WhatsApp",
-                "⭐ Réputation en ligne",
-              ].map((t) => (
+              {PRO_PERKS.map((p) => (
                 <span
-                  key={t}
+                  key={p.label}
                   style={{
                     background: "rgba(255,255,255,.1)",
                     color: "rgba(255,255,255,.85)",
@@ -908,9 +936,12 @@ export function PrestPage({
                     fontSize: ".68rem",
                     fontWeight: 600,
                     border: "1px solid rgba(255,255,255,.15)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
                   }}
                 >
-                  {t}
+                  <ContentIcon name={p.iconKey} size={12} /> {p.label}
                 </span>
               ))}
             </div>
@@ -923,19 +954,25 @@ export function PrestPage({
                 border: "none",
                 padding: "13px 26px",
                 borderRadius: 11,
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: ".9rem",
                 cursor: "pointer",
                 boxShadow: "0 6px 18px rgba(252,209,22,.3)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
               }}
             >
-              🚀 Devenir prestataire gratuitement
+              <Rocket size={16} aria-hidden /> Devenir prestataire gratuitement
             </button>
           </div>
 
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "5rem", lineHeight: 1, marginBottom: 6 }}>👷‍♂️💼</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 6, color: "var(--yellow, #fcd116)" }}>
+              <HardHat size={48} strokeWidth={1.75} aria-hidden />
+              <Briefcase size={48} strokeWidth={1.75} aria-hidden />
+            </div>
             <div
               style={{
                 background: "rgba(252,209,22,.15)",
@@ -947,7 +984,7 @@ export function PrestPage({
             >
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontSize: "1.5rem",
                   fontWeight: 800,
                   color: "var(--yellow, #fcd116)",
@@ -990,14 +1027,18 @@ export function PrestPage({
               border: "none",
               padding: "13px 16px",
               borderRadius: 50,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 800,
               fontSize: ".85rem",
               cursor: "pointer",
               boxShadow: "0 8px 24px rgba(252,209,22,.45), 0 2px 6px rgba(0,0,0,.15)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
             }}
           >
-            🚀 Trouver un pro maintenant
+            <Rocket size={16} aria-hidden /> Trouver un pro maintenant
           </button>
           <button
             onClick={() =>
@@ -1021,8 +1062,9 @@ export function PrestPage({
               alignItems: "center",
               justifyContent: "center",
             }}
+            aria-label="Contacter via WhatsApp"
           >
-            💬
+            <MessageCircle size={22} aria-hidden />
           </button>
         </div>
       )}
@@ -1034,7 +1076,9 @@ export function PrestPage({
           onClick={(e) => e.target === e.currentTarget && closePrest()}
         >
           <div className="modal" style={{ maxWidth: 540 }}>
-            <button type="button" className="modal-close" onClick={() => closePrest()}>✕</button>
+            <button type="button" className="modal-close" onClick={() => closePrest()} aria-label="Fermer">
+              <X size={18} aria-hidden />
+            </button>
 
             {/* Photo/Avatar header */}
             <div
@@ -1078,13 +1122,13 @@ export function PrestPage({
                     boxShadow: "0 6px 20px rgba(0,0,0,.15)",
                   }}
                 >
-                  {selectedPrest.emoji}
+                  <ContentIcon name={prestIconKey(selectedPrest)} size={40} />
                 </div>
               )}
 
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: "1.25rem",
                   color: "var(--ink, #111)",
@@ -1096,26 +1140,30 @@ export function PrestPage({
                   <span style={{ marginLeft: 6, fontSize: ".82rem", color: "#0066cc" }}>✓</span>
                 )}
               </div>
-              <div style={{ fontSize: ".82rem", color: "var(--gray, #666)", marginTop: 3 }}>
-                {selectedPrest.metier} · 📍 {selectedPrest.ville}
-                {selectedPrest.quartier && `, ${selectedPrest.quartier}`}
+              <div style={{ fontSize: ".82rem", color: "var(--gray, #666)", marginTop: 3, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, flexWrap: "wrap" }}>
+                <span>{selectedPrest.metier}</span>
+                <span>·</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                  <MapPin size={12} aria-hidden /> {selectedPrest.ville}
+                  {selectedPrest.quartier && `, ${selectedPrest.quartier}`}
+                </span>
               </div>
 
               {/* Badges */}
               <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 10 }}>
                 {selectedPrest.top && (
-                  <span style={{ background: "var(--yellow, #fcd116)", color: "#0d1f14", padding: "3px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 800 }}>
-                    ⭐ TOP
+                  <span style={{ background: "var(--yellow, #fcd116)", color: "#0d1f14", padding: "3px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <Star size={10} fill="#0d1f14" aria-hidden /> TOP
                   </span>
                 )}
                 {selectedPrest.dispo && (
-                  <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 700 }}>
-                    🟢 Disponible
+                  <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <CircleDot size={10} aria-hidden /> Disponible
                   </span>
                 )}
                 {selectedPrest.urgent_24h && (
-                  <span style={{ background: "#fff0f0", color: "#dc2626", padding: "3px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 700 }}>
-                    🚨 Urgence 24h
+                  <span style={{ background: "#fff0f0", color: "#dc2626", padding: "3px 10px", borderRadius: 50, fontSize: ".62rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <AlertTriangle size={10} aria-hidden /> Urgence 24h
                   </span>
                 )}
               </div>
@@ -1124,9 +1172,9 @@ export function PrestPage({
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 14 }}>
               {[
-                { icon: "⭐", val: selectedPrest.note, lbl: `${selectedPrest.avis} avis` },
-                { icon: "📦", val: selectedPrest.realisations, lbl: "missions" },
-                { icon: "💼", val: selectedPrest.experience, lbl: "expérience" },
+                { iconKey: "star", val: selectedPrest.note, lbl: `${selectedPrest.avis} avis` },
+                { iconKey: "package", val: selectedPrest.realisations, lbl: "missions" },
+                { iconKey: "briefcase", val: selectedPrest.experience, lbl: "expérience" },
               ].map((s) => (
                 <div
                   key={s.lbl}
@@ -1138,8 +1186,10 @@ export function PrestPage({
                     border: "1px solid var(--border, #e5e5e5)",
                   }}
                 >
-                  <div style={{ fontSize: "1rem", marginBottom: 2 }}>{s.icon}</div>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem", color: "var(--ink, #111)" }}>
+                  <div style={{ marginBottom: 2, display: "flex", justifyContent: "center", color: "var(--green, #1a6b3a)" }}>
+                    <ContentIcon name={s.iconKey} size={16} />
+                  </div>
+                  <div style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 800, fontSize: ".85rem", color: "var(--ink, #111)" }}>
                     {s.val}
                   </div>
                   <div style={{ fontSize: ".62rem", color: "var(--gray, #666)" }}>{s.lbl}</div>
@@ -1150,8 +1200,8 @@ export function PrestPage({
             {/* Bio */}
             {selectedPrest.bio && (
               <div style={{ background: "var(--surface2, #f5f5f5)", borderRadius: 10, padding: 14, marginBottom: 14 }}>
-                <div style={{ fontSize: ".68rem", fontWeight: 700, color: "var(--gray, #666)", marginBottom: 6 }}>
-                  📝 À PROPOS
+                <div style={{ fontSize: ".68rem", fontWeight: 700, color: "var(--gray, #666)", marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                  <FileText size={12} aria-hidden /> À PROPOS
                 </div>
                 <p style={{ fontSize: ".84rem", color: "var(--ink, #111)", lineHeight: 1.6 }}>
                   {selectedPrest.bio}
@@ -1162,8 +1212,8 @@ export function PrestPage({
             {/* Tags / Spécialités */}
             {selectedPrest.tags && selectedPrest.tags.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: ".68rem", fontWeight: 700, color: "var(--gray, #666)", marginBottom: 8 }}>
-                  🏷️ SPÉCIALITÉS
+                <div style={{ fontSize: ".68rem", fontWeight: 700, color: "var(--gray, #666)", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                  <Tag size={12} aria-hidden /> SPÉCIALITÉS
                 </div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {selectedPrest.tags.map((t) => (
@@ -1201,15 +1251,15 @@ export function PrestPage({
             >
               <div>
                 <div style={{ fontSize: ".68rem", color: "var(--gray, #666)", fontWeight: 700 }}>TARIF</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.15rem", color: "var(--green, #1a6b3a)" }}>
+                <div style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 800, fontSize: "1.15rem", color: "var(--green, #1a6b3a)" }}>
                   {selectedPrest.prix || formatPrestPrix(selectedPrest)}
                 </div>
               </div>
               {selectedPrest.temps_reponse && (
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: ".62rem", color: "var(--gray, #666)" }}>Réponse</div>
-                  <div style={{ fontSize: ".82rem", color: "var(--green, #1a6b3a)", fontWeight: 700 }}>
-                    ⏱ {selectedPrest.temps_reponse}
+                  <div style={{ fontSize: ".82rem", color: "var(--green, #1a6b3a)", fontWeight: 700, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                    <Clock3 size={12} aria-hidden /> {selectedPrest.temps_reponse}
                   </div>
                 </div>
               )}
@@ -1227,11 +1277,12 @@ export function PrestPage({
                 style={{
                   background: "#25D366", color: "#fff", border: "none",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
               >
-                💬 WhatsApp
+                <MessageCircle size={14} aria-hidden /> WhatsApp
               </button>
               <button
                 onClick={() => {
@@ -1241,11 +1292,12 @@ export function PrestPage({
                 style={{
                   background: "#0066cc", color: "#fff", border: "none",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
               >
-                📞 Appeler
+                <Phone size={14} aria-hidden /> Appeler
               </button>
               <button
                 onClick={() => {
@@ -1268,11 +1320,12 @@ export function PrestPage({
                 style={{
                   background: "var(--surface2, #f5f5f5)", color: "var(--ink, #111)", border: "1px solid var(--border,#ddd)",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
               >
-                ➕ Panier
+                <Plus size={14} aria-hidden /> Panier
               </button>
               <button
                 onClick={() =>
@@ -1284,11 +1337,12 @@ export function PrestPage({
                 style={{
                   background: "var(--green, #1a6b3a)", color: "#fff", border: "none",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
               >
-                📅 Réserver
+                <Calendar size={14} aria-hidden /> Réserver
               </button>
             </div>
           </div>

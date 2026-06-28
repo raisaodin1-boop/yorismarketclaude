@@ -12,6 +12,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from "react";
+import { GraduationCap } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTES
@@ -1323,41 +1324,7 @@ export function AcademyPage({
     }
     .yacad3-btn--sec:hover { background: rgba(255,255,255,.18); }
 
-    /* ━━━ LOADING / EMPTY ━━━ */
-    .yacad3-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 60px 20px;
-      color: var(--acad-gray);
-    }
-    .yacad3-spinner {
-      width: 22px; height: 22px;
-      border: 3px solid var(--acad-border);
-      border-top-color: var(--acad-green);
-      border-radius: 50%;
-      animation: yacad3Spin .7s linear infinite;
-    }
-    @keyframes yacad3Spin { to { transform: rotate(360deg); } }
-    .yacad3-empty {
-      text-align: center;
-      padding: 50px 20px;
-      background: var(--acad-surface);
-      border: 1.5px dashed var(--acad-border);
-      border-radius: 14px;
-    }
-    .yacad3-empty-ico {
-      font-size: 3rem;
-      margin-bottom: 10px;
-      opacity: .6;
-    }
-    .yacad3-empty p {
-      color: var(--acad-gray);
-      font-size: .88rem;
-      line-height: 1.65;
-      margin: 0;
-    }
+    /* Loading / empty → yorix-pages-shared.css */
 
     /* ━━━ RESPONSIVE ━━━ */
     @media (max-width: 960px) {
@@ -1594,13 +1561,13 @@ export function AcademyPage({
           </div>
 
           {academyLoading ? (
-            <div className="yacad3-loading">
-              <div className="yacad3-spinner" />
+            <div className="yx-mkt-loading">
+              <div className="yx-mkt-spinner" />
               Chargement des formations...
             </div>
           ) : filteredCourses.length === 0 ? (
-            <div className="yacad3-empty">
-              <div className="yacad3-empty-ico">🎓</div>
+            <div className="yx-mkt-empty">
+              <div className="yx-mkt-empty-icon"><GraduationCap size={32} strokeWidth={1.75} aria-hidden /></div>
               <p>Aucune formation dans cette catégorie pour l'instant.<br/>Revenez bientôt — de nouveaux modules arrivent chaque semaine.</p>
             </div>
           ) : (

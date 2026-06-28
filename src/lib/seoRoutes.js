@@ -176,11 +176,17 @@ export function pathForPageBare(page, opts = {}) {
   if (page === "productDetail" && opts.productSlug) {
     return `/produit/${opts.productSlug}`;
   }
+  if (page === "sellerStore" && opts.sellerSlug) {
+    return `/fournisseur/${opts.sellerSlug}`;
+  }
   if (page === "prestDetail" && opts.prestSlug) {
     return `/prestataire/${opts.prestSlug}`;
   }
   if (page === "merchHub" && opts.merchHub && MERCH_HUBS[opts.merchHub]) {
     return `/${opts.merchHub}`;
+  }
+  if (opts.seoAlias && SEO_URL_ALIASES[opts.seoAlias]?.pathBare) {
+    return SEO_URL_ALIASES[opts.seoAlias].pathBare;
   }
   if (page === "produits" && opts.categorySlug) {
     if (opts.subCategorySlug) {
@@ -312,6 +318,9 @@ export function parsePathnameBare(rawIn) {
 
   if (a === "produit" && b) {
     return { page: "productDetail", productSlug: b, canonicalPathBare: raw };
+  }
+  if (a === "fournisseur" && b) {
+    return { page: "sellerStore", sellerSlug: b, canonicalPathBare: raw };
   }
   if (a === "categories" && b) {
     if (c && /^[a-z0-9-]{1,80}$/.test(c)) {

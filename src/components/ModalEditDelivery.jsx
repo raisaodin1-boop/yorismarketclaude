@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from "react";
 import { DELIVERY_STATUTS, getStatutConfig } from "../utils/deliveryWorkflow";
+import { DeliveryStatusIcon } from "../lib/contentIcons";
 import { CITIES } from "../lib/constants";
 
 const STATUTS_ADMIN = [
@@ -122,9 +123,12 @@ export function ModalEditDelivery({
                 borderRadius: 50,
                 fontSize: ".78rem",
                 fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              {cfg.icon} {cfg.label}
+              <DeliveryStatusIcon statut={form.statut} size={14} /> {cfg.label}
             </span>
             <button
               onClick={onClose}

@@ -13,27 +13,30 @@
 
 import { useMemo, useState } from "react";
 import { BLOG_DATA } from "../lib/constants";
+import { ContentIcon } from "../lib/contentIcons";
+import { Search, Rocket, Lock, PenLine, PartyPopper } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { userFacingSuccess } from "../lib/appToast";
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTES
 // ─────────────────────────────────────────────────────────────
 const CATEGORY_META = {
-  BUSINESS:     { icon: "📈", color: "#1565c0", pitch: "Stratégies, lancement, croissance" },
-  LOCAL:        { icon: "🌿", color: "#1a6b3a", pitch: "Produits locaux, terroir & export" },
-  PAIEMENT:     { icon: "💳", color: "#b45309", pitch: "Mobile money, fintech, escrow" },
-  LIVRAISON:    { icon: "🚚", color: "#ea580c", pitch: "Yorix Ride, logistique, suivi" },
-  "SÉCURITÉ":   { icon: "🔐", color: "#7c3aed", pitch: "Escrow, anti-arnaque, confiance" },
-  PRESTATAIRES: { icon: "⚡", color: "#dc2626", pitch: "Services à domicile, BTP, beauté" },
-  MODE:         { icon: "👗", color: "#db2777", pitch: "Style camerounais, wax, tendances" },
-  "CARRIÈRE":   { icon: "🏍️", color: "#0891b2", pitch: "Devenir vendeur, livreur, freelance" },
+  BUSINESS:     { iconKey: "trendingUp", color: "#1565c0", pitch: "Stratégies, lancement, croissance" },
+  LOCAL:        { iconKey: "leaf", color: "#1a6b3a", pitch: "Produits locaux, terroir & export" },
+  PAIEMENT:     { iconKey: "creditCard", color: "#b45309", pitch: "Mobile money, fintech, escrow" },
+  LIVRAISON:    { iconKey: "truck", color: "#ea580c", pitch: "Yorix Ride, logistique, suivi" },
+  "SÉCURITÉ":   { iconKey: "lock", color: "#7c3aed", pitch: "Escrow, anti-arnaque, confiance" },
+  PRESTATAIRES: { iconKey: "zap", color: "#dc2626", pitch: "Services à domicile, BTP, beauté" },
+  MODE:         { iconKey: "shirt", color: "#db2777", pitch: "Style camerounais, wax, tendances" },
+  "CARRIÈRE":   { iconKey: "bike", color: "#0891b2", pitch: "Devenir vendeur, livreur, freelance" },
 };
 
 const EDITORIAL_PILLARS = [
-  { e: "🇨🇲", t: "100 % camerounais",  d: "Rédigé par des journalistes basés à Douala et Yaoundé, sur le terrain." },
-  { e: "✅", t: "Faits vérifiés",       d: "Sources publiques, partenaires officiels, chiffres horodatés." },
-  { e: "🧭", t: "Actionnable",          d: "Chaque guide se termine par une étape concrète à exécuter aujourd'hui." },
-  { e: "🛡️", t: "Indépendant",         d: "Pas d'advertorial déguisé — la transparence éditoriale d'abord." },
+  { iconKey: "flag", t: "100 % camerounais",  d: "Rédigé par des journalistes basés à Douala et Yaoundé, sur le terrain." },
+  { iconKey: "check", t: "Faits vérifiés",       d: "Sources publiques, partenaires officiels, chiffres horodatés." },
+  { iconKey: "target", t: "Actionnable",          d: "Chaque guide se termine par une étape concrète à exécuter aujourd'hui." },
+  { iconKey: "shield", t: "Indépendant",         d: "Pas d'advertorial déguisé — la transparence éditoriale d'abord." },
 ];
 
 const GUIDE_HIGHLIGHTS = ["BUSINESS", "SÉCURITÉ", "LIVRAISON"];
@@ -50,7 +53,7 @@ function openExternal(url) {
 // COMPOSANT : CARTE ARTICLE
 // ─────────────────────────────────────────────────────────────
 function ArticleCard({ p, size = "normal" }) {
-  const meta = CATEGORY_META[p.cat] || { icon: p.emoji, color: "#1a6b3a" };
+  const meta = CATEGORY_META[p.cat] || { iconKey: p.iconKey || "star", color: "#1a6b3a" };
   return (
     <article
       className={`yblog3-card yblog3-card--${size}`}
@@ -73,10 +76,12 @@ function ArticleCard({ p, size = "normal" }) {
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         ) : (
-          <span className="yblog3-card-emoji" aria-hidden>{p.emoji}</span>
+          <span className="yblog3-card-emoji" aria-hidden>
+            <ContentIcon name={p.iconKey || meta.iconKey} size={32} />
+          </span>
         )}
         <span className="yblog3-card-cat" style={{ "--cat-color": meta.color }}>
-          <span aria-hidden>{meta.icon}</span> {p.cat}
+          <ContentIcon name={meta.iconKey} size={12} /> {p.cat}
         </span>
         <span className="yblog3-card-read"><span aria-hidden>⏱</span> {p.read}</span>
       </div>
@@ -186,10 +191,11 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       console.warn(e?.message);
     }
     setNlSent(true);
+    userFacingSuccess("Bienvenue ! Vérifiez votre boîte mail pour confirmer.", 5000);
   };
 
   const featMeta = featured
-    ? (CATEGORY_META[featured.cat] || { icon: featured.emoji, color: "#1a6b3a" })
+    ? (CATEGORY_META[featured.cat] || { iconKey: featured.iconKey || "star", color: "#1a6b3a" })
     : null;
 
   // ─────────────────────────────────────────────────────────────
@@ -199,8 +205,8 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
     .yorix-blog-v3 {
       --jb-green: #1a6b3a;
       --jb-green-deep: #0d4d28;
-      --jb-green-pale: #e8f5e9;
-      --jb-green-light: #86efac;
+      --jb-green-pale: var(--yx-mkt-green-pale, #e8f5e9);
+      --jb-green-light: var(--yx-mkt-green-light, #86efac);
       --jb-yellow: #fcd116;
       --jb-gold: #f59e0b;
       --jb-ink: var(--ink, #111);
@@ -212,7 +218,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       --jb-shadow: 0 12px 30px rgba(0,0,0,.08);
       --jb-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--jb-ink);
     }
     .yorix-blog-v3 * { box-sizing: border-box; }
@@ -309,7 +315,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
     }
 
     .yblog3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -353,7 +359,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       background: rgba(255,255,255,.08);
       backdrop-filter: blur(10px);
       color: #fff;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-size: .88rem;
       outline: none;
       transition: all .2s;
@@ -474,7 +480,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       color: #0d1f14;
       padding: 5px 12px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .68rem;
       letter-spacing: .04em;
@@ -493,14 +499,14 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       align-items: center;
       gap: 5px;
       color: var(--cat-color, var(--jb-green));
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .7rem;
       letter-spacing: .08em;
       margin-bottom: 9px;
     }
     .yblog3-hero-feat-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.25rem;
       font-weight: 800;
       color: var(--jb-ink);
@@ -540,7 +546,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .78rem;
     }
@@ -619,7 +625,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       margin-bottom: 10px;
     }
     .yblog3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -640,7 +646,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       -webkit-text-fill-color: transparent;
     }
     .yblog3-h2-sm {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.2rem;
       font-weight: 800;
       color: var(--jb-ink);
@@ -773,7 +779,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       color: var(--cat-color, var(--jb-green));
       padding: 4px 11px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .62rem;
       letter-spacing: .06em;
@@ -799,7 +805,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       flex-direction: column;
     }
     .yblog3-card-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1rem;
       font-weight: 800;
       color: var(--jb-ink);
@@ -889,7 +895,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       transform: scale(1.12) rotate(-5deg);
     }
     .yblog3-pillar h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: .98rem;
       font-weight: 800;
       color: var(--jb-ink);
@@ -917,12 +923,14 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       overflow: hidden;
     }
     .yblog3-nl::before {
-      content: '📬';
+      content: '';
       position: absolute;
       top: 50%; right: 30px;
       transform: translateY(-50%);
-      font-size: 11rem;
-      opacity: .04;
+      width: 11rem;
+      height: 11rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,209,22,.06) 0%, transparent 70%);
       pointer-events: none;
     }
     .yblog3-nl-left { position: relative; z-index: 2; }
@@ -973,7 +981,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       border: 1px solid rgba(255,255,255,.15);
       background: rgba(0,0,0,.25);
       color: #fff;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-size: .88rem;
       outline: none;
       transition: border-color .2s;
@@ -1001,12 +1009,14 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       overflow: hidden;
     }
     .yblog3-final-cta::before {
-      content: '✍️';
+      content: '';
       position: absolute;
       top: 50%; right: -10px;
       transform: translateY(-50%) rotate(-10deg);
-      font-size: 11rem;
-      opacity: .05;
+      width: 11rem;
+      height: 11rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,209,22,.05) 0%, transparent 70%);
       pointer-events: none;
     }
     .yblog3-final-cta-text { position: relative; z-index: 2; }
@@ -1023,7 +1033,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
     .yblog3-btn {
       padding: 12px 22px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .85rem;
       cursor: pointer;
@@ -1076,7 +1086,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
       opacity: .55;
     }
     .yblog3-empty h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--jb-ink);
@@ -1179,7 +1189,9 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                   role="search"
                   aria-label="Rechercher un article"
                 >
-                  <span className="yblog3-hero-search-ico" aria-hidden>🔎</span>
+                  <span className="yblog3-hero-search-ico" aria-hidden>
+                    <Search size={18} strokeWidth={2.25} />
+                  </span>
                   <input
                     type="search"
                     placeholder="Rechercher : MoMo, livraison, escrow, wax…"
@@ -1205,16 +1217,16 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                         className="yblog3-hero-theme"
                         onClick={() => { setBlogFilter(cat); setQuery(""); }}
                       >
-                        <span aria-hidden>{m.icon}</span> {cat}
+                        <ContentIcon name={m.iconKey} size={14} /> {cat}
                       </button>
                     </li>
                   ))}
                 </ul>
 
                 <ul className="yblog3-hero-trust" aria-label="Engagement éditorial">
-                  <li><span aria-hidden>✅</span> Faits vérifiés</li>
-                  <li><span aria-hidden>🇨🇲</span> Rédigé au Cameroun</li>
-                  <li><span aria-hidden>📅</span> Mis à jour chaque semaine</li>
+                  <li style={{ display: "flex", alignItems: "center", gap: 5 }}><ContentIcon name="check" size={14} /> Faits vérifiés</li>
+                  <li style={{ display: "flex", alignItems: "center", gap: 5 }}><ContentIcon name="flag" size={14} /> Rédigé au Cameroun</li>
+                  <li style={{ display: "flex", alignItems: "center", gap: 5 }}><ContentIcon name="calendar" size={14} /> Mis à jour chaque semaine</li>
                 </ul>
               </div>
 
@@ -1246,16 +1258,20 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                           onError={(e) => { e.currentTarget.style.display = "none"; }}
                         />
                       ) : (
-                        <span className="yblog3-hero-feat-fallback" aria-hidden>{featured.emoji}</span>
+                        <span className="yblog3-hero-feat-fallback" aria-hidden>
+                          <ContentIcon name={featured.iconKey || featMeta?.iconKey || "star"} size={40} />
+                        </span>
                       )}
-                      <span className="yblog3-hero-feat-pin">⭐ À la une</span>
+                      <span className="yblog3-hero-feat-pin" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <ContentIcon name="star" size={12} /> À la une
+                      </span>
                     </div>
                     <div className="yblog3-hero-feat-body">
                       <span
                         className="yblog3-hero-feat-kicker"
                         style={{ "--cat-color": featMeta?.color }}
                       >
-                        <span aria-hidden>{featMeta?.icon}</span> {featured.cat}
+                        <ContentIcon name={featMeta?.iconKey || "star"} size={12} /> {featured.cat}
                       </span>
                       <h2 className="yblog3-hero-feat-title">{featured.title}</h2>
                       <p className="yblog3-hero-feat-ex">{featured.excerpt}</p>
@@ -1296,12 +1312,12 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
               className={`yblog3-cat${blogFilter === "TOUT" ? " is-active" : ""}`}
               onClick={() => setBlogFilter("TOUT")}
             >
-              <span className="yblog3-cat-ico" aria-hidden>📚</span>
+              <span className="yblog3-cat-ico" aria-hidden><ContentIcon name="star" size={18} /></span>
               <span className="yblog3-cat-label">Tout</span>
               <span className="yblog3-cat-count">{counts.TOUT}</span>
             </button>
             {categoryOrder.map((cat) => {
-              const m = CATEGORY_META[cat] || { icon: "📰", color: "#1a6b3a" };
+              const m = CATEGORY_META[cat] || { iconKey: "star", color: "#1a6b3a" };
               return (
                 <button
                   key={cat}
@@ -1312,7 +1328,7 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                   style={{ "--cat-color": m.color }}
                   onClick={() => setBlogFilter(cat)}
                 >
-                  <span className="yblog3-cat-ico" aria-hidden>{m.icon}</span>
+                  <span className="yblog3-cat-ico" aria-hidden><ContentIcon name={m.iconKey} size={18} /></span>
                   <span className="yblog3-cat-label">{cat}</span>
                   <span className="yblog3-cat-count">{counts[cat] || 0}</span>
                 </button>
@@ -1343,7 +1359,9 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
 
           {gridArticles.length === 0 ? (
             <div className="yblog3-empty">
-              <div className="yblog3-empty-ico" aria-hidden>📰</div>
+              <div className="yblog3-empty-ico" aria-hidden style={{ display: "flex", justifyContent: "center", color: "var(--jb-green)" }}>
+                <ContentIcon name="newspaper" size={40} />
+              </div>
               <h3>Aucun article ne correspond à votre recherche.</h3>
               <p>Essayez un autre mot-clé ou parcourez toutes les catégories.</p>
               <div className="yblog3-empty-cta">
@@ -1413,7 +1431,9 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
           <div className="yblog3-pillars">
             {EDITORIAL_PILLARS.map((p) => (
               <article key={p.t} className="yblog3-pillar">
-                <div className="yblog3-pillar-emoji" aria-hidden>{p.e}</div>
+                <div className="yblog3-pillar-emoji" aria-hidden>
+                  <ContentIcon name={p.iconKey} size={28} />
+                </div>
                 <h3>{p.t}</h3>
                 <p>{p.d}</p>
               </article>
@@ -1438,9 +1458,9 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                 <strong> Zéro spam, désinscription en un clic.</strong>
               </p>
               <ul className="yblog3-nl-perks">
-                <li><span aria-hidden>📈</span> Analyses commerce CM</li>
-                <li><span aria-hidden>🎯</span> Conseils vendeurs</li>
-                <li><span aria-hidden>💎</span> Opportunités exclusives</li>
+                <li><ContentIcon name="trendingUp" size={14} /> Analyses commerce CM</li>
+                <li><ContentIcon name="target" size={14} /> Conseils vendeurs</li>
+                <li><ContentIcon name="gem" size={14} /> Opportunités exclusives</li>
               </ul>
             </div>
 
@@ -1462,14 +1482,20 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                   onChange={(e) => setNlEmail(e.target.value)}
                   required
                 />
-                <button type="submit" className="yblog3-btn yblog3-btn--pri yblog3-nl-submit">
-                  {nlSent ? "Abonné(e) ✓" : "S'abonner 🚀"}
+                <button type="submit" className="yblog3-btn yblog3-btn--pri yblog3-nl-submit" style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                  {nlSent ? (
+                    <>Abonné(e) <ContentIcon name="check" size={14} /></>
+                  ) : (
+                    <><Rocket size={14} aria-hidden /> S'abonner</>
+                  )}
                 </button>
               </div>
-              <p className="yblog3-nl-note">
-                {nlSent
-                  ? "🎉 Merci ! Confirmez votre inscription depuis l'email que nous venons d'envoyer."
-                  : "🔒 RGPD · vous pouvez vous désabonner à tout moment depuis chaque envoi."}
+              <p className="yblog3-nl-note" style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                {nlSent ? (
+                  <><PartyPopper size={14} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} /> Merci ! Confirmez votre inscription depuis l'email que nous venons d'envoyer.</>
+                ) : (
+                  <><Lock size={14} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} /> RGPD · vous pouvez vous désabonner à tout moment depuis chaque envoi.</>
+                )}
               </p>
             </form>
           </div>
@@ -1495,8 +1521,9 @@ export function BlogPage({ blogFilter, setBlogFilter, nlEmail, setNlEmail, nlSen
                 type="button"
                 className="yblog3-btn yblog3-btn--pri"
                 onClick={() => goPage?.("contact")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
-                ✍️ Proposer un sujet
+                <PenLine size={16} aria-hidden /> Proposer un sujet
               </button>
               <button
                 type="button"

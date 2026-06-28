@@ -26,67 +26,40 @@ import {
   categoryNameFromTaxonomySlug,
   CITY_BY_SLUG,
   METIER_SLUG_TO_CATEGORY,
-  SEO_CITIES,
   SITE_URL,
   getSearchActionUrl,
   PAGE_PATH,
   localePath,
   canonicalFromSeoAlias,
   buildHrefLangAlternates,
-  ensureLocalePath,
   parseLocaleSegments,
 } from "./lib/seoRoutes";
 import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
-import { filterProductsByMerchHub, getMerchHub } from "./lib/merchHubs.js";
-import {
-  resolveCategoryFilter,
-  productMatchesCategoryFilter,
-} from "./lib/marketplaceCategories.js";
+import { getMerchHub } from "./lib/merchHubs.js";
+import { resolveCategoryFilter } from "./lib/marketplaceCategories.js";
+import { filterCatalogProducts } from "./lib/filterCatalogProducts.js";
 import { useCategoryTaxonomy } from "./hooks/useCategoryTaxonomy.js";
+import { useGlobalProducts } from "./hooks/useGlobalProducts.js";
+import { useYorixNotifications } from "./hooks/useYorixNotifications.js";
 import { SeoHead } from "./components/seo/SeoHead";
 import i18n from "./i18n/index.js";
-import {
-  supabase,
-  YORIX_WA_NUMBER,
-  CLOUD_NAME,
-  UPLOAD_PRESET,
-} from "./lib/supabase";
-
-import {
-  CATS,
-  ROLE_LABELS,
-  DELIVERY_STATUSES,
-  ESCROW_STATUSES,
-  PREST_DATA,
-  COURSES_DATA,
-  REWARDS_DATA,
-} from "./lib/constants";
-
-import {
-  uploadSingleImage,
-  updateLivraisonStatut,
-  genererCodeSuivi,
-} from "./utils/helpers";
+import { supabase, YORIX_WA_NUMBER } from "./lib/supabase";
+import { CATS, PREST_DATA } from "./lib/constants";
 import { isAdminViewer } from "./lib/roles";
 import { makeCSS } from "./utils/styles";
-import { Stars } from "./components/Stars";
-import { ModalCommander } from "./components/ModalCommander";
-import { LevelBadge } from "./components/LevelBadge";
-import { PointsAnimation } from "./components/PointsAnimation";
 import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
 import { CartDrawer } from "./components/CartDrawer";
 import { UserMenuDrawer } from "./components/UserMenuDrawer";
 import { GlobalToastHost } from "./components/ui/GlobalToastHost";
+import { BackToTop } from "./components/ui/BackToTop";
+import { ScrollProgress } from "./components/ui/ScrollProgress";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PageProgressBar } from "./components/ui/PageProgressBar";
 import { PushPromptBanner } from "./components/ui/PushPromptBanner";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
-import { enrichNotification, showBrowserNotificationIfPossible } from "./domain/notificationsDomain";
-import { applyNotificationOpen, getNotificationOpenAction } from "./lib/notificationNavigation.js";
-import { ensureNotificationPrefsSynced, loadNotificationPrefs } from "./lib/notificationPrefs";
-import { OptimizedImage } from "./components/OptimizedImage";
 import { PremiumSiteFooter } from "./components/layout/PremiumSiteFooter";
+import { shouldShowSiteFooter } from "./lib/pageChrome";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { ContractAcceptance } from "./components/ContractAcceptance";
 import { RouteErrorBoundary } from "./components/errors/AppErrorBoundary.jsx";
@@ -95,6 +68,8 @@ import { YorixHeader } from "./components/yorix/YorixHeader.jsx";
 import { YorixPages } from "./components/yorix/YorixPages.jsx";
 import { useYorixAuth } from "./hooks/useYorixAuth.js";
 import { useYorixCart } from "./hooks/useYorixCart.js";
+import { useWishlist } from "./hooks/useWishlist.js";
+import { CommandPalette } from "./components/CommandPalette.jsx";
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE (logique métier + layout)
@@ -141,13 +116,25 @@ export default function YorixApp() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
 
-  const [dark, setDark]           = useState(false);
+  const [dark, setDark] = useState(() => {
+    try {
+      const stored = localStorage.getItem("yorix_theme");
+      if (stored === "dark") return true;
+      if (stored === "light") return false;
+    } catch { /* ignore */ }
+    return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
+  });
 
-  // Produits
-  const [produits, setProduits]                 = useState([]);
-  const [produitsLoading, setProduitsLoading]   = useState(true);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    try {
+      localStorage.setItem("yorix_theme", dark ? "dark" : "light");
+    } catch { /* ignore */ }
+  }, [dark]);
+
+  // Catalogue global (hors page produits paginée)
   const [sellerMerchProfiles, setSellerMerchProfiles] = useState([]);
-  const [allServices, setAllServices]           = useState([]);
+  const [allServices, setAllServices] = useState([]);
 
   useEffect(() => {
     const loadServices = async () => {
@@ -196,12 +183,10 @@ export default function YorixApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Notifs
-  const [notifs, setNotifs]       = useState([]);
-  const [notifRevision, setNotifRevision] = useState(0);
-  const [notifPrefs, setNotifPrefs] = useState(() => loadNotificationPrefs());
-  const notifPrefsRef = useRef(notifPrefs);
-  notifPrefsRef.current = notifPrefs;
+  const notifBridge = useRef({
+    setNotifs: () => {},
+    loadNotifsForUser: async () => {},
+  });
 
   const [navCompact, setNavCompact] = useState(false);
   const [navQuickOpen, setNavQuickOpen] = useState(false);
@@ -259,19 +244,6 @@ export default function YorixApp() {
     };
   }, []);
 
-  const loadNotifsForUser = useCallback(async (uid, limit = 40) => {
-    if (!uid) return;
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", uid)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (error) console.warn("Notifications:", error.message);
-    else setNotifs(data || []);
-    setNotifRevision((v) => v + 1);
-  }, []);
-
   const goPage = useCallback((p, opts = {}) => {
     setPageNavigating(true);
     navigate(pathForPage(p, { ...opts, locale: opts.locale ?? route.locale }));
@@ -323,8 +295,8 @@ export default function YorixApp() {
     goPage,
     setDashTab,
     setDemandeLivraisonOpen,
-    setNotifs,
-    onProfileLoaded: loadNotifsForUser,
+    setNotifs: (...args) => notifBridge.current.setNotifs(...args),
+    onProfileLoaded: (uid) => notifBridge.current.loadNotifsForUser(uid),
   });
 
   const {
@@ -361,6 +333,36 @@ export default function YorixApp() {
     executePendingAction,
   } = authSession;
 
+  const { wishlist, toggleWish } = useWishlist(user?.id);
+
+  const {
+    notifs,
+    setNotifs,
+    notifRevision,
+    notifPrefs,
+    setNotifPrefs,
+    loadNotifsForUser,
+    openNotificationTarget,
+    marquerNotifLue,
+    supprimerNotif,
+    marquerToutesLues,
+    unread,
+  } = useYorixNotifications({
+    userId: user?.id,
+    routeLocale: route.locale,
+    navigate,
+    goPage,
+    setDashTab,
+    setPendingChatConversationId,
+  });
+
+  notifBridge.current = { setNotifs, loadNotifsForUser };
+
+  const { produits, produitsLoading } = useGlobalProducts({
+    page,
+    cityMode: route.cityMode,
+  });
+
   const {
     cartItems,
     setCartItems,
@@ -390,30 +392,16 @@ export default function YorixApp() {
     };
   }, [user?.id]);
 
-  useEffect(() => {
-    if (!user?.id) {
-      setNotifPrefs(loadNotificationPrefs());
-      return undefined;
-    }
-    let cancelled = false;
-    ensureNotificationPrefsSynced(supabase, user.id).then((p) => {
-      if (!cancelled) setNotifPrefs(p);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
-
   // Divers
   const [nlEmail, setNlEmail]                   = useState("");
   const [nlSent, setNlSent]                     = useState(false);
-  const [wishlist, setWishlist]                 = useState(new Set());
   const [loyaltyPts, setLoyaltyPts]             = useState(320);
   const [blogFilter, setBlogFilter]             = useState("TOUT");
   const [selectedPrest, setSelectedPrest]       = useState(null);
 
   // ═══ ONBOARDING ═══
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
@@ -558,6 +546,18 @@ export default function YorixApp() {
     }
   }, []);
 
+  // ── Palette de commande ⌘K / Ctrl+K ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // ── HANDLER : choix d'une action onboarding ──
   const handleOnboardingAction = useCallback((actionId) => {
     localStorage.setItem("yorix_onboarding_seen", "1");
@@ -589,128 +589,6 @@ export default function YorixApp() {
     localStorage.setItem("yorix_onboarding_seen", "1");
     setOnboardingOpen(false);
   }, []);
-
-  /* Temps réel : nouvelles lignes notifications (+ alerte bureau si autorisée) */
-  useEffect(() => {
-    if (!user?.id) return undefined;
-    const channel = supabase
-      .channel(`notifications_rt_${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const row = payload.new;
-          setNotifs((prev) => {
-            if (prev.some((x) => x.id === row.id)) return prev;
-            return [row, ...prev].slice(0, 120);
-          });
-          setNotifRevision((v) => v + 1);
-          try {
-            showBrowserNotificationIfPossible(enrichNotification(row), notifPrefsRef.current);
-          } catch {
-            /* ignore */
-          }
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const row = payload.new;
-          setNotifs((prev) => prev.map((n) => (n.id === row.id ? row : n)));
-          setNotifRevision((v) => v + 1);
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const id = payload.old?.id;
-          if (!id) return;
-          setNotifs((prev) => prev.filter((n) => n.id !== id));
-          setNotifRevision((v) => v + 1);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
-
-  /* Deep link depuis une notification push (service worker) */
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return undefined;
-    const onMsg = (event) => {
-      if (event.data?.type !== "NOTIF_NAV") return;
-      const url = typeof event.data.url === "string" ? event.data.url : "/";
-      const path = url.startsWith("/") ? url : `/${url}`;
-      navigate(ensureLocalePath(path, route.locale));
-    };
-    navigator.serviceWorker.addEventListener("message", onMsg);
-    return () => navigator.serviceWorker.removeEventListener("message", onMsg);
-  }, [navigate, route.locale]);
-
-  // ── PRODUITS GLOBAUX (accueil, panier, hubs merch, pages SEO) ──
-  // Le catalogue `/produits` a son propre fetch paginé (useCatalogProducts) : on ne charge pas
-  // ce cache global de 200 produits sur la page catalogue, pour éviter une requête select(*) redondante.
-  const [globalProductsLoaded, setGlobalProductsLoaded] = useState(false);
-
-  const loadGlobalProducts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .or("actif.eq.true,actif.is.null")
-      .order("sponsorise", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (error) console.warn("Produits:", error.message);
-    setProduits(data || []);
-    setProduitsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const isCatalogPage = page === "produits" || (page === "seoCity" && route.cityMode === "acheter");
-    if (isCatalogPage) {
-      setProduitsLoading(false); // le catalogue gère son propre chargement paginé
-      return undefined;
-    }
-    if (globalProductsLoaded) return undefined;
-    let cancelled = false;
-    setProduitsLoading(true);
-    loadGlobalProducts().then(() => {
-      if (!cancelled) setGlobalProductsLoaded(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [page, route.cityMode, globalProductsLoaded, loadGlobalProducts]);
-
-  // Realtime : actif une fois le cache global chargé — jamais sur un accès direct au catalogue.
-  useEffect(() => {
-    if (!globalProductsLoaded) return undefined;
-    const channel = supabase
-      .channel("prod_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, loadGlobalProducts)
-      .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [globalProductsLoaded, loadGlobalProducts]);
-
 
   const routeBarePath = route.barePath ?? parseLocaleSegments(location.pathname).barePath;
 
@@ -862,73 +740,6 @@ export default function YorixApp() {
   }, [user?.id]);
 
 
-  const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
-
-  const openNotificationTarget = useCallback(
-    (notification) => {
-      if (!notification) return false;
-      const action = getNotificationOpenAction(notification, route.locale);
-      return applyNotificationOpen(action, {
-        navigate,
-        goPage,
-        setDashTab,
-        setPendingChatConversationId,
-      });
-    },
-    [navigate, route.locale, goPage, setDashTab],
-  );
-
-  const marquerNotifLue = async (notif, opts = { navigate: false, closeDrawer: false }) => {
-    const id = typeof notif === "object" ? notif.id : notif;
-    const notification = typeof notif === "object" ? notif : notifs.find((n) => n.id === id);
-
-    try {
-      const { error } = await supabase.from("notifications").update({ lu: true }).eq("id", id);
-      if (error) console.warn("marquerNotifLue:", error.message);
-    } catch (e) {
-      console.warn("marquerNotifLue exception:", e?.message);
-    }
-
-    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
-    setNotifRevision((v) => v + 1);
-
-    if (opts.navigate && notification) {
-      openNotificationTarget(notification);
-    }
-  };
-
-  const supprimerNotif = async (id) => {
-    if (!id) return;
-    try {
-      const { error } = await supabase.from("notifications").delete().eq("id", id);
-      if (error) console.warn("supprimerNotif:", error.message);
-    } catch (e) {
-      console.warn("supprimerNotif:", e?.message);
-    }
-    setNotifs((prev) => prev.filter((n) => n.id !== id));
-    setNotifRevision((v) => v + 1);
-  };
-
-  const marquerToutesLues = async () => {
-    if (!user?.id) return;
-
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ lu: true })
-        .eq("user_id", user.id)
-        .eq("lu", false);
-      if (error) console.warn("marquerToutesLues:", error.message);
-    } catch (e) {
-      console.warn("marquerToutesLues exception:", e?.message);
-    }
-
-    setNotifs((prev) => prev.map((n) => ({ ...n, lu: true })));
-    setNotifRevision((v) => v + 1);
-  };
-
-  const unread = notifs.filter(n => !n.lu).length;
-
   useEffect(() => {
     const hub = page === "merchHub" && route.merchHub ? getMerchHub(route.merchHub) : null;
     if (!hub || !["new_sellers", "top_sellers"].includes(hub.filter)) return;
@@ -946,37 +757,32 @@ export default function YorixApp() {
     };
   }, [page, route.merchHub]);
 
-  const produitsFiltres = useMemo(() => {
-    let list = produits.filter(
-      (p) =>
-        !search ||
-        p.name_fr?.toLowerCase().includes(search.toLowerCase()) ||
-        p.description_fr?.toLowerCase().includes(search.toLowerCase())
-    );
-    if (page === "seoCity" && route.cityMode === "acheter" && seoCityName) {
-      const sl = seoCityName.toLowerCase();
-      list = list.filter((p) => {
-        const v = (p.ville || "").toLowerCase();
-        return !v || v.includes(sl) || sl.includes(v);
-      });
-    }
-    if (page === "merchHub" && route.merchHub) {
-      const hub = getMerchHub(route.merchHub);
-      if (hub?.filter) {
-        list = filterProductsByMerchHub(list, hub.filter, {
-          citySlug: route.citySlug,
-          sellerProfiles: sellerMerchProfiles,
-        });
-      }
-    }
-    if (categoryFilter?.filterLabel || categoryFilter?.categoryId) {
-      list = list.filter((p) => productMatchesCategoryFilter(p, categoryFilter));
-    } else if (filterCat) {
-      const fc = filterCat.toLowerCase();
-      list = list.filter((p) => (p.categorie || "").toLowerCase() === fc);
-    }
-    return list;
-  }, [produits, search, page, route.cityMode, route.merchHub, route.citySlug, seoCityName, categoryFilter, filterCat, sellerMerchProfiles]);
+  const produitsFiltres = useMemo(
+    () =>
+      filterCatalogProducts(produits, {
+        search,
+        page,
+        cityMode: route.cityMode,
+        merchHub: route.merchHub,
+        citySlug: route.citySlug,
+        seoCityName,
+        categoryFilter,
+        filterCat,
+        sellerMerchProfiles,
+      }),
+    [
+      produits,
+      search,
+      page,
+      route.cityMode,
+      route.merchHub,
+      route.citySlug,
+      seoCityName,
+      categoryFilter,
+      filterCat,
+      sellerMerchProfiles,
+    ],
+  );
 
   const showSeoLocal =
     page === "seoCity" || (page === "livraison" && !!route.citySlug);
@@ -1040,6 +846,18 @@ export default function YorixApp() {
     [goPage]
   );
 
+  const openSellerUrl = useCallback(
+    (p) => {
+      const id = p?.vendeur_id || p?.id;
+      const name = p?.vendeur_nom || p?.nom || "boutique";
+      if (!id) return;
+      goPage("sellerStore", {
+        sellerSlug: buildEntitySlug(name, id),
+      });
+    },
+    [goPage]
+  );
+
   const roleChipClass = () =>
     ({ buyer:"chip-buyer", seller:"chip-seller", delivery:"chip-delivery", provider:"chip-provider", admin:"chip-admin", admin_partner:"chip-admin", superadmin:"chip-admin" }[userRole] || "chip-buyer");
 
@@ -1085,26 +903,35 @@ export default function YorixApp() {
   }, [userRole, tNav]);
 
   const TABS = useMemo(() => {
-    const tab = (icon, key, p) => ({ l: `${icon} ${tNav(`tabs.${key}`)}`, p });
+    const tab = (iconKey, key, p) => ({ iconKey, label: tNav(`tabs.${key}`), p });
     const base = [
-      tab("🏠", "home", "home"),
-      tab("🛍️", "products", "produits"),
-      tab("🎁", "deals", "bonsPlans"),
-      tab("🚚", "delivery", "livraison"),
-      tab("🔐", "escrow", "escrow"),
-      tab("👷", "providers", "prestataires"),
-      tab("💼", "business", "business"),
-      tab("🎓", "academy", "academy"),
-      tab("📰", "blog", "blog"),
-      tab("🌟", "loyalty", "loyalty"),
-      tab("📞", "contact", "contact"),
-      tab("🆘", "help", "aide"),
+      tab("home", "home", "home"),
+      tab("produits", "products", "produits"),
+      tab("bonsPlans", "deals", "bonsPlans"),
+      tab("livraison", "delivery", "livraison"),
+      tab("escrow", "escrow", "escrow"),
+      tab("prestataires", "providers", "prestataires"),
+      tab("business", "business", "business"),
+      tab("academy", "academy", "academy"),
+      tab("blog", "blog", "blog"),
+      tab("loyalty", "loyalty", "loyalty"),
+      tab("contact", "contact", "contact"),
+      tab("aide", "help", "aide"),
     ];
     if (user && isAdminViewer(userData)) {
-      base.push(tab("⚙️", "admin", "admin"));
+      base.push(tab("admin", "admin", "admin"));
     }
     return base;
   }, [tNav, user, userData?.role]);
+
+  const cartSuggestions = useMemo(
+    () =>
+      [...produits]
+        .filter((p) => p.actif !== false && p.prix > 0)
+        .sort((a, b) => (b.vente_total || 0) - (a.vente_total || 0))
+        .slice(0, 3),
+    [produits],
+  );
 
   const seoBundle = useMemo(() => {
     const canon = route.canonicalPath || location.pathname;
@@ -1634,6 +1461,7 @@ export default function YorixApp() {
     addToCart,
     toggleWish,
     openProductUrl,
+    openSellerUrl,
     setOnboardingOpen,
     allServices,
     nlEmail,
@@ -1696,16 +1524,13 @@ export default function YorixApp() {
     loyaltyPts,
     setLoyaltyPts,
     totalQty,
-    tabActive,
-    unread,
-    openCart,
     cartDrawerOpen,
     closeCartDrawer,
   };
 
 
   if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'DM Sans',sans-serif", color:"#1a6b3a", gap:12 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontFamily:"'Inter',sans-serif", color:"#1a6b3a", gap:12 }}>
       <div style={{ width:40, height:40, border:"4px solid #e2ddd6", borderTopColor:"#1a6b3a", borderRadius:"50%", animation:"spin .7s linear infinite" }}/>
       Chargement de Yorix...
       <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
@@ -1714,6 +1539,9 @@ export default function YorixApp() {
 
   return (
     <>
+      <a href="#main-content" className="yx-skip-link">
+        Aller au contenu principal
+      </a>
       <style>{makeCSS(dark)}</style>
       <SeoHead
         title={seoBundle.title}
@@ -1798,6 +1626,8 @@ export default function YorixApp() {
         search={search}
         setSearch={setSearch}
         produits={produits}
+        onOpenProduct={openProductUrl}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         setOnboardingOpen={setOnboardingOpen}
         onNotifsSync={() => user?.id && loadNotifsForUser(user.id)}
         notifRevision={notifRevision}
@@ -1833,6 +1663,8 @@ export default function YorixApp() {
         removeItem={removeItem}
         goPage={goPage}
         totalQty={totalQty}
+        suggestedProducts={cartSuggestions}
+        onAddProduct={addToCart}
       />
 
       <UserMenuDrawer
@@ -1858,10 +1690,24 @@ export default function YorixApp() {
         setOnboardingOpen={setOnboardingOpen}
       />
 
-      <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+      {shouldShowSiteFooter(page) && (
+        <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+      )}
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        produits={produits}
+        siteLocale={route.locale}
+        goPage={goPage}
+        onOpenProduct={openProductUrl}
+        setSearch={setSearch}
+      />
 
       <GlobalToastHost />
       <OfflineBanner />
+      <ScrollProgress />
+      <BackToTop />
       <PageProgressBar active={pageNavigating} />
       <PushPromptBanner user={user} />
       <MobileBottomNav

@@ -1,4 +1,5 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
+import { productMoq } from "./productMoq.js";
 import {
   computeTopNewProducts,
   computeTrendingProducts,
@@ -147,12 +148,28 @@ export const MERCH_HUBS = {
     theme: "map",
     filter: "local_city",
   },
+  "sourcer-en-gros": {
+    slug: "sourcer-en-gros",
+    page: "merchHub",
+    categorySlug: "sourcing-gros",
+    titleFr: "Sourcer en gros — Fournisseurs & MOQ Cameroun",
+    titleEn: "Wholesale sourcing — Suppliers & MOQ Cameroon",
+    descFr:
+      "Achat groupé, fournisseurs vérifiés et quantités minimum (MOQ) pour professionnels, boutiques et distributeurs.",
+    descEn:
+      "Bulk buying, verified suppliers and minimum order quantities (MOQ) for pros, shops and distributors.",
+    keywordsFr: "gros cameroun, sourcing fournisseur, moq marketplace, achat groupé",
+    emoji: "📦",
+    theme: "wholesale",
+    filter: "wholesale",
+  },
 };
 
 export const MERCH_HUB_SLUGS = Object.keys(MERCH_HUBS);
 
 export const HOMEPAGE_MERCH_TILES = [
   { hub: "made-in-cameroun", accent: "#007a5e" },
+  { hub: "sourcer-en-gros", accent: "#f59e0b" },
   { hub: "top-produits", accent: "#b8860b" },
   { hub: "produits-tendance", accent: "#dc2626" },
   { hub: "promotions", accent: "#7c3aed" },
@@ -160,15 +177,24 @@ export const HOMEPAGE_MERCH_TILES = [
   { hub: "top-vendeurs", accent: "#1a4a9a" },
 ];
 
+/** Alias SEO avec contenu hub dédié (immobilier, emploi). */
+export const SEO_HUB_ALIAS_KEYS = new Set([
+  "immobilier-cameroun",
+  "properties-cameroon",
+  "emploi-cameroun",
+  "jobs-cameroon",
+]);
+
 /** Navigation émotionnelle header */
 export const EMOTIONAL_NAV = [
-  { page: "produits", labelFr: "Produits", labelEn: "Products", icon: "🛍️" },
-  { page: "prestataires", labelFr: "Services", labelEn: "Services", icon: "🛠️" },
-  { hub: "made-in-cameroun", labelFr: "Made in Cameroun", labelEn: "Made in Cameroon", icon: "🇨🇲" },
-  { hub: "top-produits", labelFr: "Top Produits", labelEn: "Top Products", icon: "⭐" },
-  { hub: "promotions", labelFr: "Promotions", labelEn: "Deals", icon: "💸" },
-  { page: "seoAlias", alias: "immobilier-cameroun", labelFr: "Immobilier", labelEn: "Real estate", icon: "🏠" },
-  { page: "seoAlias", alias: "jobs", labelFr: "Emploi", labelEn: "Jobs", icon: "💼" },
+  { page: "produits", labelFr: "Produits", labelEn: "Products", iconKey: "shoppingBag" },
+  { hub: "sourcer-en-gros", labelFr: "Sourcer en gros", labelEn: "Wholesale", iconKey: "package" },
+  { page: "prestataires", labelFr: "Services", labelEn: "Services", iconKey: "wrench" },
+  { hub: "made-in-cameroun", labelFr: "Made in Cameroun", labelEn: "Made in Cameroon", iconKey: "flag" },
+  { hub: "top-produits", labelFr: "Top Produits", labelEn: "Top Products", iconKey: "star" },
+  { hub: "promotions", labelFr: "Promotions", labelEn: "Deals", iconKey: "gift" },
+  { page: "seoAlias", alias: "immobilier-cameroun", labelFr: "Immobilier", labelEn: "Real estate", iconKey: "building" },
+  { page: "seoAlias", alias: "emploi-cameroun", labelFr: "Emploi", labelEn: "Jobs", iconKey: "briefcase" },
 ];
 
 /**
@@ -182,31 +208,73 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
   const active = list.filter((p) => p.actif !== false && (!p.is_pack || p.pack_status === "approved"));
 
   switch (filterKey) {
-    case "made_in_cameroon":
-      return active.filter(productMatchesMadeInFilter);
-    case "local_brand":
-      return active.filter((p) => Boolean(p.local_brand_name?.trim?.()));
-    case "top_products":
-      return computeTopNewProducts(active, { limit: 64 });
+    case "made_in_cameroon": {
+      const strict = active.filter(productMatchesMadeInFilter);
+      if (strict.length >= 4) return strict;
+      const cmCities = ["douala", "yaound", "bafoussam", "bamenda", "garoua", "kribi", "ngaound", "maroua"];
+      return active
+        .filter((p) => {
+          const v = String(p.ville || "").toLowerCase();
+          if (cmCities.some((c) => v.includes(c))) return true;
+          if (p.local_brand_name?.trim?.()) return true;
+          if (p.is_made_in_cameroon) return true;
+          const cat = String(p.categorie || "").toLowerCase();
+          return /artisan|local|agricole|cameroun|fabriqu|made in/.test(cat);
+        })
+        .slice(0, 64);
+    }
+    case "local_brand": {
+      const branded = active.filter((p) => Boolean(p.local_brand_name?.trim?.()));
+      if (branded.length >= 4) return branded;
+      return active.filter((p) => Boolean(p.vendeur_nom?.trim?.())).slice(0, 48);
+    }
+    case "top_products": {
+      const topNew = computeTopNewProducts(active, { limit: 64 });
+      if (topNew.length >= 4) return topNew;
+      return [...active]
+        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .slice(0, 64);
+    }
     case "trending": {
       const topNew = computeTopNewProducts(active, { limit: 64 });
       const exclude = new Set(topNew.map((p) => p.id));
-      return computeTrendingProducts(active, { limit: 48, excludeIds: exclude });
+      const trending = computeTrendingProducts(active, { limit: 48, excludeIds: exclude });
+      if (trending.length >= 4) return trending;
+      return computeTrendingProducts(active, { limit: 48 });
     }
-    case "promo":
-      return active.filter((p) => p.promo || p.flash || (p.promo_pct && p.promo_pct > 0));
-    case "express_delivery":
-      return active.filter((p) => {
+    case "promo": {
+      const promos = active.filter((p) => p.promo || p.flash || (Number(p.promo_pct) || 0) > 0);
+      if (promos.length >= 4) return promos;
+      return [...active]
+        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .slice(0, 48);
+    }
+    case "express_delivery": {
+      const express = active.filter((p) => {
         const v = String(p.ville || "").toLowerCase();
         return v.includes("douala") || v.includes("yaound");
       });
+      if (express.length >= 4) return express;
+      return active.filter((p) => String(p.ville || "").trim()).slice(0, 48);
+    }
     case "top_sellers": {
       const ids = getTopSellerIds(active);
-      return filterProductsByTopSellers(active, ids);
+      let list = filterProductsByTopSellers(active, ids);
+      if (list.length >= 4) return list;
+      const relaxed = getTopSellerIds(active, 5);
+      list = filterProductsByTopSellers(active, relaxed);
+      if (list.length >= 4) return list;
+      return [...active]
+        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .slice(0, 48);
     }
     case "new_sellers": {
       const ids = getNewSellerIds(opts.sellerProfiles || []);
-      return filterProductsByNewSellers(active, ids);
+      let list = filterProductsByNewSellers(active, ids);
+      if (list.length >= 4) return list;
+      return [...active]
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .slice(0, 48);
     }
     case "local_city": {
       const city = opts.citySlug;
@@ -221,6 +289,26 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
       };
       const needle = nameMap[city] || city;
       return active.filter((p) => String(p.ville || "").toLowerCase().includes(needle));
+    }
+    case "wholesale": {
+      const wholesale = active.filter((p) => {
+        const moq = productMoq(p);
+        return (
+          moq > 1 ||
+          p.vendeur_verifie ||
+          p.verifie ||
+          p.sponsorise ||
+          (Number(p.vente_total) || 0) >= 8
+        );
+      });
+      if (wholesale.length >= 4) {
+        return [...wholesale].sort(
+          (a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0),
+        );
+      }
+      return [...active]
+        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .slice(0, 64);
     }
     default:
       return active;

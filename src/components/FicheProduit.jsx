@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ShoppingCart, MapPin, CheckCircle2, AlertTriangle, XCircle, Flame, Shield, Bell, MessageCircle, Store } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { OptimizedImage } from "./OptimizedImage";
 import { Stars } from "./Stars";
@@ -6,7 +7,9 @@ import { FormulaireAvis } from "./FormulaireAvis";
 import { ModalCommander } from "./ModalCommander";
 import { ChatUsers } from "./ChatUsers";
 import { optimizeCloudinaryUrl } from "../utils/helpers";
-import { TrustStrip } from "./conversion/TrustStrip";
+import { TrustStrip } from "./ui/TrustStrip";
+import { ProtectPlusPanel } from "./ProtectPlusPanel";
+import { ShareProductButton } from "./conversion/ShareProductButton";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";
@@ -19,7 +22,7 @@ import { B2BOrderForm } from "./B2BOrderForm";
 // ✅ Bouton "Contacter le vendeur" intégré (ouvre un modal chat)
 // ✅ Pas besoin de modifier App.jsx
 // ─────────────────────────────────────────────────────────────
-export function FicheProduit({ product, user, userData, onClose, onAddToCart, siteLocale = "fr" }) {
+export function FicheProduit({ product, user, userData, onClose, onAddToCart, siteLocale = "fr", onOpenSeller }) {
   const [activeImg, setActiveImg]           = useState(0);
   const [avis, setAvis]                     = useState([]);
   const [showCmdModal, setShowCmdModal]     = useState(false);
@@ -119,8 +122,12 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     setShowChatModal(true);
   };
 
+  const displayPrice = isPromoActive(product)
+    ? effectiveProductPrice(product)
+    : product.prix;
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 40 }}>
+    <div className="yx-pdp-page" style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <YorixToast toast={toast} onClose={clearToast} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "16px" }}>
         <button
@@ -203,6 +210,12 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
           {/* COLONNE DROITE : INFOS */}
           <div>
             <TrustStrip compact />
+            <ProtectPlusPanel
+              product={product}
+              locale={siteLocale}
+              reviewsCount={avis.length}
+              avgReviewNote={avgNote}
+            />
             <div className="modal-title fp-title">{product.name_fr}</div>
             <SocialProofLine product={product} locale={siteLocale} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
@@ -210,7 +223,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>
                 {avgNote} / 5 ({avis.length} avis)
               </span>
-              {product.ville && <span className="tag">📍 {product.ville}</span>}
+              {product.ville && <span className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} aria-hidden /> {product.ville}</span>}
               {product.categorie && <span className="tag">{product.categorie}</span>}
             </div>
 
@@ -222,43 +235,73 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
 
             {product.stock !== undefined && product.stock !== null && (
               <div style={{ marginBottom: 10 }}>
-                <span className={`prod-stock ${product.stock > 5 ? "stock-ok" : product.stock > 0 ? "stock-low" : "stock-out"}`}>
-                  {product.stock > 5
-                    ? `✅ En stock (${product.stock})`
-                    : product.stock > 0
-                      ? `⚠️ Plus que ${product.stock} en stock !`
-                      : "❌ Rupture de stock"}
+                <span className={`prod-stock ${product.stock > 5 ? "stock-ok" : product.stock > 0 ? "stock-low" : "stock-out"}`} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {product.stock > 5 ? (
+                    <><CheckCircle2 size={14} aria-hidden /> En stock ({product.stock})</>
+                  ) : product.stock > 0 ? (
+                    <><AlertTriangle size={14} aria-hidden /> Plus que {product.stock} en stock !</>
+                  ) : (
+                    <><XCircle size={14} aria-hidden /> Rupture de stock</>
+                  )}
                 </span>
               </div>
             )}
 
-            <div className="fp-price product-price" style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.5rem", fontWeight: 800, color: "var(--green)", marginBottom: 14 }}>
+            <div className="fp-price product-price" style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--green)", marginBottom: 14 }}>
               {isPromoActive(product) ? (
                 <>
                   {effectiveProductPrice(product).toLocaleString()}{" "}
-                  <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+                  <span style={{ fontSize: ".8rem", fontFamily: "var(--font-body)", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
                   {productPromoListPrice(product) != null && (
                     <span style={{ marginLeft: 8, fontSize: ".85rem", color: "var(--gray)", textDecoration: "line-through", fontWeight: 500 }}>
                       {productPromoListPrice(product).toLocaleString()} FCFA
                     </span>
                   )}
-                  <span style={{ display: "block", marginTop: 4, fontSize: ".72rem", fontWeight: 700, color: "#d4520a" }}>
-                    🔥 -{product.promo_pct || 15}% · Alimentation
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: ".72rem", fontWeight: 700, color: "#d4520a" }}>
+                    <Flame size={14} aria-hidden /> -{product.promo_pct || 15}% · Alimentation
                   </span>
                 </>
               ) : (
                 <>
                   {product.prix?.toLocaleString()}{" "}
-                  <span style={{ fontSize: ".8rem", fontFamily: "'DM Sans',sans-serif", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
+                  <span style={{ fontSize: ".8rem", fontFamily: "var(--font-body)", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
                 </>
               )}
             </div>
 
             {product.escrow && (
-              <div className="commission-box" style={{ marginBottom: 12 }}>
-                <span>🔐 Paiement protégé Escrow Yorix</span>
+              <div className="commission-box" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <Shield size={16} aria-hidden style={{ color: "var(--green)", flexShrink: 0 }} />
+                <span>Paiement protégé Escrow Yorix</span>
                 <span style={{ fontSize: ".68rem" }}>Fonds libérés à la livraison</span>
               </div>
+            )}
+
+            {product.vendeur_id && onOpenSeller && (
+              <button
+                type="button"
+                onClick={() => onOpenSeller(product)}
+                style={{
+                  width: "100%",
+                  marginBottom: 10,
+                  padding: "10px 14px",
+                  borderRadius: 9,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  cursor: "pointer",
+                  fontSize: ".8rem",
+                  fontWeight: 700,
+                  color: "var(--ink)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Store size={16} aria-hidden />
+                {siteLocale === "en" ? "View supplier store" : "Voir la boutique fournisseur"}
+                {product.vendeur_nom ? ` — ${product.vendeur_nom}` : ""}
+              </button>
             )}
 
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -273,7 +316,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 }}
                 onClick={() => { if (buyable) setShowCmdModal(true); }}
               >
-                {buyable ? "✅ Commander" : "❌ Produit indisponible"}
+                {buyable ? "Commander" : "Produit indisponible"}
               </button>
               {onAddToCart && (
                 <button
@@ -309,17 +352,17 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                     border: `1.5px dashed ${restockState === "done" ? "var(--green)" : "var(--border)"}`,
                     borderRadius: 9,
                     padding: "10px 12px",
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     fontSize: ".8rem",
                     cursor: restockState === "done" ? "default" : "pointer",
                   }}
                 >
                   {restockState === "done"
-                    ? "✅ Vous serez prévenu(e) dès le retour en stock"
+                    ? "Vous serez prévenu(e) dès le retour en stock"
                     : restockState === "pending"
                       ? "Enregistrement..."
-                      : "🔔 Me notifier quand disponible"}
+                      : <><Bell size={14} aria-hidden /> Me notifier quand disponible</>}
                 </button>
                 {restockState === "error" && restockError && (
                   <p style={{ marginTop: 6, fontSize: ".72rem", color: "#ce1126" }}>{restockError}</p>
@@ -327,7 +370,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               </div>
             )}
 
-            <div style={{ marginBottom: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+              <ShareProductButton product={product} locale={siteLocale} variant="primary" className="share-wa-btn--block" />
               <ShareWhatsAppButton product={product} locale={siteLocale} variant="ghost" className="share-wa-btn--block" />
             </div>
 
@@ -345,7 +389,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   cursor: "pointer",
                   fontSize: ".85rem",
                   fontWeight: 700,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   marginBottom: 16,
                   transition: "all .2s",
                   display: "flex",
@@ -362,7 +406,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   e.currentTarget.style.color = "var(--ink)"; 
                 }}
               >
-                💬 Contacter le vendeur{product.vendeur_nom ? ` (${product.vendeur_nom})` : ""}
+                <MessageCircle size={16} aria-hidden />
+                Contacter le vendeur{product.vendeur_nom ? ` (${product.vendeur_nom})` : ""}
               </button>
             )}
 
@@ -394,15 +439,16 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 textAlign: "center",
                 fontWeight: 600,
               }}>
-                🏪 C'est votre produit
+                <Store size={16} aria-hidden style={{ marginRight: 6 }} />
+                C'est votre produit
               </div>
             )}
 
             <div className="divider-h" />
 
             <div className="avis-section">
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", marginBottom: 12 }}>
-                💬 Avis clients ({avis.length})
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "var(--ink)", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <MessageCircle size={16} aria-hidden /> Avis clients ({avis.length})
               </div>
               {user && (
                 <FormulaireAvis
@@ -493,47 +539,35 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
         )}
       </div>
 
-      {/* ═══ STICKY MOBILE CTA BAR ═══ */}
+      {/* Barre d'achat sticky mobile */}
       {buyable && (
-        <div style={{
-          position: "fixed", bottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)",
-          left: 0, right: 0,
-          display: "none",
-          zIndex: 600,
-          padding: "10px 16px",
-          background: "var(--surface)",
-          borderTop: "1px solid var(--border)",
-          boxShadow: "0 -8px 28px rgba(0,0,0,.1)",
-          gap: 10,
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-        className="fp-sticky-cta"
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".82rem", color: "var(--green)", lineHeight: 1 }}>
-              {(isPromoActive(product) ? effectiveProductPrice(product) : product.prix)?.toLocaleString()} FCFA
-            </div>
-            <div style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {product.name_fr}
-            </div>
+        <div className="yx-pdp-sticky-bar" aria-label="Actions produit">
+          <div className="yx-pdp-sticky-bar__price">
+            {displayPrice?.toLocaleString()} FCFA
+            <small>{product.name_fr}</small>
           </div>
-          {onAddToCart && (
+          <div className="yx-pdp-sticky-bar__actions">
+            {onAddToCart && (
+              <button
+                type="button"
+                className="yx-pdp-sticky-bar__btn yx-pdp-sticky-bar__btn--cart"
+                aria-label="Ajouter au panier"
+                onClick={() => {
+                  onAddToCart(product);
+                  onClose();
+                }}
+              >
+                <ShoppingCart size={18} strokeWidth={2.25} aria-hidden="true" />
+              </button>
+            )}
             <button
-              className="btn-cmd-sm"
-              onClick={() => { onAddToCart(product); onClose(); }}
-              style={{ flex: "none", padding: "11px 20px", borderRadius: 10, fontSize: ".82rem", fontWeight: 800 }}
+              type="button"
+              className="yx-pdp-sticky-bar__btn yx-pdp-sticky-bar__btn--primary"
+              onClick={() => setShowCmdModal(true)}
             >
-              🛒 Panier
+              Commander
             </button>
-          )}
-          <button
-            className="btn-cmd-sm"
-            onClick={() => setShowCmdModal(true)}
-            style={{ flex: "none", padding: "11px 20px", borderRadius: 10, background: "#0f4a28", fontSize: ".82rem", fontWeight: 800 }}
-          >
-            ✅ Commander
-          </button>
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
+import { ContentIcon } from "../lib/contentIcons";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL ÉCHANGE RÉCOMPENSE
@@ -121,7 +122,7 @@ export function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSucces
             background: reward.color_bg, width: 72, height: 72, borderRadius: "50%",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
           }}>
-            {reward.emoji}
+            <ContentIcon name={reward.iconKey || "gift"} size={32} />
           </div>
           <div style={{
             fontFamily: "'Syne',sans-serif", fontSize: "1.15rem", fontWeight: 800,

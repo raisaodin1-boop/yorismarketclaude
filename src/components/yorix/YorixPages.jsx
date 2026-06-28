@@ -1,9 +1,12 @@
 import { Suspense } from "react";
+import { Bell, Settings, Eye, Lock } from "lucide-react";
+import { AuthGate } from "../ui/AuthGate";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { WhatsAppFab } from "../WhatsAppFab";
 import { supabase, YORIX_WA_NUMBER, MOMO_NUMBER, ORANGE_NUMBER, PAYMENT_WA_NUMBER } from "../../lib/supabase";
 import { ROLE_LABELS } from "../../lib/constants";
 import { isAdminViewer, canWriteAdmin } from "../../lib/roles";
+import { shouldShowGlobalNewsletter } from "../../lib/pageChrome";
 import { SeoLocalIntro } from "../seo/SeoLocalIntro";
 import { ChatUsers } from "../ChatUsers";
 import {
@@ -21,6 +24,7 @@ import {
   LazyLoyaltyPage,
   LazyPromotionsPage,
   LazyMerchHubPage,
+  LazySellerStorefrontPage,
   LazySellerDashboard,
   LazyBuyerDashboard,
   LazyDeliveryDashboard,
@@ -58,6 +62,7 @@ export function YorixPages({ ctx }) {
     addToCart,
     toggleWish,
     openProductUrl,
+    openSellerUrl,
     setOnboardingOpen,
     allServices,
     nlEmail,
@@ -120,20 +125,34 @@ export function YorixPages({ ctx }) {
     loyaltyPts,
     setLoyaltyPts,
     totalQty,
-    tabActive,
-    unread,
-    openCart,
+    cartDrawerOpen,
+    closeCartDrawer,
   } = ctx;
 
   return (
-    <>
+    <main id="main-content">
       {page === "merchHub" && route.merchHub && (
         <Suspense fallback={<RouteSuspenseFallback label="Chargement sélection..." />}>
           <LazyMerchHubPage
             merchHub={route.merchHub}
             locale={route.locale || "fr"}
-            produits={produitsFiltres}
-            produitsLoading={produitsLoading}
+            user={user}
+            userData={userData}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
+            goPage={goPage}
+          />
+        </Suspense>
+      )}
+
+      {page === "sellerStore" && route.sellerSlug && (
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement fournisseur..." />}>
+          <LazySellerStorefrontPage
+            sellerSlug={route.sellerSlug}
+            locale={route.locale || "fr"}
             user={user}
             userData={userData}
             wishlist={wishlist}
@@ -161,6 +180,7 @@ export function YorixPages({ ctx }) {
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
             setOnboardingOpen={setOnboardingOpen}
             goPage={goPage}
             categoryTree={categoryTree}
@@ -197,6 +217,7 @@ export function YorixPages({ ctx }) {
                 onClose={() => goPage("produits")}
                 onAddToCart={addToCart}
                 siteLocale={route.locale || "fr"}
+                onOpenSeller={openSellerUrl}
               />
             </Suspense>
           ) : (
@@ -240,6 +261,7 @@ export function YorixPages({ ctx }) {
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
             dark={dark}
             goPage={goPage}
           />
@@ -322,25 +344,16 @@ export function YorixPages({ ctx }) {
       )}
 
       {page === "notifications" && !user && (
-        <section className="sec anim" style={{ maxWidth: 480, margin: "0 auto", textAlign: "center", padding: "48px 20px" }}>
-          <h1 className="sec-title" style={{ fontSize: "1.25rem" }}>
-            Vos notifications Yorix
-          </h1>
-          <p style={{ color: "var(--gray)", marginBottom: 22, fontSize: ".9rem", lineHeight: 1.55 }}>
-            Connectez-vous pour suivre les messages, commandes, paiements et livraisons en temps réel.
-          </p>
-          <button
-            type="button"
-            className="form-submit"
-            style={{ width: "auto", padding: "12px 28px" }}
-            onClick={() => {
-              setAuthTab("login");
-              setAuthOpen(true);
-            }}
-          >
-            Se connecter
-          </button>
-        </section>
+        <AuthGate
+          icon={Bell}
+          title="Suivez vos commandes en temps réel"
+          description="Connectez-vous pour recevoir vos notifications, statuts de livraison et alertes promo."
+          ctaLabel="Se connecter — c'est gratuit"
+          onLogin={() => {
+            setAuthTab("login");
+            setAuthOpen(true);
+          }}
+        />
       )}
       {page === "notifications" && user && (
         <Suspense fallback={<RouteSuspenseFallback label="Chargement notifications..." />}>
@@ -387,6 +400,12 @@ export function YorixPages({ ctx }) {
             user={user}
             userData={userData}
             siteLocale={route.locale || "fr"}
+            seoAliasKey={route.seoAliasKey}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
           />
         </Suspense>
       )}
@@ -514,16 +533,19 @@ export function YorixPages({ ctx }) {
             </div>
           </div>
         ) : (
-          <div className="empty-state anim" style={{ padding: "60px 0" }}>
-            <div className="empty-icon">🔐</div>
-            <p>Connectez-vous pour accéder à votre espace</p>
-            <button className="form-submit" style={{ width: "auto", padding: "11px 28px", marginTop: 16 }} onClick={() => setAuthOpen(true)}>
-              Se connecter
-            </button>
-          </div>
+          <AuthGate
+            icon={Lock}
+            title="Votre espace Yorix"
+            description="Connectez-vous pour accéder à vos commandes, favoris, points fidélité et tableau de bord."
+            ctaLabel="Se connecter — c'est gratuit"
+            onLogin={() => {
+              setAuthTab("login");
+              setAuthOpen(true);
+            }}
+          />
         ))}
 
-      {page !== "home" && (
+      {shouldShowGlobalNewsletter(page) && (
         <div className="newsletter">
           <div className="nl-title">📬 Restez informé(e)</div>
           <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>
@@ -553,107 +575,11 @@ export function YorixPages({ ctx }) {
 
       <div className="yorix-fab-stack" aria-live="polite">
         {user && isAdminViewer(userData) && page !== "admin" && (
-          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title={canWriteAdmin(userData) ? "Ouvrir l’administration" : "Consultation partenaire"}>
-            {canWriteAdmin(userData) ? "⚙️ Admin Yorix" : "👁️ Consultation Yorix"}
+          <button type="button" className="admin-quick-pill" onClick={() => goPage("admin")} title={canWriteAdmin(userData) ? "Ouvrir l'administration" : "Consultation partenaire"}>
+            {canWriteAdmin(userData) ? <><Settings size={14} aria-hidden /> Admin Yorix</> : <><Eye size={14} aria-hidden /> Consultation Yorix</>}
           </button>
         )}
         <WhatsAppFab />
-      </div>
-
-      <div className="mobile-nav">
-        <div className="mn-inner">
-          {[
-            { icon: "🏠", label: "Accueil",   p: "home" },
-            { icon: "🛍️", label: "Produits",  p: "produits" },
-            { icon: "🛒", label: "Panier",    p: "cart", drawer: true, cart: true },
-            { icon: "🔔", label: "Alertes",   p: "notifications" },
-            { icon: "👤", label: "Mon espace", p: "dashboard" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className={`mn-item${item.cart ? " mn-item--cart" : ""}${tabActive(item.p) ? " active" : ""}`}
-              onClick={() => {
-                if (item.p === "dashboard" && !user) {
-                  setAuthTab("register");
-                  setAuthOpen(true);
-                } else if (item.p === "notifications" && !user) {
-                  goPage("notifications");
-                } else if (item.drawer) {
-                  openCart();
-                } else {
-                  goPage(item.p);
-                }
-              }}
-            >
-              {item.cart ? (
-                <div className="mn-icon-wrap">
-                  <div className="mn-icon">{item.icon}</div>
-                </div>
-              ) : (
-                <div className="mn-icon">{item.icon}</div>
-              )}
-              <div className="mn-label">{item.label}</div>
-              {item.p === "cart" && totalQty > 0 && (
-                <div className="mn-badge">{totalQty > 99 ? "99+" : totalQty}</div>
-              )}
-              {item.p === "notifications" && unread > 0 && user && (
-                <div className="mn-badge">{unread > 99 ? "99+" : unread}</div>
-              )}
-              {item.p === "dashboard" && !user && (
-                <div className="mn-badge" style={{ background: "var(--green)", fontSize: ".45rem", minWidth: 20, height: 14 }}>
-                  NEW
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        {!user && (
-          <div style={{ borderTop: "1px solid var(--border)", padding: "8px 16px", display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthTab("login");
-                setAuthOpen(true);
-              }}
-              style={{
-                flex: 1,
-                padding: "9px",
-                borderRadius: 8,
-                border: "1.5px solid var(--border)",
-                background: "var(--surface)",
-                fontFamily: "'DM Sans',sans-serif",
-                fontWeight: 600,
-                fontSize: ".78rem",
-                cursor: "pointer",
-                color: "var(--ink)",
-              }}
-            >
-              🔑 Connexion
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthTab("register");
-                setSelectedRole("buyer");
-                setAuthOpen(true);
-              }}
-              style={{
-                flex: 2,
-                padding: "9px",
-                borderRadius: 8,
-                border: "none",
-                background: "var(--green)",
-                fontFamily: "'Syne',sans-serif",
-                fontWeight: 700,
-                fontSize: ".78rem",
-                cursor: "pointer",
-                color: "#fff",
-              }}
-            >
-              🚀 S'inscrire gratuitement
-            </button>
-          </div>
-        )}
       </div>
 
       {page === "admin" && (
@@ -661,6 +587,6 @@ export function YorixPages({ ctx }) {
           <LazyAdminDashboard user={user} userData={userData} goPage={goPage} />
         </Suspense>
       )}
-    </>
+    </main>
   );
 }

@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import { DeliveryStatusIcon } from "../lib/contentIcons";
 import {
   DELIVERY_STATUTS,
   getStatutConfig,
@@ -40,7 +41,7 @@ function StatutBadge({ statut, size = "md" }) {
         lineHeight: 1.2,
       }}
     >
-      <span>{cfg.icon}</span>
+      <DeliveryStatusIcon statut={statut} size={size === "sm" ? 12 : 14} />
       <span>{cfg.label}</span>
     </span>
   );
@@ -110,7 +111,7 @@ function LivraisonCard({ l, user, onAccepter, onRefuser, onAvancer, onContacter,
               fontSize: "1.15rem", flexShrink: 0,
             }}
           >
-            {cfg.icon}
+            <DeliveryStatusIcon statut={l.statut} size={20} />
           </div>
           <div style={{ minWidth: 0 }}>
             <div

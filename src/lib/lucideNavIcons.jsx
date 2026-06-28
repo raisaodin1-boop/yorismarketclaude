@@ -1,0 +1,132 @@
+import {
+  Home,
+  ShoppingBag,
+  ShoppingCart,
+  Tag,
+  Truck,
+  Shield,
+  Wrench,
+  Briefcase,
+  GraduationCap,
+  Newspaper,
+  Star,
+  Phone,
+  LifeBuoy,
+  HelpCircle,
+  Bell,
+  Package,
+  Users,
+  Store,
+  Bike,
+  HardHat,
+  DollarSign,
+  Gift,
+  MessageCircle,
+  Megaphone,
+  BarChart3,
+  CheckCircle2,
+  Flame,
+  Zap,
+  Trophy,
+  BadgeCheck,
+  Lock,
+  MapPin,
+  Smartphone,
+  CreditCard,
+  Banknote,
+  Moon,
+  Sun,
+  Search,
+  Rocket,
+  LogIn,
+  User,
+  AlertTriangle,
+  Settings,
+  XCircle,
+} from "lucide-react";
+
+export const NAV_QUICK_ICONS = {
+  home: Home,
+  produits: ShoppingBag,
+  cart: ShoppingCart,
+  bonsPlans: Tag,
+  livraison: Truck,
+  escrow: Shield,
+  prestataires: Wrench,
+  business: Briefcase,
+  academy: GraduationCap,
+  blog: Newspaper,
+  loyalty: Star,
+  contact: Phone,
+  aide: LifeBuoy,
+  faq: HelpCircle,
+  admin: Settings,
+};
+
+export const ADMIN_NAV_ICONS = {
+  overview: BarChart3,
+  deliveries: Truck,
+  categories: Tag,
+  packs: Package,
+  produits: Package,
+  commandes: ShoppingBag,
+  utilisateurs: Users,
+  vendeurs: Store,
+  livreurs: Bike,
+  prestataires: HardHat,
+  revenus: DollarSign,
+  commerce_promo: Gift,
+  messagerie: MessageCircle,
+  notif_center: Megaphone,
+  loyalty: Star,
+  alertes: Bell,
+};
+
+export const SELLER_STAT_ICONS = {
+  products: Package,
+  orders: ShoppingCart,
+  delivered: CheckCircle2,
+  revenue: DollarSign,
+};
+
+export const PRODUCT_BADGE_ICONS = {
+  top: Star,
+  verified: BadgeCheck,
+  promo: Flame,
+  flash: Zap,
+  best: Trophy,
+  escrow: Lock,
+  stockLow: Flame,
+  delivery: Truck,
+  cash: Banknote,
+};
+
+export const PAY_STRIP_ICONS = {
+  momo: Smartphone,
+  orange: CreditCard,
+  card: CreditCard,
+  cash: Banknote,
+  delivery: Truck,
+  escrow: Shield,
+};
+
+export const HEADER_ICONS = {
+  moon: Moon,
+  sun: Sun,
+  search: Search,
+  rocket: Rocket,
+  login: LogIn,
+  user: User,
+  phone: Phone,
+  help: LifeBuoy,
+  package: Package,
+  mapPin: MapPin,
+  check: CheckCircle2,
+  alert: AlertTriangle,
+  x: XCircle,
+};
+
+export function LucideIcon({ icon: Icon, size = 18, className = "", ...props }) {
+  if (!Icon) return null;
+  return <Icon size={size} strokeWidth={2.25} className={className} aria-hidden="true" {...props} />;
+}

@@ -1,11 +1,17 @@
 import { useTranslation } from "react-i18next";
+import { Moon, Sun, Rocket, Phone, LifeBuoy, LogIn, User, Package, Truck, Smartphone, CreditCard, Banknote, Shield, ShieldCheck, Search, Flag, ShoppingCart, Menu } from "lucide-react";
 import { roleLabel } from "../../i18n/index.js";
 import { EMOTIONAL_NAV } from "../../lib/merchHubs";
+import { ContentIcon } from "../../lib/contentIcons";
 import { categoryLabel } from "../../lib/marketplaceCategories";
+import { productMatchesSearch } from "../../lib/productSearch";
+import { NAV_QUICK_ICONS, PAY_STRIP_ICONS, LucideIcon } from "../../lib/lucideNavIcons";
 import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
 import { CategoryMobileNav } from "../categories/CategoryMobileNav";
 import { NotificationBell } from "../NotificationBell";
+import { Button } from "../ui/Button";
 import "../categories/categoryUi.css";
+import "./marketplaceHeader.css";
 
 export function YorixHeader({
   navCompact,
@@ -24,6 +30,8 @@ export function YorixHeader({
   search,
   setSearch,
   produits,
+  onOpenProduct,
+  onOpenCommandPalette,
   setOnboardingOpen,
   onNotifsSync,
   onOpenNotification,
@@ -47,6 +55,10 @@ export function YorixHeader({
 }) {
   const { t } = useTranslation("nav");
   const localeTag = siteLocale === "en" ? "en-FR" : "fr-FR";
+  const cmdKLabel =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform)
+      ? "⌘K"
+      : "Ctrl+K";
   const freeShip = commerceDeliveryPolicy.freeShippingThresholdXaf.toLocaleString(localeTag);
 
   return (
@@ -59,64 +71,82 @@ export function YorixHeader({
               <span className="fr" />
               <span className="fy" />
             </span>
-            <span>{t("topbar.cameroon")} 🇨🇲</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              {t("topbar.cameroon")} <Flag size={14} aria-hidden />
+            </span>
           </div>
           <span
             role="group"
             aria-label={t("sticky_lang_hint", { ns: "common" })}
             style={{ display: "inline-flex", gap: 6, alignItems: "center", userSelect: "none" }}
           >
-            <span
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               onClick={() => switchLocale?.("fr")}
-              onKeyDown={(e) => e.key === "Enter" && switchLocale?.("fr")}
               style={{
                 cursor: "pointer",
                 fontWeight: siteLocale === "fr" ? 700 : 500,
                 opacity: siteLocale === "fr" ? 1 : 0.7,
+                background: "none",
+                border: "none",
+                color: "inherit",
+                padding: 0,
+                font: "inherit",
               }}
+              aria-pressed={siteLocale === "fr"}
             >
               FR
-            </span>
+            </button>
             <span aria-hidden style={{ opacity: 0.45 }}>
               |
             </span>
-            <span
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               onClick={() => switchLocale?.("en")}
-              onKeyDown={(e) => e.key === "Enter" && switchLocale?.("en")}
               style={{
                 cursor: "pointer",
                 fontWeight: siteLocale === "en" ? 700 : 500,
                 opacity: siteLocale === "en" ? 1 : 0.7,
+                background: "none",
+                border: "none",
+                color: "inherit",
+                padding: 0,
+                font: "inherit",
               }}
+              aria-pressed={siteLocale === "en"}
             >
               EN
-            </span>
+            </button>
           </span>
-          <span>📞 +237 696 56 56 54</span>
+          <span><LucideIcon icon={Phone} size={14} /> +237 696 56 56 54</span>
         </div>
         <div className="topbar-r">
-          <span onClick={() => goPage("aide")}>🆘 {t("topbar.help")}</span>
-          <span onClick={() => goPage("contact")}>📞 {t("topbar.contact")}</span>
+          <button type="button" className="topbar-link" onClick={() => goPage("aide")}>
+            <LucideIcon icon={LifeBuoy} size={14} /> {t("topbar.help")}
+          </button>
+          <button type="button" className="topbar-link" onClick={() => goPage("contact")}>
+            <LucideIcon icon={Phone} size={14} /> {t("topbar.contact")}
+          </button>
           {user ? (
-            <span style={{ color: "#b7e4c7" }}>👤 {userData?.nom || user.email?.split("@")[0]}</span>
+            <span style={{ color: "#b7e4c7", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <LucideIcon icon={User} size={14} /> {userData?.nom || user.email?.split("@")[0]}
+            </span>
           ) : (
-            <span
+            <button
+              type="button"
+              className="topbar-link"
               onClick={() => {
                 setAuthTab("login");
                 setAuthOpen(true);
               }}
             >
-              🔑 {t("topbar.login")}
-            </span>
+              <LucideIcon icon={LogIn} size={14} /> {t("topbar.login")}
+            </button>
           )}
         </div>
       </div>
 
-      <nav className="navbar navbar--yorix-mobile">
+      <nav className="navbar navbar--yorix-mobile navbar--marketplace">
         <div className="logo-wrap" onClick={() => goPage("home")}>
           <div className="logo-txt">
             Yo<span>rix</span>
@@ -166,24 +196,38 @@ export function YorixHeader({
                 </option>
               ))}
             </select>
-            <input
-              placeholder={t("search.placeholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && goPage("produits")}
-              autoComplete="off"
-              aria-label={t("search.ariaSearch")}
-              aria-expanded={search.trim().length >= 2}
-              aria-haspopup="listbox"
-            />
+            <div className="nav-search-field">
+              <input
+                placeholder={t("search.placeholder")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") goPage("produits");
+                  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+                    e.preventDefault();
+                    onOpenCommandPalette?.();
+                  }
+                }}
+                autoComplete="off"
+                aria-label={t("search.ariaSearch")}
+                aria-expanded={search.trim().length >= 2}
+                aria-haspopup="listbox"
+              />
+              {onOpenCommandPalette && !search.trim() && (
+                <button
+                  type="button"
+                  className="nav-search-cmd-hint"
+                  onClick={() => onOpenCommandPalette()}
+                  aria-label={siteLocale === "en" ? "Open command palette" : "Ouvrir la palette de commande"}
+                >
+                  <kbd>{cmdKLabel}</kbd>
+                </button>
+              )}
+            </div>
             {search.trim().length >= 2 && (
               <div className="nav-search-dd" role="listbox" aria-label={t("search.ariaSuggestions")}>
                 {produits
-                  .filter(
-                    (p) =>
-                      (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
-                      (p.description_fr || "").toLowerCase().includes(search.toLowerCase()),
-                  )
+                  .filter((p) => productMatchesSearch(p, search))
                   .slice(0, 8)
                   .map((p) => (
                     <button
@@ -193,7 +237,8 @@ export function YorixHeader({
                       role="option"
                       onClick={() => {
                         setSearch("");
-                        goPage("produits");
+                        if (onOpenProduct) onOpenProduct(p);
+                        else goPage("produits");
                       }}
                     >
                       {p.image ? (
@@ -207,7 +252,7 @@ export function YorixHeader({
                         />
                       ) : (
                         <span className="nav-search-dd-img nav-search-dd-ph" aria-hidden>
-                          📦
+                          <Package size={18} strokeWidth={2} />
                         </span>
                       )}
                       <div style={{ minWidth: 0 }}>
@@ -216,30 +261,26 @@ export function YorixHeader({
                       </div>
                     </button>
                   ))}
-                {produits.filter((p) => (p.name_fr || "").toLowerCase().includes(search.toLowerCase())).length === 0 && (
+                {produits.filter((p) => productMatchesSearch(p, search)).length === 0 && (
                   <div className="nav-search-dd-empty">
                     Aucun résultat pour « {search} » — touche Entrée pour ouvrir le catalogue filtré.
                   </div>
                 )}
               </div>
             )}
-            <button type="button" onClick={() => goPage("produits")} aria-label={t("search.ariaSubmit")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <button type="button" className="nav-search-submit" onClick={() => goPage("produits")} aria-label={t("search.ariaSubmit")}>
+              <Search size={16} strokeWidth={2.5} aria-hidden="true" />
             </button>
           </div>
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-cta-onboard" onClick={() => setOnboardingOpen(true)} title={t("actions.getStartedTitle")}>
-            🚀 {t("actions.getStarted")}
-          </button>
+          <Button type="button" variant="primary" size="sm" className="nav-cta-onboard" icon={Rocket} onClick={() => setOnboardingOpen(true)} title={t("actions.getStartedTitle")}>
+            {t("actions.getStarted")}
+          </Button>
 
-          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? t("actions.lightMode") : t("actions.darkMode")}>
-            {dark ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            )}
+          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? t("actions.lightMode") : t("actions.darkMode")} aria-label={dark ? t("actions.lightMode") : t("actions.darkMode")}>
+            {dark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
           </button>
 
           {user && (
@@ -255,8 +296,8 @@ export function YorixHeader({
             />
           )}
 
-          <button type="button" className="icon-btn" onClick={openCart} title={t("actions.cart")}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <button type="button" className="icon-btn" onClick={openCart} title={t("actions.cart")} aria-label={t("actions.cart")}>
+            <ShoppingCart size={18} strokeWidth={2} aria-hidden="true" />
             {totalQty > 0 && <span className="ibadge">{totalQty}</span>}
           </button>
 
@@ -268,7 +309,7 @@ export function YorixHeader({
               onClick={onOpenUserMenu}
             >
               {user ? (userData?.nom || user.email || "?")[0].toUpperCase() : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                <Menu size={18} strokeWidth={2} aria-hidden="true" />
               )}
             </button>
           </div>
@@ -276,18 +317,22 @@ export function YorixHeader({
           <div className="nav-auth-desktop">
             {!user ? (
               <>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   className="btn-ghost"
                   onClick={() => {
                     setAuthTab("login");
                     setAuthOpen(true);
                   }}
                 >
-                  Connexion
-                </button>
-                <button
+                  {t("actions.loginShort")}
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   className="btn-green"
                   onClick={() => {
                     setAuthTab("register");
@@ -296,14 +341,20 @@ export function YorixHeader({
                   }}
                 >
                   {t("actions.register")}
-                </button>
+                </Button>
               </>
             ) : (
               <>
                 <span className={`role-chip ${roleChipClass()}`}>{roleLabel(t, userRole || "buyer")}</span>
-                <div className="user-av" onClick={() => goPage("dashboard")} title={t("actions.mySpace")}>
+                <button
+                  type="button"
+                  className="user-av"
+                  onClick={() => goPage("dashboard")}
+                  title={t("actions.mySpace")}
+                  aria-label={t("actions.mySpace")}
+                >
                   {(userData?.nom || user.email || "?")[0].toUpperCase()}
-                </div>
+                </button>
                 <button type="button" className="btn-red" onClick={doLogout} title={t("actions.logout")}>
                   {t("actions.logout")}
                 </button>
@@ -314,20 +365,29 @@ export function YorixHeader({
       </nav>
 
       <div className="nav-tabs-row" ref={navQuickRef}>
-        <nav className="nav-tabs" aria-label={t("actions.navigation")}>
-          {TABS.map((t) => (
-            <div
-              key={t.p}
-              className={`tab${tabActive(t.p) ? " active" : ""}`}
-              onClick={() => {
-                setNavQuickOpen(false);
-                goPage(t.p);
-              }}
-              role="presentation"
-            >
-              {t.l}
-            </div>
-          ))}
+        <nav className="nav-tabs" role="tablist" aria-label={t("actions.navigation")}>
+          {TABS.map((tab) => {
+            const active = tabActive(tab.p);
+            const TabIcon = NAV_QUICK_ICONS[tab.iconKey] || NAV_QUICK_ICONS.home;
+            return (
+              <button
+                key={tab.p}
+                type="button"
+                role="tab"
+                className={`tab${active ? " active" : ""}`}
+                aria-selected={active}
+                aria-current={active ? "page" : undefined}
+                onClick={() => {
+                  setNavQuickOpen(false);
+                  goPage(tab.p);
+                }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              >
+                <TabIcon size={14} strokeWidth={2.25} aria-hidden />
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
         <div className="nav-quick-wrap">
           <button type="button" className="nav-quick-btn" aria-expanded={navQuickOpen} onClick={() => setNavQuickOpen((o) => !o)}>
@@ -353,12 +413,14 @@ export function YorixHeader({
                   <h4>{t("quickNav.marketplace")}</h4>
                   <div className="nav-quick-links">
                     {[
-                      { ic: "🏠", l: t("quickNav.home"), p: "home" },
-                      { ic: "🛍️", l: t("quickNav.catalog"), p: "produits" },
-                      { ic: "🛒", l: t("quickNav.cartSecure"), p: "cart" },
-                      { ic: "🏷️", l: t("quickNav.dealsNow"), p: "bonsPlans" },
-                      { ic: "🚚", l: t("quickNav.deliveryTrack"), p: "livraison" },
-                    ].map((x) => (
+                      { key: "home", l: t("quickNav.home"), p: "home" },
+                      { key: "produits", l: t("quickNav.catalog"), p: "produits" },
+                      { key: "cart", l: t("quickNav.cartSecure"), p: "cart" },
+                      { key: "bonsPlans", l: t("quickNav.dealsNow"), p: "bonsPlans" },
+                      { key: "livraison", l: t("quickNav.deliveryTrack"), p: "livraison" },
+                    ].map((x) => {
+                      const Icon = NAV_QUICK_ICONS[x.key];
+                      return (
                       <button
                         key={x.p}
                         type="button"
@@ -367,23 +429,25 @@ export function YorixHeader({
                           goPage(x.p);
                         }}
                       >
-                        <span className="nav-quick-ico">{x.ic}</span>
+                        <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
                         <span>{x.l}</span>
                       </button>
-                    ))}
+                    );})}
                   </div>
                 </div>
                 <div className="nav-quick-section">
                   <h4>{t("quickNav.trust")}</h4>
                   <div className="nav-quick-links">
                     {[
-                      { ic: "🔐", l: t("quickNav.escrowBuyer"), p: "escrow" },
-                      { ic: "🧑‍🔧", l: t("quickNav.providersVerified"), p: "prestataires" },
-                      { ic: "💼", l: t("tabs.business"), p: "business" },
-                      { ic: "🎓", l: t("tabs.academy"), p: "academy" },
-                      { ic: "📰", l: t("quickNav.blogTrends"), p: "blog" },
-                      { ic: "⭐", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
-                    ].map((x) => (
+                      { key: "escrow", l: t("quickNav.escrowBuyer"), p: "escrow" },
+                      { key: "prestataires", l: t("quickNav.providersVerified"), p: "prestataires" },
+                      { key: "business", l: t("tabs.business"), p: "business" },
+                      { key: "academy", l: t("tabs.academy"), p: "academy" },
+                      { key: "blog", l: t("quickNav.blogTrends"), p: "blog" },
+                      { key: "loyalty", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
+                    ].map((x) => {
+                      const Icon = NAV_QUICK_ICONS[x.key];
+                      return (
                       <button
                         key={x.p}
                         type="button"
@@ -392,10 +456,10 @@ export function YorixHeader({
                           goPage(x.p);
                         }}
                       >
-                        <span className="nav-quick-ico">{x.ic}</span>
+                        <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
                         <span>{x.l}</span>
                       </button>
-                    ))}
+                    );})}
                   </div>
                 </div>
                 <div className="nav-quick-section">
@@ -408,7 +472,7 @@ export function YorixHeader({
                         goPage("contact");
                       }}
                     >
-                      <span className="nav-quick-ico">📞</span>
+                      <span className="nav-quick-ico"><Phone size={16} strokeWidth={2.25} /></span>
                       <span>{t("quickNav.contactSupport")}</span>
                     </button>
                     <button
@@ -418,7 +482,7 @@ export function YorixHeader({
                         goPage("aide");
                       }}
                     >
-                      <span className="nav-quick-ico">🆘</span>
+                      <span className="nav-quick-ico"><LifeBuoy size={16} strokeWidth={2.25} /></span>
                       <span>{t("quickNav.helpSos")}</span>
                     </button>
                     <button
@@ -428,7 +492,7 @@ export function YorixHeader({
                         goPage("faq");
                       }}
                     >
-                      <span className="nav-quick-ico">❓</span>
+                      <span className="nav-quick-ico"><LucideIcon icon={NAV_QUICK_ICONS.faq} size={16} /></span>
                       <span>{t("quickNav.faqMarketplace")}</span>
                     </button>
                   </div>
@@ -439,17 +503,56 @@ export function YorixHeader({
         </div>
       </div>
 
+      {categoryTree.length > 0 && (
+        <div className="yorix-cat-bar">
+          <CategoryMegaMenu tree={categoryTree} locale={siteLocale} onNavigate={(v) => goToCategory?.(v)} />
+          <div className="yorix-cat-bar-scroll">
+            {categoryTree.map((root) => (
+              <button
+                key={root.id || root.slug}
+                type="button"
+                className="yorix-cat-pill"
+                onClick={() => goToCategory?.({ parentSlug: root.slug })}
+              >
+                {categoryLabel(root, siteLocale)}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="yorix-cat-pill yorix-cat-pill--wholesale"
+              onClick={() => goPage("merchHub", { merchHub: "sourcer-en-gros" })}
+            >
+              {siteLocale === "en" ? "Wholesale" : "Sourcer en gros"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="yorix-trust-strip" role="note" aria-label={siteLocale === "en" ? "Yorix trust services" : "Services de confiance Yorix"}>
+        <button type="button" className="yorix-trust-pill" onClick={() => goPage("produits")}>
+          <ShieldCheck size={13} aria-hidden /> Protect+
+        </button>
+        <span className="yorix-trust-dot" aria-hidden>·</span>
+        <button type="button" className="yorix-trust-pill" onClick={() => goPage("escrow")}>
+          <Shield size={13} aria-hidden /> Escrow
+        </button>
+        <span className="yorix-trust-dot" aria-hidden>·</span>
+        <span className="yorix-trust-pill yorix-trust-pill--static">
+          <Smartphone size={13} aria-hidden /> MTN MoMo & Orange
+        </span>
+      </div>
+
       <nav className="yorix-emotional-nav" aria-label={siteLocale === "en" ? "Shop highlights" : "Sélections marketplace"}>
         {EMOTIONAL_NAV.map((item) => {
           const label = siteLocale === "en" ? item.labelEn : item.labelFr;
           const onClick = () => {
             if (item.hub) goPage("merchHub", { merchHub: item.hub });
-            else if (item.page === "seoAlias" && item.alias) goPage("business");
+            else if (item.page === "seoAlias" && item.alias) goPage("business", { seoAlias: item.alias });
             else goPage(item.page);
           };
           return (
             <button key={item.hub || item.page || item.alias} type="button" className="yorix-emotional-nav-btn" onClick={onClick}>
-              <span aria-hidden>{item.icon}</span> {label}
+              <ContentIcon name={item.iconKey} size={13} /> {label}
             </button>
           );
         })}
@@ -458,29 +561,35 @@ export function YorixHeader({
       <div className="pay-strip">
         <b style={{ color: "var(--ink)" }}>{t("payStrip.payment")}</b>
         <div className="pay-methods">
-          <span className="pm mtn-b">📱 {t("payStrip.momo")}</span>
-          <span className="pm ora-b">🔶 {t("payStrip.orange")}</span>
-          <span className="pm">💳 {t("payStrip.card")}</span>
-          <span className="pm">💵 {t("payStrip.cash")}</span>
+          <span className="pm mtn-b"><LucideIcon icon={PAY_STRIP_ICONS.momo} size={14} /> {t("payStrip.momo")}</span>
+          <span className="pm ora-b"><LucideIcon icon={PAY_STRIP_ICONS.orange} size={14} /> {t("payStrip.orange")}</span>
+          <span className="pm"><LucideIcon icon={PAY_STRIP_ICONS.card} size={14} /> {t("payStrip.card")}</span>
+          <span className="pm"><LucideIcon icon={PAY_STRIP_ICONS.cash} size={14} /> {t("payStrip.cash")}</span>
         </div>
         <div className="strip-right">
-          <span>🚚 {t("payStrip.deliveryJ1")}</span>
-          <span
-            role="link"
-            tabIndex={0}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LucideIcon icon={PAY_STRIP_ICONS.delivery} size={14} /> {t("payStrip.deliveryJ1")}</span>
+          <button
+            type="button"
             onClick={() => goPage("bonsPlans")}
-            onKeyDown={(e) => e.key === "Enter" && goPage("bonsPlans")}
             style={{
               cursor: "pointer",
               fontWeight: 700,
               color: "var(--green)",
               textDecoration: "underline",
+              background: "none",
+              border: "none",
+              padding: 0,
+              font: "inherit",
             }}
           >
             {t("payStrip.freeShippingFrom", { amount: freeShip })}
-          </span>
-          <span>🔐 {t("payStrip.escrowSecure")}</span>
-          {user && <span style={{ color: "var(--gold)" }}>👤 {userData?.nom || user.email}</span>}
+          </button>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LucideIcon icon={PAY_STRIP_ICONS.escrow} size={14} /> {t("payStrip.escrowSecure")}</span>
+          {user && (
+            <span style={{ color: "var(--gold)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <LucideIcon icon={User} size={14} /> {userData?.nom || user.email}
+            </span>
+          )}
         </div>
       </div>
     </div>

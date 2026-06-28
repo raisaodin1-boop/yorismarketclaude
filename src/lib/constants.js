@@ -5,11 +5,11 @@ export const CATS = getRootCategoryLabels("fr");
 
 export const CITIES = ["Toutes les villes","Douala","Yaoundé","Bafoussam","Bamenda","Garoua","Kribi","Ngaoundéré","Maroua","Ebolowa","Buea","Bertoua"];
 
-export const ROLE_LABELS = { buyer:"🛍️ Acheteur", seller:"🏪 Vendeur", delivery:"🚚 Livreur", provider:"👷 Prestataire", admin:"🛡️ Administrateur", admin_partner:"🤝 Partenaire", superadmin:"🛡️ Super Admin" };
+export const ROLE_LABELS = { buyer: "Acheteur", seller: "Vendeur", delivery: "Livreur", provider: "Prestataire", admin: "Administrateur", admin_partner: "Partenaire", superadmin: "Super Admin" };
 
-export const DELIVERY_STATUSES = { pending:"⏳ En attente", en_cours:"🚚 En cours", livre:"✅ Livré", echec:"❌ Échoué" };
+export const DELIVERY_STATUSES = { pending: "En attente", en_cours: "En cours", livre: "Livré", echec: "Échoué" };
 
-export const ESCROW_STATUSES = { pending:"⏳ En attente", securise:"🔐 Sécurisé", libere:"✅ Libéré", rembourse:"↩️ Remboursé" };
+export const ESCROW_STATUSES = { pending: "En attente", securise: "Sécurisé", libere: "Libéré", rembourse: "Remboursé" };
 
 export const PREST_DATA = [
   {
@@ -19,7 +19,7 @@ export const PREST_DATA = [
     categorie: "Plomberie",
     ville: "Douala",
     quartier: "Akwa",
-    emoji: "🔧",
+    iconKey: "wrench",
     photo: "https://images.unsplash.com/photo-1620207418302-439b387441b0?w=400&q=80",
     color_bg: "linear-gradient(135deg, #dbeafe, #bfdbfe)",
     tags: ["Plomberie", "Sanitaire", "Chauffe-eau"],
@@ -41,7 +41,7 @@ export const PREST_DATA = [
     categorie: "Électricité",
     ville: "Yaoundé",
     quartier: "Bastos",
-    emoji: "⚡",
+    iconKey: "zap",
     photo: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400&q=80",
     color_bg: "linear-gradient(135deg, #fef3c7, #fde68a)",
     tags: ["Électricité", "Installation", "Dépannage"],
@@ -63,7 +63,7 @@ export const PREST_DATA = [
     categorie: "Graphisme",
     ville: "Douala",
     quartier: "Bonanjo",
-    emoji: "🎨",
+    iconKey: "palette",
     photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
     color_bg: "linear-gradient(135deg, #fce7f3, #fbcfe8)",
     tags: ["Logo", "Flyer", "Branding"],
@@ -85,7 +85,7 @@ export const PREST_DATA = [
     categorie: "Photographie",
     ville: "Kribi",
     quartier: "Centre-ville",
-    emoji: "📸",
+    iconKey: "camera",
     photo: "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=400&q=80",
     color_bg: "linear-gradient(135deg, #e0e7ff, #c7d2fe)",
     tags: ["Mariage", "Portrait", "Événementiel"],
@@ -107,7 +107,7 @@ export const PREST_DATA = [
     categorie: "Nettoyage",
     ville: "Douala",
     quartier: "Bonapriso",
-    emoji: "🧹",
+    iconKey: "sparkles",
     photo: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80",
     color_bg: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
     tags: ["Ménage", "Bureaux", "Grand nettoyage"],
@@ -129,7 +129,7 @@ export const PREST_DATA = [
     categorie: "Informatique",
     ville: "Yaoundé",
     quartier: "Nlongkak",
-    emoji: "💻",
+    iconKey: "laptop",
     photo: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&q=80",
     color_bg: "linear-gradient(135deg, #cffafe, #a5f3fc)",
     tags: ["Site web", "App", "E-commerce"],
@@ -151,7 +151,7 @@ export const PREST_DATA = [
     categorie: "Menuiserie",
     ville: "Bafoussam",
     quartier: "Tamdja",
-    emoji: "🪚",
+    iconKey: "hammer",
     photo: "https://images.unsplash.com/photo-1513467655676-561b7d489a88?w=400&q=80",
     color_bg: "linear-gradient(135deg, #fed7aa, #fdba74)",
     tags: ["Meubles", "Placards", "Sur-mesure"],
@@ -173,7 +173,7 @@ export const PREST_DATA = [
     categorie: "Cuisine",
     ville: "Douala",
     quartier: "Logbessou",
-    emoji: "👩‍🍳",
+    iconKey: "chefHat",
     photo: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=400&q=80",
     color_bg: "linear-gradient(135deg, #fecaca, #fca5a5)",
     tags: ["Traiteur", "Mariages", "Cuisine locale"],
@@ -195,7 +195,7 @@ export const PREST_DATA = [
     categorie: "Beauté",
     ville: "Yaoundé",
     quartier: "Mvan",
-    emoji: "💇‍♀️",
+    iconKey: "scissors",
     photo: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80",
     color_bg: "linear-gradient(135deg, #fbcfe8, #f9a8d4)",
     tags: ["Tresses", "Coloration", "Soins"],
@@ -219,7 +219,7 @@ export const BLOG_DATA = [
     title: "Comment vendre en ligne au Cameroun en 2026 : le guide complet",
     excerpt: "Stratégies concrètes pour lancer ton business e-commerce au Cameroun : choix des produits, marketing WhatsApp, paiement mobile, logistique locale.",
     cat: "BUSINESS",
-    emoji: "📈",
+    iconKey: "trendingUp",
     color_bg: "linear-gradient(135deg, #dbeafe, #bfdbfe)",
     image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
     date: "15 avril 2026",
@@ -236,7 +236,7 @@ export const BLOG_DATA = [
     title: "Les 10 produits camerounais les plus vendus en ligne",
     excerpt: "Beurre de karité, pagne wax, cacao, miel de Oku, poivre de Penja... Découvre les produits locaux qui cartonnent à l'international.",
     cat: "LOCAL",
-    emoji: "🌿",
+    iconKey: "leaf",
     color_bg: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
     image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&q=80",
     date: "12 avril 2026",
@@ -253,7 +253,7 @@ export const BLOG_DATA = [
     title: "MTN MoMo vs Orange Money : quel système de paiement choisir ?",
     excerpt: "Comparatif détaillé des deux géants du mobile money au Cameroun : frais, limites, sécurité, intégration marchande et expérience utilisateur.",
     cat: "PAIEMENT",
-    emoji: "💳",
+    iconKey: "creditCard",
     color_bg: "linear-gradient(135deg, #fef3c7, #fde68a)",
     image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80",
     date: "10 avril 2026",
@@ -270,7 +270,7 @@ export const BLOG_DATA = [
     title: "Suivi de commande en temps réel : comment ça marche chez Yorix",
     excerpt: "Découvre notre système de tracking GPS inspiré d'Uber : de la collecte chez le vendeur jusqu'à ta porte, tu vois tout en direct.",
     cat: "LIVRAISON",
-    emoji: "🚚",
+    iconKey: "truck",
     color_bg: "linear-gradient(135deg, #fed7aa, #fdba74)",
     image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80",
     date: "8 avril 2026",
@@ -287,7 +287,7 @@ export const BLOG_DATA = [
     title: "Escrow Yorix : pourquoi ton argent est 100% protégé",
     excerpt: "Comprends en 5 minutes le système Escrow : ton paiement reste bloqué jusqu'à la livraison confirmée. Zéro arnaque, zéro stress.",
     cat: "SÉCURITÉ",
-    emoji: "🔐",
+    iconKey: "lock",
     color_bg: "linear-gradient(135deg, #e9d5ff, #d8b4fe)",
     image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&q=80",
     date: "5 avril 2026",
@@ -304,7 +304,7 @@ export const BLOG_DATA = [
     title: "Comment trouver un électricien fiable à Douala en 2026",
     excerpt: "Check-list complète : vérifier les qualifications, demander un devis, évaluer les avis, éviter les arnaques courantes dans le BTP camerounais.",
     cat: "PRESTATAIRES",
-    emoji: "⚡",
+    iconKey: "zap",
     color_bg: "linear-gradient(135deg, #fecaca, #fca5a5)",
     image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80",
     date: "2 avril 2026",
@@ -321,7 +321,7 @@ export const BLOG_DATA = [
     title: "Le pagne wax camerounais : histoire, tendances et où acheter",
     excerpt: "Du marché de Mokolo aux défilés internationaux, le pagne wax conquiert le monde. Guide complet pour reconnaître un vrai pagne de qualité.",
     cat: "MODE",
-    emoji: "👗",
+    iconKey: "shirt",
     color_bg: "linear-gradient(135deg, #fce7f3, #fbcfe8)",
     image: "https://images.unsplash.com/photo-1617627191894-1c9e59f7a4ab?w=800&q=80",
     date: "28 mars 2026",
@@ -338,7 +338,7 @@ export const BLOG_DATA = [
     title: "Devenir livreur Yorix : gagne jusqu'à 150 000 FCFA/mois",
     excerpt: "Témoignages de livreurs actifs à Yaoundé et Douala, processus d'inscription, revenus réels et conseils pour maximiser tes gains.",
     cat: "CARRIÈRE",
-    emoji: "🏍️",
+    iconKey: "bike",
     color_bg: "linear-gradient(135deg, #cffafe, #a5f3fc)",
     image: "https://images.unsplash.com/photo-1558383331-f520f2888351?w=800&q=80",
     date: "25 mars 2026",
@@ -355,7 +355,7 @@ export const BLOG_DATA = [
     title: "Fiscalité des vendeurs en ligne au Cameroun : ce qu'il faut savoir",
     excerpt: "TVA, impôt sur le revenu, patente : toutes les obligations fiscales d'un e-commerçant camerounais expliquées simplement.",
     cat: "BUSINESS",
-    emoji: "📊",
+    iconKey: "barChart",
     color_bg: "linear-gradient(135deg, #dbeafe, #bfdbfe)",
     image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
     date: "22 mars 2026",
@@ -369,19 +369,19 @@ export const BLOG_DATA = [
 ];
 
 export const COURSES_DATA = [
-  {emoji:"🏪",title:"Créer sa boutique en 1h",level:"Débutant",lc:"level-deb",duree:"1h30",apprenants:"2.4K",prix:"Gratuit",bg:"#e8f7ee"},
-  {emoji:"📸",title:"Photographier ses produits",level:"Débutant",lc:"level-deb",duree:"2h",apprenants:"1.8K",prix:"Gratuit",bg:"#fff3e0"},
-  {emoji:"📊",title:"Analyser ses ventes",level:"Intermédiaire",lc:"level-int",duree:"3h",apprenants:"920",prix:"5 000 FCFA",bg:"#e3f2fd"},
-  {emoji:"💡",title:"Marketing digital Cameroun",level:"Intermédiaire",lc:"level-int",duree:"4h",apprenants:"640",prix:"8 000 FCFA",bg:"#fce4ec"},
-  {emoji:"🤝",title:"Négocier avec les fournisseurs",level:"Avancé",lc:"level-adv",duree:"2h30",apprenants:"380",prix:"10 000 FCFA",bg:"#ede7f6"},
-  {emoji:"🚀",title:"Scaler vers le B2B",level:"Avancé",lc:"level-adv",duree:"5h",apprenants:"210",prix:"15 000 FCFA",bg:"#e0f2f1"},
+  { iconKey: "store", title: "Créer sa boutique en 1h", level: "Débutant", lc: "level-deb", duree: "1h30", apprenants: "2.4K", prix: "Gratuit", bg: "#e8f7ee" },
+  { iconKey: "camera", title: "Photographier ses produits", level: "Débutant", lc: "level-deb", duree: "2h", apprenants: "1.8K", prix: "Gratuit", bg: "#fff3e0" },
+  { iconKey: "barChart", title: "Analyser ses ventes", level: "Intermédiaire", lc: "level-int", duree: "3h", apprenants: "920", prix: "5 000 FCFA", bg: "#e3f2fd" },
+  { iconKey: "lightbulb", title: "Marketing digital Cameroun", level: "Intermédiaire", lc: "level-int", duree: "4h", apprenants: "640", prix: "8 000 FCFA", bg: "#fce4ec" },
+  { iconKey: "handshake", title: "Négocier avec les fournisseurs", level: "Avancé", lc: "level-adv", duree: "2h30", apprenants: "380", prix: "10 000 FCFA", bg: "#ede7f6" },
+  { iconKey: "rocket", title: "Scaler vers le B2B", level: "Avancé", lc: "level-adv", duree: "5h", apprenants: "210", prix: "15 000 FCFA", bg: "#e0f2f1" },
 ];
 
 export const REWARDS_DATA = [
-  {icon:"🎁",name:"Bon 5 000 FCFA",pts:500},
-  {icon:"🚚",name:"Livraison gratuite x3",pts:300},
-  {icon:"⭐",name:"Statut VIP Yorix",pts:1000},
-  {icon:"📱",name:"-20% téléphones",pts:400},
-  {icon:"☕",name:"Pack café 500g",pts:200},
-  {icon:"🎓",name:"Cours Academy offert",pts:350},
+  { iconKey: "gift", name: "Bon 5 000 FCFA", pts: 500 },
+  { iconKey: "truck", name: "Livraison gratuite x3", pts: 300 },
+  { iconKey: "star", name: "Statut VIP Yorix", pts: 1000 },
+  { iconKey: "smartphone", name: "-20% téléphones", pts: 400 },
+  { iconKey: "coffee", name: "Pack café 500g", pts: 200 },
+  { iconKey: "graduationCap", name: "Cours Academy offert", pts: 350 },
 ];

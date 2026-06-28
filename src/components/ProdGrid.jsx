@@ -1,5 +1,6 @@
 import { useState, useCallback, lazy, Suspense } from "react";
 import { VariantPickerModal } from "./VariantPickerModal";
+import { ShoppingCart, MessageCircle, Lock, Flame, Zap, Star, Trophy, BadgeCheck, Truck, Banknote, ShieldCheck, Clock, Package } from "lucide-react";
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
@@ -10,6 +11,12 @@ import { SocialProofLine } from "./conversion/SocialProofLine";
 import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
 import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
+import {
+  productMoqLabel,
+  productDeliveryShort,
+  productProtectScore,
+} from "../lib/productCardMeta";
+import "../components/yorix/marketplaceHeader.css";
 
 const LazyFicheProduit = lazy(() =>
   import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
@@ -27,6 +34,7 @@ export function ProdGrid({
   wishlist,
   onOpenProd,
   onOpenProductUrl,
+  onOpenSellerUrl,
   siteLocale = "fr",
   showShare = false,
 }) {
@@ -64,11 +72,11 @@ export function ProdGrid({
   // ── Badges vendeur
   const getVendeurBadges = (p) => {
     const badges = [];
-    if (p.sponsorise)                   badges.push({ label: "⭐ Top Vendeur",   cls: "badge-top" });
-    if (p.verifie || p.vendeur_verifie) badges.push({ label: "✅ Vérifié",        cls: "badge-verif" });
-    if (isPromoActive(p))               badges.push({ label: "🔥 Promo du jour", cls: "badge-promo" });
-    if (p.flash)                        badges.push({ label: "⚡ Offre flash",   cls: "badge-flash" });
-    if (p.vente_total > 50)             badges.push({ label: "🏆 Best seller",   cls: "badge-best" });
+    if (p.sponsorise)                   badges.push({ label: "Top Vendeur",   cls: "badge-top",   icon: Star });
+    if (p.verifie || p.vendeur_verifie) badges.push({ label: "Vérifié",        cls: "badge-verif", icon: BadgeCheck });
+    if (isPromoActive(p))               badges.push({ label: "Promo du jour", cls: "badge-promo", icon: Flame });
+    if (p.flash)                        badges.push({ label: "Offre flash",   cls: "badge-flash", icon: Zap });
+    if (p.vente_total > 50)             badges.push({ label: "Best seller",   cls: "badge-best",  icon: Trophy });
     return badges;
   };
 
@@ -101,11 +109,11 @@ export function ProdGrid({
                   fallbackEmoji="📦"
                   style={{ width: "100%", height: "100%" }}
                 />
-                {p.flash                             && <span className="pbadge-flash">⚡ Flash</span>}
+                {p.flash                             && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> Flash</span>}
                 {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
-                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r">⭐ Top</span>}
+                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
                 {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
-                {p.escrow                            && <span className="escrow-badge">🔐</span>}
+                {p.escrow                            && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
                 {!buyable && (
                   <span
                     style={{
@@ -142,7 +150,10 @@ export function ProdGrid({
                 {vendBadges.length > 0 && (
                   <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
                     {vendBadges.map(b => (
-                      <span key={b.label} className={`vendor-badge ${b.cls}`}>{b.label}</span>
+                      <span key={b.label} className={`vendor-badge ${b.cls}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {b.icon && <b.icon size={12} strokeWidth={2.25} aria-hidden />}
+                        {b.label}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -150,14 +161,54 @@ export function ProdGrid({
                 <div className="prod-name">{p.name_fr}</div>
                 <div className="prod-loc">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {p.ville || "Cameroun"}{p.vendeur_nom ? ` · ${p.vendeur_nom}` : ""}
+                  {p.ville || "Cameroun"}
+                  {p.vendeur_nom && (
+                    <>
+                      {" · "}
+                      {onOpenSellerUrl && p.vendeur_id ? (
+                        <button
+                          type="button"
+                          className="prod-seller-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenSellerUrl(p);
+                          }}
+                        >
+                          {p.vendeur_nom}
+                        </button>
+                      ) : (
+                        p.vendeur_nom
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="prod-enriched-row" aria-label={siteLocale === "en" ? "Product trust" : "Confiance produit"}>
+                  <span className="prod-enriched-chip prod-enriched-chip--moq">
+                    <Package size={10} aria-hidden />
+                    {productMoqLabel(p, siteLocale)}
+                  </span>
+                  <span className="prod-enriched-chip prod-enriched-chip--delivery">
+                    <Clock size={10} aria-hidden />
+                    {productDeliveryShort(p, siteLocale)}
+                  </span>
+                  <span className="prod-enriched-chip prod-enriched-chip--protect">
+                    <ShieldCheck size={10} aria-hidden />
+                    Protect+ {productProtectScore(p)}%
+                  </span>
+                  {(p.verifie || p.vendeur_verifie) && (
+                    <span className="prod-enriched-chip prod-enriched-chip--verified">
+                      <BadgeCheck size={10} aria-hidden />
+                      {siteLocale === "en" ? "Verified" : "Vérifié"}
+                    </span>
+                  )}
                 </div>
                 <SocialProofLine product={p} locale={siteLocale} />
 
                 <div className="prod-badge-row">
-                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire">🔥 Stock limité</span>}
-                  <span className="pb pb-truck">🚚 Livraison rapide</span>
-                  <span className="pb pb-cash">💰 Paiement livraison</span>
+                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire"><Flame size={11} aria-hidden /> Stock limité</span>}
+                  <span className="pb pb-truck"><Truck size={11} aria-hidden /> Livraison rapide</span>
+                  <span className="pb pb-cash"><Banknote size={11} aria-hidden /> Paiement livraison</span>
                 </div>
 
                 {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
@@ -215,7 +266,7 @@ export function ProdGrid({
                   aria-disabled={!buyable}
                   style={{
                     width: "100%", padding: "8px", borderRadius: 8, fontSize: ".78rem",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 700,
+                    fontFamily: "var(--font-display)", fontWeight: 700,
                     background: addedIds.has(p.id) ? "#0f4a28" : buyable ? "var(--green)" : "var(--surface2)",
                     color: buyable ? "#fff" : "var(--gray)",
                     border: buyable ? "none" : "1px solid var(--border)",
@@ -248,7 +299,7 @@ export function ProdGrid({
                       openWhatsAppShare(buildProductWhatsAppText(p, siteLocale));
                     }}
                   >
-                    💬 {siteLocale === "en" ? "Share" : "Partager"}
+                    <MessageCircle size={14} aria-hidden /> {siteLocale === "en" ? "Share" : "Partager"}
                   </button>
                 )}
               </div>
