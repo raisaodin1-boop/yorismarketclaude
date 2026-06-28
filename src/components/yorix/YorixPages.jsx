@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { Home, ShoppingBag, ShoppingCart, Bell, User, LogIn, Rocket, Settings, Eye } from "lucide-react";
+import { Home, ShoppingBag, ShoppingCart, Bell, User, LogIn, Rocket, Settings, Eye, Lock } from "lucide-react";
+import { AuthGate } from "../ui/AuthGate";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { WhatsAppFab } from "../WhatsAppFab";
 import { supabase, YORIX_WA_NUMBER, MOMO_NUMBER, ORANGE_NUMBER, PAYMENT_WA_NUMBER } from "../../lib/supabase";
@@ -323,25 +324,16 @@ export function YorixPages({ ctx }) {
       )}
 
       {page === "notifications" && !user && (
-        <section className="sec anim" style={{ maxWidth: 480, margin: "0 auto", textAlign: "center", padding: "48px 20px" }}>
-          <h1 className="sec-title" style={{ fontSize: "1.25rem" }}>
-            Vos notifications Yorix
-          </h1>
-          <p style={{ color: "var(--gray)", marginBottom: 22, fontSize: ".9rem", lineHeight: 1.55 }}>
-            Connectez-vous pour suivre les messages, commandes, paiements et livraisons en temps réel.
-          </p>
-          <button
-            type="button"
-            className="form-submit"
-            style={{ width: "auto", padding: "12px 28px" }}
-            onClick={() => {
-              setAuthTab("login");
-              setAuthOpen(true);
-            }}
-          >
-            Se connecter
-          </button>
-        </section>
+        <AuthGate
+          icon={Bell}
+          title="Suivez vos commandes en temps réel"
+          description="Connectez-vous pour recevoir vos notifications, statuts de livraison et alertes promo."
+          ctaLabel="Se connecter — c'est gratuit"
+          onLogin={() => {
+            setAuthTab("login");
+            setAuthOpen(true);
+          }}
+        />
       )}
       {page === "notifications" && user && (
         <Suspense fallback={<RouteSuspenseFallback label="Chargement notifications..." />}>
@@ -515,13 +507,16 @@ export function YorixPages({ ctx }) {
             </div>
           </div>
         ) : (
-          <div className="empty-state anim" style={{ padding: "60px 0" }}>
-            <div className="empty-icon">🔐</div>
-            <p>Connectez-vous pour accéder à votre espace</p>
-            <button className="form-submit" style={{ width: "auto", padding: "11px 28px", marginTop: 16 }} onClick={() => setAuthOpen(true)}>
-              Se connecter
-            </button>
-          </div>
+          <AuthGate
+            icon={Lock}
+            title="Votre espace Yorix"
+            description="Connectez-vous pour accéder à vos commandes, favoris, points fidélité et tableau de bord."
+            ctaLabel="Se connecter — c'est gratuit"
+            onLogin={() => {
+              setAuthTab("login");
+              setAuthOpen(true);
+            }}
+          />
         ))}
 
       {page !== "home" && (

@@ -5,3 +5,4 @@ export { Card, CardBody } from "./Card.jsx";
 export { TrustStrip } from "./TrustStrip.jsx";
 export { BackToTop } from "./BackToTop.jsx";
 export { ScrollProgress } from "./ScrollProgress.jsx";
+export { AuthGate } from "./AuthGate.jsx";

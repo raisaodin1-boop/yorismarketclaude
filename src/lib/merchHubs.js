@@ -162,13 +162,13 @@ export const HOMEPAGE_MERCH_TILES = [
 
 /** Navigation émotionnelle header */
 export const EMOTIONAL_NAV = [
-  { page: "produits", labelFr: "Produits", labelEn: "Products", icon: "🛍️" },
-  { page: "prestataires", labelFr: "Services", labelEn: "Services", icon: "🛠️" },
-  { hub: "made-in-cameroun", labelFr: "Made in Cameroun", labelEn: "Made in Cameroon", icon: "🇨🇲" },
-  { hub: "top-produits", labelFr: "Top Produits", labelEn: "Top Products", icon: "⭐" },
-  { hub: "promotions", labelFr: "Promotions", labelEn: "Deals", icon: "💸" },
-  { page: "seoAlias", alias: "immobilier-cameroun", labelFr: "Immobilier", labelEn: "Real estate", icon: "🏠" },
-  { page: "seoAlias", alias: "jobs", labelFr: "Emploi", labelEn: "Jobs", icon: "💼" },
+  { page: "produits", labelFr: "Produits", labelEn: "Products", iconKey: "shoppingBag" },
+  { page: "prestataires", labelFr: "Services", labelEn: "Services", iconKey: "wrench" },
+  { hub: "made-in-cameroun", labelFr: "Made in Cameroun", labelEn: "Made in Cameroon", iconKey: "flag" },
+  { hub: "top-produits", labelFr: "Top Produits", labelEn: "Top Products", iconKey: "star" },
+  { hub: "promotions", labelFr: "Promotions", labelEn: "Deals", iconKey: "gift" },
+  { page: "seoAlias", alias: "immobilier-cameroun", labelFr: "Immobilier", labelEn: "Real estate", iconKey: "building" },
+  { page: "seoAlias", alias: "jobs", labelFr: "Emploi", labelEn: "Jobs", iconKey: "briefcase" },
 ];
 
 /**

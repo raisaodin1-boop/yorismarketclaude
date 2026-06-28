@@ -66,6 +66,9 @@ import {
   FileText,
   Clock3,
   Plus,
+  PenLine,
+  Newspaper,
+  Mail,
 } from "lucide-react";
 
 export const CONTENT_ICONS = {
@@ -133,6 +136,9 @@ export const CONTENT_ICONS = {
   fileText: FileText,
   clock3: Clock3,
   plus: Plus,
+  penLine: PenLine,
+  newspaper: Newspaper,
+  mail: Mail,
 };
 
 export const DELIVERY_STATUS_ICONS = {

@@ -144,7 +144,7 @@ export function PrestCard({ p, onClick }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 800,
               fontSize: ".98rem",
               color: "var(--ink, #111)",
@@ -203,7 +203,7 @@ export function PrestCard({ p, onClick }) {
               borderRadius: 50,
               fontSize: ".58rem",
               fontWeight: 800,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               letterSpacing: ".05em",
               boxShadow: "0 2px 6px rgba(0,0,0,.15)",
               display: "inline-flex",
@@ -380,7 +380,7 @@ export function PrestCard({ p, onClick }) {
             </div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: ".95rem",
                 color: "var(--green, #1a6b3a)",
@@ -402,7 +402,7 @@ export function PrestCard({ p, onClick }) {
               border: "none",
               padding: "8px 4px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 700,
               fontSize: ".68rem",
               cursor: "pointer",
@@ -424,7 +424,7 @@ export function PrestCard({ p, onClick }) {
               border: "none",
               padding: "8px 4px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 700,
               fontSize: ".68rem",
               cursor: "pointer",
@@ -446,7 +446,7 @@ export function PrestCard({ p, onClick }) {
               border: "none",
               padding: "8px 4px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 700,
               fontSize: ".68rem",
               cursor: "pointer",

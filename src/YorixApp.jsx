@@ -1100,26 +1100,35 @@ export default function YorixApp() {
   }, [userRole, tNav]);
 
   const TABS = useMemo(() => {
-    const tab = (icon, key, p) => ({ l: `${icon} ${tNav(`tabs.${key}`)}`, p });
+    const tab = (iconKey, key, p) => ({ iconKey, label: tNav(`tabs.${key}`), p });
     const base = [
-      tab("🏠", "home", "home"),
-      tab("🛍️", "products", "produits"),
-      tab("🎁", "deals", "bonsPlans"),
-      tab("🚚", "delivery", "livraison"),
-      tab("🔐", "escrow", "escrow"),
-      tab("👷", "providers", "prestataires"),
-      tab("💼", "business", "business"),
-      tab("🎓", "academy", "academy"),
-      tab("📰", "blog", "blog"),
-      tab("🌟", "loyalty", "loyalty"),
-      tab("📞", "contact", "contact"),
-      tab("🆘", "help", "aide"),
+      tab("home", "home", "home"),
+      tab("produits", "products", "produits"),
+      tab("bonsPlans", "deals", "bonsPlans"),
+      tab("livraison", "delivery", "livraison"),
+      tab("escrow", "escrow", "escrow"),
+      tab("prestataires", "providers", "prestataires"),
+      tab("business", "business", "business"),
+      tab("academy", "academy", "academy"),
+      tab("blog", "blog", "blog"),
+      tab("loyalty", "loyalty", "loyalty"),
+      tab("contact", "contact", "contact"),
+      tab("aide", "help", "aide"),
     ];
     if (user && isAdminViewer(userData)) {
-      base.push(tab("⚙️", "admin", "admin"));
+      base.push(tab("admin", "admin", "admin"));
     }
     return base;
   }, [tNav, user, userData?.role]);
+
+  const cartSuggestions = useMemo(
+    () =>
+      [...produits]
+        .filter((p) => p.actif !== false && p.prix > 0)
+        .sort((a, b) => (b.vente_total || 0) - (a.vente_total || 0))
+        .slice(0, 3),
+    [produits],
+  );
 
   const seoBundle = useMemo(() => {
     const canon = route.canonicalPath || location.pathname;
@@ -1851,6 +1860,8 @@ export default function YorixApp() {
         removeItem={removeItem}
         goPage={goPage}
         totalQty={totalQty}
+        suggestedProducts={cartSuggestions}
+        onAddProduct={addToCart}
       />
 
       <UserMenuDrawer

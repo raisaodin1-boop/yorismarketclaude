@@ -638,7 +638,7 @@ export function CheckoutPage({
 
       {!orderDone && hasItems && (
         <div style={{ marginBottom: 20 }}>
-          <TrustStrip />
+          <TrustStrip variant="checkout" />
         </div>
       )}
 

@@ -41,6 +41,7 @@ import {
   LogIn,
   User,
   AlertTriangle,
+  Settings,
   XCircle,
 } from "lucide-react";
 
@@ -59,6 +60,7 @@ export const NAV_QUICK_ICONS = {
   contact: Phone,
   aide: LifeBuoy,
   faq: HelpCircle,
+  admin: Settings,
 };
 
 export const ADMIN_NAV_ICONS = {

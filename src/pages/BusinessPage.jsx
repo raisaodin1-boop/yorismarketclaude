@@ -206,8 +206,8 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     .yorix-biz-v3 {
       --biz-green: #1a6b3a;
       --biz-green-deep: #0d4d28;
-      --biz-green-pale: #e8f5e9;
-      --biz-green-light: #86efac;
+      --biz-green-pale: var(--yx-mkt-green-pale, #e8f5e9);
+      --biz-green-light: var(--yx-mkt-green-light, #86efac);
       --biz-yellow: #fcd116;
       --biz-gold: #f59e0b;
       --biz-blue: #2563eb;
@@ -220,7 +220,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       --biz-shadow: 0 12px 30px rgba(0,0,0,.08);
       --biz-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--biz-ink);
     }
     .yorix-biz-v3 * { box-sizing: border-box; }
@@ -306,7 +306,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       50%      { opacity: .5; transform: scale(1.4); }
     }
     .ybiz3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -374,7 +374,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       border-top: 1px solid rgba(255,255,255,.1);
     }
     .ybiz3-hero-stat-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.5rem;
       font-weight: 800;
       color: var(--biz-yellow);
@@ -426,12 +426,12 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: 1.1rem;
     }
     .ybiz3-dash-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .85rem;
       letter-spacing: -.2px;
@@ -449,7 +449,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       color: var(--biz-green);
       padding: 4px 10px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .64rem;
       letter-spacing: .04em;
@@ -489,7 +489,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       text-transform: uppercase;
     }
     .ybiz3-dash-kpi-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.2rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -566,7 +566,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .68rem;
       color: #fff;
@@ -619,7 +619,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       margin-bottom: 12px;
     }
     .ybiz3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -685,7 +685,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     }
     .ybiz3-pilier-icon {
       width: 50px; height: 50px;
-      background: linear-gradient(135deg, var(--biz-green-pale), #fff9e6);
+      background: linear-gradient(135deg, var(--biz-green-pale), var(--yx-mkt-cream, #fff9e6));
       border-radius: 12px;
       display: flex;
       align-items: center;
@@ -702,13 +702,13 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       border: 1px solid var(--biz-green-light);
       padding: 4px 10px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .68rem;
       letter-spacing: -.1px;
     }
     .ybiz3-pilier h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -764,7 +764,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       transform: scale(1.12) rotate(-4deg);
     }
     .ybiz3-solution-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -799,7 +799,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 700;
       font-size: .78rem;
       color: var(--sol-color, var(--biz-green));
@@ -853,7 +853,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       box-shadow: 0 6px 18px var(--role-color);
     }
     .ybiz3-role-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.15rem;
       font-weight: 800;
       color: var(--biz-ink);
@@ -897,7 +897,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
 
     /* ━━━ GROWTH SECTION ━━━ */
     .ybiz3-growth {
-      background: linear-gradient(135deg, #fff9e6 0%, #fffbeb 100%);
+      background: linear-gradient(135deg, var(--yx-mkt-cream, #fff9e6) 0%, var(--surface, #fffbeb) 100%);
       border: 2px solid var(--biz-yellow);
       border-radius: 20px;
       padding: 36px 32px;
@@ -938,7 +938,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       padding: 14px 16px;
     }
     .ybiz3-growth-stat-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.6rem;
       font-weight: 800;
       color: var(--biz-green);
@@ -978,7 +978,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       content: '"';
       position: absolute;
       top: 12px; right: 18px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 4rem;
       color: var(--biz-green-pale);
       line-height: 1;
@@ -1005,13 +1005,13 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: 1.1rem;
       box-shadow: 0 4px 14px rgba(0,0,0,.1);
     }
     .ybiz3-story-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .95rem;
       color: var(--biz-ink);
@@ -1034,12 +1034,12 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     }
     .ybiz3-story-metric {
       display: inline-block;
-      background: linear-gradient(135deg, var(--biz-green-pale), #fff9e6);
+      background: linear-gradient(135deg, var(--biz-green-pale), var(--yx-mkt-cream, #fff9e6));
       color: var(--biz-green);
       border: 1px solid var(--biz-green-light);
       padding: 5px 12px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .76rem;
     }
@@ -1076,7 +1076,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     }
     .ybiz3-faq-item summary::after {
       content: '+';
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-size: 1.6rem;
       color: var(--biz-green);
       transition: transform .25s;
@@ -1197,7 +1197,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
     .ybiz3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display), sans-serif;
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;
@@ -1537,7 +1537,7 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 14, color: "var(--biz-green)" }}>
                 <GraduationCap size={64} strokeWidth={1.5} aria-hidden />
               </div>
-              <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--biz-ink)", marginBottom: 10, letterSpacing: "-.4px" }}>
+              <h3 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--biz-ink)", marginBottom: 10, letterSpacing: "-.4px" }}>
                 Yorix Academy Business
               </h3>
               <p style={{ fontSize: ".88rem", color: "var(--biz-gray)", lineHeight: 1.65, marginBottom: 16, maxWidth: 320, margin: "0 auto 16px" }}>

@@ -7,7 +7,7 @@ import { FormulaireAvis } from "./FormulaireAvis";
 import { ModalCommander } from "./ModalCommander";
 import { ChatUsers } from "./ChatUsers";
 import { optimizeCloudinaryUrl } from "../utils/helpers";
-import { TrustStrip } from "./conversion/TrustStrip";
+import { TrustStrip } from "./ui/TrustStrip";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";

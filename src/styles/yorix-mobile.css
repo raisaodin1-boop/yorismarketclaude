@@ -19,6 +19,16 @@ body,
   min-height: 100dvh;
 }
 
+button,
+[role="button"],
+.yx-btn,
+.prod-card,
+.tab,
+.cart-suggestion-add,
+.qty-btn {
+  touch-action: manipulation;
+}
+
 /* Pas de hover “desktop” sur tactile */
 @media (hover: none) and (pointer: coarse) {
   .prod-card:hover,

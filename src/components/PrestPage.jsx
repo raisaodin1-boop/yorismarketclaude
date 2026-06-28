@@ -266,7 +266,7 @@ export function PrestPage({
           </div>
           <h1
             style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "1.75rem", fontWeight: 800,
+              fontFamily: "var(--font-display), sans-serif", fontSize: "1.75rem", fontWeight: 800,
               marginBottom: 8, letterSpacing: "-.5px", lineHeight: 1.18,
             }}
           >
@@ -317,7 +317,7 @@ export function PrestPage({
                       background: "rgba(255,255,255,.08)",
                       color: "#fff",
                       fontSize: ".84rem",
-                      fontFamily: "'DM Sans',sans-serif",
+                      fontFamily: "var(--font-body)",
                       outline: "none",
                       boxSizing: "border-box",
                     }}
@@ -338,7 +338,7 @@ export function PrestPage({
                       background: "rgba(255,255,255,.08)",
                       color: "#fff",
                       fontSize: ".84rem",
-                      fontFamily: "'DM Sans',sans-serif",
+                      fontFamily: "var(--font-body)",
                       outline: "none",
                       boxSizing: "border-box",
                     }}
@@ -356,7 +356,7 @@ export function PrestPage({
                     background: "rgba(255,255,255,.08)",
                     color: "#fff",
                     fontSize: ".84rem",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--font-body)",
                     outline: "none",
                     cursor: "pointer",
                   }}
@@ -382,7 +382,7 @@ export function PrestPage({
                   border: "none",
                   padding: "12px 18px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: ".88rem",
                   cursor: "pointer",
@@ -400,7 +400,7 @@ export function PrestPage({
                   border: `1.5px solid ${geoActive ? "#4fd17d" : "rgba(255,255,255,.15)"}`,
                   padding: "12px 18px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 700,
                   fontSize: ".82rem",
                   cursor: "pointer",
@@ -438,7 +438,7 @@ export function PrestPage({
                     fontSize: ".72rem",
                     fontWeight: 600,
                     cursor: "pointer",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--font-body)",
                     transition: "all .15s",
                     display: "inline-flex",
                     alignItems: "center",
@@ -470,7 +470,7 @@ export function PrestPage({
               <div key={s.lbl}>
                 <div
                   style={{
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display), sans-serif",
                     fontSize: ".95rem",
                     fontWeight: 800,
                     color: "var(--yellow, #fcd116)",
@@ -507,7 +507,7 @@ export function PrestPage({
           <div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: ".95rem",
                 color: "var(--ink, #111)",
@@ -565,7 +565,7 @@ export function PrestPage({
               border: `1.5px solid ${prestCatFilter === c.cat ? c.color : "var(--border, #e5e5e5)"}`,
               borderRadius: 50,
               padding: "8px 16px",
-              fontFamily: "'DM Sans',sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: ".78rem",
               cursor: "pointer",
@@ -611,7 +611,7 @@ export function PrestPage({
               border: "none",
               padding: "5px 12px",
               borderRadius: 50,
-              fontFamily: "'DM Sans',sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: ".7rem",
               cursor: "pointer",
@@ -652,7 +652,7 @@ export function PrestPage({
       <div id="prest-results">
         <div
           style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "var(--font-display), sans-serif",
             fontWeight: 700,
             fontSize: ".95rem",
             color: "var(--ink, #111)",
@@ -669,7 +669,7 @@ export function PrestPage({
               <Star size={18} fill="#fcd116" color="#fcd116" aria-hidden />
               <h3
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: "1rem",
                   color: "var(--ink, #111)",
@@ -712,7 +712,7 @@ export function PrestPage({
             {topPrests.length > 0 && (
               <h3
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: "1rem",
                   color: "var(--ink, #111)",
@@ -757,7 +757,7 @@ export function PrestPage({
                 padding: "10px 22px",
                 borderRadius: 9,
                 marginTop: 14,
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 700,
                 fontSize: ".82rem",
                 cursor: "pointer",
@@ -784,7 +784,7 @@ export function PrestPage({
       >
         <h3
           style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "var(--font-display), sans-serif",
             fontWeight: 800,
             fontSize: "1.05rem",
             color: "var(--ink, #111)",
@@ -824,7 +824,7 @@ export function PrestPage({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: ".78rem",
                   margin: "0 auto 10px",
@@ -837,7 +837,7 @@ export function PrestPage({
               </div>
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 700,
                   fontSize: ".82rem",
                   color: "var(--ink, #111)",
@@ -903,7 +903,7 @@ export function PrestPage({
             </div>
             <h3
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: "1.4rem",
                 marginBottom: 8,
@@ -954,7 +954,7 @@ export function PrestPage({
                 border: "none",
                 padding: "13px 26px",
                 borderRadius: 11,
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display), sans-serif",
                 fontWeight: 800,
                 fontSize: ".9rem",
                 cursor: "pointer",
@@ -984,7 +984,7 @@ export function PrestPage({
             >
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontSize: "1.5rem",
                   fontWeight: 800,
                   color: "var(--yellow, #fcd116)",
@@ -1027,7 +1027,7 @@ export function PrestPage({
               border: "none",
               padding: "13px 16px",
               borderRadius: 50,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display), sans-serif",
               fontWeight: 800,
               fontSize: ".85rem",
               cursor: "pointer",
@@ -1128,7 +1128,7 @@ export function PrestPage({
 
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,
                   fontSize: "1.25rem",
                   color: "var(--ink, #111)",
@@ -1189,7 +1189,7 @@ export function PrestPage({
                   <div style={{ marginBottom: 2, display: "flex", justifyContent: "center", color: "var(--green, #1a6b3a)" }}>
                     <ContentIcon name={s.iconKey} size={16} />
                   </div>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem", color: "var(--ink, #111)" }}>
+                  <div style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 800, fontSize: ".85rem", color: "var(--ink, #111)" }}>
                     {s.val}
                   </div>
                   <div style={{ fontSize: ".62rem", color: "var(--gray, #666)" }}>{s.lbl}</div>
@@ -1251,7 +1251,7 @@ export function PrestPage({
             >
               <div>
                 <div style={{ fontSize: ".68rem", color: "var(--gray, #666)", fontWeight: 700 }}>TARIF</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.15rem", color: "var(--green, #1a6b3a)" }}>
+                <div style={{ fontFamily: "var(--font-display), sans-serif", fontWeight: 800, fontSize: "1.15rem", color: "var(--green, #1a6b3a)" }}>
                   {selectedPrest.prix || formatPrestPrix(selectedPrest)}
                 </div>
               </div>
@@ -1277,7 +1277,7 @@ export function PrestPage({
                 style={{
                   background: "#25D366", color: "#fff", border: "none",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
@@ -1292,7 +1292,7 @@ export function PrestPage({
                 style={{
                   background: "#0066cc", color: "#fff", border: "none",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
@@ -1320,7 +1320,7 @@ export function PrestPage({
                 style={{
                   background: "var(--surface2, #f5f5f5)", color: "var(--ink, #111)", border: "1px solid var(--border,#ddd)",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
@@ -1337,7 +1337,7 @@ export function PrestPage({
                 style={{
                   background: "var(--green, #1a6b3a)", color: "#fff", border: "none",
                   padding: "11px 8px", borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                  fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: ".75rem",
                   cursor: "pointer",
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
                 }}
