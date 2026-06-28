@@ -95,6 +95,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   const [loading, setLoading] = useState(true);
   const [step, setStep]       = useState(1);
   const [saving, setSaving]   = useState(false);
+  const draftKey = userId ? `kyc_draft_${userId}` : null;
 
   // Champs formulaire
   const [form, setForm] = useState({
@@ -114,13 +115,49 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   const refCniV   = useRef(null);
   const refSelfie = useRef(null);
   const refShop   = useRef(null);
+  const initialLoad = useRef(true);
 
   const upd = (field, val) => setForm(f => ({ ...f, [field]: val }));
 
+  // ── Sauvegarde automatique brouillon localStorage ──
+  useEffect(() => {
+    if (!draftKey || initialLoad.current) return;
+    try { localStorage.setItem(draftKey, JSON.stringify({ form, step })); } catch {}
+  }, [form, step]);
+
+  // ── Chargement initial : Supabase en priorité, sinon localStorage ──
   useEffect(() => {
     if (!userId) return;
     supabase.from("seller_kyc").select("*").eq("user_id", userId).maybeSingle()
-      .then(({ data }) => { setKyc(data); setLoading(false); if (data) populateForm(data); });
+      .then(({ data }) => {
+        if (data) {
+          setKyc(data);
+          populateForm(data);
+          // Restaurer l'étape depuis localStorage si plus avancée
+          try {
+            const raw = localStorage.getItem(`kyc_draft_${userId}`);
+            if (raw) {
+              const draft = JSON.parse(raw);
+              if (draft.step > 1 && data.status !== "verified" && data.status !== "pending") {
+                setStep(draft.step);
+              }
+            }
+          } catch {}
+        } else {
+          // Aucun enregistrement Supabase → essayer localStorage
+          try {
+            const raw = localStorage.getItem(`kyc_draft_${userId}`);
+            if (raw) {
+              const draft = JSON.parse(raw);
+              if (draft.form) setForm(f => ({ ...f, ...draft.form }));
+              if (draft.step) setStep(draft.step);
+              showAppToast("Brouillon restauré — continuez où vous étiez !", "success", 4000);
+            }
+          } catch {}
+        }
+        setLoading(false);
+        setTimeout(() => { initialLoad.current = false; }, 100);
+      });
   }, [userId]);
 
   const populateForm = (data) => {
@@ -145,14 +182,37 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     }));
   };
 
-  const uploadFile = async (file, slot) => {
+  // ── Sauvegarde partielle vers Supabase (champs texte seulement) ──
+  const saveDraft = async (fields = {}) => {
+    try {
+      await supabase.from("seller_kyc").upsert(
+        { user_id: userId, status: "draft", updated_at: new Date().toISOString(), ...fields },
+        { onConflict: "user_id" }
+      );
+    } catch {}
+  };
+
+  const slotToField = { cni_recto: "doc_url", cni_verso: "doc_url2", selfie: "selfie_url", shop: "shop_photo_url" };
+
+  const uploadFile = async (file, slot, attempt = 0) => {
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `${userId}/${slot}_${Date.now()}.${ext}`;
-    const { data, error } = await supabase.storage.from("kyc-docs").upload(path, file, { upsert: true, contentType: file.type });
-    if (error) throw error;
-    const { data: signed, error: signErr } = await supabase.storage.from("kyc-docs").createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
-    if (signErr) throw signErr;
-    return signed.signedUrl;
+    try {
+      const { data, error } = await supabase.storage.from("kyc-docs").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: signed, error: signErr } = await supabase.storage.from("kyc-docs").createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
+      if (signErr) throw signErr;
+      // Sauvegarder immédiatement l'URL en base (draft) pour ne pas perdre l'upload
+      const field = slotToField[slot];
+      if (field) saveDraft({ [field]: signed.signedUrl });
+      return signed.signedUrl;
+    } catch (e) {
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        return uploadFile(file, slot, attempt + 1);
+      }
+      throw e;
+    }
   };
 
   const handleSubmit = async () => {
@@ -160,19 +220,31 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     if (!fileCniR && !kyc?.doc_url)  { showAppToast("La photo recto de la CNI est obligatoire", "error"); return; }
     setSaving(true);
     try {
-      const [url1, url2, urlSelfie, urlShop] = await Promise.all([
-        fileCniR   ? uploadFile(fileCniR,   "cni_recto")  : Promise.resolve(kyc?.doc_url       || null),
-        fileCniV   ? uploadFile(fileCniV,   "cni_verso")  : Promise.resolve(kyc?.doc_url2      || null),
-        fileSelfie ? uploadFile(fileSelfie, "selfie")     : Promise.resolve(kyc?.selfie_url    || null),
-        fileShop   ? uploadFile(fileShop,   "shop")       : Promise.resolve(kyc?.shop_photo_url|| null),
-      ]);
+      // Uploads séquentiels pour éviter les timeouts sur connexion mobile
+      const url1      = fileCniR   ? await uploadFile(fileCniR,   "cni_recto") : (kyc?.doc_url        || null);
+      const url2      = fileCniV   ? await uploadFile(fileCniV,   "cni_verso") : (kyc?.doc_url2       || null);
+      const urlSelfie = fileSelfie ? await uploadFile(fileSelfie, "selfie")    : (kyc?.selfie_url     || null);
+      const urlShop   = fileShop   ? await uploadFile(fileShop,   "shop")      : (kyc?.shop_photo_url || null);
 
       const isFullKyc = Boolean(urlSelfie && urlShop && (form.seller_type === "particulier" || form.rccm));
       const payload = {
         user_id:        userId,
-        ...form,
+        full_name:      form.full_name,
         birth_date:     form.birth_date   || null,
+        birth_place:    form.birth_place,
+        cni_number:     form.cni_number,
         cni_expiry:     form.cni_expiry   || null,
+        phone:          form.phone,
+        email:          form.email,
+        whatsapp:       form.whatsapp     || null,
+        seller_type:    form.seller_type,
+        company_name:   form.company_name || null,
+        rccm:           form.rccm         || null,
+        country:        form.country,
+        city:           form.city,
+        quartier:       form.quartier,
+        address:        form.address,
+        declaration:    form.declaration,
         doc_url:        url1,
         doc_url2:       url2,
         selfie_url:     urlSelfie,
@@ -184,9 +256,9 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         reviewer_note:  null,
       };
 
-      await supabase.from("seller_kyc").upsert(payload, { onConflict: "user_id" });
+      const { error: upsertErr } = await supabase.from("seller_kyc").upsert(payload, { onConflict: "user_id" });
+      if (upsertErr) throw upsertErr;
 
-      // Notification admin
       await supabase.from("notifications").insert({
         user_id: userId,
         type: "kyc",
@@ -196,9 +268,10 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       }).catch(() => {});
 
       setKyc({ ...payload, status: "pending" });
+      try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
       showAppToast("Dossier envoyé — vérification sous 24–48h", "success", 5000);
     } catch (e) {
-      showAppToast("Erreur : " + e.message, "error");
+      showAppToast("Erreur : " + (e?.message || "Connexion interrompue, réessayez") + " — vos données sont sauvegardées, réessayez.", "error", 6000);
     }
     setSaving(false);
   };
@@ -448,7 +521,17 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
           {step < 5 ? (
             <button
               type="button"
-              onClick={() => setStep(s => s + 1)}
+              onClick={() => {
+                // Sauvegarder les champs de l'étape courante en Supabase (brouillon)
+                const stepFields = [
+                  { full_name: form.full_name, birth_date: form.birth_date || null, birth_place: form.birth_place, cni_number: form.cni_number, cni_expiry: form.cni_expiry || null },
+                  { phone: form.phone, email: form.email, whatsapp: form.whatsapp || null },
+                  { seller_type: form.seller_type, company_name: form.company_name || null, rccm: form.rccm || null, country: form.country, city: form.city, quartier: form.quartier, address: form.address },
+                  {},
+                ][step - 1] || {};
+                if (Object.keys(stepFields).length) saveDraft(stepFields);
+                setStep(s => s + 1);
+              }}
               disabled={!canNext()}
               style={{
                 flex: 1, padding: "12px", borderRadius: 10, border: "none", background: canNext() ? "var(--green)" : "var(--surface2)",
