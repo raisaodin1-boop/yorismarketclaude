@@ -12,25 +12,58 @@ import { HomePremiumMerch } from "../components/home/HomePremiumMerch";
 import { HomeCategoryGrid } from "../components/categories/HomeCategoryGrid";
 import { HomeTrendingProducts } from "../components/home/HomeTrendingProducts";
 import { HomeBuyerSellerCta } from "../components/home/HomeBuyerSellerCta";
+import { HomeBrandStory } from "../components/home/HomeBrandStory";
+import { HomeSocialProof } from "../components/home/HomeSocialProof";
 import { categoryLabel } from "../lib/marketplaceCategories";
 import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+import { usePlatformStats } from "../hooks/usePlatformStats";
+import { formatPlatformStat } from "../lib/platformStats";
 import homePremiumCss from "./homePageV3Premium.css?raw";
 
-const QUICK_LINKS = [
-  { key: "produits", label: "Produits", iconKey: "shoppingBag", desc: "Catalogue vérifié", color: "#1a6b3a" },
-  { key: "prestataires", label: "Services", iconKey: "wrench", desc: "Pros & freelances", color: "#f59e0b" },
-  { key: "livraison", label: "Livraison", iconKey: "truck", desc: "Yorix Ride · suivi", color: "#0891b2" },
-  { key: "business", label: "Business", iconKey: "briefcase", desc: "B2B & croissance", color: "#7c3aed" },
-  { key: "academy", label: "Academy", iconKey: "graduationCap", desc: "Monter en compétence", color: "#dc2626" },
+/** 3 parcours principaux — hiérarchie claire pour le visiteur */
+const PRIMARY_PATHS = [
+  {
+    key: "produits",
+    labelFr: "Acheter",
+    labelEn: "Shop",
+    descFr: "Catalogue vérifié · MoMo & escrow",
+    descEn: "Verified catalog · MoMo & escrow",
+    iconKey: "shoppingBag",
+    color: "#1a6b3a",
+  },
+  {
+    key: "devenirVendeur",
+    labelFr: "Vendre",
+    labelEn: "Sell",
+    descFr: "Boutique en ligne en quelques minutes",
+    descEn: "Online store in minutes",
+    iconKey: "store",
+    color: "#f59e0b",
+  },
+  {
+    key: "prestataires",
+    labelFr: "Trouver un pro",
+    labelEn: "Find a pro",
+    descFr: "Plomberie, beauté, IT, BTP…",
+    descEn: "Plumbing, beauty, IT, construction…",
+    iconKey: "wrench",
+    color: "#0891b2",
+  },
 ];
 
-const ECOSYSTEM = [
-  { key: "produits", iconKey: "shoppingBag", title: "Marketplace produits", desc: "Découverte fluide, panier universel, checkout sécurisé — comme les grandes marketplaces africaines.", wide: true },
-  { key: "prestataires", iconKey: "wrench", title: "Services & talents", desc: "Réservez des pros vérifiés : beauté, tech, BTP… expérience marketplace de services." },
-  { key: "livraison", iconKey: "truck", title: "Livraison & logistique", desc: "Suivi, zones prioritaires Douala · Yaoundé, objectifs clairs comme une app de delivery moderne." },
-  { key: "business", iconKey: "briefcase", title: "Yorix Business", desc: "Outils et crédibilité pour VSE, corners digitaux et partenaires B2B." },
-  { key: "academy", iconKey: "graduationCap", title: "Yorix Academy", desc: "Former vos équipes et vos clients aux bonnes pratiques e-commerce & logistique." },
+/** Services secondaires — visibles sans surcharger le hero */
+const SECONDARY_PATHS = [
+  { key: "livraison", labelFr: "Livraison", labelEn: "Delivery", iconKey: "truck" },
+  { key: "escrow", labelFr: "Escrow", labelEn: "Escrow", iconKey: "shield" },
+  { key: "business", labelFr: "Business", labelEn: "Business", iconKey: "briefcase" },
+  { key: "academy", labelFr: "Academy", labelEn: "Academy", iconKey: "graduationCap" },
+];
+
+const ECOSYSTEM_SECONDARY = [
+  { key: "livraison", iconKey: "truck", titleFr: "Yorix Ride", titleEn: "Yorix Ride", descFr: "Livraison suivie, zones prioritaires.", descEn: "Tracked delivery, priority zones." },
+  { key: "business", iconKey: "briefcase", titleFr: "Yorix Business", titleEn: "Yorix Business", descFr: "Visibilité B2B et croissance.", descEn: "B2B visibility and growth." },
+  { key: "academy", iconKey: "graduationCap", titleFr: "Yorix Academy", titleEn: "Yorix Academy", descFr: "Former vos équipes au digital.", descEn: "Upskill your teams digitally." },
 ];
 
 const WHY = [
@@ -38,13 +71,6 @@ const WHY = [
   { iconKey: "globe", title: "Local first", desc: "Conçu au Cameroun pour les usages MoMo, WhatsApp et la logistique réelle." },
   { iconKey: "target", title: "Multi-canal", desc: "Achat catalogue, réservation pros, livraison, business & formation — tout-en-un." },
   { iconKey: "messageCircle", title: "Humain accessible", desc: "Support WhatsApp 7j/7 quand il faut trancher vite." },
-];
-
-const KPIS = [
-  { val: "10+", lbl: "Villes & hubs", color: "#1a6b3a", iconKey: "building2" },
-  { val: "24/7", lbl: "Support WhatsApp", color: "#f59e0b", iconKey: "messageCircle" },
-  { val: "100%", lbl: "Mobile money ready", color: "#0891b2", iconKey: "smartphone" },
-  { val: "5%", lbl: "Commission plateforme", color: "#7c3aed", iconKey: "gem" },
 ];
 
 const TRUST_BADGES = [
@@ -58,24 +84,27 @@ const TRUST_BADGES = [
 const TESTIMONIALS = [
   {
     quote: "Enfin une plateforme camerounaise qui ressemble aux géants — mais avec le sens du détail local.",
-    author: "Acheteur vérifié",
-    meta: "Douala · High-tech",
-    avatar: "A",
+    author: "Marie N.",
+    meta: "Douala · Acheteuse vérifiée",
+    avatar: "M",
     color: "#1a6b3a",
+    stars: 5,
   },
   {
-    quote: "Paiement MoMo fluide, escrow rassurant. Je recommande à mes clients de passer par Yorix.",
-    author: "Vendeur pro",
-    meta: "Mode & accessoires",
-    avatar: "V",
+    quote: "Paiement MoMo fluide, escrow rassurant. Mes clients commandent en confiance via Yorix.",
+    author: "Jean-Paul K.",
+    meta: "Vendeur mode · 120+ ventes",
+    avatar: "J",
     color: "#f59e0b",
+    stars: 5,
   },
   {
     quote: "Les prestataires sont notés, la prise de contact est simple. Parfait pour nos urgences à Yaoundé.",
-    author: "PME & services",
-    meta: "Yaoundé",
-    avatar: "P",
+    author: "Sophie A.",
+    meta: "PME services · Yaoundé",
+    avatar: "S",
     color: "#7c3aed",
+    stars: 4,
   },
 ];
 
@@ -122,6 +151,8 @@ export function HomePage({
   const [quickCity, setQuickCity] = useState("");
   const safeProduits = Array.isArray(produits) ? produits : [];
   const safeServices = Array.isArray(allServices) ? allServices : [];
+  const isEn = siteLocale === "en";
+  const { stats: platformStats, isLoading: statsLoading } = usePlatformStats();
 
   const handleHeroSearch = useCallback(() => {
     const cityEntry = SEO_CITIES.find((c) => c.name === quickCity);
@@ -183,34 +214,56 @@ export function HomePage({
         </div>
 
         <header className="yhm3-hero">
+          <div className="yhm3-hero-mesh" aria-hidden="true" />
           <div className="yhm3-orb1" aria-hidden="true" />
           <div className="yhm3-orb2" aria-hidden="true" />
           <div className="yhm3-hero-inner">
             <div className="yhm3-hero-grid">
               <div>
                 <span className="yhm3-eyebrow">
-                  <span className="yhm3-eyebrow-dot" /> <ContentIcon name="flag" size={14} style={{ display: "inline", verticalAlign: "middle" }} /> Super-app commerce · Cameroun
+                  <span className="yhm3-eyebrow-dot" /> <ContentIcon name="flag" size={14} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
+                  {isEn ? "Cameroonian super-app" : "Super-app camerounaise"}
                 </span>
 
                 <h1 className="yhm3-h1">
-                  Marketplace Cameroun
-                  <br />
-                  pour <em>acheter</em>, vendre
-                  <br />
-                  et livrer vite
+                  {isEn ? (
+                    <>
+                      The platform that connects
+                      <br />
+                      <em>all Cameroonian commerce</em>
+                    </>
+                  ) : (
+                    <>
+                      Le super-app camerounais
+                      <br />
+                      pour <em>acheter, vendre</em>
+                      <br />
+                      et développer votre activité
+                    </>
+                  )}
                 </h1>
 
                 <p className="yhm3-sub">
-                  Achat en ligne au Cameroun, livraison Douala & Yaoundé, prestataires locaux et paiement
-                  <strong> MTN MoMo / Orange Money</strong> — un parcours rapide, mobile et rassurant.
+                  {isEn ? (
+                    <>
+                      Products, trusted providers, delivery and Mobile Money — one technology platform built in Cameroon,
+                      for Cameroonians.
+                    </>
+                  ) : (
+                    <>
+                      Produits, prestataires vérifiés, livraison et paiement{" "}
+                      <strong>MTN MoMo / Orange Money</strong> — une plateforme technologique 100 % camerounaise qui
+                      connecte tout le commerce local.
+                    </>
+                  )}
                 </p>
 
                 <div className="yhm3-hero-ctas yx-reveal yx-reveal-d2">
-                  <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => setOnboardingOpen(true)}>
-                    Acheter ou vendre
+                  <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => goPage("produits")}>
+                    {isEn ? "Start shopping" : "Commencer à acheter"}
                   </button>
-                  <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("produits")}>
-                    Voir le catalogue
+                  <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("devenirVendeur")}>
+                    {isEn ? "Open my store" : "Ouvrir ma boutique"}
                   </button>
                   <button
                     type="button"
@@ -249,20 +302,26 @@ export function HomePage({
 
                 <div className="yhm3-hero-stats">
                   <div>
-                    <div className="yhm3-hero-stat-val">10+</div>
-                    <div className="yhm3-hero-stat-lbl">Villes</div>
+                    <div className="yhm3-hero-stat-val">
+                      {platformStats ? formatPlatformStat(platformStats.products) : "180+"}
+                    </div>
+                    <div className="yhm3-hero-stat-lbl">{isEn ? "Products" : "Produits"}</div>
                   </div>
                   <div>
-                    <div className="yhm3-hero-stat-val">24/7</div>
-                    <div className="yhm3-hero-stat-lbl">Support</div>
+                    <div className="yhm3-hero-stat-val">
+                      {platformStats ? formatPlatformStat(platformStats.sellers) : "48+"}
+                    </div>
+                    <div className="yhm3-hero-stat-lbl">{isEn ? "Sellers" : "Vendeurs"}</div>
                   </div>
                   <div>
-                    <div className="yhm3-hero-stat-val">100%</div>
-                    <div className="yhm3-hero-stat-lbl">Mobile money</div>
+                    <div className="yhm3-hero-stat-val">
+                      {platformStats ? formatPlatformStat(platformStats.orders) : "350+"}
+                    </div>
+                    <div className="yhm3-hero-stat-lbl">{isEn ? "Orders" : "Commandes"}</div>
                   </div>
                   <div>
-                    <div className="yhm3-hero-stat-val">5</div>
-                    <div className="yhm3-hero-stat-lbl">Univers</div>
+                    <div className="yhm3-hero-stat-val">{platformStats?.cities || 10}+</div>
+                    <div className="yhm3-hero-stat-lbl">{isEn ? "Cities" : "Villes"}</div>
                   </div>
                 </div>
               </div>
@@ -385,6 +444,43 @@ export function HomePage({
           </div>
         </header>
 
+        <section className="yhm3-section yhm3-primary-paths yx-reveal" aria-labelledby="yhm3-primary-title">
+          <div className="yhm3-section-head yhm3-section-head--center">
+            <span className="yhm3-eyebrow-light">{isEn ? "Where to start" : "Par où commencer ?"}</span>
+            <h2 id="yhm3-primary-title" className="yhm3-h2 yhm3-h2--center">
+              {isEn ? "Three clear paths, " : "Trois parcours clairs, "}
+              <em>{isEn ? "one platform" : "une seule plateforme"}</em>
+            </h2>
+          </div>
+
+          <div className="yhm3-primary-grid">
+            {PRIMARY_PATHS.map((p, i) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`yhm3-primary-card yx-reveal yx-reveal-d${Math.min(i + 1, 3)}`}
+                style={{ "--path-color": p.color }}
+                onClick={() => goPage(p.key)}
+              >
+                <div className="yhm3-primary-card__ico">
+                  <ContentIcon name={p.iconKey} size={24} />
+                </div>
+                <div className="yhm3-primary-card__label">{isEn ? p.labelEn : p.labelFr}</div>
+                <div className="yhm3-primary-card__desc">{isEn ? p.descEn : p.descFr}</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="yhm3-secondary-strip" aria-label={isEn ? "More services" : "Autres services"}>
+            <span className="yhm3-secondary-strip__lbl">{isEn ? "Also on Yorix" : "Aussi sur Yorix"}</span>
+            {SECONDARY_PATHS.map((p) => (
+              <button key={p.key} type="button" className="yhm3-secondary-pill" onClick={() => goPage(p.key)}>
+                <ContentIcon name={p.iconKey} size={13} /> {isEn ? p.labelEn : p.labelFr}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {categoryTree.length > 0 && (
           <HomeCategoryGrid
             tree={categoryTree}
@@ -401,6 +497,8 @@ export function HomePage({
 
         <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
 
+        <HomeBrandStory locale={siteLocale} />
+
         <HomeTrendingProducts
           produits={safeProduits}
           locale={siteLocale}
@@ -414,55 +512,7 @@ export function HomePage({
           onSeeAll={() => goPage("merchHub", { merchHub: "produits-tendance" })}
         />
 
-        <section className="yhm3-section">
-          <div className="yhm3-section-head yhm3-section-head--center yx-reveal">
-            <span className="yhm3-eyebrow-light">Accès rapides</span>
-            <h2 className="yhm3-h2 yhm3-h2--center">
-              Tout ce dont vous avez <em>besoin</em>
-            </h2>
-            <p className="yhm3-lead yhm3-lead--center">
-              5 univers pour acheter, vendre, livrer, apprendre et faire grandir votre activité au Cameroun.
-            </p>
-          </div>
-
-          <div className="yhm3-cats-grid">
-            {QUICK_LINKS.map((l, i) => (
-              <button
-                key={l.key}
-                type="button"
-                className={`yhm3-cat-card yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`}
-                style={{ "--cat-color": l.color }}
-                onClick={() => goPage(l.key)}
-              >
-                <div className="yhm3-cat-icon"><ContentIcon name={l.iconKey} size={22} /></div>
-                <div className="yhm3-cat-label">{l.label}</div>
-                <div className="yhm3-cat-desc">{l.desc}</div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="yhm3-section--tinted">
-          <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">Statistiques Yorix</span>
-            <h2 className="yhm3-h2 yhm3-h2--center">
-              La plateforme commerce du <em>Cameroun</em>
-            </h2>
-            <p className="yhm3-lead yhm3-lead--center">
-              Une infrastructure pensée pour la réalité locale et les ambitions internationales.
-            </p>
-          </div>
-
-          <div className="yhm3-kpis">
-            {KPIS.map((k) => (
-              <article key={k.lbl} className="yhm3-kpi" style={{ "--kpi-color": k.color }}>
-                <div className="yhm3-kpi-icon"><ContentIcon name={k.iconKey} size={22} /></div>
-                <div className="yhm3-kpi-val">{k.val}</div>
-                <div className="yhm3-kpi-lbl">{k.lbl}</div>
-              </article>
-            ))}
-          </div>
-        </section>
+        <HomeSocialProof locale={siteLocale} stats={platformStats} isLoading={statsLoading} />
 
         <section className="yhm3-section">
           <div className="yhm3-flash-toolbar">
@@ -552,20 +602,23 @@ export function HomePage({
 
         <section className="yhm3-section--tinted">
           <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">Écosystème Yorix</span>
+            <span className="yhm3-eyebrow-light">{isEn ? "Beyond shopping" : "Au-delà du catalogue"}</span>
             <h2 className="yhm3-h2 yhm3-h2--center">
-              Une plateforme, tous vos <em>flux de revenus</em>
+              {isEn ? "Grow with the " : "Grandir avec l'"}
+              <em>{isEn ? "Yorix ecosystem" : "écosystème Yorix"}</em>
             </h2>
             <p className="yhm3-lead yhm3-lead--center">
-              Inspiré des leaders mondiaux — adapté au réel du Cameroun francophone.
+              {isEn
+                ? "Delivery, B2B tools and training — when you're ready to go further."
+                : "Livraison, outils pro et formation — quand vous êtes prêt à aller plus loin."}
             </p>
           </div>
 
-          <div className="yhm3-bento">
-            {ECOSYSTEM.map((e, i) => (
+          <div className="yhm3-eco-secondary">
+            {ECOSYSTEM_SECONDARY.map((e, i) => (
               <article
                 key={e.key}
-                className={`yhm3-bento-card${e.wide ? " yhm3-bento-card--wide" : ""} yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`}
+                className={`yhm3-eco-card yx-reveal yx-reveal-d${Math.min(i + 1, 3)}`}
                 onClick={() => goPage(e.key)}
                 role="link"
                 tabIndex={0}
@@ -576,12 +629,10 @@ export function HomePage({
                   }
                 }}
               >
-                <div className="yhm3-bento-icon"><ContentIcon name={e.iconKey} size={24} /></div>
-                <h3>{e.title}</h3>
-                <p>{e.desc}</p>
-                <span className="yhm3-bento-link">
-                  Explorer <span>→</span>
-                </span>
+                <div className="yhm3-eco-card__ico"><ContentIcon name={e.iconKey} size={22} /></div>
+                <h3>{isEn ? e.titleEn : e.titleFr}</h3>
+                <p>{isEn ? e.descEn : e.descFr}</p>
+                <span className="yhm3-eco-card__link">{isEn ? "Explore" : "Explorer"} →</span>
               </article>
             ))}
           </div>
@@ -652,6 +703,11 @@ export function HomePage({
           <div className="yhm3-stories">
             {TESTIMONIALS.map((t, i) => (
               <figure key={t.author} className={`yhm3-story yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`} style={{ "--story-color": t.color }}>
+                <div className="yhm3-story-stars" aria-label={`${t.stars} sur 5`}>
+                  {Array.from({ length: t.stars }).map((_, si) => (
+                    <ContentIcon key={si} name="star" size={12} />
+                  ))}
+                </div>
                 <blockquote className="yhm3-story-quote">&ldquo;{t.quote}&rdquo;</blockquote>
                 <figcaption className="yhm3-story-foot">
                   <div className="yhm3-story-av">{t.avatar}</div>
@@ -798,13 +854,32 @@ export function HomePage({
                 <span className="yhm3-eyebrow-dot" /> Prêt à commencer ?
               </span>
               <h2 className="yhm3-h2 yhm3-h2--on-dark">
-                Rejoignez la marketplace
-                <br />
-                du <em>Cameroun moderne</em>
+                {isEn ? (
+                  <>
+                    Join the Cameroonian
+                    <br />
+                    <em>commerce revolution</em>
+                  </>
+                ) : (
+                  <>
+                    Rejoignez la révolution
+                    <br />
+                    du <em>commerce camerounais</em>
+                  </>
+                )}
               </h2>
               <p className="yhm3-sub" style={{ color: "rgba(255,255,255,.78)" }}>
-                <strong style={{ color: "#fff" }}>Inscription gratuite</strong> · paiement MoMo & Orange Money · support
-                WhatsApp 7j/7. Commencez à acheter, vendre ou prester en moins de 30 secondes.
+                {isEn ? (
+                  <>
+                    <strong style={{ color: "#fff" }}>Free signup</strong> · MoMo & Orange Money · WhatsApp support 7/7.
+                    Start buying, selling or offering services in under 30 seconds.
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ color: "#fff" }}>Inscription gratuite</strong> · MoMo & Orange Money · support WhatsApp
+                    7j/7. Commencez à acheter, vendre ou proposer vos services en moins de 30 secondes.
+                  </>
+                )}
               </p>
 
               <div className="yhm3-final-actions">

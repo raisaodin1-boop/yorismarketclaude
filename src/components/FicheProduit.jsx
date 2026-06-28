@@ -8,6 +8,7 @@ import { ModalCommander } from "./ModalCommander";
 import { ChatUsers } from "./ChatUsers";
 import { optimizeCloudinaryUrl } from "../utils/helpers";
 import { TrustStrip } from "./ui/TrustStrip";
+import { ProtectPlusPanel } from "./ProtectPlusPanel";
 import { ShareProductButton } from "./conversion/ShareProductButton";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
@@ -195,6 +196,12 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
           {/* COLONNE DROITE : INFOS */}
           <div>
             <TrustStrip compact />
+            <ProtectPlusPanel
+              product={product}
+              locale={siteLocale}
+              reviewsCount={avis.length}
+              avgReviewNote={avgNote}
+            />
             <div className="modal-title fp-title">{product.name_fr}</div>
             <SocialProofLine product={product} locale={siteLocale} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>

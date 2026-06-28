@@ -1,0 +1,123 @@
+.protect-plus {
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--protect-color) 35%, var(--border));
+  background: color-mix(in srgb, var(--protect-color) 6%, var(--surface));
+  overflow: hidden;
+}
+
+.protect-plus__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+
+.protect-plus__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--protect-color) 15%, transparent);
+  color: var(--protect-color);
+  flex-shrink: 0;
+}
+
+.protect-plus__copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.protect-plus__brand {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--protect-color);
+}
+
+.protect-plus__score {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.protect-plus__meter {
+  display: none;
+  width: 72px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--surface2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+@media (min-width: 520px) {
+  .protect-plus__meter {
+    display: block;
+  }
+}
+
+.protect-plus__meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--protect-color);
+  transition: width 0.35s ease;
+}
+
+.protect-plus__factors {
+  margin: 0;
+  padding: 0 14px 10px;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.protect-plus__factors li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.protect-plus__factors li.is-ok {
+  border-color: color-mix(in srgb, var(--green) 20%, var(--border));
+}
+
+.protect-plus__factors li.is-risk {
+  border-color: color-mix(in srgb, var(--red, #dc2626) 25%, var(--border));
+  color: var(--red, #dc2626);
+}
+
+.protect-plus__impact {
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  opacity: 0.85;
+}
+
+.protect-plus__disclaimer {
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--gray);
+}
