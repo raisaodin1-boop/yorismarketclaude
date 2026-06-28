@@ -182,6 +182,9 @@ export function pathForPageBare(page, opts = {}) {
   if (page === "merchHub" && opts.merchHub && MERCH_HUBS[opts.merchHub]) {
     return `/${opts.merchHub}`;
   }
+  if (opts.seoAlias && SEO_URL_ALIASES[opts.seoAlias]?.pathBare) {
+    return SEO_URL_ALIASES[opts.seoAlias].pathBare;
+  }
   if (page === "produits" && opts.categorySlug) {
     if (opts.subCategorySlug) {
       return `/categories/${opts.categorySlug}/${opts.subCategorySlug}`;

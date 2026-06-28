@@ -1,6 +1,28 @@
 import { ProdGrid } from "../components/ProdGrid";
 import { MERCH_HUBS } from "../lib/merchHubs";
+import { useMerchHubProducts } from "../hooks/useMerchHubProducts";
 import "./merchHubPage.css";
+
+const HUB_TIPS = {
+  "made-in-cameroun": {
+    fr: [
+      "Produits déclarés ou vérifiés Made in Cameroun par les vendeurs.",
+      "Soutenez l'économie locale : artisans, marques et producteurs nationaux.",
+    ],
+    en: [
+      "Products declared or verified Made in Cameroon by sellers.",
+      "Support the local economy: artisans, brands and national producers.",
+    ],
+  },
+  "top-produits": {
+    fr: ["Meilleures ventes et nouveautés plébiscitées par les acheteurs."],
+    en: ["Best sellers and new arrivals popular with buyers."],
+  },
+  promotions: {
+    fr: ["Promos, offres flash et prix réduits — stock limité."],
+    en: ["Deals, flash offers and discounted prices — limited stock."],
+  },
+};
 
 /**
  * Landing merchandising premium (/made-in-cameroun, /top-produits, …)
@@ -8,8 +30,6 @@ import "./merchHubPage.css";
 export function MerchHubPage({
   merchHub,
   locale = "fr",
-  produits = [],
-  produitsLoading,
   user,
   userData,
   wishlist,
@@ -20,6 +40,8 @@ export function MerchHubPage({
 }) {
   const hub = MERCH_HUBS[merchHub];
   const isEn = locale === "en";
+  const { products, isLoading } = useMerchHubProducts(merchHub);
+  const tips = HUB_TIPS[merchHub]?.[isEn ? "en" : "fr"] || [];
 
   if (!hub) {
     return (
@@ -49,9 +71,17 @@ export function MerchHubPage({
         )}
       </header>
 
-      {produitsLoading ? (
-        <div className="mhub-loading">Chargement…</div>
-      ) : produits.length === 0 ? (
+      {tips.length > 0 && (
+        <ul className="mhub-tips">
+          {tips.map((tip) => (
+            <li key={tip}>{tip}</li>
+          ))}
+        </ul>
+      )}
+
+      {isLoading ? (
+        <div className="mhub-loading">{isEn ? "Loading…" : "Chargement…"}</div>
+      ) : products.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">{hub.emoji}</div>
           <p>{isEn ? "No products in this selection yet." : "Aucun produit dans cette sélection pour le moment."}</p>
@@ -61,7 +91,7 @@ export function MerchHubPage({
         </div>
       ) : (
         <ProdGrid
-          prods={produits}
+          prods={products}
           user={user}
           userData={userData}
           onAddToCart={addToCart}

@@ -133,8 +133,6 @@ export function YorixPages({ ctx }) {
           <LazyMerchHubPage
             merchHub={route.merchHub}
             locale={route.locale || "fr"}
-            produits={produitsFiltres}
-            produitsLoading={produitsLoading}
             user={user}
             userData={userData}
             wishlist={wishlist}
@@ -379,6 +377,11 @@ export function YorixPages({ ctx }) {
             user={user}
             userData={userData}
             siteLocale={route.locale || "fr"}
+            seoAliasKey={route.seoAliasKey}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
           />
         </Suspense>
       )}

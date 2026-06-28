@@ -30,6 +30,25 @@ describe("SEO hubs & blog (localized paths)", () => {
     expect(r.canonicalPath).toBe("/fr/blog/comment-vendre-en-ligne-cameroun");
   });
 
+  it("parses immobilier-cameroun as business with alias", () => {
+    const r = parsePathname("/fr/immobilier-cameroun");
+    expect(r.page).toBe("business");
+    expect(r.seoAliasKey).toBe("immobilier-cameroun");
+    expect(r.canonicalPath).toBe("/fr/immobilier-cameroun");
+  });
+
+  it("parses emploi-cameroun as business with alias", () => {
+    const r = parsePathname("/fr/emploi-cameroun");
+    expect(r.page).toBe("business");
+    expect(r.seoAliasKey).toBe("emploi-cameroun");
+  });
+
+  it("pathForPage business avec seoAlias immobilier", () => {
+    expect(pathForPage("business", { seoAlias: "immobilier-cameroun", locale: "fr" })).toBe(
+      "/fr/immobilier-cameroun",
+    );
+  });
+
   it("pathForPage blog avec slug et locale fr", () => {
     expect(pathForPage("blog", { blogSlug: "livraison-douala-guide", locale: "fr" })).toBe(
       "/fr/blog/livraison-douala-guide",

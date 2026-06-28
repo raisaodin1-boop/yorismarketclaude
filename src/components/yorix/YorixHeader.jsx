@@ -195,32 +195,34 @@ export function YorixHeader({
                 </option>
               ))}
             </select>
-            <input
-              placeholder={t("search.placeholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") goPage("produits");
-                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-                  e.preventDefault();
-                  onOpenCommandPalette?.();
-                }
-              }}
-              autoComplete="off"
-              aria-label={t("search.ariaSearch")}
-              aria-expanded={search.trim().length >= 2}
-              aria-haspopup="listbox"
-            />
-            {onOpenCommandPalette && !search.trim() && (
-              <button
-                type="button"
-                className="nav-search-cmd-hint"
-                onClick={() => onOpenCommandPalette()}
-                aria-label={siteLocale === "en" ? "Open command palette" : "Ouvrir la palette de commande"}
-              >
-                <kbd>{cmdKLabel}</kbd>
-              </button>
-            )}
+            <div className="nav-search-field">
+              <input
+                placeholder={t("search.placeholder")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") goPage("produits");
+                  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+                    e.preventDefault();
+                    onOpenCommandPalette?.();
+                  }
+                }}
+                autoComplete="off"
+                aria-label={t("search.ariaSearch")}
+                aria-expanded={search.trim().length >= 2}
+                aria-haspopup="listbox"
+              />
+              {onOpenCommandPalette && !search.trim() && (
+                <button
+                  type="button"
+                  className="nav-search-cmd-hint"
+                  onClick={() => onOpenCommandPalette()}
+                  aria-label={siteLocale === "en" ? "Open command palette" : "Ouvrir la palette de commande"}
+                >
+                  <kbd>{cmdKLabel}</kbd>
+                </button>
+              )}
+            </div>
             {search.trim().length >= 2 && (
               <div className="nav-search-dd" role="listbox" aria-label={t("search.ariaSuggestions")}>
                 {produits
@@ -265,7 +267,7 @@ export function YorixHeader({
                 )}
               </div>
             )}
-            <button type="button" onClick={() => goPage("produits")} aria-label={t("search.ariaSubmit")}>
+            <button type="button" className="nav-search-submit" onClick={() => goPage("produits")} aria-label={t("search.ariaSubmit")}>
               <Search size={16} strokeWidth={2.5} aria-hidden="true" />
             </button>
           </div>
@@ -505,7 +507,7 @@ export function YorixHeader({
           const label = siteLocale === "en" ? item.labelEn : item.labelFr;
           const onClick = () => {
             if (item.hub) goPage("merchHub", { merchHub: item.hub });
-            else if (item.page === "seoAlias" && item.alias) goPage("business");
+            else if (item.page === "seoAlias" && item.alias) goPage("business", { seoAlias: item.alias });
             else goPage(item.page);
           };
           return (

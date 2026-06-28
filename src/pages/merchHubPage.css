@@ -59,6 +59,24 @@
   color: var(--green);
 }
 
+.mhub-tips {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.mhub-tips li {
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--green-pale, rgba(22, 163, 74, 0.08));
+  border: 1px solid rgba(22, 163, 74, 0.12);
+  font-size: 0.8rem;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
 @media (max-width: 768px) {
   .mhub-page {
     padding: 0 12px;
