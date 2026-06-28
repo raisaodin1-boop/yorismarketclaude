@@ -1,5 +1,5 @@
 /* Yorix CM — Service worker : shell cache + push + navigation fallback */
-const CACHE = "yorix-sw-v3";
+const CACHE = "yorix-sw-v4";
 const OFFLINE = "/offline.html";
 const PRECACHE = ["/", OFFLINE, "/favicon.svg", "/manifest.json"];
 
@@ -22,19 +22,23 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
 
-  /* Navigation document : réseau puis cache offline */
+  /* Navigation SPA : réseau → si 4xx/5xx → shell "/" en cache → offline */
   if (req.mode === "navigate" || req.headers.get("Accept")?.includes("text/html")) {
     event.respondWith(
       fetch(req)
         .then((res) => {
           if (res && res.ok) {
+            // Bonne réponse : mettre à jour le cache
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+            return res;
           }
-          return res;
+          // 404/500 du serveur sur une route SPA → servir le shell mis en cache
+          return caches.match("/").then((shell) => shell || res);
         })
         .catch(() =>
-          caches.match(req).then((hit) => hit || caches.match(OFFLINE) || caches.match("/")),
+          // Hors-ligne : shell en cache → page offline
+          caches.match("/").then((shell) => shell || caches.match(OFFLINE)),
         ),
     );
     return;
