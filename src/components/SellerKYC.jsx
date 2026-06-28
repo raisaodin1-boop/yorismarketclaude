@@ -2,6 +2,30 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
 
+// Compresse une image via canvas — réduit les photos mobile (5-10 MB) à ~300 KB
+async function compressImage(file, maxPx = 1200, quality = 0.82) {
+  if (!file.type.startsWith("image/")) return file; // PDF → pas de compression
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }) : file),
+        "image/jpeg", quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 const VILLES_CM = ["Yaoundé","Douala","Bafoussam","Bamenda","Garoua","Maroua","Ngaoundéré","Bertoua","Ebolowa","Kribi","Limbe","Kumba","Buea","Edéa","Nkongsamba","Dschang","Foumban","Kumbo","Mbouda","Sangmélima"];
 
 const STEPS = [
@@ -195,10 +219,11 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   const slotToField = { cni_recto: "doc_url", cni_verso: "doc_url2", selfie: "selfie_url", shop: "shop_photo_url" };
 
   const uploadFile = async (file, slot, attempt = 0) => {
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const compressed = await compressImage(file);
+    const ext = compressed.name.split(".").pop() || "jpg";
     const path = `${userId}/${slot}_${Date.now()}.${ext}`;
     try {
-      const { data, error } = await supabase.storage.from("kyc-docs").upload(path, file, { upsert: true, contentType: file.type });
+      const { data, error } = await supabase.storage.from("kyc-docs").upload(path, compressed, { upsert: true, contentType: compressed.type });
       if (error) throw error;
       const { data: signed, error: signErr } = await supabase.storage.from("kyc-docs").createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
       if (signErr) throw signErr;
@@ -218,6 +243,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   const handleSubmit = async () => {
     if (!form.declaration) { showAppToast("Veuillez accepter la déclaration sur l'honneur", "error"); return; }
     if (!fileCniR && !kyc?.doc_url)  { showAppToast("La photo recto de la CNI est obligatoire", "error"); return; }
+    if (!fileSelfie && !kyc?.selfie_url) { showAppToast("Le selfie avec votre CNI est obligatoire", "error"); return; }
     setSaving(true);
     try {
       // Uploads séquentiels pour éviter les timeouts sur connexion mobile
@@ -281,7 +307,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     if (step === 1) return form.full_name.trim() && form.birth_date && form.birth_place.trim() && form.cni_number.trim();
     if (step === 2) return form.phone.replace(/\s/g,"").length >= 8 && form.email.includes("@");
     if (step === 3) return form.city.trim() && form.quartier.trim() && form.address.trim() && (form.seller_type === "particulier" || form.company_name.trim());
-    if (step === 4) return (fileCniR || kyc?.doc_url);
+    if (step === 4) return (fileCniR || kyc?.doc_url) && (fileSelfie || kyc?.selfie_url);
     return true;
   };
 
@@ -456,14 +482,14 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
                 hint={kyc?.doc_url2 ? "Déjà envoyé" : "Recommandé"} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
-              <UploadZone label="🤳 Selfie avec la CNI" file={fileSelfie} onFile={setFileSelfie} inputRef={refSelfie}
-                hint="Tenez votre CNI à côté de votre visage" />
+              <UploadZone label="🤳 Selfie avec la CNI *" file={fileSelfie} onFile={setFileSelfie} inputRef={refSelfie}
+                hint={kyc?.selfie_url ? "Déjà envoyé — choisir pour remplacer" : "Obligatoire — tenez votre CNI à côté de votre visage"} />
               <UploadZone label="🏪 Photo de la boutique" file={fileShop} onFile={setFileShop} inputRef={refShop}
                 hint="Façade, enseigne ou lieu d'activité visible" />
             </div>
             <div style={{ background: "#d1fae5", border: "1px solid #86efac", borderRadius: 10, padding: "10px 14px", fontSize: ".75rem", color: "#065f46", marginTop: 12 }}>
-              <strong>⭐ KYC Complet</strong> (selfie + photo boutique) = retrait jusqu'à 500 000 FCFA/mois + accès B2B.<br/>
-              <strong>KYC Lite</strong> (CNI seule) = retrait jusqu'à 50 000 FCFA/mois.
+              <strong>⭐ KYC Complet</strong> (CNI + selfie + photo boutique) = retrait jusqu'à 500 000 FCFA/mois + accès B2B.<br/>
+              <strong>KYC Standard</strong> (CNI + selfie) = retrait jusqu'à 50 000 FCFA/mois.
             </div>
           </div>
         )}
