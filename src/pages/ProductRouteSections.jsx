@@ -20,6 +20,7 @@ export function ProductRouteSections({
   addToCart,
   toggleWish,
   openProductUrl,
+  openSellerUrl,
   dark,
   goPage,
 }) {
@@ -41,6 +42,7 @@ export function ProductRouteSections({
         addToCart={addToCart}
         toggleWish={toggleWish}
         openProductUrl={openProductUrl}
+        openSellerUrl={openSellerUrl}
       />
     );
   }

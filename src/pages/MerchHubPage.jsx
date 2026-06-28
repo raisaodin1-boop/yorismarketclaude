@@ -1,5 +1,7 @@
+import { useMemo, useState } from "react";
 import { ProdGrid } from "../components/ProdGrid";
 import { MERCH_HUBS } from "../lib/merchHubs";
+import { productMoq } from "../lib/productCardMeta";
 import { useMerchHubProducts } from "../hooks/useMerchHubProducts";
 import "./merchHubPage.css";
 
@@ -22,7 +24,31 @@ const HUB_TIPS = {
     fr: ["Promos, offres flash et prix réduits — stock limité."],
     en: ["Deals, flash offers and discounted prices — limited stock."],
   },
+  "sourcer-en-gros": {
+    fr: [
+      "Filtrez par quantité minimum (MOQ) pour vos achats professionnels.",
+      "Fournisseurs vérifiés, Protect+ et escrow sur les annonces éligibles.",
+    ],
+    en: [
+      "Filter by minimum order quantity (MOQ) for professional buying.",
+      "Verified suppliers, Protect+ and escrow on eligible listings.",
+    ],
+  },
 };
+
+const MOQ_FILTERS = [
+  { id: "all", fr: "Tous", en: "All" },
+  { id: "1", fr: "1 pc", en: "1 pc" },
+  { id: "5", fr: "MOQ 5+", en: "MOQ 5+" },
+  { id: "10", fr: "MOQ 10+", en: "MOQ 10+" },
+];
+
+function filterByMoq(products, moqFilter) {
+  if (moqFilter === "all") return products;
+  if (moqFilter === "1") return products.filter((p) => productMoq(p) <= 1);
+  const min = moqFilter === "5" ? 5 : 10;
+  return products.filter((p) => productMoq(p) >= min);
+}
 
 /**
  * Landing merchandising premium (/made-in-cameroun, /top-produits, …)
@@ -36,12 +62,19 @@ export function MerchHubPage({
   addToCart,
   toggleWish,
   openProductUrl,
+  openSellerUrl,
   goPage,
 }) {
   const hub = MERCH_HUBS[merchHub];
   const isEn = locale === "en";
   const { products, isLoading } = useMerchHubProducts(merchHub);
   const tips = HUB_TIPS[merchHub]?.[isEn ? "en" : "fr"] || [];
+  const [moqFilter, setMoqFilter] = useState("all");
+
+  const displayProducts = useMemo(() => {
+    if (merchHub !== "sourcer-en-gros") return products;
+    return filterByMoq(products, moqFilter);
+  }, [products, merchHub, moqFilter]);
 
   if (!hub) {
     return (
@@ -69,6 +102,13 @@ export function MerchHubPage({
               : "🇨🇲 Badge : choix vendeur + détection auto + validation admin (✔)"}
           </p>
         )}
+        {merchHub === "sourcer-en-gros" && (
+          <p className="mhub-hero-note">
+            {isEn
+              ? "B2B sourcing hub — filter by MOQ, contact suppliers via chat on product pages."
+              : "Hub sourcing B2B — filtrez par MOQ, contactez les fournisseurs via le chat sur les fiches produit."}
+          </p>
+        )}
       </header>
 
       {tips.length > 0 && (
@@ -79,9 +119,24 @@ export function MerchHubPage({
         </ul>
       )}
 
+      {merchHub === "sourcer-en-gros" && (
+        <div className="mhub-moq-filters" role="group" aria-label={isEn ? "MOQ filter" : "Filtre MOQ"}>
+          {MOQ_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={`mhub-moq-btn${moqFilter === f.id ? " is-active" : ""}`}
+              onClick={() => setMoqFilter(f.id)}
+            >
+              {isEn ? f.en : f.fr}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="mhub-loading">{isEn ? "Loading…" : "Chargement…"}</div>
-      ) : products.length === 0 ? (
+      ) : displayProducts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">{hub.emoji}</div>
           <p>{isEn ? "No products in this selection yet." : "Aucun produit dans cette sélection pour le moment."}</p>
@@ -91,13 +146,15 @@ export function MerchHubPage({
         </div>
       ) : (
         <ProdGrid
-          prods={products}
+          prods={displayProducts}
           user={user}
           userData={userData}
           onAddToCart={addToCart}
           onWish={toggleWish}
           wishlist={wishlist}
           onOpenProductUrl={openProductUrl}
+          onOpenSellerUrl={openSellerUrl}
+          siteLocale={locale}
         />
       )}
     </section>

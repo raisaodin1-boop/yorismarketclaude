@@ -13,7 +13,7 @@
 
 import { BusinessForm } from "../components/BusinessForm";
 import { ContentIcon } from "../lib/contentIcons";
-import { BarChart3, Rocket, GraduationCap, MessageCircle, Shield, TrendingUp, Zap, Briefcase, Flag, CreditCard } from "lucide-react";
+import { BarChart3, Rocket, GraduationCap, MessageCircle, Shield, TrendingUp, Zap, Briefcase, Flag, CreditCard, Package } from "lucide-react";
 
 const PILIERS = [
   {
@@ -1309,9 +1309,9 @@ export function BusinessPage({ goPage, user, userData, setAuthOpen, setAuthTab, 
                   <button
                     type="button"
                     className="ybiz3-btn ybiz3-btn--sec"
-                    onClick={() => goPage?.("academy")}
+                    onClick={() => goPage?.("merchHub", { merchHub: "sourcer-en-gros" })}
                   >
-                    <GraduationCap size={16} strokeWidth={2.25} aria-hidden /> Former mes équipes
+                    <Package size={16} strokeWidth={2.25} aria-hidden /> Sourcer en gros
                   </button>
                 </div>
 

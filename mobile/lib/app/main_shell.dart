@@ -6,6 +6,7 @@ import '../features/explore/explore_tab.dart';
 import '../features/home/home_tab.dart';
 import '../features/product/product_detail_screen.dart';
 import '../features/profile/profile_tab.dart';
+import '../features/sourcer/sourcer_tab.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 
@@ -37,6 +38,7 @@ class _MainShellState extends State<MainShell> {
         children: [
           HomeTab(onProductTap: _openProduct, onExplore: _goExplore),
           ExploreTab(onProductTap: _openProduct),
+          SourcerTab(onProductTap: _openProduct),
           const CartTab(),
           const ProfileTab(),
         ],
@@ -47,6 +49,7 @@ class _MainShellState extends State<MainShell> {
         destinations: [
           const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Accueil'),
           const NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore_rounded), label: 'Explorer'),
+          const NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2_rounded), label: 'Sourcer'),
           NavigationDestination(
             icon: Badge(
               isLabelVisible: cartCount > 0,

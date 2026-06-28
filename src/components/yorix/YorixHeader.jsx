@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Moon, Sun, Rocket, Phone, LifeBuoy, LogIn, User, Package, Truck, Smartphone, CreditCard, Banknote, Shield, Search, Flag, ShoppingCart, Menu } from "lucide-react";
+import { Moon, Sun, Rocket, Phone, LifeBuoy, LogIn, User, Package, Truck, Smartphone, CreditCard, Banknote, Shield, ShieldCheck, Search, Flag, ShoppingCart, Menu } from "lucide-react";
 import { roleLabel } from "../../i18n/index.js";
 import { EMOTIONAL_NAV } from "../../lib/merchHubs";
 import { ContentIcon } from "../../lib/contentIcons";
@@ -11,6 +11,7 @@ import { CategoryMobileNav } from "../categories/CategoryMobileNav";
 import { NotificationBell } from "../NotificationBell";
 import { Button } from "../ui/Button";
 import "../categories/categoryUi.css";
+import "./marketplaceHeader.css";
 
 export function YorixHeader({
   navCompact,
@@ -145,7 +146,7 @@ export function YorixHeader({
         </div>
       </div>
 
-      <nav className="navbar navbar--yorix-mobile">
+      <nav className="navbar navbar--yorix-mobile navbar--marketplace">
         <div className="logo-wrap" onClick={() => goPage("home")}>
           <div className="logo-txt">
             Yo<span>rix</span>
@@ -500,6 +501,45 @@ export function YorixHeader({
             </div>
           )}
         </div>
+      </div>
+
+      {categoryTree.length > 0 && (
+        <div className="yorix-cat-bar">
+          <CategoryMegaMenu tree={categoryTree} locale={siteLocale} onNavigate={(v) => goToCategory?.(v)} />
+          <div className="yorix-cat-bar-scroll">
+            {categoryTree.map((root) => (
+              <button
+                key={root.id || root.slug}
+                type="button"
+                className="yorix-cat-pill"
+                onClick={() => goToCategory?.({ parentSlug: root.slug })}
+              >
+                {categoryLabel(root, siteLocale)}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="yorix-cat-pill yorix-cat-pill--wholesale"
+              onClick={() => goPage("merchHub", { merchHub: "sourcer-en-gros" })}
+            >
+              {siteLocale === "en" ? "Wholesale" : "Sourcer en gros"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="yorix-trust-strip" role="note" aria-label={siteLocale === "en" ? "Yorix trust services" : "Services de confiance Yorix"}>
+        <button type="button" className="yorix-trust-pill" onClick={() => goPage("produits")}>
+          <ShieldCheck size={13} aria-hidden /> Protect+
+        </button>
+        <span className="yorix-trust-dot" aria-hidden>·</span>
+        <button type="button" className="yorix-trust-pill" onClick={() => goPage("escrow")}>
+          <Shield size={13} aria-hidden /> Escrow
+        </button>
+        <span className="yorix-trust-dot" aria-hidden>·</span>
+        <span className="yorix-trust-pill yorix-trust-pill--static">
+          <Smartphone size={13} aria-hidden /> MTN MoMo & Orange
+        </span>
       </div>
 
       <nav className="yorix-emotional-nav" aria-label={siteLocale === "en" ? "Shop highlights" : "Sélections marketplace"}>

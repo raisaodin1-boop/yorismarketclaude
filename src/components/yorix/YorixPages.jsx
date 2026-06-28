@@ -6,6 +6,7 @@ import { WhatsAppFab } from "../WhatsAppFab";
 import { supabase, YORIX_WA_NUMBER, MOMO_NUMBER, ORANGE_NUMBER, PAYMENT_WA_NUMBER } from "../../lib/supabase";
 import { ROLE_LABELS } from "../../lib/constants";
 import { isAdminViewer, canWriteAdmin } from "../../lib/roles";
+import { shouldShowGlobalNewsletter } from "../../lib/pageChrome";
 import { SeoLocalIntro } from "../seo/SeoLocalIntro";
 import { ChatUsers } from "../ChatUsers";
 import {
@@ -23,6 +24,7 @@ import {
   LazyLoyaltyPage,
   LazyPromotionsPage,
   LazyMerchHubPage,
+  LazySellerStorefrontPage,
   LazySellerDashboard,
   LazyBuyerDashboard,
   LazyDeliveryDashboard,
@@ -60,6 +62,7 @@ export function YorixPages({ ctx }) {
     addToCart,
     toggleWish,
     openProductUrl,
+    openSellerUrl,
     setOnboardingOpen,
     allServices,
     nlEmail,
@@ -139,6 +142,23 @@ export function YorixPages({ ctx }) {
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
+            goPage={goPage}
+          />
+        </Suspense>
+      )}
+
+      {page === "sellerStore" && route.sellerSlug && (
+        <Suspense fallback={<RouteSuspenseFallback label="Chargement fournisseur..." />}>
+          <LazySellerStorefrontPage
+            sellerSlug={route.sellerSlug}
+            locale={route.locale || "fr"}
+            user={user}
+            userData={userData}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
             goPage={goPage}
           />
         </Suspense>
@@ -160,6 +180,7 @@ export function YorixPages({ ctx }) {
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
             setOnboardingOpen={setOnboardingOpen}
             goPage={goPage}
             categoryTree={categoryTree}
@@ -196,6 +217,7 @@ export function YorixPages({ ctx }) {
                 onClose={() => goPage("produits")}
                 onAddToCart={addToCart}
                 siteLocale={route.locale || "fr"}
+                onOpenSeller={openSellerUrl}
               />
             </Suspense>
           ) : (
@@ -239,6 +261,7 @@ export function YorixPages({ ctx }) {
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
             dark={dark}
             goPage={goPage}
           />
@@ -382,6 +405,7 @@ export function YorixPages({ ctx }) {
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
           />
         </Suspense>
       )}
@@ -521,7 +545,7 @@ export function YorixPages({ ctx }) {
           />
         ))}
 
-      {page !== "home" && (
+      {shouldShowGlobalNewsletter(page) && (
         <div className="newsletter">
           <div className="nl-title">📬 Restez informé(e)</div>
           <p className="nl-sub">Les meilleures offres Yorix dans votre boîte mail.</p>

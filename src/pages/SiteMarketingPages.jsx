@@ -41,6 +41,7 @@ export function SiteMarketingPages({
   addToCart,
   toggleWish,
   openProductUrl,
+  openSellerUrl,
 }) {
   switch (page) {
     case "faq":
@@ -163,6 +164,7 @@ export function SiteMarketingPages({
             addToCart={addToCart}
             toggleWish={toggleWish}
             openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
           />
         );
       }

@@ -59,6 +59,7 @@ import { PushPromptBanner } from "./components/ui/PushPromptBanner";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { getDefaultPolicyFromEnv, normalizeDeliveryPolicy } from "./domain/deliveryPolicy";
 import { PremiumSiteFooter } from "./components/layout/PremiumSiteFooter";
+import { shouldShowSiteFooter } from "./lib/pageChrome";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { ContractAcceptance } from "./components/ContractAcceptance";
 import { RouteErrorBoundary } from "./components/errors/AppErrorBoundary.jsx";
@@ -845,6 +846,18 @@ export default function YorixApp() {
     [goPage]
   );
 
+  const openSellerUrl = useCallback(
+    (p) => {
+      const id = p?.vendeur_id || p?.id;
+      const name = p?.vendeur_nom || p?.nom || "boutique";
+      if (!id) return;
+      goPage("sellerStore", {
+        sellerSlug: buildEntitySlug(name, id),
+      });
+    },
+    [goPage]
+  );
+
   const roleChipClass = () =>
     ({ buyer:"chip-buyer", seller:"chip-seller", delivery:"chip-delivery", provider:"chip-provider", admin:"chip-admin", admin_partner:"chip-admin", superadmin:"chip-admin" }[userRole] || "chip-buyer");
 
@@ -1447,6 +1460,7 @@ export default function YorixApp() {
     addToCart,
     toggleWish,
     openProductUrl,
+    openSellerUrl,
     setOnboardingOpen,
     allServices,
     nlEmail,
@@ -1675,7 +1689,9 @@ export default function YorixApp() {
         setOnboardingOpen={setOnboardingOpen}
       />
 
-      <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+      {shouldShowSiteFooter(page) && (
+        <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+      )}
 
       <CommandPalette
         open={commandPaletteOpen}

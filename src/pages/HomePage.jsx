@@ -137,6 +137,7 @@ export function HomePage({
   addToCart = () => {},
   toggleWish = () => {},
   openProductUrl = () => {},
+  openSellerUrl,
   setOnboardingOpen = () => {},
   goPage = () => {},
   categoryTree = [],
@@ -509,6 +510,7 @@ export function HomePage({
           toggleWish={toggleWish}
           wishlist={wishlist}
           openProductUrl={openProductUrl}
+          openSellerUrl={openSellerUrl}
           onSeeAll={() => goPage("merchHub", { merchHub: "produits-tendance" })}
         />
 
@@ -559,6 +561,7 @@ export function HomePage({
               onWish={toggleWish}
               wishlist={wishlist}
               onOpenProductUrl={openProductUrl}
+              onOpenSellerUrl={openSellerUrl}
             />
           )}
         </section>
@@ -596,6 +599,7 @@ export function HomePage({
               onWish={toggleWish}
               wishlist={wishlist}
               onOpenProductUrl={openProductUrl}
+              onOpenSellerUrl={openSellerUrl}
             />
           )}
         </section>

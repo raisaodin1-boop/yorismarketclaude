@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/product.dart';
 import '../../utils/format.dart';
+import '../../utils/product_meta.dart';
 import '../theme/yorix_theme.dart';
 import 'yorix_network_image.dart';
 
@@ -137,6 +138,23 @@ class _Info extends StatelessWidget {
           ],
         ),
         if (!dense) ...[
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              _MetaChip(
+                label: product.moq <= 1 ? '1 pc min.' : 'MOQ ${product.moq}',
+                color: const Color(0xFFB45309),
+              ),
+              _MetaChip(
+                label: 'Protect+ ${ProductMeta.protectScore(product.toJson())}%',
+                color: YorixColors.green,
+              ),
+              if (product.verified)
+                const _MetaChip(label: 'Vérifié', color: YorixColors.green),
+            ],
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -200,6 +218,29 @@ class _Chip extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }

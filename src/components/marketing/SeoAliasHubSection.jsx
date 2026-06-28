@@ -88,6 +88,7 @@ export function SeoAliasHubSection({
   addToCart,
   toggleWish,
   openProductUrl,
+  openSellerUrl,
 }) {
   const isEn = locale === "en";
   const config = ALIAS_CONFIG[seoAliasKey];
@@ -149,6 +150,7 @@ export function SeoAliasHubSection({
           onWish={toggleWish}
           wishlist={wishlist}
           onOpenProductUrl={openProductUrl}
+          onOpenSellerUrl={openSellerUrl}
         />
       ) : (
         <p className="seo-alias-hub__empty">

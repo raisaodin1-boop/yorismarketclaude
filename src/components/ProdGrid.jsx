@@ -1,5 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from "react";
-import { ShoppingCart, MessageCircle, Lock, Flame, Zap, Star, Trophy, BadgeCheck, Truck, Banknote } from "lucide-react";
+import { ShoppingCart, MessageCircle, Lock, Flame, Zap, Star, Trophy, BadgeCheck, Truck, Banknote, ShieldCheck, Clock, Package } from "lucide-react";
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
@@ -10,6 +10,12 @@ import { SocialProofLine } from "./conversion/SocialProofLine";
 import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
 import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
+import {
+  productMoqLabel,
+  productDeliveryShort,
+  productProtectScore,
+} from "../lib/productCardMeta";
+import "../components/yorix/marketplaceHeader.css";
 
 const LazyFicheProduit = lazy(() =>
   import("./FicheProduit").then((m) => ({ default: m.FicheProduit }))
@@ -27,6 +33,7 @@ export function ProdGrid({
   wishlist,
   onOpenProd,
   onOpenProductUrl,
+  onOpenSellerUrl,
   siteLocale = "fr",
   showShare = false,
 }) {
@@ -145,7 +152,47 @@ export function ProdGrid({
                 <div className="prod-name">{p.name_fr}</div>
                 <div className="prod-loc">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {p.ville || "Cameroun"}{p.vendeur_nom ? ` · ${p.vendeur_nom}` : ""}
+                  {p.ville || "Cameroun"}
+                  {p.vendeur_nom && (
+                    <>
+                      {" · "}
+                      {onOpenSellerUrl && p.vendeur_id ? (
+                        <button
+                          type="button"
+                          className="prod-seller-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenSellerUrl(p);
+                          }}
+                        >
+                          {p.vendeur_nom}
+                        </button>
+                      ) : (
+                        p.vendeur_nom
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="prod-enriched-row" aria-label={siteLocale === "en" ? "Product trust" : "Confiance produit"}>
+                  <span className="prod-enriched-chip prod-enriched-chip--moq">
+                    <Package size={10} aria-hidden />
+                    {productMoqLabel(p, siteLocale)}
+                  </span>
+                  <span className="prod-enriched-chip prod-enriched-chip--delivery">
+                    <Clock size={10} aria-hidden />
+                    {productDeliveryShort(p, siteLocale)}
+                  </span>
+                  <span className="prod-enriched-chip prod-enriched-chip--protect">
+                    <ShieldCheck size={10} aria-hidden />
+                    Protect+ {productProtectScore(p)}%
+                  </span>
+                  {(p.verifie || p.vendeur_verifie) && (
+                    <span className="prod-enriched-chip prod-enriched-chip--verified">
+                      <BadgeCheck size={10} aria-hidden />
+                      {siteLocale === "en" ? "Verified" : "Vérifié"}
+                    </span>
+                  )}
                 </div>
                 <SocialProofLine product={p} locale={siteLocale} />
 

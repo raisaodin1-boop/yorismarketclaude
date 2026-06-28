@@ -8,6 +8,7 @@ import '../../core/widgets/yorix_network_image.dart';
 import '../../models/product.dart';
 import '../../providers/cart_provider.dart';
 import '../../utils/format.dart';
+import '../../utils/product_meta.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
@@ -64,8 +65,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _whatsapp() async {
+    final seller = p.vendeurNom != null ? ' (vendeur: ${p.vendeurNom})' : '';
     final text = Uri.encodeComponent(
-      'Bonjour Yorix, je commande : ${p.name} (${formatFcfa(p.price)} × $_qty)',
+      'Bonjour Yorix, je commande$seller : ${p.name} (${formatFcfa(p.price)} × $_qty)',
     );
     final uri = Uri.parse('https://wa.me/${Env.whatsAppNumber}?text=$text');
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
@@ -179,7 +181,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   if (p.city != null)
                     _InfoTile(icon: Icons.location_on_outlined, title: 'Ville', value: p.city!),
-                  const SizedBox(height: 16),
+                  _InfoTile(
+                    icon: Icons.schedule_outlined,
+                    title: 'Livraison',
+                    value: ProductMeta.deliveryShort(p.city),
+                  ),
+                  _InfoTile(
+                    icon: Icons.shopping_cart_outlined,
+                    title: 'MOQ',
+                    value: p.moq <= 1 ? '1 pièce minimum' : 'MOQ ${p.moq} pièces',
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: YorixColors.greenPale,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: YorixColors.green.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified_user_outlined, color: YorixColors.green),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Protect+ ${ProductMeta.protectScore(p.toJson())}% — annonce analysée par Yorix.',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: YorixColors.greenDark),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -199,6 +232,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ],
                     ),
                   ),
+                  if (p.vendeurId != null) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _whatsapp,
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: Text(
+                        p.vendeurNom != null ? 'Chat vendeur — ${p.vendeurNom}' : 'Contacter le vendeur',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: YorixColors.green,
+                        side: const BorderSide(color: YorixColors.green),
+                        minimumSize: const Size.fromHeight(44),
+                      ),
+                    ),
+                  ],
                   if (p.description != null && p.description!.trim().isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text('Description', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),

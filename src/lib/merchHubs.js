@@ -1,4 +1,5 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
+import { productMoq } from "./productCardMeta.js";
 import {
   computeTopNewProducts,
   computeTrendingProducts,
@@ -147,12 +148,28 @@ export const MERCH_HUBS = {
     theme: "map",
     filter: "local_city",
   },
+  "sourcer-en-gros": {
+    slug: "sourcer-en-gros",
+    page: "merchHub",
+    categorySlug: "sourcing-gros",
+    titleFr: "Sourcer en gros — Fournisseurs & MOQ Cameroun",
+    titleEn: "Wholesale sourcing — Suppliers & MOQ Cameroon",
+    descFr:
+      "Achat groupé, fournisseurs vérifiés et quantités minimum (MOQ) pour professionnels, boutiques et distributeurs.",
+    descEn:
+      "Bulk buying, verified suppliers and minimum order quantities (MOQ) for pros, shops and distributors.",
+    keywordsFr: "gros cameroun, sourcing fournisseur, moq marketplace, achat groupé",
+    emoji: "📦",
+    theme: "wholesale",
+    filter: "wholesale",
+  },
 };
 
 export const MERCH_HUB_SLUGS = Object.keys(MERCH_HUBS);
 
 export const HOMEPAGE_MERCH_TILES = [
   { hub: "made-in-cameroun", accent: "#007a5e" },
+  { hub: "sourcer-en-gros", accent: "#f59e0b" },
   { hub: "top-produits", accent: "#b8860b" },
   { hub: "produits-tendance", accent: "#dc2626" },
   { hub: "promotions", accent: "#7c3aed" },
@@ -171,6 +188,7 @@ export const SEO_HUB_ALIAS_KEYS = new Set([
 /** Navigation émotionnelle header */
 export const EMOTIONAL_NAV = [
   { page: "produits", labelFr: "Produits", labelEn: "Products", iconKey: "shoppingBag" },
+  { hub: "sourcer-en-gros", labelFr: "Sourcer en gros", labelEn: "Wholesale", iconKey: "package" },
   { page: "prestataires", labelFr: "Services", labelEn: "Services", iconKey: "wrench" },
   { hub: "made-in-cameroun", labelFr: "Made in Cameroun", labelEn: "Made in Cameroon", iconKey: "flag" },
   { hub: "top-produits", labelFr: "Top Produits", labelEn: "Top Products", iconKey: "star" },
@@ -271,6 +289,26 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
       };
       const needle = nameMap[city] || city;
       return active.filter((p) => String(p.ville || "").toLowerCase().includes(needle));
+    }
+    case "wholesale": {
+      const wholesale = active.filter((p) => {
+        const moq = productMoq(p);
+        return (
+          moq > 1 ||
+          p.vendeur_verifie ||
+          p.verifie ||
+          p.sponsorise ||
+          (Number(p.vente_total) || 0) >= 8
+        );
+      });
+      if (wholesale.length >= 4) {
+        return [...wholesale].sort(
+          (a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0),
+        );
+      }
+      return [...active]
+        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .slice(0, 64);
     }
     default:
       return active;

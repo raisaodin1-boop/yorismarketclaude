@@ -21,7 +21,7 @@ import { YorixToast, useYorixToast } from "./ui/YorixToast";
 // ✅ Bouton "Contacter le vendeur" intégré (ouvre un modal chat)
 // ✅ Pas besoin de modifier App.jsx
 // ─────────────────────────────────────────────────────────────
-export function FicheProduit({ product, user, userData, onClose, onAddToCart, siteLocale = "fr" }) {
+export function FicheProduit({ product, user, userData, onClose, onAddToCart, siteLocale = "fr", onOpenSeller }) {
   const [activeImg, setActiveImg]           = useState(0);
   const [avis, setAvis]                     = useState([]);
   const [showCmdModal, setShowCmdModal]     = useState(false);
@@ -261,6 +261,33 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 <span>Paiement protégé Escrow Yorix</span>
                 <span style={{ fontSize: ".68rem" }}>Fonds libérés à la livraison</span>
               </div>
+            )}
+
+            {product.vendeur_id && onOpenSeller && (
+              <button
+                type="button"
+                onClick={() => onOpenSeller(product)}
+                style={{
+                  width: "100%",
+                  marginBottom: 10,
+                  padding: "10px 14px",
+                  borderRadius: 9,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  cursor: "pointer",
+                  fontSize: ".8rem",
+                  fontWeight: 700,
+                  color: "var(--ink)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Store size={16} aria-hidden />
+                {siteLocale === "en" ? "View supplier store" : "Voir la boutique fournisseur"}
+                {product.vendeur_nom ? ` — ${product.vendeur_nom}` : ""}
+              </button>
             )}
 
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
