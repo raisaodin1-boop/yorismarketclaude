@@ -347,8 +347,65 @@
 
 @media (max-width: 720px) {
   .cmd-palette-overlay {
-    padding-top: 8vh;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(12px, env(safe-area-inset-bottom));
     align-items: flex-start;
+  }
+
+  .cmd-palette {
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cmd-palette--agent {
+    width: 100%;
+  }
+
+  .cmd-palette-body {
+    max-height: min(58dvh, 420px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cmd-palette-input {
+    font-size: 16px;
+  }
+
+  .cmd-palette-foot {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .cmd-palette-foot kbd {
+    display: none;
+  }
+
+  .cmd-palette-agent-card {
+    padding: 12px;
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+
+  .cmd-palette-agent-tags {
+    padding-left: 0;
+    margin-top: 10px;
+  }
+
+  .cmd-palette-agent-tag {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+  }
+
+  .cmd-palette-thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cmd-palette-item {
+    min-height: 44px;
+    padding: 10px 12px;
   }
 }
 

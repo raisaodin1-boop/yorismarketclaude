@@ -25,7 +25,7 @@ import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 import { TrustStrip } from "./ui/TrustStrip";
 import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
-import { creditReferralBonusIfEligible } from "../lib/referralApi";
+import { explainDeliveryEta } from "../lib/logisticsAi";
 import { userFacingSuccess } from "../lib/appToast";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
@@ -46,14 +46,21 @@ function waMeRecipient(configured) {
   return official;
 }
 
-function deliveryEstimateHint(ville, locationType, carrier) {
+function deliveryEstimateHint(ville, locationType, carrier, orderAmount = 0) {
   const v = (ville || "").toLowerCase();
   const metro = v.includes("douala") || v.includes("yaound");
   if (locationType === "online") return "Prestation préparée en visio / échange numérique — délai communiqué par le prestataire.";
   if (locationType === "shop") return "Retrait — vous serez notifié dès que la commande est prête au point convenu.";
-  if (carrier === "yorix" && metro) return "Estimation Yorix Delivery zones prioritaires : J+1 à J+2 ouvrés (sous réserve du vendeur).";
-  if (metro) return "Livraison grand ville — souvent sous 48–72 h. Le livreur ou le vendeur peut vous préciser le créneau.";
-  return "Autres régions Cameroun — livraison typique sur 3 à 7 jours ouvrés selon la route.";
+  const city = ville || (metro ? "Douala" : "Yaoundé");
+  const eta = explainDeliveryEta({
+    originCity: city,
+    destCity: city,
+    orderAmount,
+    couriersNearby: metro ? 4 : 2,
+  });
+  const base = eta.summaryFr;
+  if (carrier === "yorix" && metro) return `${base} · Réseau Yorix Ride prioritaire.`;
+  return base;
 }
 
 export function CheckoutPage({
@@ -617,7 +624,7 @@ export function CheckoutPage({
     return t("location.standard");
   }, [locationType, carrier, ville, hasProducts, t]);
 
-  const deliveryHintText = deliveryEstimateHint(ville, locationType, carrier);
+  const deliveryHintText = deliveryEstimateHint(ville, locationType, carrier, summary?.total || 0);
 
   return (
     <section className="sec anim checkout-page-wrap yorix-page-flow yorix-pro-page">

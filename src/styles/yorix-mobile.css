@@ -657,3 +657,26 @@ body:has(.yx-pdp-sticky-bar) .yx-back-to-top {
     max-width: 100% !important;
   }
 }
+
+/* ─── AI panels (Business / Logistics / Credit / Protect+) ─── */
+@media (max-width: 768px) {
+  .dash-content .yai-panel,
+  .prod-form .yai-panel,
+  .sec .yai-panel {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .dash-content .yai-panel--credit {
+    order: -1;
+  }
+
+  .fiche-produit-grid .protect-plus {
+    grid-column: 1 / -1;
+  }
+
+  .livraison-page .yai-panel,
+  .checkout-page .yai-panel {
+    margin-top: 12px;
+  }
+}

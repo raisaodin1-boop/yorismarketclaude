@@ -5,6 +5,7 @@ import { DELIVERY_STATUSES, REWARDS_DATA } from "../lib/constants";
 import { ContentIcon } from "../lib/contentIcons";
 import { OrderCardWithTracking } from "./OrderCardWithTracking";
 import { ReferralPanel } from "./ReferralPanel";
+import { CreditScorePanel } from "./credit/CreditScorePanel";
 
 const PULL_THRESHOLD = 64; // px pour déclencher le refresh
 
@@ -97,6 +98,7 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
               </div>
             ))}
           </div>
+          <CreditScorePanel user={user} locale="fr" />
           <div style={{
             fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem",
             color: "var(--ink)", marginBottom: 12,

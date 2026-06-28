@@ -20,6 +20,7 @@ import {
 } from "../lib/catalogMutations";
 import { showAppToast } from "../lib/appToast";
 import { ReferralPanel } from "./ReferralPanel";
+import { BusinessAiAssistant } from "./seller/BusinessAiAssistant";
 import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons";
 
 // ─────────────────────────────────────────────────────────────
@@ -809,6 +810,8 @@ export function SellerDashboard({
               {saveMsg.text}
             </div>
           )}
+
+          <BusinessAiAssistant form={form} setForm={setForm} peerProducts={mesProduits} locale="fr" />
 
           <div className="form-row">
             <div className="form-group">

@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { CITY_BY_SLUG } from "../lib/seoRoutes";
+import { LogisticsAiPanel } from "../components/logistics/LogisticsAiPanel";
 
 function LivraisonSuspenseFallback({ minHeight = 200, label = "Chargement..." }) {
   return (
@@ -44,6 +45,8 @@ export function LivraisonPage({
             Service de livraison rapide au Cameroun : colis, courses, marketplace. Réseau de livreurs indépendants — suivi, tarifs transparents, paiement MoMo.
           </p>
         </header>
+
+        <LogisticsAiPanel locale={route.locale || "fr"} />
 
         <Suspense fallback={<LivraisonSuspenseFallback minHeight={160} label="Chargement outils livraison..." />}>
           <LazyLivraisonTopInteractive user={user} userData={userData} onOpenDemand={() => setDemandeLivraisonOpen(true)} />

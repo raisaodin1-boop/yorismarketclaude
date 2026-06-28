@@ -1,0 +1,322 @@
+.yai-panel {
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+}
+
+.yai-panel--business {
+  border-color: color-mix(in srgb, #7c3aed 25%, var(--border));
+}
+
+.yai-panel--logistics {
+  border-color: color-mix(in srgb, #0891b2 25%, var(--border));
+}
+
+.yai-panel--credit {
+  border-color: color-mix(in srgb, var(--green) 25%, var(--border));
+}
+
+.yai-panel__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.yai-panel__ico {
+  color: var(--green);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.yai-panel--business .yai-panel__ico {
+  color: #7c3aed;
+}
+
+.yai-panel--logistics .yai-panel__ico {
+  color: #0891b2;
+}
+
+.yai-panel__brand {
+  font-family: var(--font-display, "Syne", sans-serif);
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.yai-panel__sub {
+  font-size: 0.72rem;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+.yai-panel__label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-bottom: 10px;
+}
+
+.yai-panel__input,
+.yai-panel__select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--ink);
+}
+
+.yai-panel__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.yai-panel__field {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+.yai-panel__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: none;
+  background: var(--green);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.yai-panel__btn--apply {
+  margin-top: 10px;
+  background: #7c3aed;
+}
+
+.yai-panel__btn--ghost {
+  background: transparent;
+  color: var(--gray);
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+
+.yai-panel__result {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.yai-panel__preview-title {
+  margin: 0 0 6px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.yai-panel__preview-desc {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--gray);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.yai-panel__meta {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  color: var(--ink);
+}
+
+.yai-panel__tips {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.72rem;
+  color: var(--gray);
+  line-height: 1.45;
+}
+
+.yai-panel__summary {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.yai-panel__legal {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--gray);
+}
+
+.yai-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.yai-panel__stat-lbl {
+  display: block;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray);
+  font-weight: 700;
+}
+
+.yai-panel__stat-val {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.yai-panel__factors {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.yai-factor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.yai-factor--positive {
+  border-color: color-mix(in srgb, var(--green) 22%, var(--border));
+}
+
+.yai-factor--warning {
+  border-color: color-mix(in srgb, #d97706 30%, var(--border));
+  color: #b45309;
+}
+
+.yai-factor--neutral {
+  opacity: 0.92;
+}
+
+.yai-factor__impact {
+  font-family: ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.yai-credit-score {
+  margin-left: auto;
+  font-family: var(--font-display, "Syne", sans-serif);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--green);
+  line-height: 1;
+}
+
+.yai-panel__btn,
+.protect-plus__head {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Mobile / touch ── */
+@media (max-width: 768px) {
+  .yai-panel {
+    margin-bottom: 14px;
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+
+  .yai-panel__head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .yai-panel__brand {
+    font-size: 0.85rem;
+  }
+
+  .yai-panel__input,
+  .yai-panel__select {
+    font-size: 16px;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .yai-panel__row,
+  .yai-panel__stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .yai-panel__stat-val {
+    font-size: 0.88rem;
+  }
+
+  .yai-panel__btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+
+  .yai-panel__btn--apply,
+  .yai-panel__btn--ghost {
+    width: 100%;
+  }
+
+  .yai-factor {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+
+  .yai-factor__impact {
+    align-self: flex-end;
+  }
+
+  .yai-credit-score {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
+    font-size: 2rem;
+    padding-top: 4px;
+  }
+
+  .yai-panel__summary,
+  .yai-panel__legal {
+    font-size: 0.8rem;
+  }
+
+  .yai-panel__preview-desc {
+    max-height: 120px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
