@@ -12,14 +12,53 @@ export function productPublicUrl(product, locale = "fr") {
   return `${SITE_URL.replace(/\/$/, "")}${path}`;
 }
 
-export function buildProductWhatsAppText(product, locale = "fr") {
+export function buildProductShareText(product, locale = "fr") {
   const name = product?.name_fr || "Produit";
   const price = product?.prix != null ? `${Number(product.prix).toLocaleString("fr-FR")} FCFA` : "";
   const url = productPublicUrl(product, locale);
   if (locale === "en") {
-    return `🛍️ ${name}${price ? ` — ${price}` : ""}\nBuy safely on Yorix.cm (Escrow · MoMo):\n${url}`;
+    return `${name}${price ? ` — ${price}` : ""}\nBuy safely on Yorix.cm (Escrow · MoMo):\n${url}`;
   }
-  return `🛍️ ${name}${price ? ` — ${price}` : ""}\nAchetez en confiance sur Yorix.cm (Escrow · MoMo):\n${url}`;
+  return `${name}${price ? ` — ${price}` : ""}\nAchetez en confiance sur Yorix.cm (Escrow · MoMo):\n${url}`;
+}
+
+export function buildProductWhatsAppText(product, locale = "fr") {
+  const plain = buildProductShareText(product, locale);
+  return `🛍️ ${plain}`;
+}
+
+/**
+ * Partage natif (Web Share API) avec repli presse-papiers puis WhatsApp.
+ * @returns {Promise<{ ok: boolean, method: 'native' | 'clipboard' | 'whatsapp' | 'cancelled' }>}
+ */
+export async function shareProduct(product, locale = "fr") {
+  if (!product) return { ok: false, method: "cancelled" };
+
+  const title = product.name_fr || "Produit Yorix";
+  const text = buildProductShareText(product, locale);
+  const url = productPublicUrl(product, locale);
+
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title, text, url });
+      return { ok: true, method: "native" };
+    } catch (e) {
+      if (e?.name === "AbortError") return { ok: false, method: "cancelled" };
+    }
+  }
+
+  const payload = `${text}`;
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(payload);
+      return { ok: true, method: "clipboard" };
+    } catch {
+      /* fall through */
+    }
+  }
+
+  openWhatsAppShare(buildProductWhatsAppText(product, locale));
+  return { ok: true, method: "whatsapp" };
 }
 
 export function openWhatsAppShare(text) {

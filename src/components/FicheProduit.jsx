@@ -8,6 +8,7 @@ import { ModalCommander } from "./ModalCommander";
 import { ChatUsers } from "./ChatUsers";
 import { optimizeCloudinaryUrl } from "../utils/helpers";
 import { TrustStrip } from "./ui/TrustStrip";
+import { ShareProductButton } from "./conversion/ShareProductButton";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";
@@ -321,7 +322,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               </div>
             )}
 
-            <div style={{ marginBottom: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+              <ShareProductButton product={product} locale={siteLocale} variant="primary" className="share-wa-btn--block" />
               <ShareWhatsAppButton product={product} locale={siteLocale} variant="ghost" className="share-wa-btn--block" />
             </div>
 

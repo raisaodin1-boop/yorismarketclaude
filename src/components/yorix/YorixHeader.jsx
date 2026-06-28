@@ -28,6 +28,8 @@ export function YorixHeader({
   search,
   setSearch,
   produits,
+  onOpenProduct,
+  onOpenCommandPalette,
   setOnboardingOpen,
   onNotifsSync,
   onOpenNotification,
@@ -51,6 +53,10 @@ export function YorixHeader({
 }) {
   const { t } = useTranslation("nav");
   const localeTag = siteLocale === "en" ? "en-FR" : "fr-FR";
+  const cmdKLabel =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform)
+      ? "⌘K"
+      : "Ctrl+K";
   const freeShip = commerceDeliveryPolicy.freeShippingThresholdXaf.toLocaleString(localeTag);
 
   return (
@@ -192,12 +198,28 @@ export function YorixHeader({
               placeholder={t("search.placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && goPage("produits")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") goPage("produits");
+                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+                  e.preventDefault();
+                  onOpenCommandPalette?.();
+                }
+              }}
               autoComplete="off"
               aria-label={t("search.ariaSearch")}
               aria-expanded={search.trim().length >= 2}
               aria-haspopup="listbox"
             />
+            {onOpenCommandPalette && !search.trim() && (
+              <button
+                type="button"
+                className="nav-search-cmd-hint"
+                onClick={() => onOpenCommandPalette()}
+                aria-label={siteLocale === "en" ? "Open command palette" : "Ouvrir la palette de commande"}
+              >
+                <kbd>{cmdKLabel}</kbd>
+              </button>
+            )}
             {search.trim().length >= 2 && (
               <div className="nav-search-dd" role="listbox" aria-label={t("search.ariaSuggestions")}>
                 {produits
@@ -215,7 +237,8 @@ export function YorixHeader({
                       role="option"
                       onClick={() => {
                         setSearch("");
-                        goPage("produits");
+                        if (onOpenProduct) onOpenProduct(p);
+                        else goPage("produits");
                       }}
                     >
                       {p.image ? (

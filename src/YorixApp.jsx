@@ -97,6 +97,8 @@ import { YorixHeader } from "./components/yorix/YorixHeader.jsx";
 import { YorixPages } from "./components/yorix/YorixPages.jsx";
 import { useYorixAuth } from "./hooks/useYorixAuth.js";
 import { useYorixCart } from "./hooks/useYorixCart.js";
+import { useWishlist } from "./hooks/useWishlist.js";
+import { CommandPalette } from "./components/CommandPalette.jsx";
 
 // ═══════════════════════════════════════════════════════════════
 // APP PRINCIPALE (logique métier + layout)
@@ -377,6 +379,8 @@ export default function YorixApp() {
     executePendingAction,
   } = authSession;
 
+  const { wishlist, toggleWish } = useWishlist(user?.id);
+
   const {
     cartItems,
     setCartItems,
@@ -423,13 +427,13 @@ export default function YorixApp() {
   // Divers
   const [nlEmail, setNlEmail]                   = useState("");
   const [nlSent, setNlSent]                     = useState(false);
-  const [wishlist, setWishlist]                 = useState(new Set());
   const [loyaltyPts, setLoyaltyPts]             = useState(320);
   const [blogFilter, setBlogFilter]             = useState("TOUT");
   const [selectedPrest, setSelectedPrest]       = useState(null);
 
   // ═══ ONBOARDING ═══
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Academy
   const [academyCourses, setAcademyCourses] = useState([]);
@@ -572,6 +576,18 @@ export default function YorixApp() {
       const t = setTimeout(() => setOnboardingOpen(true), 800);
       return () => clearTimeout(t);
     }
+  }, []);
+
+  // ── Palette de commande ⌘K / Ctrl+K ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   // ── HANDLER : choix d'une action onboarding ──
@@ -877,8 +893,6 @@ export default function YorixApp() {
     setUserData((prev) => (prev ? { ...prev, ...payload } : prev));
   }, [user?.id]);
 
-
-  const toggleWish = useCallback((id) => setWishlist(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
   const openNotificationTarget = useCallback(
     (notification) => {
@@ -1825,6 +1839,8 @@ export default function YorixApp() {
         search={search}
         setSearch={setSearch}
         produits={produits}
+        onOpenProduct={openProductUrl}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         setOnboardingOpen={setOnboardingOpen}
         onNotifsSync={() => user?.id && loadNotifsForUser(user.id)}
         notifRevision={notifRevision}
@@ -1888,6 +1904,16 @@ export default function YorixApp() {
       />
 
       <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        produits={produits}
+        siteLocale={route.locale}
+        goPage={goPage}
+        onOpenProduct={openProductUrl}
+        setSearch={setSearch}
+      />
 
       <GlobalToastHost />
       <OfflineBanner />
