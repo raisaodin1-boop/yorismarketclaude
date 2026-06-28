@@ -4,6 +4,7 @@ import { roleLabel } from "../../i18n/index.js";
 import { EMOTIONAL_NAV } from "../../lib/merchHubs";
 import { ContentIcon } from "../../lib/contentIcons";
 import { categoryLabel } from "../../lib/marketplaceCategories";
+import { productMatchesSearch } from "../../lib/productSearch";
 import { NAV_QUICK_ICONS, PAY_STRIP_ICONS, LucideIcon } from "../../lib/lucideNavIcons";
 import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
 import { CategoryMobileNav } from "../categories/CategoryMobileNav";
@@ -223,11 +224,7 @@ export function YorixHeader({
             {search.trim().length >= 2 && (
               <div className="nav-search-dd" role="listbox" aria-label={t("search.ariaSuggestions")}>
                 {produits
-                  .filter(
-                    (p) =>
-                      (p.name_fr || "").toLowerCase().includes(search.toLowerCase()) ||
-                      (p.description_fr || "").toLowerCase().includes(search.toLowerCase()),
-                  )
+                  .filter((p) => productMatchesSearch(p, search))
                   .slice(0, 8)
                   .map((p) => (
                     <button
@@ -261,7 +258,7 @@ export function YorixHeader({
                       </div>
                     </button>
                   ))}
-                {produits.filter((p) => (p.name_fr || "").toLowerCase().includes(search.toLowerCase())).length === 0 && (
+                {produits.filter((p) => productMatchesSearch(p, search)).length === 0 && (
                   <div className="nav-search-dd-empty">
                     Aucun résultat pour « {search} » — touche Entrée pour ouvrir le catalogue filtré.
                   </div>

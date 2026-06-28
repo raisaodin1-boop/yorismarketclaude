@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Home, ShoppingBag, ShoppingCart, Bell, User, LogIn, Rocket, Settings, Eye, Lock } from "lucide-react";
+import { Bell, Settings, Eye, Lock } from "lucide-react";
 import { AuthGate } from "../ui/AuthGate";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { WhatsAppFab } from "../WhatsAppFab";
@@ -122,9 +122,8 @@ export function YorixPages({ ctx }) {
     loyaltyPts,
     setLoyaltyPts,
     totalQty,
-    tabActive,
-    unread,
-    openCart,
+    cartDrawerOpen,
+    closeCartDrawer,
   } = ctx;
 
   return (
@@ -554,84 +553,6 @@ export function YorixPages({ ctx }) {
           </button>
         )}
         <WhatsAppFab />
-      </div>
-
-      <div className="mobile-nav">
-        <div className="mn-inner">
-          {[
-            { Icon: Home, label: "Accueil", p: "home" },
-            { Icon: ShoppingBag, label: "Produits", p: "produits" },
-            { Icon: ShoppingCart, label: "Panier", p: "cart", drawer: true, cart: true },
-            { Icon: Bell, label: "Alertes", p: "notifications" },
-            { Icon: User, label: "Mon espace", p: "dashboard" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className={`mn-item${item.cart ? " mn-item--cart" : ""}${tabActive(item.p) ? " active" : ""}`}
-              onClick={() => {
-                if (item.p === "dashboard" && !user) {
-                  setAuthTab("register");
-                  setAuthOpen(true);
-                } else if (item.p === "notifications" && !user) {
-                  goPage("notifications");
-                } else if (item.drawer) {
-                  openCart();
-                } else {
-                  goPage(item.p);
-                }
-              }}
-            >
-              {item.cart ? (
-                <div className="mn-icon-wrap">
-                  <div className="mn-icon">
-                    <item.Icon size={22} strokeWidth={2} aria-hidden="true" />
-                  </div>
-                </div>
-              ) : (
-                <div className="mn-icon">
-                  <item.Icon size={22} strokeWidth={2} aria-hidden="true" />
-                </div>
-              )}
-              <div className="mn-label">{item.label}</div>
-              {item.p === "cart" && totalQty > 0 && (
-                <div className="mn-badge">{totalQty > 99 ? "99+" : totalQty}</div>
-              )}
-              {item.p === "notifications" && unread > 0 && user && (
-                <div className="mn-badge">{unread > 99 ? "99+" : unread}</div>
-              )}
-              {item.p === "dashboard" && !user && (
-                <div className="mn-badge mn-badge--new">NEW</div>
-              )}
-            </div>
-          ))}
-        </div>
-        {!user && (
-          <div className="yx-mobile-auth-strip">
-            <button
-              type="button"
-              className="yx-mobile-auth-strip__btn yx-mobile-auth-strip__btn--ghost"
-              onClick={() => {
-                setAuthTab("login");
-                setAuthOpen(true);
-              }}
-            >
-              <LogIn size={16} strokeWidth={2.25} aria-hidden="true" />
-              Connexion
-            </button>
-            <button
-              type="button"
-              className="yx-mobile-auth-strip__btn yx-mobile-auth-strip__btn--primary"
-              onClick={() => {
-                setAuthTab("register");
-                setSelectedRole("buyer");
-                setAuthOpen(true);
-              }}
-            >
-              <Rocket size={16} strokeWidth={2.25} aria-hidden="true" />
-              S'inscrire gratuitement
-            </button>
-          </div>
-        )}
       </div>
 
       {page === "admin" && (

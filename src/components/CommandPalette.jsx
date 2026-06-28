@@ -12,6 +12,7 @@ import {
   Package,
   ArrowRight,
 } from "lucide-react";
+import { filterProductsBySearch, normalizeSearchText } from "../lib/productSearch";
 import "./commandPalette.css";
 
 const QUICK_ACTIONS = [
@@ -23,13 +24,6 @@ const QUICK_ACTIONS = [
   { id: "aide", page: "aide", icon: HelpCircle, labelFr: "Centre d'aide", labelEn: "Help center" },
   { id: "contact", page: "contact", icon: Mail, labelFr: "Contact", labelEn: "Contact" },
 ];
-
-function normalize(s) {
-  return String(s || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "");
-}
 
 /**
  * Palette de commande globale (⌘K / Ctrl+K).
@@ -50,25 +44,17 @@ export function CommandPalette({
   const en = siteLocale === "en";
   const localeTag = en ? "en-CM" : "fr-CM";
 
-  const filteredProducts = useMemo(() => {
-    const q = normalize(query.trim());
-    if (q.length < 2) return [];
-    return produits
-      .filter(
-        (p) =>
-          normalize(p.name_fr).includes(q) ||
-          normalize(p.description_fr).includes(q) ||
-          normalize(p.categorie).includes(q),
-      )
-      .slice(0, 8);
-  }, [produits, query]);
+  const filteredProducts = useMemo(
+    () => filterProductsBySearch(produits, query, 8),
+    [produits, query],
+  );
 
   const filteredActions = useMemo(() => {
-    const q = normalize(query.trim());
+    const q = normalizeSearchText(query.trim());
     if (!q) return QUICK_ACTIONS;
     return QUICK_ACTIONS.filter((a) => {
       const label = en ? a.labelEn : a.labelFr;
-      return normalize(label).includes(q) || normalize(a.page).includes(q);
+      return normalizeSearchText(label).includes(q) || normalizeSearchText(a.page).includes(q);
     });
   }, [query, en]);
 
