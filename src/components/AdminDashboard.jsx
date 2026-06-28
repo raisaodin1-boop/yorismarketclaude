@@ -56,7 +56,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const ADMIN_TABS = useMemo(
     () => [
       "overview", "deliveries", "livreurs", "categories", "packs", "produits",
-      "commandes", "utilisateurs", "vendeurs", "prestataires", "revenus",
+      "commandes", "utilisateurs", "vendeurs", "kyc", "prestataires", "revenus",
       "commerce_promo", "loyalty", "messagerie", "notif_center", "alertes",
     ],
     [],
@@ -88,6 +88,12 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [adminDeliveries, setAdminDeliveries]   = useState([]);
   const [adminLivreurs, setAdminLivreurs]       = useState([]);
   const [prestatairesList, setPrestatairesList] = useState([]);
+  const [kycList, setKycList]                   = useState([]);
+  const [kycFilter, setKycFilter]               = useState("pending");
+  const [kycModal, setKycModal]                 = useState(null); // { kyc, sellerInfo }
+  const [kycAction, setKycAction]               = useState(null); // "approve"|"reject"|"info"
+  const [kycNote, setKycNote]                   = useState("");
+  const [kycSaving, setKycSaving]               = useState(false);
   const [chartVentes, setChartVentes]           = useState([]);
   const [chartInscrits, setChartInscrits]       = useState([]);
   const [topProduits, setTopProduits]           = useState([]);
@@ -329,7 +335,59 @@ export function AdminDashboard({ user, userData, goPage }) {
       setLoadError("Erreur : " + e.message);
       showToast("Erreur de chargement", "error");
     }
+    // Charger les demandes KYC
+    supabase
+      .from("seller_kyc")
+      .select("*")
+      .order("submitted_at", { ascending: false })
+      .then(({ data }) => setKycList(data || []));
+
     setLoading(false);
+  };
+
+  // ═══════════ KYC ACTIONS ═══════════
+  const loadKyc = async () => {
+    const { data } = await supabase.from("seller_kyc").select("*").order("submitted_at", { ascending: false });
+    setKycList(data || []);
+  };
+
+  const handleKycDecision = async () => {
+    if (!kycModal || !kycAction) return;
+    if ((kycAction === "reject" || kycAction === "info") && !kycNote.trim()) {
+      showToast("Veuillez saisir un motif / message", "error"); return;
+    }
+    setKycSaving(true);
+    try {
+      const newStatus = kycAction === "approve" ? "verified" : kycAction === "reject" ? "rejected" : "pending";
+      await supabase.from("seller_kyc").update({
+        status:        newStatus,
+        reviewed_at:   new Date().toISOString(),
+        reviewer_id:   user.id,
+        reviewer_note: kycNote.trim() || null,
+        updated_at:    new Date().toISOString(),
+      }).eq("id", kycModal.kyc.id);
+
+      // Notification au vendeur
+      const notifBody = kycAction === "approve"
+        ? "Félicitations ! Votre identité a été vérifiée. Vous disposez maintenant du badge Vendeur Vérifié."
+        : kycAction === "reject"
+          ? `Votre demande de vérification a été refusée. Motif : ${kycNote}`
+          : `Des informations complémentaires sont requises pour votre vérification KYC : ${kycNote}`;
+      await supabase.from("notifications").insert({
+        user_id: kycModal.kyc.user_id,
+        type:    "kyc",
+        title:   kycAction === "approve" ? "Identité vérifiée ✓" : kycAction === "reject" ? "Vérification refusée" : "Informations complémentaires requises",
+        body:    notifBody,
+        lu:      false,
+      });
+
+      showToast(kycAction === "approve" ? "Vendeur vérifié !" : kycAction === "reject" ? "Demande refusée" : "Message envoyé au vendeur", "success");
+      setKycModal(null); setKycAction(null); setKycNote("");
+      loadKyc();
+    } catch (e) {
+      showToast("Erreur : " + e.message, "error");
+    }
+    setKycSaving(false);
   };
 
   // ═══════════ REALTIME DELIVERIES ═══════════
@@ -737,6 +795,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         { id: "commandes", label: t("nav.orders"), badge: commandes.filter((o) => o.status === "pending").length || null },
         { id: "utilisateurs", label: t("nav.users") },
         { id: "vendeurs", label: t("nav.sellers") },
+        { id: "kyc", label: "KYC Vendeurs", badge: kycList.filter(k => k.status === "pending").length || null },
         { id: "livreurs", label: t("nav.couriers") },
         { id: "prestataires", label: t("nav.providers"), badge: prestPending || null },
         { id: "revenus", label: t("nav.revenue") },
@@ -1861,6 +1920,278 @@ export function AdminDashboard({ user, userData, goPage }) {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════════ KYC VENDEURS ════════ */}
+        {adminTab === "kyc" && (
+          <>
+            <div className="admin-page-title">
+              🛡 Vérification KYC Vendeurs
+              <span style={{ fontSize: ".75rem", background: kycList.filter(k => k.status === "pending").length > 0 ? "#f59e0b" : "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
+                {kycList.filter(k => k.status === "pending").length} en attente
+              </span>
+            </div>
+
+            {/* Stats rapides */}
+            <div className="stat-cards-grid" style={{ marginBottom: 16 }}>
+              <StatCard icon="⏳" val={kycList.filter(k => k.status === "pending").length}  lbl="En attente"  col="#fef3c7" ic="#92400e" />
+              <StatCard icon="✅" val={kycList.filter(k => k.status === "verified").length} lbl="Vérifiés"    col="#d1fae5" ic="#065f46" />
+              <StatCard icon="❌" val={kycList.filter(k => k.status === "rejected").length} lbl="Refusés"     col="#fee2e2" ic="#991b1b" />
+              <StatCard icon="📋" val={kycList.length}                                       lbl="Total"       col="#eff6ff" ic="#1d4ed8" />
+            </div>
+
+            {/* Filtres */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              {[
+                { id: "pending",  label: "⏳ En attente", color: "#f59e0b" },
+                { id: "verified", label: "✅ Vérifiés",   color: "#059669" },
+                { id: "rejected", label: "❌ Refusés",    color: "#dc2626" },
+                { id: "all",      label: "📋 Tous",       color: "#6b7280" },
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setKycFilter(f.id)}
+                  style={{
+                    padding: "6px 14px", borderRadius: 20, fontSize: ".75rem", fontWeight: 700, cursor: "pointer",
+                    background: kycFilter === f.id ? f.color : "var(--surface2)",
+                    color: kycFilter === f.id ? "#fff" : "var(--gray)",
+                    border: `1px solid ${kycFilter === f.id ? f.color : "var(--border)"}`,
+                  }}
+                >
+                  {f.label} ({kycList.filter(k => f.id === "all" || k.status === f.id).length})
+                </button>
+              ))}
+              <button onClick={loadKyc} style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 20, fontSize: ".75rem", fontWeight: 700, cursor: "pointer", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--gray)" }}>
+                🔄 Actualiser
+              </button>
+            </div>
+
+            {/* Liste */}
+            {kycList.filter(k => kycFilter === "all" || k.status === kycFilter).length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, background: "var(--surface)", borderRadius: 12, color: "var(--gray)" }}>
+                <div style={{ fontSize: "3rem", marginBottom: 10 }}>🛡</div>
+                <p>Aucune demande KYC {kycFilter !== "all" ? `avec le statut "${kycFilter}"` : ""}</p>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Vendeur</th>
+                      <th>Type de doc</th>
+                      <th>Soumis le</th>
+                      <th>Statut</th>
+                      <th>Documents</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kycList
+                      .filter(k => kycFilter === "all" || k.status === kycFilter)
+                      .map(k => {
+                        const seller = utilisateurs.find(u => (u.uid || u.id) === k.user_id);
+                        const docLabel = { cni: "CNI", passport: "Passeport", rccm: "RCCM", other: "Autre" }[k.doc_type] || k.doc_type || "—";
+                        const statusCfg = {
+                          pending:  { bg: "#fef3c7", color: "#92400e", label: "En attente" },
+                          verified: { bg: "#d1fae5", color: "#065f46", label: "Vérifié" },
+                          rejected: { bg: "#fee2e2", color: "#991b1b", label: "Refusé" },
+                          none:     { bg: "var(--surface2)", color: "var(--gray)", label: "Non soumis" },
+                        }[k.status] || { bg: "var(--surface2)", color: "var(--gray)", label: k.status };
+                        return (
+                          <tr key={k.id}>
+                            <td>
+                              <div style={{ fontWeight: 700, fontSize: ".82rem" }}>{seller?.nom || "—"}</div>
+                              <div style={{ fontSize: ".68rem", color: "var(--gray)" }}>{seller?.email || k.user_id?.slice(0, 8) + "…"}</div>
+                            </td>
+                            <td><span className="admin-badge admin-badge-blue">{docLabel}</span></td>
+                            <td style={{ fontSize: ".72rem", color: "var(--gray)" }}>
+                              {k.submitted_at ? new Date(k.submitted_at).toLocaleDateString("fr-FR") : "—"}
+                            </td>
+                            <td>
+                              <span style={{ fontSize: ".7rem", fontWeight: 700, padding: "3px 9px", borderRadius: 12, background: statusCfg.bg, color: statusCfg.color }}>
+                                {statusCfg.label}
+                              </span>
+                              {k.reviewer_note && (
+                                <div style={{ fontSize: ".62rem", color: "var(--gray)", marginTop: 3, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={k.reviewer_note}>
+                                  💬 {k.reviewer_note}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                {k.doc_url && (
+                                  <a href={k.doc_url} target="_blank" rel="noreferrer"
+                                    style={{ fontSize: ".72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: "#eff6ff", color: "#1d4ed8", textDecoration: "none" }}>
+                                    📄 Recto
+                                  </a>
+                                )}
+                                {k.doc_url2 && (
+                                  <a href={k.doc_url2} target="_blank" rel="noreferrer"
+                                    style={{ fontSize: ".72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: "#eff6ff", color: "#1d4ed8", textDecoration: "none" }}>
+                                    📄 Verso
+                                  </a>
+                                )}
+                                {!k.doc_url && <span style={{ fontSize: ".68rem", color: "var(--gray)" }}>Aucun doc</span>}
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", gap: 4 }}>
+                                {k.status !== "verified" && (
+                                  <button
+                                    onClick={() => { setKycModal({ kyc: k, sellerInfo: seller }); setKycAction("approve"); setKycNote(""); }}
+                                    style={{ background: "#d1fae5", color: "#065f46", border: "none", borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
+                                    title="Valider"
+                                  >✅ Valider</button>
+                                )}
+                                <button
+                                  onClick={() => { setKycModal({ kyc: k, sellerInfo: seller }); setKycAction("info"); setKycNote(k.reviewer_note || ""); }}
+                                  style={{ background: "#fef3c7", color: "#92400e", border: "none", borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
+                                  title="Demander des informations"
+                                >💬 Info</button>
+                                {k.status !== "rejected" && (
+                                  <button
+                                    onClick={() => { setKycModal({ kyc: k, sellerInfo: seller }); setKycAction("reject"); setKycNote(""); }}
+                                    style={{ background: "#fee2e2", color: "#991b1b", border: "none", borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
+                                    title="Rejeter"
+                                  >❌ Rejeter</button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Modal de décision KYC */}
+            {kycModal && (
+              <div className="modal-overlay" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setKycModal(null)}>
+                <div className="modal" style={{ maxWidth: 560, width: "calc(100vw - 32px)", borderRadius: 18, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 12px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+                    <div>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
+                        {kycAction === "approve" && "✅ Valider l'identité"}
+                        {kycAction === "reject"  && "❌ Rejeter la demande"}
+                        {kycAction === "info"    && "💬 Demander des informations"}
+                      </div>
+                      <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: 2 }}>
+                        {kycModal.kyc.full_name || kycModal.sellerInfo?.nom || "Vendeur"}
+                        {kycModal.kyc.kyc_level && <span style={{ marginLeft: 6, background: kycModal.kyc.kyc_level === "full" ? "#d1fae5" : "#fef3c7", color: kycModal.kyc.kyc_level === "full" ? "#065f46" : "#92400e", borderRadius: 4, padding: "1px 6px", fontWeight: 700, fontSize: ".68rem" }}>{kycModal.kyc.kyc_level === "full" ? "KYC Complet" : "KYC Lite"}</span>}
+                      </div>
+                    </div>
+                    <button className="modal-close" onClick={() => setKycModal(null)} aria-label="Fermer">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+
+                  <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
+                    {/* Informations identité */}
+                    {(() => {
+                      const k = kycModal.kyc;
+                      const rows = [
+                        k.full_name    && ["👤 Nom complet",       k.full_name],
+                        k.birth_date   && ["🎂 Date de naissance", new Date(k.birth_date).toLocaleDateString("fr-FR")],
+                        k.birth_place  && ["📍 Lieu de naissance", k.birth_place],
+                        k.cni_number   && ["🪪 N° CNI",            k.cni_number],
+                        k.cni_expiry   && ["📅 Expiration CNI",    new Date(k.cni_expiry).toLocaleDateString("fr-FR")],
+                        k.phone        && ["📞 Téléphone",         k.phone],
+                        k.email        && ["✉️ Email",              k.email],
+                        k.whatsapp     && ["💬 WhatsApp",          k.whatsapp],
+                        k.seller_type  && ["🏷 Type",              k.seller_type === "entreprise" ? "Entreprise" : "Particulier"],
+                        k.company_name && ["🏢 Raison sociale",   k.company_name],
+                        k.rccm         && ["📋 RCCM",              k.rccm],
+                        (k.city || k.country) && ["🌍 Localisation", [k.quartier, k.city, k.country].filter(Boolean).join(", ")],
+                        k.address      && ["🗺 Adresse",           k.address],
+                      ].filter(Boolean);
+                      if (!rows.length) return null;
+                      return (
+                        <div style={{ background: "var(--surface2)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: ".78rem" }}>
+                          {rows.map(([label, val]) => (
+                            <div key={label} style={{ display: "flex", gap: 8, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
+                              <span style={{ color: "var(--gray)", minWidth: 140, flexShrink: 0 }}>{label}</span>
+                              <span style={{ color: "var(--ink)", fontWeight: 600, wordBreak: "break-word" }}>{val}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Aperçu documents */}
+                    {(() => {
+                      const k = kycModal.kyc;
+                      const docs = [
+                        k.doc_url      && ["CNI Recto",    k.doc_url],
+                        k.doc_url2     && ["CNI Verso",    k.doc_url2],
+                        k.selfie_url   && ["Selfie + CNI", k.selfie_url],
+                        k.shop_photo_url && ["Photo boutique", k.shop_photo_url],
+                      ].filter(Boolean);
+                      if (!docs.length) return null;
+                      return (
+                        <div style={{ marginBottom: 16 }}>
+                          <div style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--gray)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em" }}>Documents ({docs.length})</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                            {docs.map(([label, url]) => (
+                              <a key={label} href={url} target="_blank" rel="noreferrer" style={{ display: "block", borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", textDecoration: "none" }}>
+                                <img src={url} alt={label} style={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
+                                  onError={e => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }} />
+                                <div style={{ display: "none", height: 70, alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#1d4ed8", fontSize: ".72rem", fontWeight: 700 }}>📄 {label}</div>
+                                <div style={{ padding: "4px 8px", fontSize: ".68rem", fontWeight: 700, color: "var(--gray)", background: "var(--surface2)" }}>{label}</div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {kycAction === "approve" && (
+                      <div style={{ background: "#d1fae5", border: "1px solid #6ee7b7", borderRadius: 10, padding: "12px 14px", fontSize: ".82rem", color: "#065f46", marginBottom: 16 }}>
+                        Le vendeur recevra une notification de validation et obtiendra le badge <strong>Vendeur Vérifié</strong>.
+                      </div>
+                    )}
+
+                    {(kycAction === "reject" || kycAction === "info") && (
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">
+                          {kycAction === "reject" ? "Motif du refus *" : "Message / informations demandées *"}
+                        </label>
+                        <textarea
+                          className="form-textarea"
+                          style={{ minHeight: 90 }}
+                          placeholder={kycAction === "reject"
+                            ? "Ex: Document illisible, photo floue, document expiré…"
+                            : "Ex: Merci de renvoyer une photo plus nette du recto de votre CNI…"
+                          }
+                          value={kycNote}
+                          onChange={e => setKycNote(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ padding: "0 20px 20px", display: "flex", gap: 8 }}>
+                    <button
+                      onClick={handleKycDecision}
+                      disabled={kycSaving || ((kycAction === "reject" || kycAction === "info") && !kycNote.trim())}
+                      style={{
+                        flex: 1, padding: "11px", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, fontSize: ".85rem",
+                        background: kycAction === "approve" ? "var(--green)" : kycAction === "reject" ? "#dc2626" : "#f59e0b",
+                        color: "#fff",
+                        opacity: kycSaving ? 0.7 : 1,
+                      }}
+                    >
+                      {kycSaving ? "Traitement…" : kycAction === "approve" ? "✅ Confirmer la validation" : kycAction === "reject" ? "❌ Confirmer le refus" : "💬 Envoyer le message"}
+                    </button>
+                    <button onClick={() => setKycModal(null)} style={{ padding: "11px 18px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: ".82rem", fontWeight: 600, color: "var(--gray)" }}>
+                      Annuler
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </>
