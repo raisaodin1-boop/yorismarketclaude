@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
+import { uploadCloudinaryFile } from "../utils/helpers";
 
 // Compresse une image via canvas — réduit les photos mobile (5-10 MB) à ~300 KB
 async function compressImage(file, maxPx = 1200, quality = 0.82) {
@@ -219,18 +220,12 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   const slotToField = { cni_recto: "doc_url", cni_verso: "doc_url2", selfie: "selfie_url", shop: "shop_photo_url" };
 
   const uploadFile = async (file, slot, attempt = 0) => {
-    const compressed = await compressImage(file);
-    const ext = compressed.name.split(".").pop() || "jpg";
-    const path = `${userId}/${slot}_${Date.now()}.${ext}`;
     try {
-      const { data, error } = await supabase.storage.from("kyc-docs").upload(path, compressed, { upsert: true, contentType: compressed.type });
-      if (error) throw error;
-      const { data: signed, error: signErr } = await supabase.storage.from("kyc-docs").createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
-      if (signErr) throw signErr;
-      // Sauvegarder immédiatement l'URL en base (draft) pour ne pas perdre l'upload
+      const compressed = await compressImage(file);
+      const url = await uploadCloudinaryFile(compressed, { folder: `kyc/${userId}` });
       const field = slotToField[slot];
-      if (field) saveDraft({ [field]: signed.signedUrl });
-      return signed.signedUrl;
+      if (field) saveDraft({ [field]: url });
+      return url;
     } catch (e) {
       if (attempt < 2) {
         await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
@@ -289,7 +284,8 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         user_id: userId,
         type: "kyc",
         title: "Demande KYC envoyée",
-        body: "Votre dossier de vérification est en cours d'examen. Réponse sous 24–48h ouvrées.",
+        message: "Votre dossier de vérification est en cours d'examen. Réponse sous 24–48h ouvrées.",
+        link: "/dashboard?tab=kyc",
         lu: false,
       }).catch(() => {});
 
@@ -297,7 +293,11 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
       showAppToast("Dossier envoyé — vérification sous 24–48h", "success", 5000);
     } catch (e) {
-      showAppToast("Erreur : " + (e?.message || "Connexion interrompue, réessayez") + " — vos données sont sauvegardées, réessayez.", "error", 6000);
+      const msg = e?.message || "";
+      const friendly = /failed to fetch|network|load failed/i.test(msg)
+        ? "Connexion instable — vérifiez votre réseau et réessayez"
+        : msg || "Connexion interrompue, réessayez";
+      showAppToast("Erreur : " + friendly + " — vos données sont sauvegardées, réessayez.", "error", 6000);
     }
     setSaving(false);
   };
