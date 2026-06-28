@@ -1,0 +1,522 @@
+/**
+ * Dashboard mobile — buyer, seller, admin
+ * Loaded after yorix-mobile.css for member & admin panels.
+ */
+
+button.dash-nav-item,
+button.admin-nav-item {
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+button.dash-nav-item {
+  border: none;
+  background: transparent;
+  width: 100%;
+}
+
+button.admin-nav-item {
+  border: none;
+  background: transparent;
+  width: 100%;
+  color: inherit;
+}
+
+.admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin-top: 16px;
+}
+
+@media (min-width: 769px) {
+  .admin-nav-scroll {
+    display: block;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .admin-nav-scroll .admin-nav-item {
+    display: flex;
+    border-radius: 0;
+    width: 100%;
+    min-height: auto;
+    background: transparent;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ── Layout commun ── */
+  .dash-layout--member {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    min-height: auto !important;
+  }
+
+  .dash-layout--member .dash-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    position: sticky !important;
+    top: 56px !important;
+    z-index: 210 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: 0 4px 18px rgba(13, 31, 20, 0.06) !important;
+    background: var(--surface) !important;
+  }
+
+  /* Barre profil compacte */
+  .dash-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface2) 100%);
+  }
+
+  .dash-mobile-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .dash-avatar--sm {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1rem !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+  }
+
+  .dash-mobile-user-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .dash-name--inline {
+    text-align: left !important;
+    font-size: 0.82rem !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .dash-mobile-user-meta .role-chip {
+    align-self: flex-start;
+    font-size: 0.62rem;
+    padding: 2px 8px;
+  }
+
+  .dash-mobile-logout {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(206, 17, 38, 0.2);
+    border-radius: 12px;
+    background: #fff5f5;
+    color: var(--red, #ce1126);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .dash-mobile-logout:active {
+    transform: scale(0.96);
+    background: #ffe8e8;
+  }
+
+  /* Masquer ancien bloc profil desktop dans la sidebar */
+  .dash-layout--member .dash-sidebar > .dash-avatar:not(.dash-avatar--sm),
+  .dash-layout--member .dash-sidebar > .dash-name:not(.dash-name--inline),
+  .dash-layout--member .dash-sidebar > .dash-role-badge {
+    display: none !important;
+  }
+
+  /* Nav pills horizontale */
+  .dash-nav--pills {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 10px 14px !important;
+    min-width: 0 !important;
+  }
+
+  .dash-nav--pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dash-nav--pills .dash-nav-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-height: 44px;
+    padding: 8px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600;
+    border-radius: 999px !important;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--gray);
+    transform: none !important;
+    touch-action: manipulation;
+  }
+
+  .dash-nav--pills .dash-nav-item.active {
+    background: var(--green-pale);
+    border-color: var(--green-light);
+    color: var(--green);
+    box-shadow: 0 2px 8px rgba(26, 107, 58, 0.12);
+  }
+
+  .dash-nav--pills .dash-nav-item:active {
+    transform: scale(0.97) !important;
+  }
+
+  .dash-layout--member .dash-content {
+    padding: 16px 14px calc(88px + env(safe-area-inset-bottom)) !important;
+    min-width: 0 !important;
+  }
+
+  .dash-page-title {
+    font-size: 1.2rem !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.03em;
+  }
+
+  .dash-section-title {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  /* Stats modernes */
+  .dash-stats,
+  .yx-dash-stat-grid,
+  .stat-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .dstat,
+  .stat-card {
+    border-radius: 14px !important;
+    padding: 14px 12px !important;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dstat::before,
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), #4fd17d);
+    opacity: 0.35;
+  }
+
+  .dstat-val,
+  .stat-card-val {
+    font-size: 1.15rem !important;
+    word-break: break-word;
+  }
+
+  .dstat-lbl,
+  .stat-card-lbl {
+    font-size: 0.64rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Commandes */
+  .order-card {
+    flex-wrap: wrap;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .oc-actions {
+    width: 100%;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .btn-action-sm {
+    min-height: 40px;
+    padding: 8px 12px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* Formulaire vendeur */
+  .prod-form {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .dash-wallet-grid,
+  .dash-form-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-page-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .dash-page-toolbar .dash-page-title {
+    margin-bottom: 0 !important;
+  }
+
+  .dash-page-toolbar .form-submit,
+  .dash-page-toolbar button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Empty states */
+  .empty-state {
+    padding: 28px 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .empty-state .form-submit {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  /* ── Admin ── */
+  .admin-layout {
+    min-height: calc(100dvh - 56px) !important;
+  }
+
+  .admin-layout-inner {
+    flex-direction: column !important;
+  }
+
+  .admin-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    position: sticky !important;
+    top: 56px !important;
+    z-index: 210 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #0a1a10 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .admin-mobile-quickbar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .admin-mobile-quickbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-quick-stat {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    min-width: 72px;
+  }
+
+  .admin-quick-stat-val {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #4fd17d;
+    line-height: 1;
+  }
+
+  .admin-quick-stat-lbl {
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .admin-nav-scroll {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 4px !important;
+    padding: 8px 12px !important;
+  }
+
+  .admin-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-nav-scroll .admin-nav-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-left: none !important;
+    border-bottom: none !important;
+    border-radius: 999px !important;
+    padding: 8px 14px !important;
+    min-height: 44px;
+    font-size: 0.76rem !important;
+    background: rgba(255, 255, 255, 0.04);
+    touch-action: manipulation;
+  }
+
+  .admin-nav-scroll .admin-nav-item.active {
+    background: rgba(79, 209, 125, 0.18) !important;
+    color: #4fd17d !important;
+    box-shadow: inset 0 0 0 1px rgba(79, 209, 125, 0.35);
+  }
+
+  .admin-sidebar-logo,
+  .admin-sidebar-footer,
+  .admin-sidebar-stats {
+    display: none !important;
+  }
+
+  .admin-mobile-actions {
+    display: flex;
+    gap: 8px;
+    padding: 0 12px 10px;
+  }
+
+  .admin-mobile-actions button {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .admin-content {
+    padding: 14px 12px calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .admin-page-title {
+    font-size: 1.15rem !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-filter-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .admin-search {
+    max-width: none !important;
+    min-height: 44px;
+  }
+
+  .admin-section {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .admin-table-wrap {
+    position: relative;
+    margin: 0 -4px;
+    padding: 0 4px 4px;
+  }
+
+  .admin-table-wrap::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 28px;
+    background: linear-gradient(90deg, transparent, var(--bg, #f7f5f2));
+    pointer-events: none;
+  }
+
+  .admin-action-btn {
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Masquer bottom nav sur admin */
+  body.page-admin .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  body.page-admin .yx-back-to-top {
+    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .dash-mobile-bar,
+  .admin-mobile-quickbar,
+  .admin-mobile-actions {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-stats,
+  .yx-dash-stat-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .dstat-val {
+    font-size: 1rem !important;
+  }
+}

@@ -99,10 +99,7 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
             ))}
           </div>
           <CreditScorePanel user={user} locale="fr" />
-          <div style={{
-            fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem",
-            color: "var(--ink)", marginBottom: 12,
-          }}>
+          <div className="dash-section-title">
             Mes dernières commandes
           </div>
           {loadingOrders ? (

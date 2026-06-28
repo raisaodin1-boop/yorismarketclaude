@@ -211,6 +211,14 @@ export default function YorixApp() {
   }, []);
 
   useEffect(() => {
+    document.body.classList.toggle("page-admin", page === "admin");
+    document.body.classList.toggle("page-dashboard", page === "dashboard");
+    return () => {
+      document.body.classList.remove("page-admin", "page-dashboard");
+    };
+  }, [page]);
+
+  useEffect(() => {
     if (!navQuickOpen) return undefined;
     const close = (e) => {
       if (navQuickRef.current && !navQuickRef.current.contains(e.target)) setNavQuickOpen(false);

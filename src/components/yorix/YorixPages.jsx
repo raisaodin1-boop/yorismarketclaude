@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Bell, Settings, Eye, Lock } from "lucide-react";
+import { Bell, Settings, Eye, Lock, LogOut } from "lucide-react";
 import { AuthGate } from "../ui/AuthGate";
 import { buildEntitySlug, CITY_BY_SLUG } from "../../lib/seoRoutes";
 import { WhatsAppFab } from "../WhatsAppFab";
@@ -446,8 +446,24 @@ export function YorixPages({ ctx }) {
 
       {page === "dashboard" &&
         (user ? (
-          <div className="dash-layout anim">
-            <div className="dash-sidebar">
+          <div className="dash-layout dash-layout--member anim">
+            <aside className="dash-sidebar" aria-label="Navigation espace membre">
+              <div className="dash-mobile-bar">
+                <div className="dash-mobile-user">
+                  <div className="dash-avatar dash-avatar--sm" aria-hidden="true">
+                    {userData?.nom?.[0] || "U"}
+                  </div>
+                  <div className="dash-mobile-user-meta">
+                    <div className="dash-name dash-name--inline" title={userData?.nom || user.email}>
+                      {userData?.nom || user.email?.split("@")[0] || "Utilisateur"}
+                    </div>
+                    <span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole || "buyer"]}</span>
+                  </div>
+                </div>
+                <button type="button" className="dash-mobile-logout" onClick={doLogout} aria-label="Déconnexion">
+                  <LogOut size={18} strokeWidth={2.25} aria-hidden />
+                </button>
+              </div>
               <div className="dash-avatar">{userData?.nom?.[0] || "U"}</div>
               <div className="dash-name" title={userData?.nom || user.email}>
                 {userData?.nom || user.email?.split("@")[0] || "Utilisateur"}
@@ -455,30 +471,28 @@ export function YorixPages({ ctx }) {
               <div className="dash-role-badge">
                 <span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole || "buyer"]}</span>
               </div>
-              <div className="dash-nav">
+              <nav className="dash-nav dash-nav--pills" aria-label="Onglets du tableau de bord">
                 {getDashNav().map((item) => (
-                  <div
+                  <button
+                    type="button"
                     key={item.id}
                     className={`dash-nav-item${dashTab === item.id ? " active" : ""}`}
                     onClick={() => setDashTab(item.id)}
                   >
                     {item.icon} {item.label}
-                  </div>
+                  </button>
                 ))}
-                <div className="dash-nav-divider" />
-                <div
+                <button
+                  type="button"
                   className={`dash-nav-item${dashTab === "messages" ? " active" : ""}`}
                   onClick={() => setDashTab("messages")}
                 >
                   💬 Messages
-                </div>
-                <div className="dash-nav-item" onClick={doLogout} style={{ color: "var(--red)" }}>
-                  🚪 Déconnexion
-                </div>
-              </div>
-            </div>
+                </button>
+              </nav>
+            </aside>
 
-            <div className="dash-content">
+            <main className="dash-content">
               {dashTab === "messages" && (
                 <>
                   <div className="dash-page-title">💬 Messagerie Yorix</div>
@@ -530,7 +544,7 @@ export function YorixPages({ ctx }) {
                   />
                 </Suspense>
               )}
-            </div>
+            </main>
           </div>
         ) : (
           <AuthGate
