@@ -1,4 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from "react";
+import { VariantPickerModal } from "./VariantPickerModal";
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
@@ -29,13 +30,21 @@ export function ProdGrid({
   siteLocale = "fr",
   showShare = false,
 }) {
-  const [ficheOpen, setFicheOpen] = useState(null);
-  const [cmdOpen, setCmdOpen]     = useState(null);
-  const [addedIds, setAddedIds]   = useState(new Set());
+  const [ficheOpen, setFicheOpen]           = useState(null);
+  const [cmdOpen, setCmdOpen]               = useState(null);
+  const [addedIds, setAddedIds]             = useState(new Set());
+  const [variantPickerProd, setVariantPickerProd] = useState(null);
 
-  const handleAdd = useCallback((p) => {
+  const handleAdd = useCallback((p, variant = null) => {
     if (!isPurchasable(p)) return;
-    onAddToCart(p);
+    if (p.has_variants && Array.isArray(p.variants) && p.variants.length > 0 && !variant) {
+      setVariantPickerProd(p);
+      return;
+    }
+    const cartProduct = variant
+      ? { ...p, prix: variant.prix, stock: variant.stock, _variantId: variant.id, _variantLabel: variant.label }
+      : p;
+    onAddToCart(cartProduct);
     showAppToast(`✓ ${(p.name_fr || "Produit").slice(0, 32)} ajouté au panier`, "success", 2200);
     setAddedIds((prev) => {
       const next = new Set(prev);
@@ -272,6 +281,16 @@ export function ProdGrid({
           user={user}
           userData={userData}
           onClose={() => setCmdOpen(null)}
+        />
+      )}
+      {variantPickerProd && (
+        <VariantPickerModal
+          product={variantPickerProd}
+          onClose={() => setVariantPickerProd(null)}
+          onConfirm={(variant) => {
+            handleAdd(variantPickerProd, variant);
+            setVariantPickerProd(null);
+          }}
         />
       )}
     </>
