@@ -1,5 +1,5 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
-import { productMoq } from "./productCardMeta.js";
+import { productMoq } from "./productMoq.js";
 import {
   computeTopNewProducts,
   computeTrendingProducts,

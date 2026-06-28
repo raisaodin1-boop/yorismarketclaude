@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ProdGrid } from "../components/ProdGrid";
 import { MERCH_HUBS } from "../lib/merchHubs";
-import { productMoq } from "../lib/productCardMeta";
+import { productMoq } from "../lib/productMoq.js";
 import { useMerchHubProducts } from "../hooks/useMerchHubProducts";
 import "./merchHubPage.css";
 

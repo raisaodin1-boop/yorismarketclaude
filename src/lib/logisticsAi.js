@@ -1,4 +1,4 @@
-import { suggererCommissionLivreur } from "../utils/deliveryWorkflow";
+import { suggererCommissionLivreur } from "../utils/deliveryWorkflow.js";
 
 const METRO = ["douala", "yaound"];
 

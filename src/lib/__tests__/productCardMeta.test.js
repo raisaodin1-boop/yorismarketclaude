@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { productMoq, productMoqLabel, productProtectScore } from "../productCardMeta.js";
+import { productMoq, productMoqLabel } from "../productMoq.js";
+import { productProtectScore } from "../productCardMeta.js";
 
 describe("productCardMeta", () => {
   it("defaults MOQ to 1", () => {

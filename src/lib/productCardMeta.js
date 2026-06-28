@@ -1,17 +1,8 @@
 import { computeProtectPlus } from "./protectPlus.js";
 import { explainDeliveryEta } from "./logisticsAi.js";
+import { productMoq, productMoqLabel } from "./productMoq.js";
 
-/** Quantité minimum de commande (défaut 1 pièce). */
-export function productMoq(product) {
-  const n = Number(product?.moq ?? product?.moq_min ?? 1);
-  return Number.isFinite(n) && n >= 1 ? Math.round(n) : 1;
-}
-
-export function productMoqLabel(product, locale = "fr") {
-  const moq = productMoq(product);
-  if (locale === "en") return moq <= 1 ? "1 pc min." : `MOQ ${moq} pcs`;
-  return moq <= 1 ? "1 pc min." : `MOQ ${moq} pcs`;
-}
+export { productMoq, productMoqLabel };
 
 /** Fenêtre livraison courte pour carte produit. */
 export function productDeliveryShort(product, locale = "fr") {
