@@ -2046,9 +2046,9 @@ export function AdminDashboard({ user, userData, goPage }) {
             {/* Modal de décision KYC */}
             {kycModal && (
               <div className="modal-overlay" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setKycModal(null)}>
-                <div className="modal" style={{ maxWidth: 480, width: "calc(100vw - 32px)", borderRadius: 18 }}>
+                <div className="modal" style={{ maxWidth: 560, width: "calc(100vw - 32px)", borderRadius: 18, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
                   {/* Header */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 12px", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 12px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
                     <div>
                       <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
                         {kycAction === "approve" && "✅ Valider l'identité"}
@@ -2056,7 +2056,8 @@ export function AdminDashboard({ user, userData, goPage }) {
                         {kycAction === "info"    && "💬 Demander des informations"}
                       </div>
                       <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: 2 }}>
-                        {kycModal.sellerInfo?.nom || "Vendeur"} · {({ cni: "CNI", passport: "Passeport", rccm: "RCCM", other: "Autre" })[kycModal.kyc.doc_type] || kycModal.kyc.doc_type}
+                        {kycModal.kyc.full_name || kycModal.sellerInfo?.nom || "Vendeur"}
+                        {kycModal.kyc.kyc_level && <span style={{ marginLeft: 6, background: kycModal.kyc.kyc_level === "full" ? "#d1fae5" : "#fef3c7", color: kycModal.kyc.kyc_level === "full" ? "#065f46" : "#92400e", borderRadius: 4, padding: "1px 6px", fontWeight: 700, fontSize: ".68rem" }}>{kycModal.kyc.kyc_level === "full" ? "KYC Complet" : "KYC Lite"}</span>}
                       </div>
                     </div>
                     <button className="modal-close" onClick={() => setKycModal(null)} aria-label="Fermer">
@@ -2064,26 +2065,64 @@ export function AdminDashboard({ user, userData, goPage }) {
                     </button>
                   </div>
 
-                  <div style={{ padding: "16px 20px" }}>
+                  <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
+                    {/* Informations identité */}
+                    {(() => {
+                      const k = kycModal.kyc;
+                      const rows = [
+                        k.full_name    && ["👤 Nom complet",       k.full_name],
+                        k.birth_date   && ["🎂 Date de naissance", new Date(k.birth_date).toLocaleDateString("fr-FR")],
+                        k.birth_place  && ["📍 Lieu de naissance", k.birth_place],
+                        k.cni_number   && ["🪪 N° CNI",            k.cni_number],
+                        k.cni_expiry   && ["📅 Expiration CNI",    new Date(k.cni_expiry).toLocaleDateString("fr-FR")],
+                        k.phone        && ["📞 Téléphone",         k.phone],
+                        k.email        && ["✉️ Email",              k.email],
+                        k.whatsapp     && ["💬 WhatsApp",          k.whatsapp],
+                        k.seller_type  && ["🏷 Type",              k.seller_type === "entreprise" ? "Entreprise" : "Particulier"],
+                        k.company_name && ["🏢 Raison sociale",   k.company_name],
+                        k.rccm         && ["📋 RCCM",              k.rccm],
+                        (k.city || k.country) && ["🌍 Localisation", [k.quartier, k.city, k.country].filter(Boolean).join(", ")],
+                        k.address      && ["🗺 Adresse",           k.address],
+                      ].filter(Boolean);
+                      if (!rows.length) return null;
+                      return (
+                        <div style={{ background: "var(--surface2)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: ".78rem" }}>
+                          {rows.map(([label, val]) => (
+                            <div key={label} style={{ display: "flex", gap: 8, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
+                              <span style={{ color: "var(--gray)", minWidth: 140, flexShrink: 0 }}>{label}</span>
+                              <span style={{ color: "var(--ink)", fontWeight: 600, wordBreak: "break-word" }}>{val}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
                     {/* Aperçu documents */}
-                    {(kycModal.kyc.doc_url || kycModal.kyc.doc_url2) && (
-                      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                        {kycModal.kyc.doc_url && (
-                          <a href={kycModal.kyc.doc_url} target="_blank" rel="noreferrer" style={{ flex: 1, display: "block", borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", textDecoration: "none" }}>
-                            <img src={kycModal.kyc.doc_url} alt="Recto" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }}
-                              onError={e => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }} />
-                            <div style={{ display: "none", height: 80, alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#1d4ed8", fontSize: ".78rem", fontWeight: 700 }}>📄 Voir le doc recto</div>
-                          </a>
-                        )}
-                        {kycModal.kyc.doc_url2 && (
-                          <a href={kycModal.kyc.doc_url2} target="_blank" rel="noreferrer" style={{ flex: 1, display: "block", borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", textDecoration: "none" }}>
-                            <img src={kycModal.kyc.doc_url2} alt="Verso" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }}
-                              onError={e => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }} />
-                            <div style={{ display: "none", height: 80, alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#1d4ed8", fontSize: ".78rem", fontWeight: 700 }}>📄 Voir le doc verso</div>
-                          </a>
-                        )}
-                      </div>
-                    )}
+                    {(() => {
+                      const k = kycModal.kyc;
+                      const docs = [
+                        k.doc_url      && ["CNI Recto",    k.doc_url],
+                        k.doc_url2     && ["CNI Verso",    k.doc_url2],
+                        k.selfie_url   && ["Selfie + CNI", k.selfie_url],
+                        k.shop_photo_url && ["Photo boutique", k.shop_photo_url],
+                      ].filter(Boolean);
+                      if (!docs.length) return null;
+                      return (
+                        <div style={{ marginBottom: 16 }}>
+                          <div style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--gray)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em" }}>Documents ({docs.length})</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                            {docs.map(([label, url]) => (
+                              <a key={label} href={url} target="_blank" rel="noreferrer" style={{ display: "block", borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", textDecoration: "none" }}>
+                                <img src={url} alt={label} style={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
+                                  onError={e => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }} />
+                                <div style={{ display: "none", height: 70, alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#1d4ed8", fontSize: ".72rem", fontWeight: 700 }}>📄 {label}</div>
+                                <div style={{ padding: "4px 8px", fontSize: ".68rem", fontWeight: 700, color: "var(--gray)", background: "var(--surface2)" }}>{label}</div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {kycAction === "approve" && (
                       <div style={{ background: "#d1fae5", border: "1px solid #6ee7b7", borderRadius: 10, padding: "12px 14px", fontSize: ".82rem", color: "#065f46", marginBottom: 16 }}>
