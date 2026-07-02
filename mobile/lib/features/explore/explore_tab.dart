@@ -79,7 +79,7 @@ class ExploreTab extends StatelessWidget {
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.58,
+                          childAspectRatio: 0.50,
                         ),
                         itemCount: catalog.filtered.length,
                         itemBuilder: (context, i) => ProductCardModern(

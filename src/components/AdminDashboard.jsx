@@ -377,7 +377,8 @@ export function AdminDashboard({ user, userData, goPage }) {
         user_id: kycModal.kyc.user_id,
         type:    "kyc",
         title:   kycAction === "approve" ? "Identité vérifiée ✓" : kycAction === "reject" ? "Vérification refusée" : "Informations complémentaires requises",
-        body:    notifBody,
+        message: notifBody,
+        link:    "/dashboard?tab=kyc",
         lu:      false,
       });
 

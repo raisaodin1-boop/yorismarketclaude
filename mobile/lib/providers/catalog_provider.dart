@@ -38,20 +38,31 @@ class CatalogProvider extends ChangeNotifier {
       final cat = _categoryFilter!.toLowerCase();
       list = list.where((p) {
         final c = (p.category ?? '').toLowerCase();
-        return c.contains(cat) || cat.contains(c);
+        if (c.isEmpty) return false;
+        return c == cat || c.contains(cat) || cat.contains(c);
       }).toList();
     }
     if (_query.trim().isNotEmpty) {
-      final q = _query.trim().toLowerCase();
-      list = list
-          .where(
-            (p) =>
-                p.name.toLowerCase().contains(q) ||
-                (p.description ?? '').toLowerCase().contains(q),
-          )
-          .toList();
+      list = _applyQuery(list, _query);
     }
     return list;
+  }
+
+  /// Recherche globale (ignore le filtre catégorie) — écran recherche dédié.
+  List<Product> searchAll(String q) => _applyQuery(_all, q);
+
+  List<Product> _applyQuery(List<Product> list, String q) {
+    final query = q.trim().toLowerCase();
+    if (query.isEmpty) return list;
+    return list
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(query) ||
+              (p.description ?? '').toLowerCase().contains(query) ||
+              (p.category ?? '').toLowerCase().contains(query) ||
+              (p.city ?? '').toLowerCase().contains(query),
+        )
+        .toList();
   }
 
   Future<void> load() async {
