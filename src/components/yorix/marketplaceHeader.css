@@ -211,3 +211,29 @@
   border-color: var(--green);
   color: #fff;
 }
+
+/* Header scroll fix:
+   keep only the main navbar sticky so the rest can scroll away. */
+@media (min-width: 769px) {
+  .header-sticky-stack {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .header-sticky-stack .navbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 445 !important;
+    background: var(--surface) !important;
+  }
+
+  .header-sticky-stack .topbar,
+  .header-sticky-stack .nav-tabs-row,
+  .header-sticky-stack .yorix-cat-bar,
+  .header-sticky-stack .yorix-trust-strip,
+  .header-sticky-stack .yorix-emotional-nav,
+  .header-sticky-stack .pay-strip {
+    position: static !important;
+    top: auto !important;
+  }
+}
