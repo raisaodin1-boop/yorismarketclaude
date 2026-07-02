@@ -223,6 +223,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     try {
       const compressed = await compressImage(file);
       const url = await uploadCloudinaryFile(compressed, { folder: `kyc/${userId}` });
+      // Sauvegarder immédiatement l'URL en base (draft) pour ne pas perdre l'upload
       const field = slotToField[slot];
       if (field) saveDraft({ [field]: url });
       return url;
