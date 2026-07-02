@@ -7,6 +7,7 @@ import '../features/home/home_tab.dart';
 import '../features/product/product_detail_screen.dart';
 import '../features/profile/profile_tab.dart';
 import '../features/sourcer/sourcer_tab.dart';
+import '../features/search/search_screen.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 
@@ -22,11 +23,18 @@ class _MainShellState extends State<MainShell> {
 
   void _openProduct(Product product) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ProductDetailScreen(product: product)),
+      MaterialPageRoute<void>(
+        builder: (_) => ProductDetailScreen(
+          product: product,
+          onGoToCart: _goCart,
+        ),
+      ),
     );
   }
 
   void _goExplore() => setState(() => _index = 1);
+
+  void _goCart() => setState(() => _index = 3);
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +44,15 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          HomeTab(onProductTap: _openProduct, onExplore: _goExplore),
+          HomeTab(
+            onProductTap: _openProduct,
+            onExplore: _goExplore,
+            onOpenSearch: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SearchScreen(onGoToCart: _goCart),
+              ),
+            ),
+          ),
           ExploreTab(onProductTap: _openProduct),
           SourcerTab(onProductTap: _openProduct),
           const CartTab(),

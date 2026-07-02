@@ -9,20 +9,17 @@ import '../../utils/format.dart';
 import '../product/product_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.onGoToCart});
+
+  final VoidCallback? onGoToCart;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: context.read<CatalogProvider>().query);
-  }
+  final _controller = TextEditingController();
+  String _query = '';
 
   @override
   void dispose() {
@@ -32,14 +29,19 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _openProduct(Product p) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ProductDetailScreen(product: p)),
+      MaterialPageRoute<void>(
+        builder: (_) => ProductDetailScreen(
+          product: p,
+          onGoToCart: widget.onGoToCart,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
-    final results = catalog.filtered;
+    final results = catalog.searchAll(_query);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,15 +49,15 @@ class _SearchScreenState extends State<SearchScreen> {
           controller: _controller,
           autofocus: true,
           decoration: const InputDecoration(hintText: 'Rechercher…', border: InputBorder.none),
-          onChanged: catalog.setQuery,
+          onChanged: (v) => setState(() => _query = v),
         ),
         actions: [
-          if (catalog.query.isNotEmpty)
+          if (_query.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.clear),
               onPressed: () {
                 _controller.clear();
-                catalog.setQuery('');
+                setState(() => _query = '');
               },
             ),
         ],
@@ -63,7 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
       body: results.isEmpty
           ? Center(
               child: Text(
-                catalog.query.isEmpty ? 'Tapez pour rechercher' : 'Aucun résultat',
+                _query.isEmpty ? 'Tapez pour rechercher' : 'Aucun résultat',
                 style: const TextStyle(color: YorixColors.gray),
               ),
             )

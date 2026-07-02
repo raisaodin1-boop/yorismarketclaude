@@ -11,9 +11,14 @@ import '../../utils/format.dart';
 import '../../utils/product_meta.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key, required this.product});
+  const ProductDetailScreen({
+    super.key,
+    required this.product,
+    this.onGoToCart,
+  });
 
   final Product product;
+  final VoidCallback? onGoToCart;
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -57,7 +62,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         action: ok
             ? SnackBarAction(
                 label: 'Voir',
-                onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+                onPressed: () {
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                  widget.onGoToCart?.call();
+                },
               )
             : null,
       ),

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import '../utils/product_meta.dart';
+import '../core/config/env.dart';
 
 class Product {
   Product({
@@ -118,16 +121,46 @@ class Product {
 
   static List<String> _imageUrls(Map<String, dynamic> json) {
     final out = <String>[];
-    final direct = json['image']?.toString();
-    if (direct != null && direct.startsWith('http')) out.add(direct);
+    void addUrl(String? raw) {
+      final resolved = _resolveUrl(raw);
+      if (resolved != null && !out.contains(resolved)) out.add(resolved);
+    }
+
+    addUrl(json['image']?.toString());
     final urls = json['image_urls'];
     if (urls is List) {
       for (final u in urls) {
-        final s = u?.toString();
-        if (s != null && s.startsWith('http') && !out.contains(s)) out.add(s);
+        addUrl(u?.toString());
+      }
+    } else if (urls is String && urls.trim().isNotEmpty) {
+      try {
+        final parsed = jsonDecode(urls);
+        if (parsed is List) {
+          for (final u in parsed) {
+            addUrl(u?.toString());
+          }
+        }
+      } catch (_) {
+        addUrl(urls);
       }
     }
     return out;
+  }
+
+  static String? _resolveUrl(String? raw) {
+    if (raw == null) return null;
+    final url = raw.trim();
+    if (url.isEmpty) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    // Chemins Supabase Storage (bucket/products/…)
+    if (url.contains('/storage/v1/object/public/')) {
+      return url.startsWith('http') ? url : '${Env.supabaseUrl}$url';
+    }
+    final path = url.startsWith('/') ? url.substring(1) : url;
+    if (path.contains('/')) {
+      return '${Env.supabaseUrl}/storage/v1/object/public/$path';
+    }
+    return null;
   }
 
   static String? _imageUrl(Map<String, dynamic> json) {

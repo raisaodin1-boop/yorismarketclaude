@@ -15,10 +15,12 @@ class HomeTab extends StatelessWidget {
     super.key,
     required this.onProductTap,
     required this.onExplore,
+    required this.onOpenSearch,
   });
 
   final void Function(Product) onProductTap;
   final VoidCallback onExplore;
+  final VoidCallback onOpenSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,7 @@ class HomeTab extends StatelessWidget {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          SliverToBoxAdapter(child: _HomeHeader(onSearch: () => _openSearch(context))),
+          SliverToBoxAdapter(child: _HomeHeader(onSearch: onOpenSearch)),
           SliverToBoxAdapter(child: _PromoBanner()),
           SliverToBoxAdapter(child: _TrustRow()),
           if (catalog.loading && catalog.all.isEmpty)
@@ -42,7 +44,7 @@ class HomeTab extends StatelessWidget {
               child: _CategoryStrip(
                 categories: catalog.categories,
                 onSelect: (c) {
-                  catalog.setCategory(c.name);
+                  catalog.setCategory(c.slug.isNotEmpty ? c.slug : c.name);
                   onExplore();
                 },
               ),
@@ -83,7 +85,7 @@ class HomeTab extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.58,
+                  childAspectRatio: 0.50,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -101,12 +103,6 @@ class HomeTab extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-
-  void _openSearch(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
     );
   }
 }

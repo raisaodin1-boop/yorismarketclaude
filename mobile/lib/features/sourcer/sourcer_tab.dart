@@ -5,7 +5,6 @@ import '../../core/theme/yorix_theme.dart';
 import '../../core/widgets/product_card_modern.dart';
 import '../../models/product.dart';
 import '../../providers/catalog_provider.dart';
-import '../../utils/product_meta.dart';
 
 /// Hub « Sourcer en gros » — produits vérifiés / volume (filtre MOQ client).
 class SourcerTab extends StatefulWidget {
@@ -40,68 +39,86 @@ class _SourcerTabState extends State<SourcerTab> {
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
-    final products = _filter(catalog.filtered);
+    final products = _filter(catalog.all);
 
-    return Scaffold(
-      backgroundColor: YorixColors.surface,
-      appBar: AppBar(
-        title: const Text('Sourcer en gros'),
-        backgroundColor: YorixColors.card,
-        foregroundColor: YorixColors.ink,
-        elevation: 0,
-      ),
-      body: catalog.loading
-          ? const Center(child: CircularProgressIndicator(color: YorixColors.green))
-          : CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    child: Text(
-                      'Fournisseurs vérifiés, MOQ et Protect+ — idéal pour boutiques et distributeurs.',
-                      style: TextStyle(color: YorixColors.gray.withValues(alpha: 0.95), fontSize: 13),
-                    ),
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sourcer en gros',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                SliverToBoxAdapter(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        _MoqChip(label: 'Tous', id: 'all', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
-                        _MoqChip(label: '1 pc', id: '1', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
-                        _MoqChip(label: 'MOQ 5+', id: '5', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
-                        _MoqChip(label: 'MOQ 10+', id: '10', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
-                      ],
-                    ),
-                  ),
+                const SizedBox(height: 6),
+                Text(
+                  'Fournisseurs vérifiés, MOQ et Protect+ — idéal pour boutiques et distributeurs.',
+                  style: TextStyle(color: YorixColors.gray.withValues(alpha: 0.95), fontSize: 13),
                 ),
-                if (products.isEmpty)
-                  const SliverFillRemaining(
-                    child: Center(child: Text('Aucun produit pour ce filtre MOQ.')),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.all(16),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.62,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, i) => ProductCardModern(
-                          product: products[i],
-                          onTap: () => widget.onProductTap(products[i]),
-                        ),
-                      ),
-                      childCount: products.length,
-                    ),
-                  ),
               ],
             ),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              _MoqChip(label: 'Tous', id: 'all', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
+              _MoqChip(label: '1 pc', id: '1', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
+              _MoqChip(label: 'MOQ 5+', id: '5', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
+              _MoqChip(label: 'MOQ 10+', id: '10', selected: _moqFilter, onTap: (v) => setState(() => _moqFilter = v)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: catalog.loading && catalog.all.isEmpty
+              ? const Center(child: CircularProgressIndicator(color: YorixColors.green))
+              : catalog.error != null && catalog.all.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.cloud_off, size: 48, color: YorixColors.gray),
+                            const SizedBox(height: 12),
+                            Text(catalog.error!, textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            FilledButton(onPressed: catalog.load, child: const Text('Réessayer')),
+                          ],
+                        ),
+                      ),
+                    )
+                  : products.isEmpty
+                      ? const Center(child: Text('Aucun produit pour ce filtre MOQ.'))
+                      : RefreshIndicator(
+                          color: YorixColors.green,
+                          onRefresh: catalog.load,
+                          child: GridView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.50,
+                            ),
+                            itemCount: products.length,
+                            itemBuilder: (context, i) => ProductCardModern(
+                              product: products[i],
+                              onTap: () => widget.onProductTap(products[i]),
+                            ),
+                          ),
+                        ),
+        ),
+      ],
     );
   }
 }
