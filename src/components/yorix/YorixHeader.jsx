@@ -9,6 +9,7 @@ import { NAV_QUICK_ICONS, PAY_STRIP_ICONS, LucideIcon } from "../../lib/lucideNa
 import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
 import { CategoryMobileNav } from "../categories/CategoryMobileNav";
 import { NotificationBell } from "../NotificationBell";
+import { OptimizedImage } from "../OptimizedImage";
 import { Button } from "../ui/Button";
 import "../categories/categoryUi.css";
 import "./marketplaceHeader.css";
@@ -241,14 +242,13 @@ export function YorixHeader({
                         else goPage("produits");
                       }}
                     >
-                      {p.image ? (
-                        <img
-                          src={p.image}
-                          className="nav-search-dd-img"
+                      {(p.image?.startsWith("http") || (p.image_urls?.[0]?.startsWith("http"))) ? (
+                        <OptimizedImage
+                          src={p.image?.startsWith("http") ? p.image : p.image_urls![0]}
                           alt=""
-                          onError={(e) => {
-                            e.currentTarget.style.visibility = "hidden";
-                          }}
+                          size="thumb"
+                          className="nav-search-dd-img"
+                          style={{ width: 40, height: 40, minHeight: 40 }}
                         />
                       ) : (
                         <span className="nav-search-dd-img nav-search-dd-ph" aria-hidden>

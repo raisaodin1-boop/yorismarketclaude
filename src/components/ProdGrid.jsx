@@ -105,7 +105,7 @@ export function ProdGrid({
                   src={safeImg}
                   alt={p.name_fr || "Produit Yorix"}
                   size="card"
-                  priority={i === 0}
+                  priority={i < 4}
                   fallbackEmoji="📦"
                   style={{ width: "100%", height: "100%" }}
                 />

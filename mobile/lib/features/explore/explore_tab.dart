@@ -6,15 +6,46 @@ import '../../core/widgets/product_card_modern.dart';
 import '../../models/product.dart';
 import '../../providers/catalog_provider.dart';
 
-class ExploreTab extends StatelessWidget {
+class ExploreTab extends StatefulWidget {
   const ExploreTab({super.key, required this.onProductTap});
 
   final void Function(Product) onProductTap;
 
   @override
+  State<ExploreTab> createState() => _ExploreTabState();
+}
+
+class _ExploreTabState extends State<ExploreTab> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted || !_scrollController.hasClients) return;
+    final catalog = context.read<CatalogProvider>();
+    if (!catalog.canLoadMore) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 320) {
+      catalog.loadMoreVisible();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
     final filter = catalog.categoryFilter;
+    final products = catalog.filteredVisible;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,11 +100,12 @@ class ExploreTab extends StatelessWidget {
                         ),
                       ),
                     )
-              : catalog.filtered.isEmpty
+              : products.isEmpty
                   ? const Center(child: Text('Aucun produit trouvé'))
                   : RefreshIndicator(
                       onRefresh: catalog.load,
                       child: GridView.builder(
+                        controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -81,10 +113,10 @@ class ExploreTab extends StatelessWidget {
                           crossAxisSpacing: 12,
                           childAspectRatio: 0.50,
                         ),
-                        itemCount: catalog.filtered.length,
+                        itemCount: products.length,
                         itemBuilder: (context, i) => ProductCardModern(
-                          product: catalog.filtered[i],
-                          onTap: () => onProductTap(catalog.filtered[i]),
+                          product: products[i],
+                          onTap: () => widget.onProductTap(products[i]),
                         ),
                       ),
                     ),

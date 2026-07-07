@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,6 +16,7 @@ class CatalogProvider extends ChangeNotifier {
   final SupabaseClient _client;
 
   RealtimeChannel? _realtimeChannel;
+  Timer? _realtimeDebounce;
 
   List<Product> _all = [];
   List<MarketplaceCategory> _categories = List.of(kDefaultCategories);
@@ -21,6 +24,7 @@ class CatalogProvider extends ChangeNotifier {
   String? _error;
   String _query = '';
   String? _categoryFilter;
+  int _visibleLimit = 40;
 
   List<Product> get all => _all;
   List<MarketplaceCategory> get categories => _categories;
@@ -28,6 +32,7 @@ class CatalogProvider extends ChangeNotifier {
   String? get error => _error;
   String get query => _query;
   String? get categoryFilter => _categoryFilter;
+  int get visibleLimit => _visibleLimit;
 
   List<Product> get flashDeals =>
       _all.where((p) => p.promo || p.flash).take(12).toList();
@@ -47,6 +52,14 @@ class CatalogProvider extends ChangeNotifier {
     }
     return list;
   }
+
+  List<Product> get filteredVisible {
+    final list = filtered;
+    if (list.length <= _visibleLimit) return list;
+    return list.sublist(0, _visibleLimit);
+  }
+
+  bool get canLoadMore => filtered.length > _visibleLimit;
 
   /// Recherche globale (ignore le filtre catégorie) — écran recherche dédié.
   List<Product> searchAll(String q) => _applyQuery(_all, q);
@@ -70,12 +83,13 @@ class CatalogProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final productsFuture = _products.fetchCatalog(limit: 120);
+      final productsFuture = _products.fetchCatalog(limit: 60);
       final categoriesFuture = _categoryRepo.fetchFeatured();
       _all = await productsFuture;
       final cats = await categoriesFuture;
       if (cats.isNotEmpty) _categories = cats;
       _error = null;
+      _visibleLimit = 40;
       _ensureRealtime();
     } catch (e) {
       _error = 'Connexion impossible. Vérifiez votre réseau.';
@@ -86,6 +100,12 @@ class CatalogProvider extends ChangeNotifier {
     }
   }
 
+  void loadMoreVisible({int step = 40}) {
+    if (!canLoadMore) return;
+    _visibleLimit += step;
+    notifyListeners();
+  }
+
   void _ensureRealtime() {
     if (_realtimeChannel != null) return;
     _realtimeChannel = _client
@@ -94,30 +114,37 @@ class CatalogProvider extends ChangeNotifier {
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'products',
-          callback: (_) => load(),
+          callback: (_) {
+            _realtimeDebounce?.cancel();
+            _realtimeDebounce = Timer(const Duration(seconds: 5), load);
+          },
         )
         .subscribe();
   }
 
   @override
   void dispose() {
+    _realtimeDebounce?.cancel();
     _realtimeChannel?.unsubscribe();
     super.dispose();
   }
 
   void setQuery(String q) {
     _query = q;
+    _visibleLimit = 40;
     notifyListeners();
   }
 
   void setCategory(String? slugOrName) {
     _categoryFilter = slugOrName;
+    _visibleLimit = 40;
     notifyListeners();
   }
 
   void clearFilters() {
     _query = '';
     _categoryFilter = null;
+    _visibleLimit = 40;
     notifyListeners();
   }
 }

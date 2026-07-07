@@ -54,6 +54,30 @@ export function optimizeCloudinaryUrl(url, options = {}) {
   return url.replace(/\/upload\//, `/upload/${transforms}/`);
 }
 
+/**
+ * Optimise une URL image (Cloudinary ou Supabase Storage) pour affichage catalogue.
+ */
+export function optimizeImageUrl(url, options = {}) {
+  if (!url || typeof url !== "string") return url;
+  if (url.includes("cloudinary.com")) return optimizeCloudinaryUrl(url, options);
+
+  if (url.includes("/storage/v1/object/public/")) {
+    const width = options.width ?? 400;
+    const height = options.height;
+    const quality = typeof options.quality === "number" ? options.quality : 75;
+    const renderUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    const params = new URLSearchParams({
+      width: String(width),
+      quality: String(quality),
+      resize: height ? "cover" : "contain",
+    });
+    if (height) params.set("height", String(height));
+    return `${renderUrl}?${params}`;
+  }
+
+  return url;
+}
+
 // Tailles d'affichage du catalogue → transformations Cloudinary.
 export const CLOUDINARY_PRESETS = {
   thumb: { width: 80, height: 80, crop: "fill", quality: "auto" },
