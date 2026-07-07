@@ -197,15 +197,14 @@ export async function creditReferralBonusIfEligible(userId, orderId) {
     credited_at: new Date().toISOString(),
   }).eq("id", bonus.id);
 
-  // Notification au parrain
-  await supabase.from("notifications").insert({
-    user_id: profile.referrer_id,
-    type: "referral_bonus",
-    title: "🎉 Bonus parrainage débloqué !",
-    message: `Votre filleul vient de passer sa première commande. +${REFERRAL_BONUS_AMOUNT.toLocaleString("fr-FR")} FCFA crédités sur votre wallet Yorix.`,
-    link: "/dashboard",
-    priority: "important",
-    category: "referral",
-    lu: false,
+  // Notification au parrain (via RPC sécurisée)
+  await supabase.rpc("fn_publish_notification", {
+    p_user_id: profile.referrer_id,
+    p_type: "referral_bonus",
+    p_title: "🎉 Bonus parrainage débloqué !",
+    p_message: `Votre filleul vient de passer sa première commande. +${REFERRAL_BONUS_AMOUNT.toLocaleString("fr-FR")} FCFA crédités sur votre wallet Yorix.`,
+    p_link: "/dashboard",
+    p_priority: "important",
+    p_category: "referral",
   }).catch(() => {});
 }

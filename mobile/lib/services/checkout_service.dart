@@ -72,12 +72,15 @@ class CheckoutService {
     required String paymentMethod,
     required String address,
     String locationType = 'home',
+    String? idempotencyKey,
   }) {
     return _invoke('confirm_checkout', {
       'checkout_intent_id': checkoutIntentId,
       'payment_method': paymentMethod,
       'location_type': locationType,
       'address': address,
+      if (idempotencyKey != null && idempotencyKey.isNotEmpty)
+        'idempotency_key': idempotencyKey,
     });
   }
 

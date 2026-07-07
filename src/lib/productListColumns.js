@@ -32,6 +32,10 @@ export const PRODUCT_LIST_COLUMNS = [
   "actif",
   "is_archived",
   "hidden_from_marketplace",
+  "moq",
+  "b2b_enabled",
+  "prix_gros",
+  "min_qty_gros",
   "created_at",
 ].join(",");
 

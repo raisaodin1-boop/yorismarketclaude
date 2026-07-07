@@ -63,7 +63,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
           // INSERT ... ON CONFLICT DO NOTHING : ne jamais écraser un profil existant
           const pendingRole = localStorage.getItem("yorix_pending_role") || "buyer";
           const meta = oauthUserMeta.user_metadata || {};
-          await supabase.from("profiles").insert({
+          await supabase.from("profiles").upsert({
             id: uid,
             nom: meta.full_name || meta.name || oauthUserMeta.email || "",
             email: oauthUserMeta.email || "",
@@ -75,7 +75,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
             note: 0,
             nombre_avis: 0,
             total_commandes: 0,
-          });
+          }, { onConflict: "id", ignoreDuplicates: true });
           // Recharger après création
           const created = await getUserProfile(uid);
           if (created) {
@@ -240,7 +240,10 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         nombre_avis: 0,
         total_commandes: 0,
       });
-      if (profileError) console.error("Profile insert error:", profileError);
+      if (profileError) {
+        await supabase.auth.signOut();
+        throw new Error("Impossible de créer votre profil. Réessayez ou contactez le support.");
+      }
 
       await supabase
         .from("wallets")

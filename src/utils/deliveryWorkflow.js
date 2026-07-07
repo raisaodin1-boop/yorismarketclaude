@@ -509,7 +509,10 @@ export async function livreurRefuser({ delivery, user, userData, motif }) {
 
   // Notif admin : envoyer à tous les admins
   try {
-    const { data: admins } = await supabase.from("users").select("id").eq("role", "admin");
+    const { data: admins } = await supabase
+      .from("profiles")
+      .select("id")
+      .in("role", ["admin", "superadmin"]);
     for (const admin of admins || []) {
       await pushNotification({
         userId:  admin.id,
@@ -626,9 +629,9 @@ export async function creerDemandeLivraison({
   // Notif admin : envoyer à tous les utilisateurs avec rôle "admin"
   try {
     const { data: admins } = await supabase
-      .from("users")
+      .from("profiles")
       .select("id")
-      .eq("role", "admin");
+      .in("role", ["admin", "superadmin"]);
     for (const admin of admins || []) {
       await pushNotification({
         userId:  admin.id,

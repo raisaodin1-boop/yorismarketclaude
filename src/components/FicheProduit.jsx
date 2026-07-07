@@ -60,8 +60,9 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     supabase
       .from("orders")
       .select("id")
-      .eq("user_id", user.id)
-      .contains("items", [{ product_id: product.id }])
+      .eq("client_id", user.id)
+      .eq("product_id", product.id)
+      .in("status", ["livre", "validee", "paid", "completed"])
       .limit(1)
       .then(({ data }) => setHasVerifiedPurchase((data || []).length > 0));
   }, [user?.id, product.id]);

@@ -48,38 +48,18 @@ export function WalletWithdrawal({ userId, solde, onSuccess }) {
     setError("");
     setLoading(true);
     try {
-      // 1. Insérer la demande de retrait
-      const { error: txErr } = await supabase.from("wallet_transactions").insert({
-        user_id:          userId,
-        transaction_type: "withdrawal",
-        amount:           Number(amount),
-        currency:         "XAF",
-        status:           "pending",
-        provider:         method,
-        notes:            `Retrait vers ${method === "mtn_momo" ? "MTN MoMo" : "Orange Money"} — ${phone}`,
-        meta:             { phone: phone.replace(/\s/g,""), fee_pct: 3, net_amount: net },
+      const { data, error: rpcErr } = await supabase.rpc("fn_request_wallet_withdrawal", {
+        p_amount: Number(amount),
+        p_provider: method,
+        p_phone: phone.replace(/\s/g, ""),
+        p_notes: `Retrait vers ${method === "mtn_momo" ? "MTN MoMo" : "Orange Money"} — ${phone}`,
       });
-      if (txErr) throw txErr;
-
-      // 2. Déduire du solde
-      const { error: walErr } = await supabase
-        .from("wallets")
-        .update({ solde: solde - Number(amount), updated_at: new Date().toISOString() })
-        .eq("user_id", userId);
-      if (walErr) throw walErr;
-
-      // 3. Notif
-      await supabase.from("notifications").insert({
-        user_id: userId,
-        type:    "wallet",
-        title:   "Demande de retrait reçue",
-        body:    `Votre retrait de ${Number(amount).toLocaleString()} FCFA vers ${phone} est en traitement (sous 24h).`,
-        lu:      false,
-      });
+      if (rpcErr) throw rpcErr;
 
       setStep("done");
       onSuccess?.(Number(amount));
       showAppToast(`✅ Retrait de ${Number(amount).toLocaleString()} FCFA en cours`, "success", 5000);
+      if (!data) console.warn("[wallet] withdrawal RPC returned no id");
     } catch (e) {
       setError(e.message || "Erreur lors de la demande.");
     }

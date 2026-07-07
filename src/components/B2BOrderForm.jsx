@@ -20,31 +20,24 @@ export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
   const total    = Number(form.quantity || 0) * unitPrice;
 
   const handleSubmit = async () => {
+    if (!user?.id) { showAppToast("Connectez-vous pour envoyer une demande B2B", "error"); return; }
     if (!form.contact_name.trim()) { showAppToast("Nom du contact requis", "error"); return; }
-    if (!form.phone.replace(/s/g,"").match(/^d{8,}/)) { showAppToast("Numéro de téléphone invalide", "error"); return; }
+    if (!form.phone.replace(/\s/g, "").match(/^\d{8,}/)) { showAppToast("Numéro de téléphone invalide", "error"); return; }
     if (Number(form.quantity) < minQty) { showAppToast(`Quantité minimum : ${minQty} unités`, "error"); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.from("b2b_requests").insert({
-        buyer_id:     user?.id || null,
+        buyer_id:     user.id,
         product_id:   product.id,
         seller_id:    product.vendeur_id,
         company_name: form.company_name.trim() || null,
         contact_name: form.contact_name.trim(),
-        phone:        form.phone.replace(/s/g,""),
+        phone:        form.phone.replace(/\s/g, ""),
         email:        form.email.trim() || null,
         quantity:     Number(form.quantity),
         message:      form.message.trim() || null,
       }).select("id").single();
       if (error) throw error;
-
-      await supabase.from("notifications").insert({
-        user_id: product.vendeur_id,
-        type:    "b2b",
-        title:   "Nouvelle demande B2B",
-        body:    `${form.contact_name} veut commander ${Number(form.quantity).toLocaleString()} unités de "${product.name_fr}". Tél : ${form.phone}`,
-        lu:      false,
-      }).catch(() => {});
 
       setDone(data?.id || "OK");
       onSuccess?.();
