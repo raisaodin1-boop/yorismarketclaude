@@ -5470,24 +5470,24 @@ button{transition:transform .15s var(--yorix-ease-out,cubic-bezier(.16,1,.3,1)),
 
 /* ══════════════════════════════════════════════════════════════
    YORIX DESIGN SYSTEM v5 — Typography + Spacing + Premium Polish
-   Inter (body) · Plus Jakarta Sans (headings) · Syne (brand)
+   Inter (body) · Plus Jakarta Sans (display)
    ══════════════════════════════════════════════════════════════ */
 
 /* ── GLOBAL TYPOGRAPHY UPGRADE ─── */
-body{font-family:'Inter','DM Sans',sans-serif!important;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{font-family:var(--font-body)!important;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 
 /* Headings → Plus Jakarta Sans */
 h1,h2,h3,h4,h5,h6,
 .dash-page-title,.section-title,.hero-title,.cart-page-title,
 .checkout-title,.prod-name,.modal-title,.vendor-title,
 .fiche-title,.fiche-name,.admin-title{
-  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-family:var(--font-display)!important;
 }
 
-/* Brand elements keep Syne */
+/* Brand elements use display font */
 .logo-txt,.nav-cta-onboard,.add-btn-full,.form-submit,
 .btn-green,.btn-cmd,.rcm-legal-logo{
-  font-family:'Syne',sans-serif!important;
+  font-family: var(--font-display)!important;
 }
 
 /* Body copy → Inter */
@@ -5495,7 +5495,7 @@ h1,h2,h3,h4,h5,h6,
 .form-input,.form-select,.form-textarea,.nav-search input,
 .nav-search select,.rcm-check-text,.rcm-sign-input,
 p,li,td,th,.dstat-lbl,.dstat-trend{
-  font-family:'Inter','DM Sans',sans-serif!important;
+  font-family:var(--font-body)!important;
 }
 
 /* ── PRODUCT CARD IMAGE HEIGHT (desktop 220px, mobile 190px) ── */
@@ -5531,7 +5531,7 @@ p,li,td,th,.dstat-lbl,.dstat-trend{
   padding:13px 16px!important;
   border:1.5px solid var(--border)!important;
   transition:border-color .15s,box-shadow .15s!important;
-  font-family:'Inter','DM Sans',sans-serif!important;
+  font-family:var(--font-body)!important;
 }
 .form-input:focus,.form-select:focus,.form-textarea:focus,.rcm-sign-input:focus{
   border-color:var(--green-mid)!important;
@@ -5555,7 +5555,7 @@ p,li,td,th,.dstat-lbl,.dstat-trend{
   text-align:center;
 }
 .dstat-val{
-  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-family:var(--font-display)!important;
   font-size:1.55rem!important;
   font-weight:800!important;
   letter-spacing:-.03em!important;
@@ -5592,7 +5592,7 @@ p,li,td,th,.dstat-lbl,.dstat-trend{
 /* ── TOAST UPGRADE ── */
 .app-toast{
   border-radius:16px!important;
-  font-family:'Inter','DM Sans',sans-serif!important;
+  font-family:var(--font-body)!important;
   font-size:.82rem!important;
   font-weight:600!important;
   padding:13px 18px!important;
@@ -5664,7 +5664,7 @@ html{scroll-behavior:smooth;}
 
 /* ── PRICE ROW UPGRADE ── */
 .price{
-  font-family:'Plus Jakarta Sans','Syne',sans-serif!important;
+  font-family:var(--font-display)!important;
   font-weight:800!important;
   letter-spacing:-.02em!important;
   color:var(--green)!important;
@@ -6049,7 +6049,7 @@ ${dark?`
 .variant-modal__img{width:72px;height:72px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--surface2);}
 .variant-modal__info{flex:1;min-width:0;}
 .variant-modal__name{font-size:.9rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:4px;}
-.variant-modal__price{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);}
+.variant-modal__price{font-family: var(--font-display);font-size:1.1rem;font-weight:800;color:var(--green);}
 .variant-modal__stock-warn{font-size:.68rem;color:#d97706;font-weight:600;margin-top:3px;}
 .variant-modal__body{padding:16px;overflow-y:auto;max-height:280px;}
 .variant-modal__hint{font-size:.75rem;color:var(--gray);text-align:center;margin-top:8px;}
@@ -6083,7 +6083,7 @@ ${dark?`
 .withdrawal-status--failed,.withdrawal-status--rejected{background:#fee2e2;color:#991b1b;}
 .withdrawal-done{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 0;}
 .withdrawal-done__icon{margin-bottom:12px;}
-.withdrawal-done__title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
+.withdrawal-done__title{font-family: var(--font-display);font-size:1.2rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
 .withdrawal-done__sub{font-size:.82rem;color:var(--gray);line-height:1.5;}
 
 /* ════════════════════════════════════════
@@ -6113,7 +6113,7 @@ ${dark?`
 .b2b-footer{padding:12px 16px 16px;border-top:1px solid var(--border);}
 .b2b-success{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px;}
 .b2b-success__icon{width:56px;height:56px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
-.b2b-success__title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--ink);margin-bottom:6px;}
+.b2b-success__title{font-family: var(--font-display);font-size:1.1rem;font-weight:800;color:var(--ink);margin-bottom:6px;}
 .b2b-success__sub{font-size:.8rem;color:var(--gray);line-height:1.5;}
 
 /* ════════════════════════════════════════

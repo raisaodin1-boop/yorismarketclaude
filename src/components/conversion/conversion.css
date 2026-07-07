@@ -110,7 +110,7 @@
 
 .home-trending__title {
   margin: 0;
-  font-family: "Syne", sans-serif;
+  font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 800;
 }
@@ -208,7 +208,7 @@
 }
 
 .seller-landing__hero h1 {
-  font-family: "Syne", sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 4vw, 1.85rem);
   font-weight: 800;
   margin: 0 0 10px;

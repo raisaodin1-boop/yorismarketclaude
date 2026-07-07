@@ -63,7 +63,7 @@ export function FormulaireAvis({ productId, userId, userName, onSubmit, verified
 
   return (
     <div style={{ background:"var(--surface2)", borderRadius:12, padding:16, marginBottom:12 }}>
-      <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:10 }}>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight:700, fontSize:".88rem", color:"var(--ink)", marginBottom:10 }}>
         Laisser un avis
         {verifiedPurchase && (
           <span className="avis-verified" style={{ marginLeft:8 }}>Achat vérifié</span>

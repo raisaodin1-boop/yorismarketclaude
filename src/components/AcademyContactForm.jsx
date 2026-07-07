@@ -105,7 +105,7 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
             <div style={{ fontSize: "4rem", marginBottom: 16 }}>🎉</div>
             <h2
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 800,
                 fontSize: "1.4rem",
                 color: "var(--green)",
@@ -155,7 +155,7 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
                   padding: "10px 20px",
                   borderRadius: 9,
                   textDecoration: "none",
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 700,
                   fontSize: ".82rem",
                 }}
@@ -173,7 +173,7 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
                 borderRadius: 8,
                 padding: "10px 24px",
                 cursor: "pointer",
-                fontFamily: "'DM Sans',sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 600,
                 fontSize: ".82rem",
               }}
@@ -235,7 +235,7 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
             </div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 700,
                 fontSize: "1rem",
                 color: "var(--ink)",
@@ -247,7 +247,7 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
           </div>
           <div
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: "1.2rem",
               color: "var(--green)",
@@ -259,7 +259,7 @@ export function AcademyContactForm({ course, user, userData, goPage }) {
 
         <h1
           style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "var(--font-display)",
             fontWeight: 800,
             fontSize: "1.5rem",
             color: "var(--ink)",

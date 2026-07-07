@@ -66,7 +66,7 @@ function Toast({ toast, onClose }) {
         color: "#fff",
         padding: "11px 22px",
         borderRadius: 50,
-        fontFamily: "'DM Sans',sans-serif",
+        fontFamily: "var(--font-body)",
         fontWeight: 600,
         fontSize: ".85rem",
         boxShadow: "0 8px 24px rgba(0,0,0,.25)",
@@ -116,7 +116,7 @@ function LivraisonCard({ l, user, onAccepter, onRefuser, onAvancer, onContacter,
           <div style={{ minWidth: 0 }}>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 800,
                 fontSize: ".92rem",
                 color: "var(--ink)",
@@ -301,7 +301,7 @@ const btnBase = {
   minWidth: 0,
   padding: "10px 12px",
   borderRadius: 9,
-  fontFamily: "'Syne',sans-serif",
+  fontFamily: "var(--font-display)",
   fontWeight: 700,
   fontSize: ".8rem",
   cursor: "pointer",
@@ -341,7 +341,7 @@ function ModalRefus({ open, onClose, onConfirm, loading }) {
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 440 }}>
         <button className="modal-close" onClick={onClose}>✕</button>
-        <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.05rem", marginBottom: 4, color: "var(--ink)" }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.05rem", marginBottom: 4, color: "var(--ink)" }}>
           ❌ Refuser la mission
         </h3>
         <p style={{ fontSize: ".8rem", color: "var(--gray)", marginBottom: 14 }}>
@@ -401,10 +401,10 @@ function ModalDetails({ delivery, onClose, onAccepter, onRefuser, onContacter, i
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 520 }}>
         <button className="modal-close" onClick={onClose}>✕</button>
-        <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)", marginBottom: 2 }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)", marginBottom: 2 }}>
           📦 Détails de la mission
         </h3>
-        <div style={{ fontFamily: "'Syne',sans-serif", color: "var(--green)", fontSize: ".9rem", letterSpacing: ".05em", marginBottom: 12 }}>
+        <div style={{ fontFamily: "var(--font-display)", color: "var(--green)", fontSize: ".9rem", letterSpacing: ".05em", marginBottom: 12 }}>
           {delivery.code_suivi}
         </div>
 
@@ -655,7 +655,7 @@ export function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
       >
         <span>
           Bonjour {userData?.nom || "Livreur"} 🏍️{" "}
-          <span style={{ fontSize: ".75rem", color: "var(--gray)", fontFamily: "'DM Sans',sans-serif", fontWeight: 400 }}>
+          <span style={{ fontSize: ".75rem", color: "var(--gray)", fontFamily: "var(--font-body)", fontWeight: 400 }}>
             — Yorix Ride
           </span>
         </span>
@@ -748,7 +748,7 @@ export function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
               animation: "spin .7s linear infinite",
             }}
           />
-          <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 600 }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>
             Chargement des missions...
           </span>
           <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
@@ -877,7 +877,7 @@ function SectionTitle({ icon, title }) {
   return (
     <div
       style={{
-        fontFamily: "'Syne',sans-serif",
+        fontFamily: "var(--font-display)",
         fontWeight: 700,
         fontSize: ".95rem",
         color: "var(--ink)",
@@ -893,7 +893,7 @@ function EmptyState({ icon, title, hint }) {
   return (
     <div className="empty-state" style={{ background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)", padding: "30px 16px", textAlign: "center" }}>
       <div className="empty-icon" style={{ fontSize: "2.5rem" }}>{icon}</div>
-      <p style={{ marginTop: 8, fontFamily: "'Syne',sans-serif", fontWeight: 700 }}>{title}</p>
+      <p style={{ marginTop: 8, fontFamily: "var(--font-display)", fontWeight: 700 }}>{title}</p>
       {hint && (
         <p style={{ fontSize: ".78rem", marginTop: 6, color: "var(--gray)" }}>{hint}</p>
       )}
@@ -934,7 +934,7 @@ function WalletSection({ stats, livraisons }) {
             <div style={{ fontSize: "1.1rem", marginBottom: 4 }}>{s.ic}</div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 800,
                 fontSize: ".88rem",
                 color: "var(--ink)",
@@ -958,7 +958,7 @@ function WalletSection({ stats, livraisons }) {
       >
         <div
           style={{
-            fontFamily: "'Syne',sans-serif",
+            fontFamily: "var(--font-display)",
             fontWeight: 800,
             fontSize: ".88rem",
             color: "var(--ink)",

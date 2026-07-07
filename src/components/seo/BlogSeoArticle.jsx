@@ -29,7 +29,7 @@ export function BlogSeoArticle({ slug, goPage }) {
           <span aria-hidden> · </span>
           <span>{art.headline}</span>
         </nav>
-        <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "clamp(1.35rem,4vw,1.75rem)", color: "var(--ink)", marginBottom: 12, lineHeight: 1.2 }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(1.35rem,4vw,1.75rem)", color: "var(--ink)", marginBottom: 12, lineHeight: 1.2 }}>
           {art.headline}
         </h1>
         <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 28 }}>
@@ -38,14 +38,14 @@ export function BlogSeoArticle({ slug, goPage }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
           {art.sections.map((sec, i) => (
             <section key={i}>
-              <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.05rem", marginBottom: 10, color: "var(--ink)" }}>{sec.h2}</h2>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem", marginBottom: 10, color: "var(--ink)" }}>{sec.h2}</h2>
               <p style={{ fontSize: ".9rem", lineHeight: 1.75, color: "var(--gray)" }}>{sec.p}</p>
             </section>
           ))}
         </div>
         {art.faq?.length > 0 && (
           <section style={{ marginTop: 36, padding: "20px 18px", background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)" }}>
-            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1rem", marginBottom: 14 }}>Questions fréquentes</h2>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1rem", marginBottom: 14 }}>Questions fréquentes</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {art.faq.map((f, j) => (
                 <details key={j} style={{ cursor: "pointer" }}>

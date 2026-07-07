@@ -89,7 +89,7 @@ export function DeliveryTracker() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <span style={{ fontSize: "1.5rem" }}>📍</span>
           <div>
-            <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.05rem", color: "var(--ink)", margin: 0, letterSpacing: "-.3px" }}>
+            <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.05rem", color: "var(--ink)", margin: 0, letterSpacing: "-.3px" }}>
               Suivre ma livraison en temps réel
             </h3>
             <p style={{ fontSize: ".76rem", color: "var(--gray)", margin: "2px 0 0" }}>
@@ -108,7 +108,7 @@ export function DeliveryTracker() {
               padding: "11px 14px", borderRadius: 9,
               border: "1.5px solid var(--border)",
               background: "var(--surface2)", color: "var(--ink)",
-              fontFamily: "'DM Sans',sans-serif", fontSize: ".88rem",
+              fontFamily: "var(--font-body)", fontSize: ".88rem",
               outline: "none", letterSpacing: ".05em",
               textTransform: "uppercase", fontWeight: 600,
             }}
@@ -119,7 +119,7 @@ export function DeliveryTracker() {
             style={{
               background: "var(--green)", color: "#fff", border: "none",
               padding: "11px 24px", borderRadius: 9,
-              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem",
+              fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".85rem",
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.7 : 1,
             }}
@@ -131,7 +131,7 @@ export function DeliveryTracker() {
             style={{
               background: "var(--yellow)", color: "#0d1f14", border: "none",
               padding: "11px 18px", borderRadius: 9,
-              fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: ".78rem",
+              fontFamily: "var(--font-body)", fontWeight: 700, fontSize: ".78rem",
               cursor: "pointer",
             }}
           >
@@ -165,7 +165,7 @@ export function DeliveryTracker() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
                 <div>
                   <div style={{ fontSize: ".72rem", opacity: .8, marginBottom: 3 }}>CODE DE SUIVI</div>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800, letterSpacing: ".05em" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", fontWeight: 800, letterSpacing: ".05em" }}>
                     {delivery.code_suivi}
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export function DeliveryTracker() {
                     🏍️ LIVREUR ASSIGNÉ
                   </span>
                 ) : (
-                  <div style={{ background: "var(--yellow)", color: "#0d1f14", padding: "8px 16px", borderRadius: 10, fontFamily: "'Syne',sans-serif", fontWeight: 800, textAlign: "center", minWidth: 120 }}>
+                  <div style={{ background: "var(--yellow)", color: "#0d1f14", padding: "8px 16px", borderRadius: 10, fontFamily: "var(--font-display)", fontWeight: 800, textAlign: "center", minWidth: 120 }}>
                     <div style={{ fontSize: ".65rem", opacity: .8 }}>ARRIVÉE DANS</div>
                     <div style={{ fontSize: "1.15rem" }}>⏱ ~{tempsRestant} min</div>
                   </div>
@@ -235,7 +235,7 @@ export function DeliveryTracker() {
           )}
 
           <div style={{ padding: "20px 22px" }}>
-            <h4 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem", color: "var(--ink)", marginBottom: 14 }}>
+            <h4 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".88rem", color: "var(--ink)", marginBottom: 14 }}>
               📋 Progression de la livraison
             </h4>
             <div style={{ position: "relative" }}>
@@ -276,10 +276,10 @@ export function DeliveryTracker() {
                       {isDone ? "✓" : step.icon}
                     </div>
                     <div style={{ flex: 1, paddingTop: 4 }}>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".88rem", color: isDone || isCurrent ? "var(--ink)" : "var(--gray)" }}>
+                      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".88rem", color: isDone || isCurrent ? "var(--ink)" : "var(--gray)" }}>
                         {step.label}
                         {isCurrent && (
-                          <span style={{ marginLeft: 8, background: "var(--green)", color: "#fff", padding: "2px 8px", borderRadius: 50, fontSize: ".6rem", fontWeight: 800, fontFamily: "'DM Sans',sans-serif" }}>
+                          <span style={{ marginLeft: 8, background: "var(--green)", color: "#fff", padding: "2px 8px", borderRadius: 50, fontSize: ".6rem", fontWeight: 800, fontFamily: "var(--font-body)" }}>
                             EN COURS
                           </span>
                         )}
@@ -309,7 +309,7 @@ export function DeliveryTracker() {
                 🏍️
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)" }}>
                   {delivery.livreur_nom}
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: ".7rem", color: "var(--gray)", marginTop: 3, flexWrap: "wrap" }}>
@@ -330,7 +330,7 @@ export function DeliveryTracker() {
                     background: "#25D366", color: "#fff", border: "none",
                     padding: "10px 16px", borderRadius: 9,
                     cursor: "pointer", fontSize: ".76rem",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 700,
+                    fontFamily: "var(--font-display)", fontWeight: 700,
                     display: "flex", alignItems: "center", gap: 5,
                     whiteSpace: "nowrap",
                   }}
@@ -352,7 +352,7 @@ export function DeliveryTracker() {
                 flex: 1, background: "var(--surface2)", color: "var(--ink)",
                 border: "1.5px solid var(--border)", padding: "10px",
                 borderRadius: 9, cursor: "pointer",
-                fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".8rem",
+                fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".8rem",
               }}
             >
               🆘 Signaler un problème
@@ -363,7 +363,7 @@ export function DeliveryTracker() {
                 flex: 1, background: "var(--green)", color: "#fff",
                 border: "none", padding: "10px",
                 borderRadius: 9, cursor: "pointer",
-                fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".8rem",
+                fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".8rem",
               }}
             >
               🔄 Actualiser

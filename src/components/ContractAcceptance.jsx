@@ -208,7 +208,7 @@ export function ContractAcceptance({
             </div>
             <h2
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontSize: "1.3rem",
                 fontWeight: 800,
                 marginBottom: 4,
@@ -262,7 +262,7 @@ export function ContractAcceptance({
               fontSize: ".84rem",
               lineHeight: 1.65,
               color: "var(--ink, #111)",
-              fontFamily: "'DM Sans',sans-serif",
+              fontFamily: "var(--font-body)",
             }}
           >
             <ContractContent role={role} roleInfo={roleInfo} />
@@ -414,7 +414,7 @@ export function ContractAcceptance({
                   border: "1.5px solid var(--border, #e5e5e5)",
                   padding: "12px 16px",
                   borderRadius: 9,
-                  fontFamily: "'DM Sans',sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 600,
                   fontSize: ".85rem",
                   cursor: submitting ? "not-allowed" : "pointer",
@@ -435,7 +435,7 @@ export function ContractAcceptance({
                   border: "none",
                   padding: "12px 16px",
                   borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: ".88rem",
                   cursor:
@@ -483,7 +483,7 @@ export function ContractAcceptance({
               <div style={{ fontSize: "2.5rem", marginBottom: 8 }}>📜</div>
               <h3
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: "1.15rem",
                   color: "var(--ink, #111)",
@@ -554,7 +554,7 @@ export function ContractAcceptance({
                   border: "1.5px solid var(--border, #e5e5e5)",
                   padding: "11px 16px",
                   borderRadius: 9,
-                  fontFamily: "'DM Sans',sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 600,
                   fontSize: ".82rem",
                   cursor: submitting ? "not-allowed" : "pointer",
@@ -572,7 +572,7 @@ export function ContractAcceptance({
                   border: "none",
                   padding: "11px 16px",
                   borderRadius: 9,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: ".82rem",
                   cursor: submitting ? "wait" : "pointer",
@@ -620,13 +620,13 @@ export function ContractAcceptance({
 // ─────────────────────────────────────────────────────────────
 function ContractContent({ role, roleInfo }) {
   const Heading = ({ children }) => (
-    <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: ".95rem", fontWeight: 800, color: "var(--ink, #111)", marginTop: 18, marginBottom: 8, letterSpacing: "-.2px" }}>
+    <h3 style={{ fontFamily: "var(--font-display)", fontSize: ".95rem", fontWeight: 800, color: "var(--ink, #111)", marginTop: 18, marginBottom: 8, letterSpacing: "-.2px" }}>
       {children}
     </h3>
   );
 
   const SubHeading = ({ children }) => (
-    <h4 style={{ fontFamily: "'Syne',sans-serif", fontSize: ".84rem", fontWeight: 700, color: "var(--ink, #111)", marginTop: 12, marginBottom: 6 }}>
+    <h4 style={{ fontFamily: "var(--font-display)", fontSize: ".84rem", fontWeight: 700, color: "var(--ink, #111)", marginTop: 12, marginBottom: 6 }}>
       {children}
     </h4>
   );
@@ -779,7 +779,7 @@ function ContractContent({ role, roleInfo }) {
           color: "#fff",
         }}
       >
-        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem", marginBottom: 6 }}>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".95rem", marginBottom: 6 }}>
           🤝 Engagement final
         </div>
         <p style={{ color: "rgba(255,255,255,.85)", fontSize: ".82rem", lineHeight: 1.6, marginBottom: 0 }}>

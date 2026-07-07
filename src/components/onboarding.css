@@ -114,7 +114,7 @@
 }
 
 .yx-ob-title {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(1.45rem, 3.5vw, 2rem);
   font-weight: 800;
   color: var(--ink, #111);
@@ -249,7 +249,7 @@
   font-size: .6rem;
   font-weight: 800;
   letter-spacing: .03em;
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display);
   box-shadow: 0 3px 10px rgba(252,209,22,.45);
   z-index: 4;
   animation: yxObBadge .3s cubic-bezier(.34,1.56,.64,1) .5s both;
@@ -276,7 +276,7 @@
 /* Card content */
 .yx-ob-card-body { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; }
 .yx-ob-card-title {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.1rem;
   color: var(--ink, #111);
@@ -311,7 +311,7 @@
   font-size: .83rem;
   font-weight: 800;
   color: var(--yx-ob-color, #1a6b3a);
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-display);
   transition: gap .2s ease;
 }
 .yx-ob-card:hover .yx-ob-card-cta { gap: 9px; }

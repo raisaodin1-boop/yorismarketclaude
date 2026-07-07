@@ -20,7 +20,7 @@ export function FlashCountdown() {
     color: "#fff",
     padding: "3px 9px",
     borderRadius: 7,
-    fontFamily: "'Syne',sans-serif",
+    fontFamily: "var(--font-display)",
     fontWeight: 800,
     fontSize: ".85rem",
     minWidth: 32,

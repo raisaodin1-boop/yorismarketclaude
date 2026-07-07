@@ -891,7 +891,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 16, padding: 40 }}>
         <div style={{ fontSize: "4rem" }}>🔒</div>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.4rem", color: "var(--ink)" }}>Accès refusé</div>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.4rem", color: "var(--ink)" }}>Accès refusé</div>
         <p style={{ color: "var(--gray)", textAlign: "center", maxWidth: 400, lineHeight: 1.7 }}>
           Cette page est réservée aux administrateurs Yorix et aux partenaires autorisés.<br />
           Connectez-vous avec un compte habilité pour y accéder.
@@ -908,7 +908,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 14, color: "var(--green)", flexDirection: "column" }}>
         <div style={{ width: 46, height: 46, border: "4px solid var(--border)", borderTopColor: "var(--green)", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
-        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "1rem" }}>{t("loading")}</div>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1rem" }}>{t("loading")}</div>
         <div style={{ fontSize: ".8rem", color: "var(--gray)" }}>Récupération des données Supabase</div>
       </div>
     );
@@ -934,7 +934,7 @@ export function AdminDashboard({ user, userData, goPage }) {
           position: "fixed", bottom: 24, right: 24, zIndex: 9999,
           background: toast.type === "error" ? "#ce1126" : "var(--green)",
           color: "#fff", padding: "12px 20px", borderRadius: 10,
-          fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".85rem",
+          fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".85rem",
           boxShadow: "0 4px 20px rgba(0,0,0,.2)",
           display: "flex", alignItems: "center", gap: 8,
         }}>
@@ -961,7 +961,7 @@ export function AdminDashboard({ user, userData, goPage }) {
           <div className="modal" style={{ maxWidth: 600 }}>
             <button className="modal-close" onClick={() => setAssignModalOpen(null)}>✕</button>
 
-            <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--ink)", marginBottom: 4 }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", fontWeight: 800, color: "var(--ink)", marginBottom: 4 }}>
               🏍️ Assigner un livreur
             </h2>
             <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 16 }}>
@@ -974,7 +974,7 @@ export function AdminDashboard({ user, userData, goPage }) {
               <div>📞 <strong>Client :</strong> {assignModalOpen.client_tel}</div>
             </div>
 
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--green)", marginBottom: 10 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--green)", marginBottom: 10 }}>
               Livreurs disponibles ({adminLivreurs.length})
             </div>
 
@@ -987,7 +987,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                   style={{
                     background: "var(--green)", color: "#fff", border: "none",
                     padding: "10px 18px", borderRadius: 8, cursor: "pointer",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".82rem",
                   }}
                 >
                   ➕ Assigner manuellement
@@ -1008,7 +1008,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                       fontSize: "1.3rem",
                     }}>🏍️</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".88rem" }}>
+                      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".88rem" }}>
                         {liv.nom || "Livreur"}
                         {liv.verifie && <span style={{ marginLeft: 6, color: "var(--green)" }}>✓</span>}
                       </div>
@@ -1022,7 +1022,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                       style={{
                         background: "var(--green)", color: "#fff", border: "none",
                         padding: "8px 14px", borderRadius: 8, cursor: "pointer",
-                        fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem",
+                        fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".75rem",
                       }}
                     >
                       Assigner
@@ -1039,7 +1039,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                   width: "100%", background: "var(--surface2)", color: "var(--ink)",
                   border: "1.5px solid var(--border)",
                   padding: "10px", borderRadius: 8, cursor: "pointer",
-                  fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".82rem",
+                  fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".82rem",
                 }}
               >
                 ➕ Assigner un livreur externe (saisie manuelle)
@@ -1173,7 +1173,7 @@ export function AdminDashboard({ user, userData, goPage }) {
               <div className="admin-overview-alert admin-overview-alert--pack" role="alert">
                 <div style={{ fontSize: "2.2rem" }}>📦</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "#5b21b6" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", color: "#5b21b6" }}>
                     {pendingPacksCount} pack{pendingPacksCount > 1 ? "s" : ""} en attente de validation
                   </div>
                   <div style={{ fontSize: ".8rem", color: "#6d28d9", marginTop: 3 }}>
@@ -1200,7 +1200,7 @@ export function AdminDashboard({ user, userData, goPage }) {
               }}>
                 <div style={{ fontSize: "2.2rem" }}>🚚</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "#92400e" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", color: "#92400e" }}>
                     {deliveriesEnAttente} livraison{deliveriesEnAttente > 1 ? "s" : ""} en attente d'assignation !
                   </div>
                   <div style={{ fontSize: ".8rem", color: "#78350f", marginTop: 3 }}>
@@ -1210,7 +1210,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                 <button onClick={() => setAdminTab("deliveries")} style={{
                   background: "#f59e0b", color: "#fff", border: "none",
                   padding: "10px 20px", borderRadius: 9, cursor: "pointer",
-                  fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem",
+                  fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".85rem",
                 }}>
                   🏍️ Assigner maintenant →
                 </button>
@@ -1287,7 +1287,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                         fontSize: "1rem", flexShrink: 0,
                       }}>🚚</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", color: "var(--green)" }}>
+                        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem", color: "var(--green)" }}>
                           {d.code_suivi}
                         </div>
                         <div style={{ fontSize: ".68rem", color: "var(--gray)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1358,7 +1358,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                     border: "2px solid " + (active ? f.color : "var(--border)"),
                     background: active ? f.color : "var(--surface2)",
                     color: active ? "#fff" : "var(--ink)",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem",
                     cursor: "pointer", transition: "all .2s",
                   }}>
                     {f.label} ({count})
@@ -1383,7 +1383,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                          <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.05rem", color: "var(--green)", letterSpacing: ".05em" }}>
+                          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.05rem", color: "var(--green)", letterSpacing: ".05em" }}>
                             {d.code_suivi}
                           </div>
                           <StatutLivraison statut={d.statut} />
@@ -1433,7 +1433,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                         <button onClick={() => setEditDelivery(d)} style={{
                           background: "var(--green)", color: "#fff", border: "none",
                           padding: "8px 14px", borderRadius: 8,
-                          fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
+                          fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
                         }}>
                           🛠️ Modifier
                         </button>
@@ -1442,7 +1442,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                           <button onClick={() => setAssignModalOpen(d)} style={{
                             background: "var(--green)", color: "#fff", border: "none",
                             padding: "8px 14px", borderRadius: 8,
-                            fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
+                            fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem", cursor: "pointer",
                           }}>
                             🏍️ {d.livreur_id ? "Réassigner" : "Assigner"}
                           </button>
@@ -1524,7 +1524,7 @@ export function AdminDashboard({ user, userData, goPage }) {
             {livreursDispo.length === 0 ? (
               <div style={{ textAlign: "center", padding: 60, background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)" }}>
                 <div style={{ fontSize: "4rem", marginBottom: 14 }}>🏍️</div>
-                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)", marginBottom: 8 }}>
+                <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)", marginBottom: 8 }}>
                   Aucun livreur inscrit
                 </h3>
                 <p style={{ color: "var(--gray)", fontSize: ".88rem", marginBottom: 16, maxWidth: 420, margin: "0 auto 16px" }}>
@@ -2104,7 +2104,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                   {/* Header */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 12px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
                     <div>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
+                      <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
                         {kycAction === "approve" && "✅ Valider l'identité"}
                         {kycAction === "reject"  && "❌ Rejeter la demande"}
                         {kycAction === "info"    && "💬 Demander des informations"}
@@ -2255,7 +2255,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                   color: prestFilter === f.id ? "#fff" : "var(--ink)",
                   border: `1.5px solid ${prestFilter === f.id ? "var(--green)" : "var(--border)"}`,
                   borderRadius: 8, padding: "7px 14px", cursor: "pointer",
-                  fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".78rem",
+                  fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".78rem",
                 }}>
                   {f.label} ({f.id === "all" ? prestatairesList.length : prestatairesList.filter(p => p.status === f.id).length})
                 </button>
@@ -2563,7 +2563,7 @@ export function AdminDashboard({ user, userData, goPage }) {
             {alertes.length === 0 ? (
               <div style={{ textAlign: "center", padding: "48px 0", color: "var(--gray)" }}>
                 <div style={{ fontSize: "3.5rem", marginBottom: 12 }}>✅</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "1rem", marginBottom: 6, color: "var(--ink)" }}>Tout va bien !</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1rem", marginBottom: 6, color: "var(--ink)" }}>Tout va bien !</div>
                 <p>Aucune alerte sur Yorix.</p>
               </div>
             ) : (

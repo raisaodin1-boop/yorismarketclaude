@@ -58,7 +58,7 @@ export function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSucces
           <button className="modal-close" onClick={onClose}>✕</button>
           <div style={{ fontSize: "4rem", marginBottom: 12 }}>🎉</div>
           <div style={{
-            fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.25rem",
+            fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.25rem",
             color: "var(--green)", marginBottom: 8,
           }}>
             Échange réussi !
@@ -74,7 +74,7 @@ export function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSucces
               VOTRE CODE UNIQUE
             </div>
             <div style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "1.35rem", fontWeight: 800,
+              fontFamily: "var(--font-display)", fontSize: "1.35rem", fontWeight: 800,
               color: "var(--green)", letterSpacing: "0.05em",
             }}>
               {code}
@@ -125,7 +125,7 @@ export function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSucces
             <ContentIcon name={reward.iconKey || "gift"} size={32} />
           </div>
           <div style={{
-            fontFamily: "'Syne',sans-serif", fontSize: "1.15rem", fontWeight: 800,
+            fontFamily: "var(--font-display)", fontSize: "1.15rem", fontWeight: 800,
             color: "var(--ink)", marginTop: 8,
           }}>
             {reward.nom}
@@ -147,7 +147,7 @@ export function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSucces
           <div style={{
             display: "flex", justifyContent: "space-between",
             borderTop: "1px dashed var(--border)", paddingTop: 6, fontSize: ".88rem",
-            fontFamily: "'Syne',sans-serif", fontWeight: 800,
+            fontFamily: "var(--font-display)", fontWeight: 800,
             color: canAfford ? "var(--green)" : "var(--red)",
           }}>
             <span>Après échange</span>

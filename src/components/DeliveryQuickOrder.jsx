@@ -577,7 +577,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
           >
             🛵 Yorix Ride — Centre de commande
           </div>
-          <h1 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.55rem", fontWeight: 800, color: "#fff", marginBottom: 6, letterSpacing: "-.5px", lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "1.55rem", fontWeight: 800, color: "#fff", marginBottom: 6, letterSpacing: "-.5px", lineHeight: 1.2 }}>
             Restez chez vous. <span style={{ color: "#4fd17d" }}>Yorix s'en charge.</span>
           </h1>
           <p style={{ color: "rgba(255,255,255,.65)", fontSize: ".9rem", lineHeight: 1.5, marginBottom: 0, maxWidth: 540 }}>
@@ -609,7 +609,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                   width: "100%", padding: "12px 14px 12px 42px",
                   borderRadius: 10, border: "1.5px solid rgba(255,255,255,.15)",
                   background: "rgba(255,255,255,.08)", color: "#fff",
-                  fontSize: ".88rem", fontFamily: "'DM Sans',sans-serif",
+                  fontSize: ".88rem", fontFamily: "var(--font-body)",
                   outline: "none", boxSizing: "border-box",
                 }}
               />
@@ -626,7 +626,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                   width: "100%", padding: "12px 14px 12px 42px",
                   borderRadius: 10, border: "1.5px solid rgba(255,255,255,.15)",
                   background: "rgba(255,255,255,.08)", color: "#fff",
-                  fontSize: ".88rem", fontFamily: "'DM Sans',sans-serif",
+                  fontSize: ".88rem", fontFamily: "var(--font-body)",
                   outline: "none", boxSizing: "border-box",
                 }}
               />
@@ -648,7 +648,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                 flex: "1 1 140px", padding: "10px 12px", borderRadius: 9,
                 border: "1.5px solid rgba(255,255,255,.15)",
                 background: "rgba(255,255,255,.08)", color: "#fff",
-                fontSize: ".82rem", fontFamily: "'DM Sans',sans-serif",
+                fontSize: ".82rem", fontFamily: "var(--font-body)",
                 outline: "none", cursor: "pointer",
               }}
             >
@@ -664,7 +664,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                 border: urgent ? "1.5px solid var(--yellow, #fcd116)" : "1.5px solid rgba(255,255,255,.15)",
                 background: urgent ? "rgba(252,209,22,.18)" : "rgba(255,255,255,.08)",
                 color: urgent ? "var(--yellow, #fcd116)" : "#fff",
-                fontSize: ".82rem", fontFamily: "'Syne',sans-serif",
+                fontSize: ".82rem", fontFamily: "var(--font-display)",
                 fontWeight: 700, cursor: "pointer", transition: "all .2s",
               }}
             >
@@ -692,7 +692,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                   }}
                 >
                   <div style={{ fontSize: "1.2rem", marginBottom: 3 }}>{t.icon}</div>
-                  <div style={{ fontSize: ".7rem", fontWeight: 700, fontFamily: "'Syne',sans-serif" }}>{t.label}</div>
+                  <div style={{ fontSize: ".7rem", fontWeight: 700, fontFamily: "var(--font-display)" }}>{t.label}</div>
                   <div style={{ fontSize: ".58rem", color: "rgba(255,255,255,.5)", marginTop: 2 }}>
                     dès {t.base.toLocaleString()} F
                   </div>
@@ -717,7 +717,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               <div style={{ fontSize: ".68rem", color: "rgba(255,255,255,.6)", fontWeight: 700, marginBottom: 3 }}>
                 💰 ESTIMATION TARIFAIRE {urgent && "⚡ URGENT"}
               </div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.4rem", fontWeight: 800, color: "var(--yellow, #fcd116)", lineHeight: 1.1 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", fontWeight: 800, color: "var(--yellow, #fcd116)", lineHeight: 1.1 }}>
                 {estimation.fourchetteMin.toLocaleString()} – {estimation.fourchetteMax.toLocaleString()} FCFA
               </div>
               <div style={{ fontSize: ".72rem", color: "rgba(255,255,255,.65)", marginTop: 3 }}>
@@ -740,7 +740,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               background: "linear-gradient(135deg, var(--yellow, #fcd116), #ffd84a)",
               color: "#0d1f14", border: "none",
               padding: "14px 22px", borderRadius: 11,
-              fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem",
+              fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem",
               cursor: "pointer", boxShadow: "0 6px 18px rgba(252,209,22,.35)",
               transition: "transform .15s",
             }}
@@ -755,7 +755,7 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               flex: "1 1 180px", background: "#25D366",
               color: "#fff", border: "none",
               padding: "14px 22px", borderRadius: 11,
-              fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".88rem",
+              fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".88rem",
               cursor: "pointer", display: "flex", alignItems: "center",
               justifyContent: "center", gap: 6, transition: "transform .15s",
             }}

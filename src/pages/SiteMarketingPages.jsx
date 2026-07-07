@@ -49,7 +49,7 @@ export function SiteMarketingPages({
         <section className="sec anim">
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
             <header style={{ textAlign: "center", marginBottom: 22 }}>
-              <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.45rem", color: "var(--ink)" }}>FAQ — Yorix marketplace Cameroun</h1>
+              <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.45rem", color: "var(--ink)" }}>FAQ — Yorix marketplace Cameroun</h1>
               <p style={{ color: "var(--gray)", fontSize: ".86rem" }}>Livraison, escrow, paiement MoMo et prestataires.</p>
             </header>
             {[
@@ -87,7 +87,7 @@ export function SiteMarketingPages({
       return (
         <section className="sec anim">
           <div style={{ maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-            <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.45rem", color: "var(--ink)", marginBottom: 10 }}>Devenir livreur Yorix Ride — Cameroun</h1>
+            <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.45rem", color: "var(--ink)", marginBottom: 10 }}>Devenir livreur Yorix Ride — Cameroun</h1>
             <p style={{ color: "var(--gray)", fontSize: ".88rem", lineHeight: 1.75, marginBottom: 20 }}>
               Rejoignez le réseau de livraison : missions flexibles, paiement rapide, couverture villes et inter-villes.
             </p>
@@ -103,24 +103,24 @@ export function SiteMarketingPages({
         <section className="sec anim">
           <div style={{ maxWidth: 600, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "var(--ink)", marginBottom: 7, letterSpacing: "-.5px" }}>👷 Devenir prestataire Yorix</h2>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 800, color: "var(--ink)", marginBottom: 7, letterSpacing: "-.5px" }}>👷 Devenir prestataire Yorix</h2>
               <p style={{ color: "var(--gray)", fontSize: ".86rem", lineHeight: 1.7 }}>Développez votre activité et accédez à des milliers de clients au Cameroun.</p>
             </div>
             {inscriptionSent ? (
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 40, textAlign: "center" }}>
                 <div style={{ fontSize: "3.5rem", marginBottom: 14 }}>🎉</div>
-                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.2rem", color: "var(--green)", marginBottom: 10 }}>Candidature envoyée avec succès !</h3>
+                <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.2rem", color: "var(--green)", marginBottom: 10 }}>Candidature envoyée avec succès !</h3>
                 <p style={{ fontSize: ".88rem", color: "var(--gray)", lineHeight: 1.7, maxWidth: 420, margin: "0 auto 20px" }}>
                   Merci pour votre intérêt ! L'équipe Yorix vous contactera sous <strong>24h</strong> pour valider votre profil de prestataire.
                 </p>
                 <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
                   <button
                     onClick={() => { setInscriptionSent(false); setInscriptionForm({ nom: "", prenom: "", tel: "", email: "", metier: "", ville: "", experience: "", tarif: "", bio: "" }); }}
-                    style={{ background: "var(--surface2)", color: "var(--ink)", border: "1.5px solid var(--border)", borderRadius: 8, padding: "9px 20px", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".82rem" }}
+                    style={{ background: "var(--surface2)", color: "var(--ink)", border: "1.5px solid var(--border)", borderRadius: 8, padding: "9px 20px", cursor: "pointer", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".82rem" }}
                   >
                     Soumettre une autre candidature
                   </button>
-                  <button onClick={() => goPage("home")} style={{ background: "var(--green)", color: "#fff", border: "none", borderRadius: 8, padding: "9px 20px", cursor: "pointer", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem" }}>
+                  <button onClick={() => goPage("home")} style={{ background: "var(--green)", color: "#fff", border: "none", borderRadius: 8, padding: "9px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".82rem" }}>
                     ← Retour à l'accueil
                   </button>
                 </div>

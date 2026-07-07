@@ -66,7 +66,7 @@ export function EscrowPremiumPage({
       --esc-shadow: 0 12px 30px rgba(0,0,0,.08);
       --esc-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--esc-ink);
     }
     .yorix-esc-v3 * { box-sizing: border-box; }
@@ -163,7 +163,7 @@ export function EscrowPremiumPage({
     }
 
     .yesc3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -287,7 +287,7 @@ export function EscrowPremiumPage({
       border-bottom: 1px solid var(--esc-border);
     }
     .yesc3-flow-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: .85rem;
       font-weight: 800;
       color: var(--esc-ink);
@@ -347,7 +347,7 @@ export function EscrowPremiumPage({
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .9rem;
       flex-shrink: 0;
@@ -387,7 +387,7 @@ export function EscrowPremiumPage({
       font-weight: 600;
     }
     .yesc3-flow-amount-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--esc-green);
@@ -426,7 +426,7 @@ export function EscrowPremiumPage({
       margin-bottom: 12px;
     }
     .yesc3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -499,7 +499,7 @@ export function EscrowPremiumPage({
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.1rem;
       box-shadow: 0 8px 22px rgba(26,107,58,.3);
@@ -516,7 +516,7 @@ export function EscrowPremiumPage({
       margin-bottom: 8px;
     }
     .yesc3-step h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       color: var(--esc-ink);
@@ -576,7 +576,7 @@ export function EscrowPremiumPage({
       transform: scale(1.1) rotate(-5deg);
     }
     .yesc3-trust-card h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.05rem;
       font-weight: 800;
       color: var(--esc-ink);
@@ -651,7 +651,7 @@ export function EscrowPremiumPage({
       border: 1px solid rgba(252,209,22,.5);
     }
     .yesc3-protect-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.2rem;
       font-weight: 800;
       color: var(--esc-ink);
@@ -730,7 +730,7 @@ export function EscrowPremiumPage({
       transform: scale(1.15);
     }
     .yesc3-case-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: .9rem;
       font-weight: 800;
       color: var(--esc-ink);
@@ -775,7 +775,7 @@ export function EscrowPremiumPage({
     }
     .yesc3-faq-item summary::after {
       content: '+';
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.6rem;
       color: var(--esc-green);
       transition: transform .25s;
@@ -802,7 +802,7 @@ export function EscrowPremiumPage({
       gap: 14px;
     }
     .yesc3-products-head h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.4rem;
       font-weight: 800;
       color: var(--esc-ink);
@@ -821,7 +821,7 @@ export function EscrowPremiumPage({
       color: var(--esc-ink);
       padding: 8px 16px;
       border-radius: 9px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-weight: 600;
       font-size: .82rem;
       cursor: pointer;
@@ -895,7 +895,7 @@ export function EscrowPremiumPage({
     .yesc3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;

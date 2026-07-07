@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display, "Syne", sans-serif);
+  font-family: var(--font-display);
   font-size: 1.8rem;
   font-weight: 800;
   color: #fff;
@@ -31,7 +31,7 @@
 
 .seller-store-name {
   margin: 0 0 4px;
-  font-family: var(--font-display, "Syne", sans-serif);
+  font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 800;
   color: var(--ink);
@@ -85,7 +85,7 @@
 
 .seller-store-stat-val {
   display: block;
-  font-family: var(--font-display, "Syne", sans-serif);
+  font-family: var(--font-display);
   font-size: 1.2rem;
   font-weight: 800;
   color: var(--green);

@@ -235,7 +235,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       --loy-shadow: 0 12px 30px rgba(0,0,0,.08);
       --loy-shadow-hover: 0 20px 50px rgba(0,0,0,.12);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--loy-ink);
     }
     .yorix-loy-v3 * { box-sizing: border-box; }
@@ -304,7 +304,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       50%      { opacity: .5; transform: scale(1.4); }
     }
     .yloy3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.05;
@@ -358,7 +358,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
     .yloy3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;
@@ -474,12 +474,12 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.2rem;
     }
     .yloy3-vipcard-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .9rem;
       letter-spacing: .12em;
@@ -497,7 +497,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       border: 1px solid rgba(252,209,22,.4);
       padding: 5px 11px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .68rem;
       letter-spacing: .1em;
@@ -515,7 +515,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       margin-bottom: 5px;
     }
     .yloy3-vipcard-pts {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 2.2rem;
       font-weight: 800;
       color: var(--loy-yellow);
@@ -600,7 +600,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       margin-bottom: 14px;
     }
     .yloy3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(1.5rem, 3.5vw, 2.2rem);
       font-weight: 800;
       line-height: 1.15;
@@ -664,7 +664,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       transform: scale(1.15) rotate(-5deg);
     }
     .yloy3-earn-t {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.05rem;
       font-weight: 800;
       color: var(--loy-ink);
@@ -684,7 +684,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       border: 1px solid var(--loy-green-light, #86efac);
       padding: 5px 12px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: .78rem;
     }
@@ -735,7 +735,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       margin-bottom: 10px;
     }
     .yloy3-tier-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.3rem;
       font-weight: 800;
       letter-spacing: -.5px;
@@ -802,7 +802,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       margin-bottom: 6px;
     }
     .yloy3-stat-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.6rem;
       font-weight: 800;
       color: var(--loy-ink);
@@ -827,7 +827,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       background: transparent;
       border: none;
       padding: 12px 18px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-weight: 600;
       font-size: .88rem;
       color: var(--loy-gray);
@@ -902,7 +902,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       transform: scale(1.1) rotate(-4deg);
     }
     .yloy3-reward-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: .92rem;
       font-weight: 700;
       color: var(--loy-ink);
@@ -917,7 +917,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       flex: 1;
     }
     .yloy3-reward-pts {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       margin-bottom: 12px;
@@ -927,7 +927,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       width: 100%;
       padding: 9px;
       border-radius: 9px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: .78rem;
       cursor: pointer;
@@ -1001,14 +1001,14 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       font-size: 2.2rem;
     }
     .yloy3-pack-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: .92rem;
       color: var(--loy-gray);
       font-weight: 600;
       margin-bottom: 4px;
     }
     .yloy3-pack-pts {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.6rem;
       font-weight: 800;
       color: var(--loy-ink);
@@ -1026,7 +1026,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       margin-bottom: 10px;
     }
     .yloy3-pack-price {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.2rem;
       font-weight: 800;
       color: var(--loy-green);
@@ -1042,7 +1042,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       color: #fff;
       padding: 9px 14px;
       border-radius: 9px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: .78rem;
     }
@@ -1086,7 +1086,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
     }
     .yloy3-history-pts { text-align: right; }
     .yloy3-history-amt {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1rem;
       letter-spacing: -.3px;
@@ -1101,7 +1101,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
 
     /* ━━━ CODES ━━━ */
     .yloy3-codes-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.1rem;
       margin: 32px 0 14px;
@@ -1190,7 +1190,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       border: 1px solid rgba(255,255,255,.15);
       background: rgba(0,0,0,.25);
       color: #fff;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-size: .82rem;
       outline: none;
     }
@@ -1246,7 +1246,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
       border: 1.5px solid var(--loy-border);
       background: #fff;
       color: var(--loy-ink);
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-size: .88rem;
       outline: none;
       transition: border-color .2s;
@@ -1294,7 +1294,7 @@ export function LoyaltyPage({ user, userData, goPage, setAuthOpen, setAuthTab })
     }
     .yloy3-faq-item summary::after {
       content: '+';
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.6rem;
       color: var(--loy-green);
       transition: transform .25s;

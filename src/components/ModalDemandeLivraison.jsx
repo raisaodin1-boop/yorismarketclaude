@@ -113,7 +113,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
           <div style={{ fontSize: "4rem", marginBottom: 12 }}>🎉</div>
 
           <h2 style={{
-            fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.4rem",
+            fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.4rem",
             color: "var(--green)", marginBottom: 8, letterSpacing: "-.3px",
           }}>
             Demande envoyée !
@@ -138,7 +138,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
               VOTRE CODE DE SUIVI
             </div>
             <div style={{
-              fontFamily: "'Syne',sans-serif", fontSize: "1.8rem", fontWeight: 800,
+              fontFamily: "var(--font-display)", fontSize: "1.8rem", fontWeight: 800,
               color: "var(--green)", letterSpacing: ".08em", marginBottom: 10,
             }}>
               {codeGenere}
@@ -173,7 +173,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
                 background: "var(--surface2)", color: "var(--ink)",
                 border: "1.5px solid var(--border)", borderRadius: 9,
                 padding: "11px", cursor: "pointer",
-                fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".82rem",
+                fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".82rem",
               }}
             >
               Fermer
@@ -186,7 +186,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
               style={{
                 background: "var(--green)", color: "#fff", border: "none",
                 padding: "11px", borderRadius: 9, cursor: "pointer",
-                fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".82rem",
               }}
             >
               📍 Suivre maintenant
@@ -212,7 +212,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
             📦
           </div>
           <div style={{
-            fontFamily: "'Syne',sans-serif", fontSize: "1.3rem", fontWeight: 800,
+            fontFamily: "var(--font-display)", fontSize: "1.3rem", fontWeight: 800,
             color: "var(--ink)", marginTop: 8, letterSpacing: "-.3px",
           }}>
             Demander une livraison
@@ -223,7 +223,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
         </div>
 
         <div style={{
-          fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem",
+          fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".85rem",
           color: "var(--green)", marginBottom: 8, marginTop: 4,
         }}>
           👤 Vos coordonnées
@@ -252,7 +252,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
         </div>
 
         <div style={{
-          fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem",
+          fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".85rem",
           color: "var(--green)", marginBottom: 8,
         }}>
           📍 Adresses
@@ -294,7 +294,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
         </div>
 
         <div style={{
-          fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".85rem",
+          fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".85rem",
           color: "var(--green)", marginBottom: 8, marginTop: 4,
         }}>
           📦 Détails du colis
@@ -332,7 +332,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
               >
                 <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>{v.icon}</div>
                 <div style={{
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem",
                   color: "var(--ink)",
                 }}>
                   {v.label}
@@ -363,7 +363,7 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
               >
                 <div style={{ fontSize: "1.1rem", marginBottom: 2 }}>{u.icon}</div>
                 <div style={{
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".76rem",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".76rem",
                   color: "var(--ink)",
                 }}>
                   {u.label}

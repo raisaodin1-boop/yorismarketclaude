@@ -77,7 +77,7 @@ export function VariantPickerModal({ product, onConfirm, onClose }) {
               width: "100%",
               padding: "12px",
               fontSize: ".85rem",
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 700,
               background: selected && effectiveStock > 0 ? "var(--green)" : "var(--surface2)",
               color: selected && effectiveStock > 0 ? "#fff" : "var(--gray)",

@@ -200,10 +200,10 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
             background: "linear-gradient(135deg,#1a3a24,var(--green))",
             borderRadius: 14, padding: 22, color: "#fff", marginBottom: 18,
           }}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 4 }}>
               Mes points
             </div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "2rem", fontWeight: 800, color: "var(--yellow)" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 800, color: "var(--yellow)" }}>
               {loyaltyPts} pts
             </div>
             <div style={{ fontSize: ".71rem", opacity: .62, marginBottom: 12 }}>

@@ -109,7 +109,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
           </div>
           <h2
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontSize: "1.45rem",
               fontWeight: 800,
               color: "var(--ink, #111)",
@@ -196,7 +196,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                 </div>
                 <div
                   style={{
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 800,
                     fontSize: ".98rem",
                     color: "var(--ink, #111)",
@@ -237,7 +237,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <h2
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontSize: "1.3rem",
               fontWeight: 800,
               color: "var(--ink, #111)",
@@ -303,7 +303,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 800,
                     fontSize: ".95rem",
                   }}
@@ -313,7 +313,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                 <div>
                   <div
                     style={{
-                      fontFamily: "'Syne',sans-serif",
+                      fontFamily: "var(--font-display)",
                       fontWeight: 700,
                       fontSize: ".84rem",
                       color: "var(--ink, #111)",
@@ -373,7 +373,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
             </div>
             <h2
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontSize: "1.4rem",
                 fontWeight: 800,
                 color: "#0d1f14",
@@ -434,7 +434,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                   border: "none",
                   padding: "11px 20px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: ".85rem",
                   cursor: "pointer",
@@ -451,7 +451,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                   border: "1.5px solid #0d1f14",
                   padding: "11px 20px",
                   borderRadius: 10,
-                  fontFamily: "'DM Sans',sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 700,
                   fontSize: ".82rem",
                   cursor: "pointer",
@@ -473,7 +473,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                 border: "1px solid rgba(13,31,20,.08)",
               }}
             >
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#0d1f14" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 800, color: "#0d1f14" }}>
                 +127%
               </div>
               <div style={{ fontSize: ".72rem", color: "#1a2e22", fontWeight: 600 }}>

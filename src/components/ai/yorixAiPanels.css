@@ -40,7 +40,7 @@
 }
 
 .yai-panel__brand {
-  font-family: var(--font-display, "Syne", sans-serif);
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.9rem;
   color: var(--ink);
@@ -230,7 +230,7 @@
 
 .yai-credit-score {
   margin-left: auto;
-  font-family: var(--font-display, "Syne", sans-serif);
+  font-family: var(--font-display);
   font-size: 1.6rem;
   font-weight: 800;
   color: var(--green);

@@ -120,7 +120,7 @@ export function ProdGrid({
                       position: "absolute", top: 8, left: 8, zIndex: 3,
                       background: "rgba(206,17,38,.92)", color: "#fff",
                       padding: "3px 9px", borderRadius: 999, fontSize: ".62rem",
-                      fontFamily: "'Syne',sans-serif", fontWeight: 800, letterSpacing: ".02em",
+                      fontFamily: "var(--font-display)", fontWeight: 800, letterSpacing: ".02em",
                       boxShadow: "0 4px 12px rgba(206,17,38,.35)",
                     }}
                   >

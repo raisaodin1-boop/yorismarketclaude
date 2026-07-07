@@ -104,7 +104,7 @@ export function ModalEditDelivery({
             <div style={{ fontSize: ".72rem", opacity: 0.75 }}>LIVRAISON YORIX</div>
             <div
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 800,
                 fontSize: "1.3rem",
                 letterSpacing: ".05em",
@@ -174,7 +174,7 @@ export function ModalEditDelivery({
                 border: "none",
                 background: tab === t.id ? "var(--green)" : "transparent",
                 color: tab === t.id ? "#fff" : "var(--ink)",
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 700,
                 fontSize: ".82rem",
                 cursor: "pointer",
@@ -348,7 +348,7 @@ export function ModalEditDelivery({
                         color: active ? c.color : "var(--ink)",
                         fontWeight: 700,
                         cursor: "pointer",
-                        fontFamily: "'Syne',sans-serif",
+                        fontFamily: "var(--font-display)",
                         fontSize: ".82rem",
                       }}
                     >
@@ -368,7 +368,7 @@ export function ModalEditDelivery({
                   borderRadius: 10,
                 }}
               >
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: "#ce1126", marginBottom: 6 }}>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: "#ce1126", marginBottom: 6 }}>
                   ⚠️ Zone sensible
                 </div>
                 <p style={{ fontSize: ".8rem", color: "#7f1d1d", marginBottom: 10 }}>
@@ -386,7 +386,7 @@ export function ModalEditDelivery({
                     border: "none",
                     padding: "8px 16px",
                     borderRadius: 8,
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     cursor: "pointer",
                     fontSize: ".82rem",
@@ -424,7 +424,7 @@ export function ModalEditDelivery({
                 border: "1.5px solid var(--border)",
                 padding: "10px 18px",
                 borderRadius: 8,
-                fontFamily: "'DM Sans',sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 600,
                 cursor: "pointer",
                 fontSize: ".85rem",
@@ -441,7 +441,7 @@ export function ModalEditDelivery({
                 border: "none",
                 padding: "10px 22px",
                 borderRadius: 8,
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 800,
                 cursor: saving ? "not-allowed" : "pointer",
                 fontSize: ".88rem",
@@ -504,7 +504,7 @@ function LivreurTab({ delivery, livreurs, onReassign, onUnassign }) {
             🏍️
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
               {delivery.livreur_nom}
             </div>
             <div style={{ fontSize: ".75rem", color: "var(--gray)" }}>
@@ -528,7 +528,7 @@ function LivreurTab({ delivery, livreurs, onReassign, onUnassign }) {
               border: "1.5px solid #ce1126",
               padding: "8px 14px",
               borderRadius: 8,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 700,
               fontSize: ".78rem",
               cursor: "pointer",
@@ -612,7 +612,7 @@ function LivreurTab({ delivery, livreurs, onReassign, onUnassign }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      fontFamily: "'Syne',sans-serif",
+                      fontFamily: "var(--font-display)",
                       fontWeight: 700,
                       fontSize: ".85rem",
                       whiteSpace: "nowrap",
@@ -636,7 +636,7 @@ function LivreurTab({ delivery, livreurs, onReassign, onUnassign }) {
                     border: "none",
                     padding: "7px 12px",
                     borderRadius: 8,
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     fontSize: ".75rem",
                     cursor: isCurrent ? "default" : "pointer",
@@ -658,7 +658,7 @@ function SectionTitle({ children }) {
   return (
     <div
       style={{
-        fontFamily: "'Syne',sans-serif",
+        fontFamily: "var(--font-display)",
         fontWeight: 800,
         fontSize: ".88rem",
         color: "var(--green)",

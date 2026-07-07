@@ -211,7 +211,7 @@ export function AcademyPage({
       --acad-shadow: 0 12px 30px rgba(0,0,0,.08);
       --acad-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--acad-ink);
     }
     .yorix-acad-v3 * { box-sizing: border-box; }
@@ -297,7 +297,7 @@ export function AcademyPage({
       50%      { opacity: .5; transform: scale(1.4); }
     }
     .yacad3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -370,7 +370,7 @@ export function AcademyPage({
       text-align: left;
     }
     .yacad3-hero-stat-val {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.5rem;
       font-weight: 800;
       color: var(--acad-yellow);
@@ -422,12 +422,12 @@ export function AcademyPage({
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.1rem;
     }
     .yacad3-dash-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .85rem;
       letter-spacing: -.2px;
@@ -445,7 +445,7 @@ export function AcademyPage({
       color: var(--acad-green);
       padding: 4px 10px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .64rem;
       letter-spacing: .04em;
@@ -459,7 +459,7 @@ export function AcademyPage({
       margin-bottom: 6px;
     }
     .yacad3-dash-progress-pct {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 2rem;
       font-weight: 800;
       color: var(--acad-ink);
@@ -579,7 +579,7 @@ export function AcademyPage({
       margin-bottom: 12px;
     }
     .yacad3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -648,7 +648,7 @@ export function AcademyPage({
       transform: scale(1.15) rotate(-5deg);
     }
     .yacad3-parcours-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       color: var(--acad-ink);
@@ -707,7 +707,7 @@ export function AcademyPage({
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.1rem;
       box-shadow: 0 8px 22px rgba(26,107,58,.3);
@@ -723,7 +723,7 @@ export function AcademyPage({
       margin-bottom: 8px;
     }
     .yacad3-step h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       color: var(--acad-ink);
@@ -814,7 +814,7 @@ export function AcademyPage({
       color: var(--acad-ink);
       padding: 4px 11px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .62rem;
       letter-spacing: .06em;
@@ -829,7 +829,7 @@ export function AcademyPage({
       color: #0d1f14;
       padding: 4px 11px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .62rem;
       letter-spacing: .04em;
@@ -842,7 +842,7 @@ export function AcademyPage({
       flex-direction: column;
     }
     .yacad3-course-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.02rem;
       font-weight: 800;
       color: var(--acad-ink);
@@ -876,7 +876,7 @@ export function AcademyPage({
       margin-top: auto;
     }
     .yacad3-course-price {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--acad-green);
@@ -891,7 +891,7 @@ export function AcademyPage({
       border: none;
       padding: 8px 16px;
       border-radius: 9px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: .76rem;
       cursor: pointer;
@@ -933,7 +933,7 @@ export function AcademyPage({
       margin-bottom: 8px;
     }
     .yacad3-level-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.2rem;
       font-weight: 800;
       letter-spacing: -.4px;
@@ -1036,7 +1036,7 @@ export function AcademyPage({
       margin-bottom: 6px;
     }
     .yacad3-cert-brand {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .68rem;
       color: var(--acad-gray);
@@ -1044,7 +1044,7 @@ export function AcademyPage({
       margin-bottom: 4px;
     }
     .yacad3-cert-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.1rem;
       color: var(--acad-ink);
@@ -1052,7 +1052,7 @@ export function AcademyPage({
       letter-spacing: -.3px;
     }
     .yacad3-cert-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.3rem;
       color: var(--acad-green);
@@ -1120,7 +1120,7 @@ export function AcademyPage({
       content: '"';
       position: absolute;
       top: 14px; right: 18px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 4rem;
       color: var(--acad-green-pale);
       line-height: 1;
@@ -1147,13 +1147,13 @@ export function AcademyPage({
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: 1.1rem;
       box-shadow: 0 4px 14px rgba(0,0,0,.1);
     }
     .yacad3-story-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .95rem;
       color: var(--acad-ink);
@@ -1181,7 +1181,7 @@ export function AcademyPage({
       border: 1px solid var(--acad-green-light);
       padding: 5px 12px;
       border-radius: 50px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .76rem;
       letter-spacing: -.2px;
@@ -1219,7 +1219,7 @@ export function AcademyPage({
     }
     .yacad3-faq-item summary::after {
       content: '+';
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.6rem;
       color: var(--acad-green);
       transition: transform .25s;
@@ -1298,7 +1298,7 @@ export function AcademyPage({
     .yacad3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;

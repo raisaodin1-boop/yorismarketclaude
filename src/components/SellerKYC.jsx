@@ -322,7 +322,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" style={{ display: "block", margin: "0 auto 12px" }} aria-hidden="true">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
       </svg>
-      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#065f46", marginBottom: 6 }}>Identité vérifiée ✓</div>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.1rem", color: "#065f46", marginBottom: 6 }}>Identité vérifiée ✓</div>
       <div style={{ fontSize: ".82rem", color: "#047857", lineHeight: 1.6 }}>
         Votre identité a été vérifiée avec succès.<br/>
         Le badge <strong>Vendeur Vérifié</strong> est visible sur vos produits.
@@ -340,7 +340,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" style={{ display: "block", margin: "0 auto 10px" }} aria-hidden="true">
         <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
       </svg>
-      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem", color: "#92400e", marginBottom: 6 }}>Dossier en cours d'examen</div>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "#92400e", marginBottom: 6 }}>Dossier en cours d'examen</div>
       <div style={{ fontSize: ".8rem", color: "#78350f", lineHeight: 1.6 }}>
         Soumis le <strong>{kyc.submitted_at ? new Date(kyc.submitted_at).toLocaleDateString("fr-FR") : "—"}</strong><br/>
         Nos équipes traitent votre dossier sous 24–48h ouvrées.
@@ -379,7 +379,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 1 : IDENTITÉ ── */}
         {step === 1 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>👤 Informations d'identité</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>👤 Informations d'identité</div>
             <Field label="Nom complet (prénom + nom)" required>
               <input className="form-input" placeholder="Ex: Marie Ngono Biya" value={form.full_name} onChange={e => upd("full_name", e.target.value)} />
             </Field>
@@ -403,7 +403,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 2 : COORDONNÉES ── */}
         {step === 2 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>📞 Coordonnées</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>📞 Coordonnées</div>
             <Field label="Téléphone principal" required hint="Numéro MTN ou Orange actif">
               <input className="form-input" type="tel" inputMode="numeric" placeholder="Ex: 677 123 456" value={form.phone} onChange={e => upd("phone", e.target.value)} />
             </Field>
@@ -419,7 +419,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 3 : ACTIVITÉ ── */}
         {step === 3 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>🏪 Activité commerciale</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>🏪 Activité commerciale</div>
             <Field label="Type de vendeur" required>
               <div style={{ display: "flex", gap: 10 }}>
                 {["particulier","entreprise"].map(t => (
@@ -472,7 +472,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 4 : DOCUMENTS ── */}
         {step === 4 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 8 }}>📄 Documents justificatifs</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 8 }}>📄 Documents justificatifs</div>
             <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 14px", fontSize: ".75rem", color: "#1d4ed8", marginBottom: 16, lineHeight: 1.6 }}>
               Photos nettes, bien éclairées · Max 10 Mo · JPG, PNG ou PDF
             </div>
@@ -498,7 +498,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 5 : VALIDATION ── */}
         {step === 5 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>✅ Récapitulatif & Déclaration</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>✅ Récapitulatif & Déclaration</div>
 
             {/* Récap */}
             <div style={{ background: "var(--surface2)", borderRadius: 12, padding: "14px 16px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 8, fontSize: ".78rem" }}>
