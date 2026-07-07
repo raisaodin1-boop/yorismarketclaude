@@ -43,6 +43,7 @@ export function ProductRouteSections({
         toggleWish={toggleWish}
         openProductUrl={openProductUrl}
         openSellerUrl={openSellerUrl}
+        goPage={goPage}
       />
     );
   }

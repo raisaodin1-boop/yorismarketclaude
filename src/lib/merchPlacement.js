@@ -106,6 +106,55 @@ export function computeHomepageTrendingProducts(products, limit = 8) {
   return computeTrendingProducts(active, { limit, excludeIds: exclude });
 }
 
+/** Meilleures ventes globales (hub « populaires »). */
+export function computeMostPopularProducts(products, opts = {}) {
+  const limit = opts.limit ?? 8;
+  return [...(products || [])]
+    .filter(isActiveCatalogProduct)
+    .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+    .slice(0, limit);
+}
+
+/** Mieux notés (note × avis). */
+export function computeBestRatedProducts(products, opts = {}) {
+  const limit = opts.limit ?? 8;
+  return [...(products || [])]
+    .filter((p) => isActiveCatalogProduct(p) && (Number(p.nombre_avis) || 0) >= 1)
+    .sort((a, b) => {
+      const scoreA = (Number(a.note) || 0) * 100 + (Number(a.nombre_avis) || 0);
+      const scoreB = (Number(b.note) || 0) * 100 + (Number(b.nombre_avis) || 0);
+      return scoreB - scoreA;
+    })
+    .slice(0, limit);
+}
+
+/** Tendance par ville (Douala, Yaoundé…). */
+export function computeCityTrendingProducts(products, cityHint, opts = {}) {
+  const limit = opts.limit ?? 8;
+  const needle = String(cityHint || "").toLowerCase();
+  if (!needle) return [];
+  return [...(products || [])]
+    .filter((p) => {
+      if (!isActiveCatalogProduct(p)) return false;
+      return String(p.ville || "").toLowerCase().includes(needle);
+    })
+    .sort((a, b) => trendingScore(b) - trendingScore(a))
+    .slice(0, limit);
+}
+
+/** Premium : sponsorisé + vendeur vérifié. */
+export function computePremiumProducts(products, opts = {}) {
+  const limit = opts.limit ?? 8;
+  return [...(products || [])]
+    .filter(
+      (p) =>
+        isActiveCatalogProduct(p) &&
+        (p.sponsorise || p.vendeur_verifie || p.verifie),
+    )
+    .sort((a, b) => trendingScore(b) - trendingScore(a))
+    .slice(0, limit);
+}
+
 export function getTopSellerIds(products, minProducts = MERCH_TOP_SELLER_MIN_PRODUCTS) {
   const counts = countProductsBySeller(products);
   const ids = [];

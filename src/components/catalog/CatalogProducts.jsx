@@ -4,7 +4,13 @@ import { ProdGrid } from "../ProdGrid";
 import { CategoryFilterPanel } from "../categories/CategoryFilterPanel";
 import { SkeletonCard } from "../SkeletonCard";
 import { useCatalogProducts } from "../../hooks/useCatalogProducts";
+import { useCatalogRails } from "../../hooks/useCatalogRails";
 import { categoryLabel } from "../../lib/marketplaceCategories";
+import { CatalogHero } from "./CatalogHero";
+import { CatalogHubChips, CatalogCuratedRails } from "./CatalogCuratedRails";
+import { CatalogSearchFilters, applyCatalogQuickFilters } from "./CatalogSearchFilters";
+import { useSiteT } from "../../hooks/useSiteT";
+import "./catalogPage.css";
 
 function useDebounced(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -25,7 +31,6 @@ function SkeletonRow({ count }) {
   );
 }
 
-// Slug catégorie (?categorie=) → filtre, résolu depuis l'arbre (id taxonomie + libellé).
 function resolveCategoryFromTree(tree, parentSlug, subSlug, locale) {
   if (!parentSlug) return null;
   const parent = tree.find((r) => r.slug === parentSlug);
@@ -67,7 +72,9 @@ export function CatalogProducts({
   toggleWish,
   openProductUrl,
   openSellerUrl,
+  goPage,
 }) {
+  const { t } = useSiteT(siteLocale);
   const [searchParams, setSearchParams] = useSearchParams();
   const debouncedSearch = useDebounced(search || "", 350);
 
@@ -76,10 +83,9 @@ export function CatalogProducts({
   const catParam = searchParams.get("categorie") || "";
   const subParam = searchParams.get("sous-categorie") || "";
 
-  // Catégorie : ?categorie= prioritaire, sinon route SEO (path), sinon libellé legacy.
   const queryCategory = useMemo(
     () => (catParam ? resolveCategoryFromTree(categoryTree, catParam, subParam, siteLocale) : null),
-    [catParam, subParam, categoryTree, siteLocale]
+    [catParam, subParam, categoryTree, siteLocale],
   );
   const activeCategory = queryCategory || pathCategoryFilter || null;
   const legacyCat = catParam || pathCategoryFilter ? "" : filterCat;
@@ -88,7 +94,19 @@ export function CatalogProducts({
   const activeSubSlug = subParam || pathCategoryFilter?.child?.slug || "";
   const activeLabel = activeCategory?.filterLabel || filterCat || "";
 
-  // Retour page 1 quand la recherche change (les changements de catégorie passent par setParent/setSub).
+  const hasQuickFilters =
+    searchParams.has("ville") ||
+    searchParams.has("madein") ||
+    searchParams.has("escrow") ||
+    searchParams.has("express") ||
+    searchParams.has("max_prix");
+
+  const showCurated =
+    !debouncedSearch &&
+    !activeLabel &&
+    pageIndex === 0 &&
+    !hasQuickFilters;
+
   const sigRef = useRef(debouncedSearch);
   useEffect(() => {
     if (sigRef.current === debouncedSearch) return;
@@ -99,7 +117,7 @@ export function CatalogProducts({
         next.delete("page");
         return next;
       },
-      { replace: true }
+      { replace: true },
     );
   }, [debouncedSearch, setSearchParams]);
 
@@ -110,7 +128,15 @@ export function CatalogProducts({
     legacyCat,
   });
 
-  // Un clic = un seul setSearchParams (le panneau n'appelle qu'un callback à la fois).
+  const { products: railProducts, isLoading: railsLoading } = useCatalogRails({
+    enabled: showCurated,
+  });
+
+  const displayProducts = useMemo(() => {
+    if (!hasQuickFilters) return products;
+    return applyCatalogQuickFilters(products, searchParams);
+  }, [products, searchParams, hasQuickFilters]);
+
   const setParent = (parentSlug) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -142,24 +168,19 @@ export function CatalogProducts({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const title =
-    page === "seoCity" && seoCityName
-      ? `🛍️ Achat en ligne à ${seoCityName} — produits marketplace`
-      : "🛍️ Marketplace Cameroun — tous les produits";
-
   return (
-    <section className="sec anim yorix-page-flow yorix-pro-page">
-      <div className="sec-head yorix-catalog-head">
-        <h1 className="sec-title">{title}</h1>
-        <div className="yorix-sec-toolbar-end" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <span className="yorix-catalog-meta">{isLoading ? "…" : `${total} résultat(s)`}</span>
-          {activeLabel && (
-            <button type="button" className="btn-ghost yorix-pill--ghost" onClick={() => setParent("")}>
-              ✕ {activeLabel}
-            </button>
-          )}
-        </div>
-      </div>
+    <section className="sec anim yorix-page-flow yorix-pro-page catalog-page">
+      <CatalogHero
+        siteLocale={siteLocale}
+        total={total}
+        compact={Boolean(activeLabel || debouncedSearch || pageIndex > 0)}
+        activeLabel={activeLabel}
+        seoCityName={page === "seoCity" ? seoCityName : ""}
+      />
+
+      {!activeLabel && !debouncedSearch && goPage && (
+        <CatalogHubChips siteLocale={siteLocale} goPage={goPage} />
+      )}
 
       <CategoryFilterPanel
         tree={categoryTree}
@@ -171,22 +192,53 @@ export function CatalogProducts({
         onSubChange={setSub}
       />
 
+      {debouncedSearch && (
+        <CatalogSearchFilters siteLocale={siteLocale} search={debouncedSearch} />
+      )}
+
+      {showCurated && !railsLoading && railProducts.length >= 8 && (
+        <CatalogCuratedRails
+          products={railProducts}
+          siteLocale={siteLocale}
+          goPage={goPage}
+          user={user}
+          userData={userData}
+          addToCart={addToCart}
+          toggleWish={toggleWish}
+          wishlist={wishlist}
+          openProductUrl={openProductUrl}
+          openSellerUrl={openSellerUrl}
+        />
+      )}
+
+      <div className="catalog-all-head">
+        <h2>{t("catalog:allProducts")}</h2>
+        <span className="yorix-catalog-meta">
+          {isLoading ? "…" : t("catalog:resultsCount", { count: hasQuickFilters ? displayProducts.length : total })}
+        </span>
+        {activeLabel && (
+          <button type="button" className="btn-ghost yorix-pill--ghost" onClick={() => setParent("")}>
+            ✕ {activeLabel}
+          </button>
+        )}
+      </div>
+
       {isLoading ? (
         <SkeletonRow count={8} />
       ) : isError ? (
         <div className="empty-state">
           <div className="empty-icon">⚠️</div>
-          <p>Impossible de charger les produits. Réessaie dans un instant.</p>
+          <p>{t("catalog:loadError")}</p>
         </div>
-      ) : products.length === 0 ? (
+      ) : displayProducts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">🔍</div>
-          <p>Aucun produit{search ? ` pour « ${search} »` : ""}.</p>
+          <p>{search ? t("catalog:noProductsSearch", { query: search }) : t("catalog:noProducts")}</p>
         </div>
       ) : (
         <>
           <ProdGrid
-            prods={products}
+            prods={displayProducts}
             user={user}
             userData={userData}
             onAddToCart={addToCart}
@@ -198,18 +250,18 @@ export function CatalogProducts({
           />
           {isPlaceholder && <SkeletonRow count={4} />}
 
-          {totalPages > 1 && (
-            <nav className="catalog-pager" aria-label="Pagination catalogue">
+          {totalPages > 1 && !hasQuickFilters && (
+            <nav className="catalog-pager" aria-label={t("catalog:paginationAria")}>
               <button
                 type="button"
                 className="catalog-pager-btn"
                 onClick={() => goToPage(humanPage - 1)}
                 disabled={pageIndex <= 0 || isPlaceholder}
               >
-                ← Précédent
+                ← {t("catalog:prevPage")}
               </button>
               <span className="catalog-pager-status">
-                Page {humanPage} / {totalPages}
+                {t("catalog:pageStatus", { current: humanPage, total: totalPages })}
               </span>
               <button
                 type="button"
@@ -217,7 +269,7 @@ export function CatalogProducts({
                 onClick={() => goToPage(humanPage + 1)}
                 disabled={humanPage >= totalPages || isPlaceholder}
               >
-                Suivant →
+                {t("catalog:nextPage")} →
               </button>
             </nav>
           )}

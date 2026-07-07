@@ -1,5 +1,13 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import uiFr from "../locales/fr/ui.json";
+import uiEn from "../locales/en/ui.json";
+import catalogFr from "../locales/fr/catalog.json";
+import catalogEn from "../locales/en/catalog.json";
+import chatFr from "../locales/fr/chat.json";
+import chatEn from "../locales/en/chat.json";
+import marketingFr from "../locales/fr/marketing.json";
+import marketingEn from "../locales/en/marketing.json";
 import commonFr from "../locales/fr/common.json";
 import commonEn from "../locales/en/common.json";
 import navFr from "../locales/fr/nav.json";
@@ -11,7 +19,17 @@ import sellerEn from "../locales/en/seller.json";
 import adminFr from "../locales/fr/admin.json";
 import adminEn from "../locales/en/admin.json";
 
-export const I18N_NAMESPACES = ["common", "nav", "checkout", "seller", "admin"];
+export const I18N_NAMESPACES = [
+  "common",
+  "nav",
+  "checkout",
+  "seller",
+  "admin",
+  "ui",
+  "catalog",
+  "chat",
+  "marketing",
+];
 
 i18n.use(initReactI18next).init({
   lng: "fr",
@@ -26,6 +44,10 @@ i18n.use(initReactI18next).init({
       checkout: checkoutFr,
       seller: sellerFr,
       admin: adminFr,
+      ui: uiFr,
+      catalog: catalogFr,
+      chat: chatFr,
+      marketing: marketingFr,
     },
     en: {
       common: commonEn,
@@ -33,6 +55,10 @@ i18n.use(initReactI18next).init({
       checkout: checkoutEn,
       seller: sellerEn,
       admin: adminEn,
+      ui: uiEn,
+      catalog: catalogEn,
+      chat: chatEn,
+      marketing: marketingEn,
     },
   },
   interpolation: { escapeValue: false },
@@ -47,6 +73,17 @@ export function roleLabel(t, role) {
   const key = `roles.${role || "buyer"}`;
   const label = t(key, { ns: "nav", defaultValue: role || "buyer" });
   return `${icons[role] || "👤"} ${label}`;
+}
+
+/** @param {'fr'|'en'} locale */
+export function setSiteLanguage(locale) {
+  const lng = locale === "en" ? "en" : "fr";
+  if (i18n.language !== lng) {
+    void i18n.changeLanguage(lng);
+  }
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = lng === "en" ? "en" : "fr";
+  }
 }
 
 export default i18n;

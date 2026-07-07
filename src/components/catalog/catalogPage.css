@@ -1,0 +1,203 @@
+/* Hero catalogue — promesse émotionnelle */
+.catalog-hero {
+  margin-bottom: 20px;
+  padding: 22px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--green-pale) 0%, var(--surface) 55%, #fffbeb 100%);
+  border: 1px solid color-mix(in srgb, var(--green) 18%, var(--border));
+}
+
+.catalog-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.catalog-hero__title {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.catalog-hero__sub {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: var(--gray);
+  line-height: 1.45;
+  max-width: 52ch;
+}
+
+.catalog-hero__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.catalog-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+
+.catalog-hero--compact {
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.catalog-hero--compact .catalog-hero__title {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+/* Hub chips rapides */
+.catalog-hub-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.catalog-hub-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.catalog-hub-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.catalog-hub-chip:hover {
+  border-color: var(--green-light);
+  background: var(--green-pale);
+}
+
+/* Rails merchandising */
+.catalog-rails {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+
+.catalog-rail__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.catalog-rail__title {
+  margin: 0;
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.catalog-rail__sub {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: var(--gray);
+}
+
+.catalog-rail__link {
+  border: none;
+  background: transparent;
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.catalog-rail-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.catalog-rail-scroll .prod-card {
+  flex: 0 0 min(168px, 44vw);
+  scroll-snap-align: start;
+  max-width: 168px;
+}
+
+.catalog-rail-scroll .prod-grid {
+  display: contents;
+}
+
+.catalog-all-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.catalog-all-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* Filtres recherche rapides */
+.catalog-search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.catalog-search-filter {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.catalog-search-filter.is-active {
+  background: var(--green-pale);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.cat-filter-more {
+  border-style: dashed !important;
+  font-weight: 800 !important;
+}

@@ -496,14 +496,17 @@ export function YorixPages({ ctx }) {
             <main className="dash-content">
               {dashTab === "messages" && (
                 <>
-                  <div className="dash-page-title">💬 Messagerie Yorix</div>
+                  <div className="dash-page-title">💬 {route.locale === "en" ? "Yorix messaging" : "Messagerie Yorix"}</div>
                   <div className="info-msg">
-                    🔐 Messagerie sécurisée Yorix — téléphones et e-mails masqués entre membres. Photos et liens https autorisés. Canal officiel « Yorix Équipe » pour les annonces.
+                    {route.locale === "en"
+                      ? "🔐 Yorix secure messaging — phone numbers and emails hidden between members. Photos and https links allowed. Official « Yorix Team » channel for announcements."
+                      : "🔐 Messagerie sécurisée Yorix — téléphones et e-mails masqués entre membres. Photos et liens https autorisés. Canal officiel « Yorix Équipe » pour les annonces."}
                   </div>
                   <ChatUsers
                     user={user}
                     userData={userData}
                     initialConversationId={pendingChatConversationId}
+                    siteLocale={route.locale || "fr"}
                   />
                 </>
               )}

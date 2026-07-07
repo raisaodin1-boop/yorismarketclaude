@@ -42,7 +42,7 @@ import { useCategoryTaxonomy } from "./hooks/useCategoryTaxonomy.js";
 import { useGlobalProducts } from "./hooks/useGlobalProducts.js";
 import { useYorixNotifications } from "./hooks/useYorixNotifications.js";
 import { SeoHead } from "./components/seo/SeoHead";
-import i18n from "./i18n/index.js";
+import { setSiteLanguage } from "./i18n/index.js";
 import { supabase, YORIX_WA_NUMBER } from "./lib/supabase";
 import { CATS, PREST_DATA } from "./lib/constants";
 import { isAdminViewer } from "./lib/roles";
@@ -91,7 +91,7 @@ export default function YorixApp() {
   }, [route.localeRewriteTo, location.pathname, location.search, location.hash, navigate]);
 
   useEffect(() => {
-    void i18n.changeLanguage(route.locale === "en" ? "en" : "fr");
+    setSiteLanguage(route.locale === "en" ? "en" : "fr");
   }, [route.locale]);
 
   const hrefLangAlternates = useMemo(

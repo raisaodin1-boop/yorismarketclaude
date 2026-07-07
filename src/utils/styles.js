@@ -948,6 +948,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);transi
 .msg-bubble-cta{display:inline-flex;font-size:.74rem;font-weight:700;color:var(--green);margin-top:4px;}
 .msg-bubble--mine .msg-bubble-cta{color:#fcd116;}
 .msg-bubble-foot{font-size:.62rem;opacity:.72;margin-top:6px;text-align:right;}
+.msg-translate-bar{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+.msg-translate-badge{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;opacity:.75;}
+.msg-translate-toggle{border:none;background:rgba(0,0,0,.06);color:inherit;border-radius:50px;padding:3px 10px;font-size:.65rem;font-weight:700;cursor:pointer;}
+.msg-bubble--mine .msg-translate-toggle{background:rgba(255,255,255,.18);}
+.msg-translate-pending{font-size:.68rem;opacity:.7;font-style:italic;}
+.msg-translate-btn{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.95rem;flex-shrink:0;}
+.msg-translate-btn--on{background:rgba(252,209,22,.35);border-color:#fcd116;}
 .msg-blocked-banner{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fcd34d;border-radius:14px;padding:14px 16px;color:#78350f;font-size:.78rem;text-align:left;line-height:1.5;box-shadow:0 4px 16px rgba(180,83,9,.08);}
 .msg-blocked-banner strong{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;margin-bottom:8px;color:#92400e;}
 .msg-blocked-reason{font-weight:700;margin:0 0 8px;color:#b45309;}

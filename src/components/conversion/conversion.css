@@ -95,6 +95,29 @@
   color: var(--ink, #111827);
 }
 
+.compact-social-proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+  font-size: 0.62rem;
+  line-height: 1.3;
+  color: var(--gray, #6b7280);
+}
+
+.compact-social-proof__item {
+  white-space: nowrap;
+}
+
+.compact-social-proof strong {
+  color: var(--ink, #1f2937);
+  font-weight: 800;
+}
+
+.compact-proof-verified {
+  color: var(--green, #166534);
+}
+
 .home-trending {
   padding: 28px 0;
 }

@@ -553,6 +553,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 initialProduct={product}
                 onClose={() => setShowChatModal(false)}
                 isModal={true}
+                siteLocale={siteLocale}
               />
             </div>
           </div>
