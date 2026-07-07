@@ -1,4 +1,156 @@
-/* ── Header simplifié : menu unique + liens sobres ── */
+/* ── Header slim : logo + recherche + panier + menu ── */
+
+.header-sticky-stack--slim .topbar {
+  display: none;
+}
+
+.navbar--slim {
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.navbar--slim .logo-wrap {
+  flex-shrink: 0;
+}
+
+.navbar--slim .nav-search-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nav-search--breathing .nav-search-field input {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.nav-search-cat-desktop {
+  /* visible desktop only — see media query */
+}
+
+.nav-menu-btn {
+  flex-shrink: 0;
+}
+
+.nav-quick-panel--navbar {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 500;
+  max-height: min(75vh, 560px);
+  overflow-y: auto;
+}
+
+.nav-quick-panel--navbar .nav-quick-links button {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+@media (max-width: 768px) {
+  .navbar--slim {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .nav-search-cat-desktop,
+  .nav-search-cmd-hint {
+    display: none !important;
+  }
+
+  .nav-search--breathing {
+    grid-template-columns: 1fr auto !important;
+  }
+
+  .nav-menu-btn,
+  .navbar--slim .icon-btn,
+  .navbar--slim .user-menu-trigger {
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+
+  .navbar--slim .logo-txt {
+    font-size: 1.15rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .nav-auth-desktop .btn-ghost,
+  .nav-auth-desktop .btn-green {
+    min-height: 40px;
+  }
+}
+
+/* ── Règle de 3 : image, nom, prix ── */
+.prod-card--compact .prod-info {
+  padding: 10px 12px 12px;
+  gap: 6px;
+}
+
+.prod-name--rule3 {
+  font-size: 0.84rem;
+  line-height: 1.3;
+  font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.prod-price-row--rule3 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prod-price-row--rule3 .price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.add-btn--overlay {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  box-shadow: 0 4px 14px rgba(26, 107, 58, 0.35);
+}
+
+.wish-btn--compact {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+@media (max-width: 768px) {
+  .add-btn--overlay {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.25rem !important;
+  }
+
+  .wish-btn--compact {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .prod-card--compact {
+    border-radius: 12px;
+  }
+
+  .prod-card--compact .prod-info {
+    padding: 12px !important;
+  }
+}
+
+/* ── Header simplifié : menu unique + liens sobres (legacy row retired) ── */
 
 @media (max-width: 768px) {
   .header-sticky-stack .topbar {

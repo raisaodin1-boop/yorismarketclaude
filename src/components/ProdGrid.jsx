@@ -124,8 +124,8 @@ export function ProdGrid({
                   fallbackEmoji="📦"
                   style={{ width: "100%", height: "100%" }}
                 />
-                {p.flash                             && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> Flash</span>}
-                {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
+                {p.flash && !compactList && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> Flash</span>}
+                {!compactList && !p.flash && isPromoActive(p) && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
                 {!compactList && !p.flash && !isPromoActive(p) && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
                 {!compactList && resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
                 {!compactList && (p.b2b_enabled || isImportProduct(p)) && (
@@ -154,7 +154,8 @@ export function ProdGrid({
                   </span>
                 )}
                 <button
-                  className="wish-btn"
+                  className={`wish-btn${compactList ? " wish-btn--compact" : ""}`}
+                  aria-label={siteLocale === "en" ? "Wishlist" : "Liste de souhaits"}
                   onClick={e => { e.stopPropagation(); onWish(p.id); }}
                 >
                   {wishlist.has(p.id) ? (
@@ -163,6 +164,17 @@ export function ProdGrid({
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                   )}
                 </button>
+                {compactList && (
+                  <button
+                    className="add-btn add-btn--overlay"
+                    disabled={!buyable}
+                    aria-disabled={!buyable}
+                    aria-label={buyable ? (siteLocale === "en" ? "Add to cart" : "Ajouter au panier") : (siteLocale === "en" ? "Unavailable" : "Indisponible")}
+                    onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                  >
+                    +
+                  </button>
+                )}
               </div>
 
               {/* ── INFOS ── */}
@@ -175,36 +187,20 @@ export function ProdGrid({
               >
                 {compactList ? (
                   <>
-                    <div className="prod-name">{displayName}</div>
-                    <div className="prod-loc prod-loc--compact">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      {p.ville || "Cameroun"}
-                    </div>
-                    <div className="prod-price-row prod-price-row--compact">
-                      <div>
-                        {prixPromo ? (
-                          <>
-                            <span className="price">
-                              {prixPromo.toLocaleString()} <span className="price-unit">FCFA</span>
-                            </span>
-                            <span className="prod-price-was">{p.prix?.toLocaleString()} F</span>
-                          </>
-                        ) : (
+                    <div className="prod-name prod-name--rule3">{displayName}</div>
+                    <div className="prod-price-row prod-price-row--rule3">
+                      {prixPromo ? (
+                        <>
                           <span className="price">
-                            {p.prix?.toLocaleString()} <span className="price-unit">FCFA</span>
+                            {prixPromo.toLocaleString()} <span className="price-unit">FCFA</span>
                           </span>
-                        )}
-                      </div>
-                      <button
-                        className="add-btn"
-                        disabled={!buyable}
-                        aria-disabled={!buyable}
-                        title={buyable ? "Ajouter au panier" : "Indisponible"}
-                        style={!buyable ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
-                        onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
-                      >
-                        +
-                      </button>
+                          <span className="prod-price-was">{p.prix?.toLocaleString()} F</span>
+                        </>
+                      ) : (
+                        <span className="price">
+                          {p.prix?.toLocaleString()} <span className="price-unit">FCFA</span>
+                        </span>
+                      )}
                     </div>
                   </>
                 ) : (

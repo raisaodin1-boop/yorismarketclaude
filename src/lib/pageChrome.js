@@ -35,10 +35,10 @@ export function shouldShowSiteFooter(page) {
   return !SITE_FOOTER_HIDDEN_PAGES.has(page);
 }
 
-/** Hubs catalogue où l'en-tête global doit céder la place aux produits. */
 const CATALOG_FOCUS_MERCH_HUBS = new Set(["made-in-cameroun", "sourcer-en-gros"]);
 
 /** @param {string} page @param {string | undefined} merchHub */
 export function shouldUseCatalogFocusHeader(page, merchHub) {
+  if (page === "prestataires") return true;
   return page === "merchHub" && CATALOG_FOCUS_MERCH_HUBS.has(merchHub);
 }

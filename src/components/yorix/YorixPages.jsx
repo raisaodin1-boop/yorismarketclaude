@@ -287,6 +287,7 @@ export function YorixPages({ ctx }) {
           <LazyPrestPage
             user={user}
             userData={userData}
+            siteLocale={route.locale}
             allServices={allServices}
             goPage={goPage}
             setSelectedPrest={setSelectedPrest}

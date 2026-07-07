@@ -6,7 +6,6 @@ import { ContentIcon } from "../../lib/contentIcons";
 import { categoryLabel } from "../../lib/marketplaceCategories";
 import { productMatchesSearch } from "../../lib/productSearch";
 import { NAV_QUICK_ICONS, LucideIcon } from "../../lib/lucideNavIcons";
-import { CategoryMegaMenu } from "../categories/CategoryMegaMenu";
 import { CategoryMobileNav } from "../categories/CategoryMobileNav";
 import { NotificationBell } from "../NotificationBell";
 import { OptimizedImage } from "../OptimizedImage";
@@ -49,17 +48,18 @@ export function YorixHeader({
   navQuickRef,
   navQuickOpen,
   setNavQuickOpen,
-  tabActive,
+  tabActive: _tabActive,
   roleChipClass,
 }) {
   const { t } = useTranslation("nav");
+  const localeTag = siteLocale === "en" ? "en-FR" : "fr-FR";
   const cmdKLabel =
     typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform)
       ? "⌘K"
       : "Ctrl+K";
 
   return (
-    <div className={`header-sticky-stack${navCompact ? " header-sticky-stack--compact" : ""}`}>
+    <div className={`header-sticky-stack header-sticky-stack--slim${navCompact ? " header-sticky-stack--compact" : ""}`}>
       <div className="topbar">
         <div className="topbar-l">
           <div className="flag-wrap">
@@ -143,7 +143,7 @@ export function YorixHeader({
         </div>
       </div>
 
-      <nav className="navbar navbar--yorix-mobile navbar--marketplace">
+      <nav className="navbar navbar--yorix-mobile navbar--marketplace navbar--slim">
         <div className="logo-wrap" onClick={() => goPage("home")}>
           <div className="logo-txt">
             Yo<span>rix</span>
@@ -151,31 +151,10 @@ export function YorixHeader({
           </div>
         </div>
 
-        <span className="nav-lang-mobile" role="group" aria-label={t("sticky_lang_hint", { ns: "common" })}>
-          <button
-            type="button"
-            className={siteLocale === "fr" ? "active" : ""}
-            onClick={() => switchLocale?.("fr")}
-          >
-            FR
-          </button>
-          <span aria-hidden>|</span>
-          <button
-            type="button"
-            className={siteLocale === "en" ? "active" : ""}
-            onClick={() => switchLocale?.("en")}
-          >
-            EN
-          </button>
-        </span>
-
-        {categoryTree.length > 0 && (
-          <CategoryMegaMenu tree={categoryTree} locale={siteLocale} onNavigate={(v) => goToCategory?.(v)} />
-        )}
-
-        <div className="nav-search-wrap">
-          <div className="nav-search">
+        <div className="nav-search-wrap" ref={navQuickRef}>
+          <div className="nav-search nav-search--breathing">
             <select
+              className="nav-search-cat-desktop"
               value={filterCat}
               onChange={(e) => {
                 const v = e.target.value;
@@ -268,15 +247,152 @@ export function YorixHeader({
               <Search size={16} strokeWidth={2.5} aria-hidden="true" />
             </button>
           </div>
+
+          {navQuickOpen && (
+            <div className="nav-quick-panel nav-quick-panel--navbar" role="dialog" aria-label={t("actions.navDialog")}>
+              <div className="nav-quick-mega-cols">
+                {categoryTree.length > 0 && (
+                  <div className="nav-quick-section" style={{ gridColumn: "1 / -1" }}>
+                    <CategoryMobileNav
+                      tree={categoryTree}
+                      locale={siteLocale}
+                      onNavigate={(v) => {
+                        setNavQuickOpen(false);
+                        goToCategory?.(v);
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="nav-quick-section">
+                  <h4>{t("quickNav.marketplace")}</h4>
+                  <div className="nav-quick-links">
+                    {[
+                      { key: "produits", l: t("tabs.products"), p: "produits" },
+                      { key: "bonsPlans", l: t("tabs.deals"), p: "bonsPlans" },
+                      { key: "prestataires", l: t("tabs.providers"), p: "prestataires" },
+                      { key: "cart", l: t("quickNav.cartSecure"), p: "cart" },
+                      { key: "livraison", l: t("quickNav.deliveryTrack"), p: "livraison" },
+                    ].map((x) => {
+                      const Icon = NAV_QUICK_ICONS[x.key];
+                      return (
+                        <button
+                          key={x.p}
+                          type="button"
+                          onClick={() => {
+                            setNavQuickOpen(false);
+                            goPage(x.p);
+                          }}
+                        >
+                          <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
+                          <span>{x.l}</span>
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNavQuickOpen(false);
+                        goPage("merchHub", { merchHub: "sourcer-en-gros" });
+                      }}
+                    >
+                      <span className="nav-quick-ico"><Package size={16} strokeWidth={2.25} /></span>
+                      <span>{siteLocale === "en" ? "Wholesale" : "Sourcer en gros"}</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="nav-quick-section">
+                  <h4>{siteLocale === "en" ? "Highlights" : "Sélections"}</h4>
+                  <div className="nav-quick-links">
+                    {EMOTIONAL_NAV.map((item) => {
+                      const label = siteLocale === "en" ? item.labelEn : item.labelFr;
+                      return (
+                        <button
+                          key={item.hub || item.page || item.alias}
+                          type="button"
+                          onClick={() => {
+                            setNavQuickOpen(false);
+                            if (item.hub) goPage("merchHub", { merchHub: item.hub });
+                            else if (item.page === "seoAlias" && item.alias) goPage("business", { seoAlias: item.alias });
+                            else goPage(item.page);
+                          }}
+                        >
+                          <span className="nav-quick-ico"><ContentIcon name={item.iconKey} size={16} /></span>
+                          <span>{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="nav-quick-section">
+                  <h4>{t("quickNav.trust")}</h4>
+                  <div className="nav-quick-links">
+                    {[
+                      { key: "escrow", l: t("quickNav.escrowBuyer"), p: "escrow" },
+                      { key: "business", l: t("tabs.business"), p: "business" },
+                      { key: "academy", l: t("tabs.academy"), p: "academy" },
+                      { key: "blog", l: t("quickNav.blogTrends"), p: "blog" },
+                      { key: "loyalty", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
+                    ].map((x) => {
+                      const Icon = NAV_QUICK_ICONS[x.key];
+                      return (
+                        <button
+                          key={x.p}
+                          type="button"
+                          onClick={() => {
+                            setNavQuickOpen(false);
+                            goPage(x.p);
+                          }}
+                        >
+                          <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
+                          <span>{x.l}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="nav-quick-section">
+                  <h4>{t("quickNav.support")}</h4>
+                  <div className="nav-quick-links">
+                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("contact"); }}>
+                      <span className="nav-quick-ico"><Phone size={16} strokeWidth={2.25} /></span>
+                      <span>{t("quickNav.contactSupport")}</span>
+                    </button>
+                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("aide"); }}>
+                      <span className="nav-quick-ico"><LifeBuoy size={16} strokeWidth={2.25} /></span>
+                      <span>{t("quickNav.helpSos")}</span>
+                    </button>
+                    <button type="button" onClick={() => { setNavQuickOpen(false); goPage("faq"); }}>
+                      <span className="nav-quick-ico"><LucideIcon icon={NAV_QUICK_ICONS.faq} size={16} /></span>
+                      <span>{t("quickNav.faqMarketplace")}</span>
+                    </button>
+                    <button type="button" onClick={() => { setNavQuickOpen(false); setOnboardingOpen(true); }}>
+                      <span className="nav-quick-ico"><Rocket size={16} strokeWidth={2.25} /></span>
+                      <span>{t("actions.getStarted")}</span>
+                    </button>
+                    <button type="button" onClick={() => setDark((d) => !d)}>
+                      <span className="nav-quick-ico">{dark ? <Sun size={16} /> : <Moon size={16} />}</span>
+                      <span>{dark ? t("actions.lightMode") : t("actions.darkMode")}</span>
+                    </button>
+                    <button type="button" onClick={() => switchLocale?.(siteLocale === "fr" ? "en" : "fr")}>
+                      <span className="nav-quick-ico"><Flag size={16} strokeWidth={2.25} /></span>
+                      <span>{siteLocale === "fr" ? "English (EN)" : "Français (FR)"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="nav-actions">
-          <Button type="button" variant="primary" size="sm" className="nav-cta-onboard" icon={Rocket} onClick={() => setOnboardingOpen(true)} title={t("actions.getStartedTitle")}>
-            {t("actions.getStarted")}
-          </Button>
-
-          <button type="button" className="dark-toggle" onClick={() => setDark((d) => !d)} title={dark ? t("actions.lightMode") : t("actions.darkMode")} aria-label={dark ? t("actions.lightMode") : t("actions.darkMode")}>
-            {dark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+          <button
+            type="button"
+            className="icon-btn nav-menu-btn"
+            aria-expanded={navQuickOpen}
+            aria-label={siteLocale === "en" ? "Menu" : "Menu"}
+            onClick={() => setNavQuickOpen((o) => !o)}
+          >
+            <Menu size={20} strokeWidth={2.25} aria-hidden />
           </button>
 
           {user && (
@@ -359,180 +475,6 @@ export function YorixHeader({
           </div>
         </div>
       </nav>
-
-      <div className="nav-primary-row" ref={navQuickRef}>
-        <button
-          type="button"
-          className="nav-categories-btn"
-          aria-expanded={navQuickOpen}
-          aria-haspopup="dialog"
-          onClick={() => setNavQuickOpen((o) => !o)}
-        >
-          <Menu size={16} strokeWidth={2.25} aria-hidden />
-          {siteLocale === "en" ? "Categories" : "Catégories"}
-        </button>
-
-        <nav className="nav-primary-links" aria-label={siteLocale === "en" ? "Main navigation" : "Navigation principale"}>
-          <button
-            type="button"
-            className={`nav-primary-link${tabActive("produits") ? " active" : ""}`}
-            onClick={() => goPage("produits")}
-          >
-            {t("tabs.products")}
-          </button>
-          <button
-            type="button"
-            className={`nav-primary-link${tabActive("bonsPlans") ? " active" : ""}`}
-            onClick={() => goPage("bonsPlans")}
-          >
-            {t("tabs.deals")}
-          </button>
-          <button
-            type="button"
-            className="nav-primary-link nav-primary-link--wholesale"
-            onClick={() => goPage("merchHub", { merchHub: "sourcer-en-gros" })}
-          >
-            {siteLocale === "en" ? "Wholesale" : "Gros"}
-          </button>
-          <button
-            type="button"
-            className={`nav-primary-link${tabActive("prestataires") ? " active" : ""}`}
-            onClick={() => goPage("prestataires")}
-          >
-            {t("tabs.providers")}
-          </button>
-        </nav>
-
-        {navQuickOpen && (
-          <div className="nav-quick-panel" role="dialog" aria-label={t("actions.navDialog")}>
-            <div className="nav-quick-mega-cols">
-              {categoryTree.length > 0 && (
-                <div className="nav-quick-section" style={{ gridColumn: "1 / -1" }}>
-                  <CategoryMobileNav
-                    tree={categoryTree}
-                    locale={siteLocale}
-                    onNavigate={(v) => {
-                      setNavQuickOpen(false);
-                      goToCategory?.(v);
-                    }}
-                  />
-                </div>
-              )}
-              <div className="nav-quick-section">
-                <h4>{siteLocale === "en" ? "Highlights" : "Sélections"}</h4>
-                <div className="nav-quick-links">
-                  {EMOTIONAL_NAV.map((item) => {
-                    const label = siteLocale === "en" ? item.labelEn : item.labelFr;
-                    return (
-                      <button
-                        key={item.hub || item.page || item.alias}
-                        type="button"
-                        onClick={() => {
-                          setNavQuickOpen(false);
-                          if (item.hub) goPage("merchHub", { merchHub: item.hub });
-                          else if (item.page === "seoAlias" && item.alias) goPage("business", { seoAlias: item.alias });
-                          else goPage(item.page);
-                        }}
-                      >
-                        <span className="nav-quick-ico"><ContentIcon name={item.iconKey} size={16} /></span>
-                        <span>{label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="nav-quick-section">
-                <h4>{t("quickNav.marketplace")}</h4>
-                <div className="nav-quick-links">
-                  {[
-                    { key: "home", l: t("quickNav.home"), p: "home" },
-                    { key: "produits", l: t("quickNav.catalog"), p: "produits" },
-                    { key: "cart", l: t("quickNav.cartSecure"), p: "cart" },
-                    { key: "bonsPlans", l: t("quickNav.dealsNow"), p: "bonsPlans" },
-                    { key: "livraison", l: t("quickNav.deliveryTrack"), p: "livraison" },
-                  ].map((x) => {
-                    const Icon = NAV_QUICK_ICONS[x.key];
-                    return (
-                    <button
-                      key={x.p}
-                      type="button"
-                      onClick={() => {
-                        setNavQuickOpen(false);
-                        goPage(x.p);
-                      }}
-                    >
-                      <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
-                      <span>{x.l}</span>
-                    </button>
-                  );})}
-                </div>
-              </div>
-              <div className="nav-quick-section">
-                <h4>{t("quickNav.trust")}</h4>
-                <div className="nav-quick-links">
-                  {[
-                    { key: "escrow", l: t("quickNav.escrowBuyer"), p: "escrow" },
-                    { key: "prestataires", l: t("quickNav.providersVerified"), p: "prestataires" },
-                    { key: "business", l: t("tabs.business"), p: "business" },
-                    { key: "academy", l: t("tabs.academy"), p: "academy" },
-                    { key: "blog", l: t("quickNav.blogTrends"), p: "blog" },
-                    { key: "loyalty", l: t("quickNav.loyaltyProgram"), p: "loyalty" },
-                  ].map((x) => {
-                    const Icon = NAV_QUICK_ICONS[x.key];
-                    return (
-                    <button
-                      key={x.p}
-                      type="button"
-                      onClick={() => {
-                        setNavQuickOpen(false);
-                        goPage(x.p);
-                      }}
-                    >
-                      <span className="nav-quick-ico">{Icon && <Icon size={16} strokeWidth={2.25} />}</span>
-                      <span>{x.l}</span>
-                    </button>
-                  );})}
-                </div>
-              </div>
-              <div className="nav-quick-section">
-                <h4>{t("quickNav.support")}</h4>
-                <div className="nav-quick-links">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNavQuickOpen(false);
-                      goPage("contact");
-                    }}
-                  >
-                    <span className="nav-quick-ico"><Phone size={16} strokeWidth={2.25} /></span>
-                    <span>{t("quickNav.contactSupport")}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNavQuickOpen(false);
-                      goPage("aide");
-                    }}
-                  >
-                    <span className="nav-quick-ico"><LifeBuoy size={16} strokeWidth={2.25} /></span>
-                    <span>{t("quickNav.helpSos")}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNavQuickOpen(false);
-                      goPage("faq");
-                    }}
-                  >
-                    <span className="nav-quick-ico"><LucideIcon icon={NAV_QUICK_ICONS.faq} size={16} /></span>
-                    <span>{t("quickNav.faqMarketplace")}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

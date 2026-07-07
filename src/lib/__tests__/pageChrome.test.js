@@ -25,6 +25,7 @@ describe("pageChrome", () => {
   it("uses catalog focus header on key merch hubs", () => {
     expect(shouldUseCatalogFocusHeader("merchHub", "made-in-cameroun")).toBe(true);
     expect(shouldUseCatalogFocusHeader("merchHub", "sourcer-en-gros")).toBe(true);
+    expect(shouldUseCatalogFocusHeader("prestataires", undefined)).toBe(true);
     expect(shouldUseCatalogFocusHeader("merchHub", "top-produits")).toBe(false);
     expect(shouldUseCatalogFocusHeader("produits", "made-in-cameroun")).toBe(false);
   });
