@@ -244,7 +244,7 @@ export function YorixHeader({
                     >
                       {(p.image?.startsWith("http") || (p.image_urls?.[0]?.startsWith("http"))) ? (
                         <OptimizedImage
-                          src={p.image?.startsWith("http") ? p.image : p.image_urls![0]}
+                          src={p.image?.startsWith("http") ? p.image : p.image_urls?.[0]}
                           alt=""
                           size="thumb"
                           className="nav-search-dd-img"
