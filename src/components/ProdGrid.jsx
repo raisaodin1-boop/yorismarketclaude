@@ -4,6 +4,7 @@ import { ShoppingCart, MessageCircle, Lock, Flame, Zap, Star, Trophy, BadgeCheck
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
+import { isImportProduct } from "../lib/importWholesale";
 import { resolveMadeInCameroon } from "../lib/madeInCameroon";
 import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
@@ -113,6 +114,11 @@ export function ProdGrid({
                 {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
                 {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
                 {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
+                {(p.b2b_enabled || isImportProduct(p)) && (
+                  <span className="b2b-card-badge">
+                    {p.b2b_enabled ? "GROS" : "IMPORT"}
+                  </span>
+                )}
                 {p.escrow                            && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
                 {!buyable && (
                   <span

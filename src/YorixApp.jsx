@@ -809,6 +809,7 @@ export default function YorixApp() {
         "faq",
         "devenirVendeur",
         "devenirLivreur",
+        "importSupplier",
         "inscription",
         "business",
         "academy",
@@ -879,6 +880,7 @@ export default function YorixApp() {
         dn("🏪", "mesProduits", "myProducts"),
         dn("➕", "ajouterProduit", "addProduct"),
         dn("📦", "commandes", "orders"),
+        { icon: "🏭", id: "b2bDemandes", label: tNav("dashNav.b2bRequests") },
         dn("💰", "wallet", "wallet"),
         { icon: "🤝", id: "parrainage", label: "Parrainage" },
         { icon: "🛡", id: "kyc", label: "Vérification" },
@@ -904,6 +906,7 @@ export default function YorixApp() {
     return [
       dn("📊", "overview", "overview"),
       dn("📦", "commandes", "myOrders"),
+      { icon: "🏭", id: "b2bDemandes", label: tNav("dashNav.b2bRequests") },
       dn("❤️", "favoris", "favorites"),
       dn("🌟", "loyalty", "loyalty"),
       { icon: "🤝", id: "parrainage", label: "Parrainage" },
@@ -1346,6 +1349,7 @@ export default function YorixApp() {
       mentions: "Mentions légales — Yorix.cm",
       devenirVendeur: "Devenir vendeur sur Yorix — marketplace Cameroun",
       devenirLivreur: "Devenir livreur Yorix Ride — livraison Cameroun",
+      importSupplier: "Fournisseur import & gros — Chine → Cameroun | Yorix B2B",
       inscription: "Devenir prestataire Yorix — services Cameroun",
     };
     const fallbackDescription = {
@@ -1379,6 +1383,8 @@ export default function YorixApp() {
         "Devenir vendeur sur Yorix.cm : créez votre boutique marketplace, gagnez en visibilité et encaissez via Mobile Money au Cameroun.",
       devenirLivreur:
         "Devenir livreur Yorix Ride : rejoignez le réseau de livraison au Cameroun, recevez des missions et suivez vos gains.",
+      importSupplier:
+        "Fournisseurs import Chine et internationaux : publiez en gros sur Yorix, MOQ, Incoterms, devis B2B et escrow pour le Cameroun.",
       inscription:
         "Devenir prestataire Yorix : proposez vos services au Cameroun, recevez des demandes clients et développez votre activité locale.",
       bonsPlans:
@@ -1401,6 +1407,7 @@ export default function YorixApp() {
       mentions: "Mentions légales",
       devenirVendeur: "Devenir vendeur",
       devenirLivreur: "Devenir livreur",
+      importSupplier: "Fournisseur import",
       inscription: "Devenir prestataire",
       bonsPlans: "Bons plans",
     };

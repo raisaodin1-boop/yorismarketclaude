@@ -13,6 +13,7 @@ const GLOBAL_NEWSLETTER_PAGES = new Set([
   "escrow",
   "devenirVendeur",
   "devenirLivreur",
+  "importSupplier",
 ]);
 
 /** Pages outil / transaction / espace membre — pas de footer marketing. */

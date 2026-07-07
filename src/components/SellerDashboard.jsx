@@ -23,6 +23,8 @@ import { ReferralPanel } from "./ReferralPanel";
 import { WalletWithdrawal } from "./WalletWithdrawal";
 import { SellerKYC } from "./SellerKYC";
 import { BusinessAiAssistant } from "./seller/BusinessAiAssistant";
+import { SellerB2BInbox } from "./seller/SellerB2BInbox";
+import { INCOTERMS, ORIGIN_COUNTRIES } from "../lib/importWholesale";
 import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons.jsx";
 
 // ─────────────────────────────────────────────────────────────
@@ -66,6 +68,12 @@ export function SellerDashboard({
     isPack: false,
     packDescription: "",
     linkedProductIds: [],
+    b2bEnabled: false,
+    prixGros: "",
+    minQtyGros: "",
+    leadTimeDays: "",
+    incoterm: "FOB",
+    wholesaleTiers: [{ min_qty: "", unit_price: "" }],
   });
   const [images, setImages]     = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -209,6 +217,9 @@ export function SellerDashboard({
       b2bEnabled: false,
       prixGros: "",
       minQtyGros: "",
+      leadTimeDays: "",
+      incoterm: "FOB",
+      wholesaleTiers: [{ min_qty: "", unit_price: "" }],
     });
     setImages([]); setPreviews([]); setProgress(0);
     setHasVariants(false);
@@ -297,6 +308,13 @@ export function SellerDashboard({
             .map((v) => ({ id: v.id, label: v.label.trim(), prix: Number(v.prix), stock: Number(v.stock || 0) }))
         : [];
 
+      const validTiers = (form.wholesaleTiers || [])
+        .map((t) => ({
+          min_qty: Number(t.min_qty),
+          unit_price: Number(t.unit_price),
+        }))
+        .filter((t) => t.min_qty > 0 && t.unit_price > 0);
+
       const { error } = await supabase.from("products").insert({
         name_fr:        form.name_fr,
         name_en:        form.name_en || form.name_fr,
@@ -323,6 +341,10 @@ export function SellerDashboard({
         b2b_enabled: Boolean(form.b2bEnabled),
         prix_gros: form.b2bEnabled && form.prixGros ? Number(form.prixGros) : null,
         min_qty_gros: form.b2bEnabled && form.minQtyGros ? Number(form.minQtyGros) : 10,
+        lead_time_days: form.b2bEnabled && form.leadTimeDays ? Number(form.leadTimeDays) : null,
+        incoterm: form.b2bEnabled ? (form.incoterm || null) : null,
+        wholesale_tiers: form.b2bEnabled && validTiers.length ? validTiers : null,
+        ...(form.b2bEnabled ? { country_of_origin: form.countryOfOrigin || "CM" } : {}),
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;
@@ -1011,14 +1033,93 @@ export function SellerDashboard({
                 🏭 Activer la vente en gros (B2B)
               </label>
               {form.b2bEnabled && (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10 }}>
-                  <div className="form-group">
-                    <label className="form-label">Prix de gros (FCFA/unité)</label>
-                    <input className="form-input" type="number" min="0" placeholder="Ex: 18000" value={form.prixGros||""} onChange={e => setForm(f => ({...f, prixGros: e.target.value}))} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <div className="form-group">
+                      <label className="form-label">Prix de gros (FCFA/unité)</label>
+                      <input className="form-input" type="number" min="0" placeholder="Ex: 18000" value={form.prixGros || ""} onChange={(e) => setForm((f) => ({ ...f, prixGros: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Quantité minimum (MOQ)</label>
+                      <input className="form-input" type="number" min="2" placeholder="Ex: 10" value={form.minQtyGros || ""} onChange={(e) => setForm((f) => ({ ...f, minQtyGros: e.target.value }))} />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Quantité minimum</label>
-                    <input className="form-input" type="number" min="2" placeholder="Ex: 10" value={form.minQtyGros||""} onChange={e => setForm(f => ({...f, minQtyGros: e.target.value}))} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    <div className="form-group">
+                      <label className="form-label">Pays d&apos;origine</label>
+                      <select className="form-select" value={form.countryOfOrigin} onChange={(e) => setForm((f) => ({ ...f, countryOfOrigin: e.target.value }))}>
+                        {ORIGIN_COUNTRIES.map((o) => (
+                          <option key={o.code} value={o.code}>{o.flag} {o.labelFr}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Délai (jours)</label>
+                      <input className="form-input" type="number" min="1" placeholder="Ex: 21" value={form.leadTimeDays || ""} onChange={(e) => setForm((f) => ({ ...f, leadTimeDays: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Incoterm</label>
+                      <select className="form-select" value={form.incoterm || "FOB"} onChange={(e) => setForm((f) => ({ ...f, incoterm: e.target.value }))}>
+                        {INCOTERMS.map((i) => (
+                          <option key={i.code} value={i.code}>{i.code}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label">Paliers MOQ (optionnel)</label>
+                    <p style={{ fontSize: ".68rem", color: "var(--gray)", margin: "0 0 8px" }}>
+                      Ex. 10 pcs → 18 000 F, 50 pcs → 16 000 F
+                    </p>
+                    {(form.wholesaleTiers || []).map((tier, idx) => (
+                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 32px", gap: 6, marginBottom: 6 }}>
+                        <input
+                          className="form-input"
+                          type="number"
+                          min="1"
+                          placeholder="Qté min"
+                          value={tier.min_qty}
+                          onChange={(e) => setForm((f) => {
+                            const tiers = [...(f.wholesaleTiers || [])];
+                            tiers[idx] = { ...tiers[idx], min_qty: e.target.value };
+                            return { ...f, wholesaleTiers: tiers };
+                          })}
+                        />
+                        <input
+                          className="form-input"
+                          type="number"
+                          min="0"
+                          placeholder="Prix unitaire"
+                          value={tier.unit_price}
+                          onChange={(e) => setForm((f) => {
+                            const tiers = [...(f.wholesaleTiers || [])];
+                            tiers[idx] = { ...tiers[idx], unit_price: e.target.value };
+                            return { ...f, wholesaleTiers: tiers };
+                          })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({
+                            ...f,
+                            wholesaleTiers: (f.wholesaleTiers || []).filter((_, i) => i !== idx),
+                          }))}
+                          style={{ border: "1px solid var(--border)", borderRadius: 6, background: "none", cursor: "pointer" }}
+                          disabled={(form.wholesaleTiers || []).length <= 1}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({
+                        ...f,
+                        wholesaleTiers: [...(f.wholesaleTiers || []), { min_qty: "", unit_price: "" }],
+                      }))}
+                      style={{ fontSize: ".75rem", color: "var(--green)", fontWeight: 700, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    >
+                      + Ajouter un palier
+                    </button>
                   </div>
                 </div>
               )}
@@ -1173,6 +1274,14 @@ export function SellerDashboard({
               </div>
             ))
           )}
+        </>
+      )}
+
+      {/* ════ INBOX B2B ════ */}
+      {dashTab === "b2bDemandes" && (
+        <>
+          <div className="dash-page-title">🏭 Demandes d&apos;achat en gros (B2B)</div>
+          <SellerB2BInbox userId={user.id} />
         </>
       )}
 

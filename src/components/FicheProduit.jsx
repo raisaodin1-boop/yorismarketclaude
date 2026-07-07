@@ -16,6 +16,8 @@ import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import { YorixToast, useYorixToast } from "./ui/YorixToast";
 import { B2BOrderForm } from "./B2BOrderForm";
+import { ImportWholesaleBadge } from "./import/ImportWholesaleBadge";
+import { resolveWholesaleUnitPrice } from "../lib/importWholesale";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL
@@ -218,6 +220,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               avgReviewNote={avgNote}
             />
             <div className="modal-title fp-title">{product.name_fr}</div>
+            <ImportWholesaleBadge product={product} locale={siteLocale} />
             <SocialProofLine product={product} locale={siteLocale} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
               <Stars value={Math.round(avgNote)} />
@@ -423,7 +426,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                Commander en gros — {Number(product.prix_gros || product.prix).toLocaleString()} FCFA/unité (min {product.min_qty_gros || 10})
+                Commander en gros — {Number(resolveWholesaleUnitPrice(product, product.min_qty_gros || 10)).toLocaleString()} FCFA/unité (min {product.min_qty_gros || 10})
               </button>
             )}
 

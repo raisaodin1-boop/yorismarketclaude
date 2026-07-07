@@ -1,5 +1,8 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
-import { productMoq } from "./productMoq.js";
+import {
+  productMatchesImportChinaFilter,
+  productMatchesWholesaleFilter,
+} from "./importWholesale.js";
 import {
   computeTopNewProducts,
   computeTrendingProducts,
@@ -163,6 +166,21 @@ export const MERCH_HUBS = {
     theme: "wholesale",
     filter: "wholesale",
   },
+  "import-chine": {
+    slug: "import-chine",
+    page: "merchHub",
+    categorySlug: "import-chine",
+    titleFr: "Import Chine → Cameroun — Gros & devis B2B",
+    titleEn: "China import → Cameroon — Wholesale & B2B quotes",
+    descFr:
+      "Produits importés depuis la Chine : MOQ, délais FOB/CIF, demandes de devis et escrow Yorix pour professionnels.",
+    descEn:
+      "Products imported from China: MOQ, FOB/CIF lead times, quote requests and Yorix escrow for professionals.",
+    keywordsFr: "import chine cameroun, fournisseur chinois, gros import, sourcing chine",
+    emoji: "🇨🇳",
+    theme: "import-cn",
+    filter: "import_china",
+  },
 };
 
 export const MERCH_HUB_SLUGS = Object.keys(MERCH_HUBS);
@@ -291,24 +309,20 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
       return active.filter((p) => String(p.ville || "").toLowerCase().includes(needle));
     }
     case "wholesale": {
-      const wholesale = active.filter((p) => {
-        const moq = productMoq(p);
-        return (
-          moq > 1 ||
-          p.vendeur_verifie ||
-          p.verifie ||
-          p.sponsorise ||
-          (Number(p.vente_total) || 0) >= 8
-        );
-      });
+      const wholesale = active.filter(productMatchesWholesaleFilter);
       if (wholesale.length >= 4) {
         return [...wholesale].sort(
-          (a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0),
+          (a, b) => (Number(b.min_qty_gros) || 0) - (Number(a.min_qty_gros) || 0),
         );
       }
       return [...active]
-        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .filter((p) => p.b2b_enabled || Number(p.min_qty_gros) > 1)
         .slice(0, 64);
+    }
+    case "import_china": {
+      const imported = active.filter(productMatchesImportChinaFilter);
+      if (imported.length >= 2) return imported;
+      return active.filter((p) => p.b2b_enabled).slice(0, 48);
     }
     default:
       return active;

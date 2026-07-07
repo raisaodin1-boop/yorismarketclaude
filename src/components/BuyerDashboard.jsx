@@ -6,6 +6,7 @@ import { ContentIcon } from "../lib/contentIcons";
 import { OrderCardWithTracking } from "./OrderCardWithTracking";
 import { ReferralPanel } from "./ReferralPanel";
 import { CreditScorePanel } from "./credit/CreditScorePanel";
+import { BuyerB2BRequests } from "./buyer/BuyerB2BRequests";
 
 const PULL_THRESHOLD = 64; // px pour déclencher le refresh
 
@@ -190,6 +191,13 @@ export function BuyerDashboard({ user, userData, wishlist, totalQty, loyaltyPts,
               ))
             )}
           </div>
+        </>
+      )}
+
+      {dashTab === "b2bDemandes" && (
+        <>
+          <div className="dash-page-title">🏭 Mes demandes d&apos;achat en gros</div>
+          <BuyerB2BRequests userId={user.id} />
         </>
       )}
 

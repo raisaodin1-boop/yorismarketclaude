@@ -7,6 +7,7 @@ import { AcademyPage } from "./AcademyPage";
 import { BusinessPage } from "./BusinessPage";
 import { ContactPage } from "./ContactPage";
 import { SellerLanding } from "../components/conversion/SellerLanding";
+import { ImportSupplierLanding } from "./ImportSupplierLanding";
 import { SeoAliasHubSection } from "../components/marketing/SeoAliasHubSection";
 import { SEO_HUB_ALIAS_KEYS } from "../lib/merchHubs";
 
@@ -80,6 +81,19 @@ export function SiteMarketingPages({
             setAuthOpen(true);
           }}
           onBrowse={() => goPage("produits")}
+        />
+      );
+
+    case "importSupplier":
+      return (
+        <ImportSupplierLanding
+          locale={siteLocale}
+          onRegister={() => {
+            setAuthTab("register");
+            setSelectedRole("seller");
+            setAuthOpen(true);
+          }}
+          onBrowseWholesale={() => goPage("merchHub", { merchHub: "sourcer-en-gros" })}
         />
       );
 

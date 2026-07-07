@@ -31,6 +31,10 @@ export const PRODUCT_LIST_COLUMNS = [
   "b2b_enabled",
   "prix_gros",
   "min_qty_gros",
+  "country_of_origin",
+  "lead_time_days",
+  "incoterm",
+  "wholesale_tiers",
   "created_at",
 ].join(",");
 

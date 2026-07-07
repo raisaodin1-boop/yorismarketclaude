@@ -181,6 +181,24 @@ export const SEO_URL_ALIASES = {
       "Launch your Cameroon storefront with Yorix : national reach, escrow tools and MoMo-compatible flows.",
     keywords: "sell online Cameroon, become seller, Yorix vendor",
   },
+  "fournisseur-import-cameroun": {
+    lang: "fr",
+    page: "importSupplier",
+    pathBare: "/fournisseur-import-cameroun",
+    title: "Fournisseur import Chine → Cameroun | Gros B2B Yorix",
+    description:
+      "Devenez fournisseur import sur Yorix : MOQ, Incoterms, devis B2B et escrow pour vendre en gros au Cameroun.",
+    keywords: "fournisseur import cameroun, import chine gros, devis b2b marketplace",
+  },
+  "import-supplier-cameroon": {
+    lang: "en",
+    page: "importSupplier",
+    pathBare: "/import-supplier-cameroon",
+    title: "Import supplier China → Cameroon | Yorix wholesale B2B",
+    description:
+      "Become an import supplier on Yorix: MOQ tiers, Incoterms, B2B quotes and escrow for wholesale in Cameroon.",
+    keywords: "import supplier Cameroon, China wholesale, B2B marketplace",
+  },
   "achat-en-ligne-douala": {
     lang: "fr",
     page: "seoCity",

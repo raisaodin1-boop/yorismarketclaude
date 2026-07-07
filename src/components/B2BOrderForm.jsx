@@ -2,6 +2,13 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
+import {
+  formatLeadTime,
+  isImportProduct,
+  originLabel,
+  parseWholesaleTiers,
+  resolveWholesaleUnitPrice,
+} from "../lib/importWholesale";
 
 export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
   const [form, setForm] = useState({
@@ -16,8 +23,10 @@ export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
   const [done, setDone]       = useState(null);
 
   const minQty   = product?.min_qty_gros || 10;
-  const unitPrice = product?.prix_gros || product?.prix || 0;
+  const unitPrice = resolveWholesaleUnitPrice(product, form.quantity);
   const total    = Number(form.quantity || 0) * unitPrice;
+  const tiers    = parseWholesaleTiers(product);
+  const importFlag = isImportProduct(product);
 
   const handleSubmit = async () => {
     if (!user?.id) { showAppToast("Connectez-vous pour envoyer une demande B2B", "error"); return; }
@@ -98,11 +107,23 @@ export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
         ) : (
           <>
             <div className="b2b-body">
-              {product?.prix_gros && (
+              {(product?.prix_gros || tiers.length > 0) && (
                 <div className="b2b-price-hint">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ display:"inline",verticalAlign:"middle",marginRight:4 }} aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>
-                  Prix de gros : <strong>{Number(product.prix_gros).toLocaleString()} FCFA/unité</strong> — minimum {minQty} unités
+                  Prix de gros : <strong>{Number(unitPrice).toLocaleString()} FCFA/unité</strong> — minimum {minQty} unités
                   {Number(form.quantity) >= minQty && <> · Total indicatif : <strong>{total.toLocaleString()} FCFA</strong></>}
+                </div>
+              )}
+              {importFlag && (
+                <div style={{ fontSize: ".75rem", background: "#fef3c7", padding: "8px 10px", borderRadius: 8, marginBottom: 10, color: "#92400e" }}>
+                  Import {originLabel(product.country_of_origin)}
+                  {product.lead_time_days ? ` · Délai ${formatLeadTime(product.lead_time_days)}` : ""}
+                  {product.incoterm ? ` · ${product.incoterm}` : ""}
+                </div>
+              )}
+              {tiers.length > 1 && (
+                <div style={{ fontSize: ".72rem", color: "var(--gray)", marginBottom: 10 }}>
+                  Paliers : {tiers.map((t) => `${t.min_qty}+ → ${t.unit_price.toLocaleString()} F`).join(" · ")}
                 </div>
               )}
 

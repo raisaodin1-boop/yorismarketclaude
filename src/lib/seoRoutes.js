@@ -153,6 +153,7 @@ export const PAGE_PATH = {
   notifications: "/notifications",
   devenirVendeur: "/devenir-vendeur",
   devenirLivreur: "/devenir-livreur",
+  importSupplier: "/devenir-fournisseur-import",
 };
 
 /** Navigation interne : chemins relatifs avec préfixe langue */
@@ -446,6 +447,7 @@ export function parsePathnameBare(rawIn) {
     notifications: "notifications",
     "devenir-vendeur": "devenirVendeur",
     "devenir-livreur": "devenirLivreur",
+    "devenir-fournisseur-import": "importSupplier",
     "devenir-prestataire": "inscription",
     inscription: "inscription",
   };
