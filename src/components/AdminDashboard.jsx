@@ -686,16 +686,28 @@ export function AdminDashboard({ user, userData, goPage }) {
   // ═══════════ ACTIONS COMMANDES ═══════════
   const validerCommande = async (id) => {
     if (!requireWrite()) return;
-    const { error } = await supabase.from("orders").update({ status: "validee" }).eq("id", id);
+    const { data, error } = await supabase
+      .from("orders")
+      .update({ status: "validee" })
+      .eq("id", id)
+      .select("id, status")
+      .maybeSingle();
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
+    if (!data) { showToast("Mise à jour refusée — vérifiez vos droits", "error"); return; }
     setCommandes(c => c.map(x => x.id === id ? { ...x, status: "validee" } : x));
     showToast("Commande validée ✅");
   };
 
   const marquerLivre = async (id) => {
     if (!requireWrite()) return;
-    const { error } = await supabase.from("orders").update({ status: "livre", livraison_status: "livre", escrow_status: "libere" }).eq("id", id);
+    const { data, error } = await supabase
+      .from("orders")
+      .update({ status: "livre", livraison_status: "livre", escrow_status: "libere" })
+      .eq("id", id)
+      .select("id, status, livraison_status, escrow_status")
+      .maybeSingle();
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
+    if (!data) { showToast("Mise à jour refusée — vérifiez vos droits", "error"); return; }
     setCommandes(c => c.map(x => x.id === id ? { ...x, status: "livre", livraison_status: "livre", escrow_status: "libere" } : x));
     showToast("Commande marquée livrée 📦");
   };
@@ -703,9 +715,11 @@ export function AdminDashboard({ user, userData, goPage }) {
   const annulerCommande = async (id) => {
     if (!requireWrite()) return;
     if (!window.confirm("Annuler cette commande ?")) return;
-    const { error } = await supabase.from("orders").update({ status: "annulee" }).eq("id", id);
+    const { data, error } = await supabase.rpc("fn_cancel_order", { p_order_id: id });
     if (error) { showToast("Erreur : " + error.message, "error"); return; }
-    setCommandes(c => c.map(x => x.id === id ? { ...x, status: "annulee" } : x));
+    const row = data && typeof data === "object" ? data : null;
+    if (!row?.id) { showToast("Annulation refusée — vérifiez vos droits", "error"); return; }
+    setCommandes(c => c.map(x => x.id === id ? { ...x, ...row, status: "annulee" } : x));
     showToast("Commande annulée");
   };
 
