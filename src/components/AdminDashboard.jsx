@@ -167,6 +167,15 @@ export function AdminDashboard({ user, userData, goPage }) {
     setLoading(true);
     setLoadError(null);
 
+    const unwrap = (result, label) => {
+      if (result.status !== "fulfilled") {
+        return { data: null, error: result.reason?.message || String(result.reason || label) };
+      }
+      const { data, error, count } = result.value || {};
+      if (error) return { data: null, error: error.message || label, count: 0 };
+      return { data, count };
+    };
+
     try {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
@@ -211,16 +220,33 @@ export function AdminDashboard({ user, userData, goPage }) {
         delivLogR,
       ] = results;
 
-      const rawProfiles = profilesR.status === "fulfilled" ? (profilesR.value.data || []) : [];
-      const prodsData   = prodsR.status    === "fulfilled" ? (prodsR.value.data    || []) : [];
-      const ordersData  = ordersR.status   === "fulfilled" ? (ordersR.value.data   || []) : [];
-      const delivsData  = delivsR.status   === "fulfilled" ? (delivsR.value.data   || []) : [];
-      const prestsData  = prestsR.status   === "fulfilled" ? (prestsR.value.data   || []) : [];
-      const financeKpi =
-        financeKpiR.status === "fulfilled" ? (financeKpiR.value.data || null) : null;
-      const paymentsData = paymentsR.status === "fulfilled" ? (paymentsR.value.data || []) : [];
-      const intentsData = intentsR.status === "fulfilled" ? (intentsR.value.data || []) : [];
-      const commerceRow = commerceSetR.status === "fulfilled" ? commerceSetR.value.data : null;
+      const profilesRes = unwrap(profilesR, "profiles");
+      const prodsRes = unwrap(prodsR, "products");
+      const ordersRes = unwrap(ordersR, "orders");
+      const delivsRes = unwrap(delivsR, "deliveries");
+      const prestsRes = unwrap(prestsR, "prestataires");
+      const financeRes = unwrap(financeKpiR, "admin_finance_kpis");
+      const paymentsRes = unwrap(paymentsR, "payment_transactions");
+      const intentsRes = unwrap(intentsR, "checkout_intents");
+      const commerceRes = unwrap(commerceSetR, "commerce_settings");
+
+      const rawProfiles = profilesRes.data || [];
+      const prodsData   = prodsRes.data || [];
+      const ordersData  = ordersRes.data || [];
+      const delivsData  = delivsRes.data || [];
+      const prestsData  = prestsRes.data || [];
+      const financeKpi = financeRes.data || null;
+      const paymentsData = paymentsRes.data || [];
+      const intentsData = intentsRes.data || [];
+      const commerceRow = commerceRes.data || null;
+
+      const failedSources = [
+        profilesRes.error && `profiles (${profilesRes.error})`,
+        prodsRes.error && `products (${prodsRes.error})`,
+        ordersRes.error && `orders (${ordersRes.error})`,
+        delivsRes.error && `deliveries (${delivsRes.error})`,
+        financeRes.error && `finance KPIs (${financeRes.error})`,
+      ].filter(Boolean);
 
       const pickCount = (r) => {
         if (r.status !== "fulfilled") return 0;
@@ -302,7 +328,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       setStats({
         users:          usersData.length,
         products:       prodsData.length,
-        orders:         ordersData.length,
+        orders:         financeKpi?.total_orders ?? ordersData.length,
         deliveries:     delivsData.length,
         revenue:        revenueTotal,
         commissionTotal,
@@ -327,7 +353,9 @@ export function AdminDashboard({ user, userData, goPage }) {
       setTopProduits(topP);
       setPaymentTx(paymentsData);
 
-      if (usersData.length === 0 && prodsData.length === 0 && ordersData.length === 0) {
+      if (failedSources.length) {
+        setLoadError(`Certaines données n'ont pas pu être chargées : ${failedSources.join(" · ")}`);
+      } else if (usersData.length === 0 && prodsData.length === 0 && ordersData.length === 0) {
         setLoadError("⚠️ Aucune donnée chargée. Vérifiez les politiques RLS Supabase (profiles, products, orders).");
       }
     } catch (e) {
