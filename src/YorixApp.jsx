@@ -1659,9 +1659,7 @@ export default function YorixApp() {
         navQuickRef={navQuickRef}
         navQuickOpen={navQuickOpen}
         setNavQuickOpen={setNavQuickOpen}
-        TABS={TABS}
         tabActive={tabActive}
-        commerceDeliveryPolicy={commerceDeliveryPolicy}
         roleChipClass={roleChipClass}
       />
 

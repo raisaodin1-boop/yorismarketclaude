@@ -24,12 +24,13 @@ export const MERCH_HUBS = {
     slug: "made-in-cameroun",
     page: "merchHub",
     categorySlug: "made-in-cameroun",
-    titleFr: "Made in Cameroun 🇨🇲 — Produits locaux vérifiés",
-    titleEn: "Made in Cameroon 🇨🇲 — Verified local products",
+    titleFr: "Fierté camerounaise, chez vous",
+    titleEn: "Cameroonian pride, at your door",
     descFr:
-      "Découvrez artisans, marques et producteurs camerounais sur Yorix.cm. Achetez local, soutenez l'économie nationale.",
-    descEn: "Discover Cameroonian makers and brands on Yorix.cm. Shop local, support the national economy.",
-    keywordsFr: "made in cameroun, produits camerounais, acheter local cameroun, marques camerounaises",
+      "Artisans, producteurs et marques du terroir — du pagne wax au poisson de Kribi, achetez local en toute confiance.",
+    descEn:
+      "Artisans, producers and local brands — from wax pagne to Kribi fish, shop local with confidence.",
+    keywordsFr: "made in cameroun, produits camerounais, acheter local, terroir cameroun, artisanat",
     emoji: "🇨🇲",
     theme: "cameroon-green",
     filter: "made_in_cameroon",

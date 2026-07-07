@@ -1,4 +1,148 @@
-/* Marketplace header — recherche large, barre catégories, strip confiance */
+/* ── Header simplifié : menu unique + liens sobres ── */
+
+@media (max-width: 768px) {
+  .header-sticky-stack .topbar {
+    display: none;
+  }
+}
+
+.nav-primary-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  min-height: 44px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-categories-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.nav-categories-btn:hover,
+.nav-categories-btn[aria-expanded="true"] {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+  color: var(--green);
+}
+
+.nav-primary-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-primary-links::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-primary-link {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--gray);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-primary-link:hover {
+  color: var(--ink);
+  background: var(--surface2);
+}
+
+.nav-primary-link.active {
+  color: var(--green);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+
+.nav-primary-link--wholesale {
+  color: #b45309;
+}
+
+.nav-primary-link--wholesale:hover,
+.nav-primary-link--wholesale.active {
+  color: #92400e;
+  background: color-mix(in srgb, #f59e0b 10%, var(--surface));
+}
+
+.nav-primary-row .nav-quick-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 16px;
+  right: 16px;
+  z-index: 500;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.prod-card--compact .prod-info,
+.prod-card--made-in .prod-info {
+  gap: 4px;
+}
+
+.prod-price-row--compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.prod-price-row--compact .price {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.prod-price-was {
+  font-size: 0.62rem;
+  color: var(--gray);
+  text-decoration: line-through;
+  margin-left: 4px;
+}
+
+@media (max-width: 768px) {
+  .nav-primary-row {
+    padding: 0 12px;
+    min-height: 40px;
+  }
+
+  .nav-categories-btn {
+    padding: 6px 11px;
+    font-size: 0.72rem;
+  }
+
+  .nav-primary-link {
+    padding: 7px 10px;
+    font-size: 0.72rem;
+  }
+}
+
+/* Marketplace header — recherche large */
 
 .navbar--marketplace .nav-search-wrap {
   flex: 1 1 auto;
@@ -228,7 +372,7 @@
   }
 
   .header-sticky-stack .topbar,
-  .header-sticky-stack .nav-tabs-row,
+  .header-sticky-stack .nav-primary-row,
   .header-sticky-stack .yorix-cat-bar,
   .header-sticky-stack .yorix-trust-strip,
   .header-sticky-stack .yorix-emotional-nav,

@@ -2,22 +2,13 @@ import { useMemo, useState } from "react";
 import { Package, Boxes } from "lucide-react";
 import { ProdGrid } from "../components/ProdGrid";
 import { WholesaleHubHeader } from "../components/wholesale/WholesaleHubHeader";
+import { MadeInCameroonHubHeader } from "../components/madeIn/MadeInCameroonHubHeader";
 import { MERCH_HUBS } from "../lib/merchHubs";
 import { productMoq } from "../lib/productMoq.js";
 import { useMerchHubProducts } from "../hooks/useMerchHubProducts";
 import "./merchHubPage.css";
 
 const HUB_TIPS = {
-  "made-in-cameroun": {
-    fr: [
-      "Produits déclarés ou vérifiés Made in Cameroun par les vendeurs.",
-      "Soutenez l'économie locale : artisans, marques et producteurs nationaux.",
-    ],
-    en: [
-      "Products declared or verified Made in Cameroon by sellers.",
-      "Support the local economy: artisans, brands and national producers.",
-    ],
-  },
   "top-produits": {
     fr: ["Meilleures ventes et nouveautés plébiscitées par les acheteurs."],
     en: ["Best sellers and new arrivals popular with buyers."],
@@ -60,6 +51,7 @@ export function MerchHubPage({
   const hub = MERCH_HUBS[merchHub];
   const isEn = locale === "en";
   const isWholesaleHub = merchHub === "sourcer-en-gros";
+  const isMadeInHub = merchHub === "made-in-cameroun";
   const { products, isLoading } = useMerchHubProducts(merchHub);
   const tips = HUB_TIPS[merchHub]?.[isEn ? "en" : "fr"] || [];
   const [moqFilter, setMoqFilter] = useState("all");
@@ -81,8 +73,8 @@ export function MerchHubPage({
   }
 
   return (
-    <section className={`mhub-page sec anim yorix-page-flow${isWholesaleHub ? " mhub-page--wholesale" : ""}`}>
-      <header className={`mhub-hero mhub-hero--${hub.theme}${isWholesaleHub ? " mhub-hero--wholesale-compact" : ""}`}>
+    <section className={`mhub-page sec anim yorix-page-flow${isWholesaleHub ? " mhub-page--wholesale" : ""}${isMadeInHub ? " mhub-page--made-in" : ""}`}>
+      <header className={`mhub-hero mhub-hero--${hub.theme}${isWholesaleHub || isMadeInHub ? " mhub-hero--hub-compact" : ""}`}>
         <span className="mhub-hero-emoji" aria-hidden>
           {hub.emoji}
         </span>
@@ -93,25 +85,26 @@ export function MerchHubPage({
               {isEn ? "Import without leaving your shop" : "Importez sans quitter votre boutique"}
             </span>
           )}
+          {isMadeInHub && (
+            <span className="mhub-hero-title-sub mhub-hero-title-sub--mic">
+              {isEn ? "Eat, wear and live Cameroonian" : "Mangez, portez et vivez camerounais"}
+            </span>
+          )}
         </h1>
-        {!isWholesaleHub && (
-          <p className="mhub-hero-desc">{isEn ? hub.descEn : hub.descFr}</p>
-        )}
-        {isWholesaleHub && (
-          <p className="mhub-hero-desc mhub-hero-desc--wholesale">{isEn ? hub.descEn : hub.descFr}</p>
-        )}
-        {merchHub === "made-in-cameroun" && (
-          <p className="mhub-hero-note">
-            {isEn
-              ? "🇨🇲 Badge: seller choice + auto-detection + admin verification (✔)"
-              : "🇨🇲 Badge : choix vendeur + détection auto + validation admin (✔)"}
+        {(isWholesaleHub || isMadeInHub) ? (
+          <p className={`mhub-hero-desc${isWholesaleHub ? " mhub-hero-desc--wholesale" : " mhub-hero-desc--mic"}`}>
+            {isEn ? hub.descEn : hub.descFr}
           </p>
+        ) : (
+          <p className="mhub-hero-desc">{isEn ? hub.descEn : hub.descFr}</p>
         )}
       </header>
 
+      {isMadeInHub && <MadeInCameroonHubHeader locale={locale} />}
+
       {isWholesaleHub && <WholesaleHubHeader locale={locale} goPage={goPage} />}
 
-      {!isWholesaleHub && tips.length > 0 && (
+      {!isWholesaleHub && !isMadeInHub && tips.length > 0 && (
         <ul className="mhub-tips">
           {tips.map((tip) => (
             <li key={tip}>{tip}</li>
@@ -168,6 +161,7 @@ export function MerchHubPage({
           onOpenSellerUrl={openSellerUrl}
           siteLocale={locale}
           wholesaleMode={isWholesaleHub}
+          madeInMode={isMadeInHub}
         />
       )}
     </section>

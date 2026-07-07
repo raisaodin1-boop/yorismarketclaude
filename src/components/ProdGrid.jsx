@@ -24,6 +24,7 @@ import {
   productDeliveryShort,
   productProtectScore,
 } from "../lib/productCardMeta";
+import { formatProductDisplayName } from "../lib/productDisplayName";
 import "../components/yorix/marketplaceHeader.css";
 
 const LazyFicheProduit = lazy(() =>
@@ -46,6 +47,7 @@ export function ProdGrid({
   siteLocale = "fr",
   showShare = false,
   wholesaleMode = false,
+  madeInMode = false,
 }) {
   const [ficheOpen, setFicheOpen]           = useState(null);
   const [cmdOpen, setCmdOpen]               = useState(null);
@@ -101,9 +103,11 @@ export function ProdGrid({
           const wholesaleSummary = wholesaleMode ? wholesalePriceSummary(p) : null;
           const tierHint = wholesaleMode ? nextWholesaleTierHint(p, siteLocale) : null;
           const importHint = wholesaleMode && isImportProduct(p) ? importLogisticsHint(p, siteLocale) : null;
+          const compactList = !wholesaleMode;
+          const displayName = formatProductDisplayName(p.name_fr);
 
           return (
-            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}${wholesaleMode ? " prod-card--wholesale" : ""}`}>
+            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}${wholesaleMode ? " prod-card--wholesale" : " prod-card--compact"}${madeInMode ? " prod-card--made-in" : ""}`}>
               {/* ── IMAGE OPTIMISÉE (lazy + WebP + compression auto) ── */}
               <div
                 className="prod-img-wrap"
@@ -122,11 +126,11 @@ export function ProdGrid({
                 />
                 {p.flash                             && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> Flash</span>}
                 {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
-                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
-                {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
-                {(p.b2b_enabled || isImportProduct(p)) && (
+                {!compactList && !p.flash && !isPromoActive(p) && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
+                {!compactList && resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
+                {!compactList && (p.b2b_enabled || isImportProduct(p)) && (
                   <span className={`b2b-card-badge${wholesaleMode ? " b2b-card-badge--wholesale" : ""}`}>
-                    {p.b2b_enabled ? (wholesaleMode ? "GROS" : "GROS") : "IMPORT"}
+                    {p.b2b_enabled ? "GROS" : "IMPORT"}
                   </span>
                 )}
                 {wholesaleMode && (p.vendeur_verifie || p.verifie) && (
@@ -135,7 +139,7 @@ export function ProdGrid({
                     {siteLocale === "en" ? "Certified" : "Certifié"}
                   </span>
                 )}
-                {p.escrow                            && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
+                {!compactList && p.escrow && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
                 {!buyable && (
                   <span
                     style={{
@@ -169,6 +173,42 @@ export function ProdGrid({
                   else setFicheOpen(p);
                 }}
               >
+                {compactList ? (
+                  <>
+                    <div className="prod-name">{displayName}</div>
+                    <div className="prod-loc prod-loc--compact">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {p.ville || "Cameroun"}
+                    </div>
+                    <div className="prod-price-row prod-price-row--compact">
+                      <div>
+                        {prixPromo ? (
+                          <>
+                            <span className="price">
+                              {prixPromo.toLocaleString()} <span className="price-unit">FCFA</span>
+                            </span>
+                            <span className="prod-price-was">{p.prix?.toLocaleString()} F</span>
+                          </>
+                        ) : (
+                          <span className="price">
+                            {p.prix?.toLocaleString()} <span className="price-unit">FCFA</span>
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        className="add-btn"
+                        disabled={!buyable}
+                        aria-disabled={!buyable}
+                        title={buyable ? "Ajouter au panier" : "Indisponible"}
+                        style={!buyable ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
+                        onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
                 {vendBadges.length > 0 && (
                   <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
                     {vendBadges.map(b => (
@@ -180,7 +220,7 @@ export function ProdGrid({
                   </div>
                 )}
 
-                <div className="prod-name">{p.name_fr}</div>
+                <div className="prod-name">{displayName}</div>
                 <div className="prod-loc">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   {p.ville || "Cameroun"}
@@ -272,10 +312,12 @@ export function ProdGrid({
                   </div>
                 )}
 
+                {p.nombre_avis > 0 && (
                 <div className="prod-rating">
                   <Stars value={Math.round(p.note || 0)} />
-                  <span className="rcount">({p.nombre_avis || 0})</span>
+                  <span className="rcount">({p.nombre_avis})</span>
                 </div>
+                )}
 
                 <div className="prod-price-row">
                   <div>
@@ -328,12 +370,12 @@ export function ProdGrid({
                   </button>
                   )}
                 </div>
+                  </>
+                )}
               </div>
 
-              {/* ── BOUTON PANIER ── */}
+              {wholesaleMode && (
               <div className="prod-actions" style={{ padding: "0 11px 11px", display: "flex", flexDirection: "column", gap: 6 }}>
-                {wholesaleMode ? (
-                  <>
                     <button
                       type="button"
                       className="add-btn-full prod-wholesale-wa"
@@ -360,54 +402,8 @@ export function ProdGrid({
                         {siteLocale === "en" ? "Add to cart" : "Ajouter au panier"}
                       </button>
                     )}
-                  </>
-                ) : (
-                <>
-                <button
-                  className="add-btn-full"
-                  disabled={!buyable}
-                  aria-disabled={!buyable}
-                  style={{
-                    width: "100%", padding: "8px", borderRadius: 8, fontSize: ".78rem",
-                    fontFamily: "var(--font-display)", fontWeight: 700,
-                    background: addedIds.has(p.id) ? "#0f4a28" : buyable ? "var(--green)" : "var(--surface2)",
-                    color: buyable ? "#fff" : "var(--gray)",
-                    border: buyable ? "none" : "1px solid var(--border)",
-                    cursor: buyable ? "pointer" : "not-allowed",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                    opacity: buyable ? 1 : 0.75,
-                    transform: addedIds.has(p.id) ? "scale(.97)" : "none",
-                    transition: "background .2s, transform .15s",
-                  }}
-                  onClick={e => { e.stopPropagation(); handleAdd(p); }}
-                >
-                  {addedIds.has(p.id) ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                      Ajouté !
-                    </>
-                  ) : buyable ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                      Ajouter au panier
-                    </>
-                  ) : "Indisponible"}
-                </button>
-                {showShare && (
-                  <button
-                    type="button"
-                    className="prod-share-mini"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openWhatsAppShare(buildProductWhatsAppText(p, siteLocale));
-                    }}
-                  >
-                    <MessageCircle size={14} aria-hidden /> {siteLocale === "en" ? "Share" : "Partager"}
-                  </button>
-                )}
-                </>
-                )}
               </div>
+              )}
             </div>
           );
         })}

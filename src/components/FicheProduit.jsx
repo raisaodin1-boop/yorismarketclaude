@@ -18,6 +18,7 @@ import { YorixToast, useYorixToast } from "./ui/YorixToast";
 import { B2BOrderForm } from "./B2BOrderForm";
 import { ImportWholesaleBadge } from "./import/ImportWholesaleBadge";
 import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
+import { formatProductDisplayName } from "../lib/productDisplayName";
 import { resolveWholesaleUnitPrice } from "../lib/importWholesale";
 
 // ─────────────────────────────────────────────────────────────
@@ -69,6 +70,8 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
       .limit(1)
       .then(({ data }) => setHasVerifiedPurchase((data || []).length > 0));
   }, [user?.id, product.id]);
+
+  const displayName = formatProductDisplayName(product.name_fr);
 
   const avgNote = avis.length
     ? (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1)
@@ -220,7 +223,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               reviewsCount={avis.length}
               avgReviewNote={avgNote}
             />
-            <div className="modal-title fp-title">{product.name_fr}</div>
+            <div className="modal-title fp-title">{displayName}</div>
             <ImportWholesaleBadge product={product} locale={siteLocale} />
             {(product.vendeur_verifie || product.verifie) && (
               <div style={{ marginBottom: 8 }}>
@@ -228,6 +231,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               </div>
             )}
             <SocialProofLine product={product} locale={siteLocale} />
+            {avis.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
               <Stars value={Math.round(avgNote)} />
               <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>
@@ -236,6 +240,12 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               {product.ville && <span className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} aria-hidden /> {product.ville}</span>}
               {product.categorie && <span className="tag">{product.categorie}</span>}
             </div>
+            )}
+            {avis.length === 0 && product.ville && (
+              <div style={{ margin: "6px 0 10px" }}>
+                <span className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} aria-hidden /> {product.ville}</span>
+              </div>
+            )}
 
             {product.description_fr && (
               <p className="fp-description" style={{ fontSize: ".82rem", color: "var(--gray)", lineHeight: 1.75, marginBottom: 12 }}>
@@ -554,7 +564,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
         <div className="yx-pdp-sticky-bar" aria-label="Actions produit">
           <div className="yx-pdp-sticky-bar__price">
             {displayPrice?.toLocaleString()} FCFA
-            <small>{product.name_fr}</small>
+            <small>{displayName}</small>
           </div>
           <div className="yx-pdp-sticky-bar__actions">
             {onAddToCart && (

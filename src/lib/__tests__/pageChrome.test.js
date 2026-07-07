@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { shouldShowGlobalNewsletter, shouldShowSiteFooter } from "../pageChrome.js";
+import { shouldShowGlobalNewsletter, shouldShowSiteFooter, shouldUseCatalogFocusHeader } from "../pageChrome.js";
 
 describe("pageChrome", () => {
   it("hides global newsletter on admin and dashboard", () => {
@@ -20,5 +20,12 @@ describe("pageChrome", () => {
     expect(shouldShowSiteFooter("dashboard")).toBe(false);
     expect(shouldShowSiteFooter("checkout")).toBe(false);
     expect(shouldShowSiteFooter("home")).toBe(true);
+  });
+
+  it("uses catalog focus header on key merch hubs", () => {
+    expect(shouldUseCatalogFocusHeader("merchHub", "made-in-cameroun")).toBe(true);
+    expect(shouldUseCatalogFocusHeader("merchHub", "sourcer-en-gros")).toBe(true);
+    expect(shouldUseCatalogFocusHeader("merchHub", "top-produits")).toBe(false);
+    expect(shouldUseCatalogFocusHeader("produits", "made-in-cameroun")).toBe(false);
   });
 });
