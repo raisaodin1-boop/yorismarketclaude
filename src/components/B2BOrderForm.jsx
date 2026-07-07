@@ -5,8 +5,8 @@ import { OptimizedImage } from "./OptimizedImage";
 import {
   formatLeadTime,
   isImportProduct,
-  originLabel,
   parseWholesaleTiers,
+  productOriginLabel,
   resolveWholesaleUnitPrice,
 } from "../lib/importWholesale";
 
@@ -116,7 +116,7 @@ export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
               )}
               {importFlag && (
                 <div style={{ fontSize: ".75rem", background: "#fef3c7", padding: "8px 10px", borderRadius: 8, marginBottom: 10, color: "#92400e" }}>
-                  Import {originLabel(product.country_of_origin)}
+                  Import {productOriginLabel(product)}
                   {product.lead_time_days ? ` · Délai ${formatLeadTime(product.lead_time_days)}` : ""}
                   {product.incoterm ? ` · ${product.incoterm}` : ""}
                 </div>

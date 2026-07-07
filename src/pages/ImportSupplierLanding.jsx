@@ -22,8 +22,8 @@ export function ImportSupplierLanding({ locale = "fr", onRegister, onBrowseWhole
             }}
           >
             {isEn
-              ? "Sell wholesale to Cameroon — Chinese & international suppliers"
-              : "Vendez en gros au Cameroun — fournisseurs chinois & internationaux"}
+              ? "Sell wholesale to Cameroon — international suppliers (China, India, France…)"
+              : "Vendez en gros au Cameroun — fournisseurs internationaux (Chine, Inde, France…)"}
           </h1>
           <p style={{ color: "var(--gray)", fontSize: ".9rem", lineHeight: 1.75, maxWidth: 620, margin: "0 auto" }}>
             {isEn
@@ -42,11 +42,11 @@ export function ImportSupplierLanding({ locale = "fr", onRegister, onBrowseWhole
         >
           {[
             {
-              icon: "🇨🇳",
-              title: isEn ? "China → Cameroon" : "Chine → Cameroun",
+              icon: "🌏",
+              title: isEn ? "World → Cameroon" : "Monde → Cameroun",
               desc: isEn
-                ? "FOB/CIF, 15–45 day lead time, MOQ from 10 units."
-                : "FOB/CIF, délai 15–45 j, MOQ dès 10 unités.",
+                ? "China, India, France, Turkey, UAE, USA & more — FOB/CIF, MOQ from 10 units."
+                : "Chine, Inde, France, Turquie, Émirats, USA & plus — FOB/CIF, MOQ dès 10 unités.",
             },
             {
               icon: "📋",
@@ -100,8 +100,8 @@ export function ImportSupplierLanding({ locale = "fr", onRegister, onBrowseWhole
           <li>{isEn ? "Create a seller account and complete KYC." : "Créez un compte vendeur et complétez le KYC."}</li>
           <li>
             {isEn
-              ? "Add products: enable B2B, set origin China, MOQ tiers, lead time & Incoterm."
-              : "Ajoutez des produits : activez le B2B, origine Chine, paliers MOQ, délai et Incoterm."}
+              ? "Add products: enable B2B, pick origin country (or Other), MOQ tiers, lead time & Incoterm."
+              : "Ajoutez des produits : activez le B2B, choisissez le pays d'origine (ou Autre), paliers MOQ, délai et Incoterm."}
           </li>
           <li>
             {isEn

@@ -5,6 +5,7 @@ import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
 import { isImportProduct } from "../lib/importWholesale";
+import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
 import { resolveMadeInCameroon } from "../lib/madeInCameroon";
 import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
@@ -74,7 +75,6 @@ export function ProdGrid({
   const getVendeurBadges = (p) => {
     const badges = [];
     if (p.sponsorise)                   badges.push({ label: "Top Vendeur",   cls: "badge-top",   icon: Star });
-    if (p.verifie || p.vendeur_verifie) badges.push({ label: "Vérifié",        cls: "badge-verif", icon: BadgeCheck });
     if (isPromoActive(p))               badges.push({ label: "Promo du jour", cls: "badge-promo", icon: Flame });
     if (p.flash)                        badges.push({ label: "Offre flash",   cls: "badge-flash", icon: Zap });
     if (p.vente_total > 50)             badges.push({ label: "Best seller",   cls: "badge-best",  icon: Trophy });
@@ -202,11 +202,8 @@ export function ProdGrid({
                     <ShieldCheck size={10} aria-hidden />
                     Protect+ {productProtectScore(p)}%
                   </span>
-                  {(p.verifie || p.vendeur_verifie) && (
-                    <span className="prod-enriched-chip prod-enriched-chip--verified">
-                      <BadgeCheck size={10} aria-hidden />
-                      {siteLocale === "en" ? "Verified" : "Vérifié"}
-                    </span>
+                  {(p.vendeur_verifie || p.verifie) && (
+                    <VerifiedSellerBadge verified compact locale={siteLocale} />
                   )}
                 </div>
                 <SocialProofLine product={p} locale={siteLocale} />

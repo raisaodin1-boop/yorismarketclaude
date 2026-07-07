@@ -68,6 +68,12 @@
   color: #b45309;
 }
 
+.seller-store-badge--verified {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .seller-store-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

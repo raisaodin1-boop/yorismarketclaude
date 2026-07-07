@@ -4,5 +4,5 @@ const productListColumns =
     'ville,vendeur_nom,vendeur_id,note,nombre_avis,vues,sponsorise,flash,escrow,'
     'vente_total,promo,promo_pct,promo_starts_at,promo_ends_at,'
     'has_variants,variants,b2b_enabled,prix_gros,min_qty_gros,'
-    'country_of_origin,lead_time_days,incoterm,wholesale_tiers,'
+    'country_of_origin,country_of_origin_other,lead_time_days,incoterm,wholesale_tiers,vendeur_verifie,'
     'actif,created_at';

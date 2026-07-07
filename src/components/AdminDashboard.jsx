@@ -40,6 +40,14 @@ import {
   softBanUser,
   hardDeleteUser,
 } from "../lib/userMutations";
+import {
+  categoryLabel,
+  collectKycDocuments,
+  kycChecklist,
+  KYC_STATUS_LABELS,
+} from "../lib/sellerKyc";
+import { resolveCountryLabel } from "../lib/importWholesale";
+import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
 import { ADMIN_NAV_ICONS } from "../lib/lucideNavIcons";
 
 // ─────────────────────────────────────────────────────────────
@@ -381,36 +389,40 @@ export function AdminDashboard({ user, userData, goPage }) {
 
   const handleKycDecision = async () => {
     if (!kycModal || !kycAction) return;
-    if ((kycAction === "reject" || kycAction === "info") && !kycNote.trim()) {
+    if (!requireWrite()) return;
+    if ((kycAction === "reject" || kycAction === "info" || kycAction === "revoke") && !kycNote.trim()) {
       showToast("Veuillez saisir un motif / message", "error"); return;
     }
     setKycSaving(true);
     try {
-      const newStatus = kycAction === "approve" ? "verified" : kycAction === "reject" ? "rejected" : "pending";
-      await supabase.from("seller_kyc").update({
-        status:        newStatus,
-        reviewed_at:   new Date().toISOString(),
-        reviewer_id:   user.id,
-        reviewer_note: kycNote.trim() || null,
-        updated_at:    new Date().toISOString(),
-      }).eq("id", kycModal.kyc.id);
-
-      // Notification au vendeur
-      const notifBody = kycAction === "approve"
-        ? "Félicitations ! Votre identité a été vérifiée. Vous disposez maintenant du badge Vendeur Vérifié."
-        : kycAction === "reject"
-          ? `Votre demande de vérification a été refusée. Motif : ${kycNote}`
-          : `Des informations complémentaires sont requises pour votre vérification KYC : ${kycNote}`;
-      await supabase.from("notifications").insert({
-        user_id: kycModal.kyc.user_id,
-        type:    "kyc",
-        title:   kycAction === "approve" ? "Identité vérifiée ✓" : kycAction === "reject" ? "Vérification refusée" : "Informations complémentaires requises",
-        message: notifBody,
-        link:    "/dashboard?tab=kyc",
-        lu:      false,
+      const actionMap = {
+        approve: "approve",
+        reject: "reject",
+        info: "info_requested",
+        revoke: "revoke",
+      };
+      const { error } = await supabase.rpc("fn_admin_decide_seller_kyc", {
+        p_kyc_id: kycModal.kyc.id,
+        p_action: actionMap[kycAction],
+        p_note: kycNote.trim() || null,
       });
+      if (error) throw error;
 
-      showToast(kycAction === "approve" ? "Vendeur vérifié !" : kycAction === "reject" ? "Demande refusée" : "Message envoyé au vendeur", "success");
+      showToast(
+        kycAction === "approve" ? "Vendeur vérifié — badge activé"
+          : kycAction === "reject" ? "Demande refusée"
+            : kycAction === "revoke" ? "Badge retiré"
+              : "Message envoyé au vendeur",
+        "success",
+      );
+      const sellerUid = kycModal.kyc.user_id;
+      if (kycAction === "approve") {
+        setUtilisateurs((u) => u.map((x) => ((x.uid || x.id) === sellerUid ? { ...x, verifie: true } : x)));
+        setProduits((p) => p.map((x) => (x.vendeur_id === sellerUid ? { ...x, vendeur_verifie: true } : x)));
+      } else if (kycAction === "reject" || kycAction === "revoke") {
+        setUtilisateurs((u) => u.map((x) => ((x.uid || x.id) === sellerUid ? { ...x, verifie: false } : x)));
+        setProduits((p) => p.map((x) => (x.vendeur_id === sellerUid ? { ...x, vendeur_verifie: false } : x)));
+      }
       setKycModal(null); setKycAction(null); setKycNote("");
       loadKyc();
     } catch (e) {
@@ -679,8 +691,10 @@ export function AdminDashboard({ user, userData, goPage }) {
     if (!requireWrite()) return;
     const res = await toggleUserVerified({ userId: uid, currentlyVerified: verifie, actorProfile: userData });
     if (!res.ok) { showToast("Erreur vérification", "error"); return; }
-    setUtilisateurs(u => u.map(x => (x.uid || x.id) === uid ? { ...x, verifie: !verifie } : x));
-    showToast(verifie ? "Vérification retirée" : "Utilisateur vérifié ✅");
+    const nextVerified = !verifie;
+    setUtilisateurs(u => u.map(x => (x.uid || x.id) === uid ? { ...x, verifie: nextVerified } : x));
+    setProduits(p => p.map(x => (x.vendeur_id === uid ? { ...x, vendeur_verifie: nextVerified } : x)));
+    showToast(nextVerified ? "Badge vendeur vérifié activé" : "Badge retiré");
   };
 
   // ═══════════ ACTIONS COMMANDES ═══════════
@@ -1707,7 +1721,14 @@ export function AdminDashboard({ user, userData, goPage }) {
                         </div>
                       </td>
                       <td><strong style={{ color: "var(--green)" }}>{(p.prix || 0).toLocaleString()} F</strong></td>
-                      <td style={{ fontSize: ".75rem" }}>{p.vendeur_nom || "—"}</td>
+                      <td style={{ fontSize: ".75rem" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          {p.vendeur_nom || "—"}
+                          {(p.vendeur_verifie || utilisateurs.find((u) => (u.uid || u.id) === p.vendeur_id)?.verifie) && (
+                            <VerifiedSellerBadge verified compact />
+                          )}
+                        </span>
+                      </td>
                       <td><span className="admin-badge admin-badge-gray">{p.categorie || "—"}</span></td>
                       <td style={{ fontSize: ".72rem" }}>{p.ville || "—"}</td>
                       <td style={{ fontSize: ".65rem" }}>
@@ -1871,8 +1892,12 @@ export function AdminDashboard({ user, userData, goPage }) {
                                 {(u.nom || u.email || "?")[0].toUpperCase()}
                               </div>
                               <div>
-                                <strong style={{ fontSize: ".8rem" }}>{u.nom || "—"}</strong>
-                                {u.verifie && <span style={{ marginLeft: 4, fontSize: ".6rem", background: "#e6fff0", color: "#1a6b3a", padding: "1px 4px", borderRadius: 3 }}>✅</span>}
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                  <strong style={{ fontSize: ".8rem" }}>{u.nom || "—"}</strong>
+                                  {u.role === "seller" && u.verifie && (
+                                    <VerifiedSellerBadge verified compact />
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -1930,7 +1955,7 @@ export function AdminDashboard({ user, userData, goPage }) {
             ) : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                  <thead><tr><th>Vendeur</th><th>Email</th><th>Produits</th><th>Ventes</th><th>Statut</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Vendeur</th><th>Email</th><th>Produits</th><th>Ventes</th><th>Statut</th><th>Badge</th><th>Actions</th></tr></thead>
                   <tbody>
                     {sellers.map(u => {
                       const uid = u.uid || u.id;
@@ -1939,11 +1964,12 @@ export function AdminDashboard({ user, userData, goPage }) {
                       return (
                         <tr key={uid}>
                           <td>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--green)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: ".8rem" }}>
                                 {(u.nom || "?")[0].toUpperCase()}
                               </div>
                               <strong style={{ fontSize: ".8rem" }}>{u.nom || "—"}</strong>
+                              {u.verifie && <VerifiedSellerBadge verified compact />}
                             </div>
                           </td>
                           <td style={{ fontSize: ".72rem", color: "var(--gray)" }}>{u.email || "—"}</td>
@@ -1951,7 +1977,25 @@ export function AdminDashboard({ user, userData, goPage }) {
                           <td><span className="admin-badge admin-badge-green">{mesVentes.length}</span></td>
                           <td><span className={`admin-badge admin-badge-${u.actif !== false ? "green" : "red"}`}>{u.actif !== false ? "Actif" : "Suspendu"}</span></td>
                           <td>
-                            <div style={{ display: "flex", gap: 3 }}>
+                            {u.verifie ? (
+                              <VerifiedSellerBadge verified />
+                            ) : (
+                              <span style={{ fontSize: ".68rem", color: "var(--gray)" }}>—</span>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                              {canWrite && (
+                                <button
+                                  type="button"
+                                  className="admin-action-btn"
+                                  title={u.verifie ? "Retirer le badge" : "Activer badge (sans KYC)"}
+                                  style={{ background: u.verifie ? "#eff6ff" : "#f3f4f6", color: u.verifie ? "#1d4ed8" : "var(--gray)" }}
+                                  onClick={() => verifierUser(uid, u.verifie)}
+                                >
+                                  {u.verifie ? "↩" : "✓"}
+                                </button>
+                              )}
                               <button className="admin-action-btn" style={{ background: u.actif !== false ? "#fff0f0" : "#e6fff0", color: u.actif !== false ? "#ce1126" : "#1a6b3a" }} onClick={() => toggleVendeur(uid, u.actif !== false)}>
                                 {u.actif !== false ? "⛔" : "✅"}
                               </button>
@@ -1990,6 +2034,7 @@ export function AdminDashboard({ user, userData, goPage }) {
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {[
                 { id: "pending",  label: "⏳ En attente", color: "#f59e0b" },
+                { id: "info_requested", label: "💬 Compléments", color: "#1d4ed8" },
                 { id: "verified", label: "✅ Vérifiés",   color: "#059669" },
                 { id: "rejected", label: "❌ Refusés",    color: "#dc2626" },
                 { id: "all",      label: "📋 Tous",       color: "#6b7280" },
@@ -2024,7 +2069,7 @@ export function AdminDashboard({ user, userData, goPage }) {
                   <thead>
                     <tr>
                       <th>Vendeur</th>
-                      <th>Type de doc</th>
+                      <th>Catégorie</th>
                       <th>Soumis le</th>
                       <th>Statut</th>
                       <th>Documents</th>
@@ -2036,20 +2081,29 @@ export function AdminDashboard({ user, userData, goPage }) {
                       .filter(k => kycFilter === "all" || k.status === kycFilter)
                       .map(k => {
                         const seller = utilisateurs.find(u => (u.uid || u.id) === k.user_id);
-                        const docLabel = { cni: "CNI", passport: "Passeport", rccm: "RCCM", other: "Autre" }[k.doc_type] || k.doc_type || "—";
+                        const checklist = kycChecklist(k);
                         const statusCfg = {
-                          pending:  { bg: "#fef3c7", color: "#92400e", label: "En attente" },
-                          verified: { bg: "#d1fae5", color: "#065f46", label: "Vérifié" },
-                          rejected: { bg: "#fee2e2", color: "#991b1b", label: "Refusé" },
+                          pending:  { bg: "#fef3c7", color: "#92400e", label: KYC_STATUS_LABELS.pending },
+                          info_requested: { bg: "#eff6ff", color: "#1d4ed8", label: KYC_STATUS_LABELS.info_requested },
+                          verified: { bg: "#d1fae5", color: "#065f46", label: KYC_STATUS_LABELS.verified },
+                          rejected: { bg: "#fee2e2", color: "#991b1b", label: KYC_STATUS_LABELS.rejected },
                           none:     { bg: "var(--surface2)", color: "var(--gray)", label: "Non soumis" },
                         }[k.status] || { bg: "var(--surface2)", color: "var(--gray)", label: k.status };
+                        const allDocs = collectKycDocuments(k);
                         return (
                           <tr key={k.id}>
                             <td>
-                              <div style={{ fontWeight: 700, fontSize: ".82rem" }}>{seller?.nom || "—"}</div>
-                              <div style={{ fontSize: ".68rem", color: "var(--gray)" }}>{seller?.email || k.user_id?.slice(0, 8) + "…"}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                <div>
+                                  <div style={{ fontWeight: 700, fontSize: ".82rem" }}>{seller?.nom || "—"}</div>
+                                  <div style={{ fontSize: ".68rem", color: "var(--gray)" }}>{seller?.email || k.user_id?.slice(0, 8) + "…"}</div>
+                                </div>
+                                {(k.status === "verified" || seller?.verifie) && (
+                                  <VerifiedSellerBadge verified compact />
+                                )}
+                              </div>
                             </td>
-                            <td><span className="admin-badge admin-badge-blue">{docLabel}</span></td>
+                            <td><span className="admin-badge admin-badge-blue">{categoryLabel(k.seller_category || "online")}</span></td>
                             <td style={{ fontSize: ".72rem", color: "var(--gray)" }}>
                               {k.submitted_at ? new Date(k.submitted_at).toLocaleDateString("fr-FR") : "—"}
                             </td>
@@ -2064,20 +2118,18 @@ export function AdminDashboard({ user, userData, goPage }) {
                               )}
                             </td>
                             <td>
-                              <div style={{ display: "flex", gap: 6 }}>
-                                {k.doc_url && (
-                                  <a href={k.doc_url} target="_blank" rel="noreferrer"
-                                    style={{ fontSize: ".72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: "#eff6ff", color: "#1d4ed8", textDecoration: "none" }}>
-                                    📄 Recto
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {allDocs.slice(0, 4).map((d) => (
+                                  <a key={`${d.type}-${d.url}`} href={d.url} target="_blank" rel="noreferrer"
+                                    style={{ fontSize: ".68rem", fontWeight: 700, padding: "4px 8px", borderRadius: 8, background: "#eff6ff", color: "#1d4ed8", textDecoration: "none" }}>
+                                    📄 {d.label?.slice?.(0, 14) || d.type}
                                   </a>
-                                )}
-                                {k.doc_url2 && (
-                                  <a href={k.doc_url2} target="_blank" rel="noreferrer"
-                                    style={{ fontSize: ".72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: "#eff6ff", color: "#1d4ed8", textDecoration: "none" }}>
-                                    📄 Verso
-                                  </a>
-                                )}
-                                {!k.doc_url && <span style={{ fontSize: ".68rem", color: "var(--gray)" }}>Aucun doc</span>}
+                                ))}
+                                {allDocs.length > 4 && <span style={{ fontSize: ".65rem", color: "var(--gray)" }}>+{allDocs.length - 4}</span>}
+                                {!allDocs.length && <span style={{ fontSize: ".68rem", color: "var(--gray)" }}>Aucun</span>}
+                              </div>
+                              <div style={{ fontSize: ".62rem", marginTop: 4, color: checklist.complete ? "#059669" : "#92400e", fontWeight: 700 }}>
+                                {checklist.complete ? "✓ Dossier complet" : "⚠ Pièces manquantes"}
                               </div>
                             </td>
                             <td>
@@ -2094,12 +2146,19 @@ export function AdminDashboard({ user, userData, goPage }) {
                                   style={{ background: "#fef3c7", color: "#92400e", border: "none", borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
                                   title="Demander des informations"
                                 >💬 Info</button>
-                                {k.status !== "rejected" && (
+                                {k.status !== "verified" && k.status !== "rejected" && (
                                   <button
                                     onClick={() => { setKycModal({ kyc: k, sellerInfo: seller }); setKycAction("reject"); setKycNote(""); }}
                                     style={{ background: "#fee2e2", color: "#991b1b", border: "none", borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
                                     title="Rejeter"
                                   >❌ Rejeter</button>
+                                )}
+                                {k.status === "verified" && (
+                                  <button
+                                    onClick={() => { setKycModal({ kyc: k, sellerInfo: seller }); setKycAction("revoke"); setKycNote(""); }}
+                                    style={{ background: "#fee2e2", color: "#991b1b", border: "none", borderRadius: 7, padding: "5px 10px", cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
+                                    title="Retirer le badge"
+                                  >↩ Retirer</button>
                                 )}
                               </div>
                             </td>
@@ -2119,13 +2178,17 @@ export function AdminDashboard({ user, userData, goPage }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 12px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
                     <div>
                       <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".95rem", color: "var(--ink)" }}>
-                        {kycAction === "approve" && "✅ Valider l'identité"}
+                        {kycAction === "approve" && "✅ Valider le vendeur"}
                         {kycAction === "reject"  && "❌ Rejeter la demande"}
                         {kycAction === "info"    && "💬 Demander des informations"}
+                        {kycAction === "revoke"  && "↩ Retirer la vérification"}
                       </div>
-                      <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: 2 }}>
-                        {kycModal.kyc.full_name || kycModal.sellerInfo?.nom || "Vendeur"}
-                        {kycModal.kyc.kyc_level && <span style={{ marginLeft: 6, background: kycModal.kyc.kyc_level === "full" ? "#d1fae5" : "#fef3c7", color: kycModal.kyc.kyc_level === "full" ? "#065f46" : "#92400e", borderRadius: 4, padding: "1px 6px", fontWeight: 700, fontSize: ".68rem" }}>{kycModal.kyc.kyc_level === "full" ? "KYC Complet" : "KYC Lite"}</span>}
+                      <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span>{kycModal.kyc.full_name || kycModal.sellerInfo?.nom || "Vendeur"}</span>
+                        {(kycModal.kyc.status === "verified" || kycModal.sellerInfo?.verifie) && (
+                          <VerifiedSellerBadge verified compact />
+                        )}
+                        {kycModal.kyc.kyc_level && <span style={{ background: kycModal.kyc.kyc_level === "full" ? "#d1fae5" : "#fef3c7", color: kycModal.kyc.kyc_level === "full" ? "#065f46" : "#92400e", borderRadius: 4, padding: "1px 6px", fontWeight: 700, fontSize: ".68rem" }}>{kycModal.kyc.kyc_level === "full" ? "KYC Complet" : "KYC Lite"}</span>}
                       </div>
                     </div>
                     <button className="modal-close" onClick={() => setKycModal(null)} aria-label="Fermer">
@@ -2146,11 +2209,16 @@ export function AdminDashboard({ user, userData, goPage }) {
                         k.phone        && ["📞 Téléphone",         k.phone],
                         k.email        && ["✉️ Email",              k.email],
                         k.whatsapp     && ["💬 WhatsApp",          k.whatsapp],
-                        k.seller_type  && ["🏷 Type",              k.seller_type === "entreprise" ? "Entreprise" : "Particulier"],
+                        k.seller_category && ["🏷 Catégorie", categoryLabel(k.seller_category)],
+                        (k.business_country_code || k.business_country) && [
+                          "🌍 Pays RCCM",
+                          resolveCountryLabel(k.business_country_code, k.business_country_other || k.business_country),
+                        ],
                         k.company_name && ["🏢 Raison sociale",   k.company_name],
                         k.rccm         && ["📋 RCCM",              k.rccm],
                         (k.city || k.country) && ["🌍 Localisation", [k.quartier, k.city, k.country].filter(Boolean).join(", ")],
                         k.address      && ["🗺 Adresse",           k.address],
+                        k.location_map_url && ["📍 Plan / Maps", k.location_map_url],
                       ].filter(Boolean);
                       if (!rows.length) return null;
                       return (
@@ -2165,26 +2233,38 @@ export function AdminDashboard({ user, userData, goPage }) {
                       );
                     })()}
 
+                    {/* Checklist admin */}
+                    {(() => {
+                      const { items, complete } = kycChecklist(kycModal.kyc);
+                      return (
+                        <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: complete ? "#d1fae5" : "#fef3c7", border: `1px solid ${complete ? "#6ee7b7" : "#fcd34d"}` }}>
+                          <div style={{ fontSize: ".72rem", fontWeight: 800, marginBottom: 6, color: complete ? "#065f46" : "#92400e" }}>
+                            {complete ? "Dossier complet — prêt à valider" : "Dossier incomplet"}
+                          </div>
+                          {items.map((it) => (
+                            <div key={it.type + it.label} style={{ fontSize: ".68rem", color: it.ok ? "#065f46" : "#92400e" }}>
+                              {it.ok ? "✓" : "○"} {it.label}{it.need > 1 ? ` (${it.have}/${it.need})` : ""}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
                     {/* Aperçu documents */}
                     {(() => {
                       const k = kycModal.kyc;
-                      const docs = [
-                        k.doc_url      && ["CNI Recto",    k.doc_url],
-                        k.doc_url2     && ["CNI Verso",    k.doc_url2],
-                        k.selfie_url   && ["Selfie + CNI", k.selfie_url],
-                        k.shop_photo_url && ["Photo boutique", k.shop_photo_url],
-                      ].filter(Boolean);
+                      const docs = collectKycDocuments(k);
                       if (!docs.length) return null;
                       return (
                         <div style={{ marginBottom: 16 }}>
                           <div style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--gray)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em" }}>Documents ({docs.length})</div>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-                            {docs.map(([label, url]) => (
-                              <a key={label} href={url} target="_blank" rel="noreferrer" style={{ display: "block", borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", textDecoration: "none" }}>
-                                <img src={url} alt={label} style={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
+                            {docs.map((d) => (
+                              <a key={d.url} href={d.url} target="_blank" rel="noreferrer" style={{ display: "block", borderRadius: 10, overflow: "hidden", border: "1px solid var(--border)", textDecoration: "none" }}>
+                                <img src={d.url} alt={d.label} style={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
                                   onError={e => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }} />
-                                <div style={{ display: "none", height: 70, alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#1d4ed8", fontSize: ".72rem", fontWeight: 700 }}>📄 {label}</div>
-                                <div style={{ padding: "4px 8px", fontSize: ".68rem", fontWeight: 700, color: "var(--gray)", background: "var(--surface2)" }}>{label}</div>
+                                <div style={{ display: "none", height: 70, alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#1d4ed8", fontSize: ".72rem", fontWeight: 700 }}>📄 {d.label}</div>
+                                <div style={{ padding: "4px 8px", fontSize: ".68rem", fontWeight: 700, color: "var(--gray)", background: "var(--surface2)" }}>{d.label}</div>
                               </a>
                             ))}
                           </div>
@@ -2193,8 +2273,8 @@ export function AdminDashboard({ user, userData, goPage }) {
                     })()}
 
                     {kycAction === "approve" && (
-                      <div style={{ background: "#d1fae5", border: "1px solid #6ee7b7", borderRadius: 10, padding: "12px 14px", fontSize: ".82rem", color: "#065f46", marginBottom: 16 }}>
-                        Le vendeur recevra une notification de validation et obtiendra le badge <strong>Vendeur Vérifié</strong>.
+                      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "12px 14px", fontSize: ".82rem", color: "#1d4ed8", marginBottom: 16 }}>
+                        Le vendeur recevra le badge discret <strong>Vendeur vérifié</strong> (coche bleue) sur sa boutique et tous ses produits.
                       </div>
                     )}
 

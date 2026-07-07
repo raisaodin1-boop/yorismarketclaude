@@ -24,7 +24,8 @@ import { WalletWithdrawal } from "./WalletWithdrawal";
 import { SellerKYC } from "./SellerKYC";
 import { BusinessAiAssistant } from "./seller/BusinessAiAssistant";
 import { SellerB2BInbox } from "./seller/SellerB2BInbox";
-import { INCOTERMS, ORIGIN_COUNTRIES } from "../lib/importWholesale";
+import { INCOTERMS, ORIGIN_COUNTRIES, isOtherCountryCode } from "../lib/importWholesale";
+import { CountrySelectWithOther } from "./seller/CountrySelectWithOther";
 import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons.jsx";
 
 // ─────────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ export function SellerDashboard({
     madeInChoice: "no",
     localBrandName: "",
     countryOfOrigin: "CM",
+    countryOfOriginOther: "",
     isPack: false,
     packDescription: "",
     linkedProductIds: [],
@@ -211,6 +213,7 @@ export function SellerDashboard({
       madeInChoice: "no",
       localBrandName: "",
       countryOfOrigin: "CM",
+      countryOfOriginOther: "",
       isPack: false,
       packDescription: "",
       linkedProductIds: [],
@@ -344,7 +347,12 @@ export function SellerDashboard({
         lead_time_days: form.b2bEnabled && form.leadTimeDays ? Number(form.leadTimeDays) : null,
         incoterm: form.b2bEnabled ? (form.incoterm || null) : null,
         wholesale_tiers: form.b2bEnabled && validTiers.length ? validTiers : null,
-        ...(form.b2bEnabled ? { country_of_origin: form.countryOfOrigin || "CM" } : {}),
+        ...(form.b2bEnabled ? {
+          country_of_origin: form.countryOfOrigin || "CM",
+          country_of_origin_other: isOtherCountryCode(form.countryOfOrigin)
+            ? (form.countryOfOriginOther?.trim() || null)
+            : null,
+        } : {}),
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;
@@ -1045,14 +1053,19 @@ export function SellerDashboard({
                     </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    <div className="form-group">
-                      <label className="form-label">Pays d&apos;origine</label>
-                      <select className="form-select" value={form.countryOfOrigin} onChange={(e) => setForm((f) => ({ ...f, countryOfOrigin: e.target.value }))}>
-                        {ORIGIN_COUNTRIES.map((o) => (
-                          <option key={o.code} value={o.code}>{o.flag} {o.labelFr}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <CountrySelectWithOther
+                      label="Pays d'origine / sourcing"
+                      value={form.countryOfOrigin}
+                      other={form.countryOfOriginOther}
+                      onChange={(code) => setForm((f) => ({
+                        ...f,
+                        countryOfOrigin: code,
+                        countryOfOriginOther: code === "XX" ? f.countryOfOriginOther : "",
+                      }))}
+                      onOtherChange={(v) => setForm((f) => ({ ...f, countryOfOriginOther: v }))}
+                      options={ORIGIN_COUNTRIES}
+                      hint="Chine, Inde, France… ou Autre"
+                    />
                     <div className="form-group">
                       <label className="form-label">Délai (jours)</label>
                       <input className="form-input" type="number" min="1" placeholder="Ex: 21" value={form.leadTimeDays || ""} onChange={(e) => setForm((f) => ({ ...f, leadTimeDays: e.target.value }))} />

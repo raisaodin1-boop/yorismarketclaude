@@ -1,6 +1,6 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
 import {
-  productMatchesImportChinaFilter,
+  productMatchesInternationalImportFilter,
   productMatchesWholesaleFilter,
 } from "./importWholesale.js";
 import {
@@ -169,17 +169,17 @@ export const MERCH_HUBS = {
   "import-chine": {
     slug: "import-chine",
     page: "merchHub",
-    categorySlug: "import-chine",
-    titleFr: "Import Chine → Cameroun — Gros & devis B2B",
-    titleEn: "China import → Cameroon — Wholesale & B2B quotes",
+    categorySlug: "import-international",
+    titleFr: "Import international → Cameroun — Gros & devis B2B",
+    titleEn: "International import → Cameroon — Wholesale & B2B",
     descFr:
-      "Produits importés depuis la Chine : MOQ, délais FOB/CIF, demandes de devis et escrow Yorix pour professionnels.",
+      "Sourcing Chine, Inde, France, Turquie, Émirats et plus : MOQ, délais FOB/CIF, devis B2B et escrow Yorix.",
     descEn:
-      "Products imported from China: MOQ, FOB/CIF lead times, quote requests and Yorix escrow for professionals.",
-    keywordsFr: "import chine cameroun, fournisseur chinois, gros import, sourcing chine",
-    emoji: "🇨🇳",
-    theme: "import-cn",
-    filter: "import_china",
+      "Sourcing from China, India, France, Turkey, UAE and more: MOQ, FOB/CIF lead times, B2B quotes and Yorix escrow.",
+    keywordsFr: "import international cameroun, gros import, sourcing inde france chine, fournisseur étranger",
+    emoji: "🌏",
+    theme: "import-intl",
+    filter: "import_international",
   },
 };
 
@@ -319,8 +319,9 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
         .filter((p) => p.b2b_enabled || Number(p.min_qty_gros) > 1)
         .slice(0, 64);
     }
+    case "import_international":
     case "import_china": {
-      const imported = active.filter(productMatchesImportChinaFilter);
+      const imported = active.filter(productMatchesInternationalImportFilter);
       if (imported.length >= 2) return imported;
       return active.filter((p) => p.b2b_enabled).slice(0, 48);
     }

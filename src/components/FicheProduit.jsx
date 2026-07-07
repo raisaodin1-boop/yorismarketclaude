@@ -17,6 +17,7 @@ import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../
 import { YorixToast, useYorixToast } from "./ui/YorixToast";
 import { B2BOrderForm } from "./B2BOrderForm";
 import { ImportWholesaleBadge } from "./import/ImportWholesaleBadge";
+import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
 import { resolveWholesaleUnitPrice } from "../lib/importWholesale";
 
 // ─────────────────────────────────────────────────────────────
@@ -221,6 +222,11 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
             />
             <div className="modal-title fp-title">{product.name_fr}</div>
             <ImportWholesaleBadge product={product} locale={siteLocale} />
+            {(product.vendeur_verifie || product.verifie) && (
+              <div style={{ marginBottom: 8 }}>
+                <VerifiedSellerBadge verified locale={siteLocale} />
+              </div>
+            )}
             <SocialProofLine product={product} locale={siteLocale} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
               <Stars value={Math.round(avgNote)} />

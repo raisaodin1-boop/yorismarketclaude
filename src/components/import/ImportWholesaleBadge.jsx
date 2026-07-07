@@ -1,11 +1,11 @@
-import { originLabel, formatLeadTime, isImportProduct } from "../../lib/importWholesale";
+import { originLabel, formatLeadTime, isImportProduct, productOriginLabel } from "../../lib/importWholesale";
 
 export function ImportWholesaleBadge({ product, locale = "fr", compact = false }) {
   if (!product?.b2b_enabled && !isImportProduct(product)) return null;
 
   const isEn = locale === "en";
   const importFlag = isImportProduct(product);
-  const origin = importFlag ? originLabel(product.country_of_origin, locale) : null;
+  const origin = importFlag ? productOriginLabel(product, locale) : null;
   const lead = product.lead_time_days ? formatLeadTime(product.lead_time_days, locale) : null;
 
   return (

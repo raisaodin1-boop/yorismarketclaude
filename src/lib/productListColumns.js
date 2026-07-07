@@ -32,9 +32,11 @@ export const PRODUCT_LIST_COLUMNS = [
   "prix_gros",
   "min_qty_gros",
   "country_of_origin",
+  "country_of_origin_other",
   "lead_time_days",
   "incoterm",
   "wholesale_tiers",
+  "vendeur_verifie",
   "created_at",
 ].join(",");
 

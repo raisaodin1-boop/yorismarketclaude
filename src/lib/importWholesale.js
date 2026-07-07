@@ -15,25 +15,95 @@ export const INCOTERMS = [
   { code: "DDP", labelFr: "DDP — Rendu droits acquittés", labelEn: "DDP — Delivered duty paid" },
 ];
 
-export const ORIGIN_COUNTRIES = [
-  { code: "CM", labelFr: "Cameroun", labelEn: "Cameroon", flag: "🇨🇲" },
+/** Cameroun — origine locale */
+export const LOCAL_ORIGIN = {
+  code: "CM",
+  labelFr: "Cameroun",
+  labelEn: "Cameroon",
+  flag: "🇨🇲",
+};
+
+/** ~10 pays sourcing / import gros (hors Cameroun) */
+export const WHOLESALE_IMPORT_COUNTRIES = [
   { code: "CN", labelFr: "Chine", labelEn: "China", flag: "🇨🇳" },
-  { code: "TR", labelFr: "Turquie", labelEn: "Turkey", flag: "🇹🇷" },
-  { code: "AE", labelFr: "Émirats", labelEn: "UAE", flag: "🇦🇪" },
   { code: "IN", labelFr: "Inde", labelEn: "India", flag: "🇮🇳" },
+  { code: "FR", labelFr: "France", labelEn: "France", flag: "🇫🇷" },
+  { code: "TR", labelFr: "Turquie", labelEn: "Turkey", flag: "🇹🇷" },
+  { code: "AE", labelFr: "Émirats arabes unis", labelEn: "UAE", flag: "🇦🇪" },
   { code: "NG", labelFr: "Nigeria", labelEn: "Nigeria", flag: "🇳🇬" },
-  { code: "XX", labelFr: "Autre", labelEn: "Other", flag: "🌍" },
+  { code: "US", labelFr: "États-Unis", labelEn: "United States", flag: "🇺🇸" },
+  { code: "BE", labelFr: "Belgique / UE", labelEn: "Belgium / EU", flag: "🇧🇪" },
+  { code: "KR", labelFr: "Corée du Sud", labelEn: "South Korea", flag: "🇰🇷" },
+  { code: "VN", labelFr: "Vietnam", labelEn: "Vietnam", flag: "🇻🇳" },
 ];
 
-export function originLabel(code, locale = "fr") {
-  const c = ORIGIN_COUNTRIES.find((o) => o.code === String(code || "").toUpperCase());
-  if (!c) return code || "—";
+export const OTHER_COUNTRY = {
+  code: "XX",
+  labelFr: "Autre pays",
+  labelEn: "Other country",
+  flag: "🌍",
+};
+
+/** Options produit : local + import + autre */
+export const ORIGIN_COUNTRIES = [
+  LOCAL_ORIGIN,
+  ...WHOLESALE_IMPORT_COUNTRIES,
+  OTHER_COUNTRY,
+];
+
+/** RCCM / siège entreprise import */
+export const IMPORT_BUSINESS_COUNTRIES = [
+  ...WHOLESALE_IMPORT_COUNTRIES,
+  OTHER_COUNTRY,
+];
+
+/** Entreprise locale CM + import */
+export const BUSINESS_REGISTRATION_COUNTRIES = [
+  LOCAL_ORIGIN,
+  ...WHOLESALE_IMPORT_COUNTRIES,
+  OTHER_COUNTRY,
+];
+
+export function isOtherCountryCode(code) {
+  return String(code || "").toUpperCase() === "XX";
+}
+
+export function resolveCountryLabel(code, otherName, locale = "fr") {
+  const c = [...ORIGIN_COUNTRIES, ...BUSINESS_REGISTRATION_COUNTRIES].find(
+    (o) => o.code === String(code || "").toUpperCase(),
+  );
+  if (isOtherCountryCode(code)) {
+    const custom = String(otherName || "").trim();
+    if (custom) return `${OTHER_COUNTRY.flag} ${custom}`;
+    return locale === "en" ? OTHER_COUNTRY.labelEn : OTHER_COUNTRY.labelFr;
+  }
+  if (!c) return String(code || otherName || "—");
   return `${c.flag} ${locale === "en" ? c.labelEn : c.labelFr}`;
+}
+
+/** @deprecated use resolveCountryLabel */
+export function originLabel(code, locale = "fr", otherName) {
+  return resolveCountryLabel(code, otherName, locale);
 }
 
 export function isImportProduct(product) {
   const origin = String(product?.country_of_origin || "CM").toUpperCase();
   return origin !== "CM" && origin !== "";
+}
+
+export function productOriginLabel(product, locale = "fr") {
+  return resolveCountryLabel(
+    product?.country_of_origin,
+    product?.country_of_origin_other,
+    locale,
+  );
+}
+
+export function supplierChannelForCountryCode(code) {
+  const c = String(code || "").toUpperCase();
+  if (c === "CN") return SUPPLIER_CHANNELS.IMPORT_CN;
+  if (c && c !== "CM" && c !== "XX") return SUPPLIER_CHANNELS.IMPORT_INTL;
+  return SUPPLIER_CHANNELS.LOCAL;
 }
 
 export function parseWholesaleTiers(product) {
@@ -49,7 +119,6 @@ export function parseWholesaleTiers(product) {
     .sort((a, b) => a.min_qty - b.min_qty);
 }
 
-/** Prix unitaire gros selon quantité (paliers ou prix_gros / prix). */
 export function resolveWholesaleUnitPrice(product, quantity = 1) {
   const qty = Math.max(1, Number(quantity) || 1);
   const tiers = parseWholesaleTiers(product);
@@ -85,11 +154,15 @@ export function productMatchesWholesaleFilter(p) {
   return false;
 }
 
-export function productMatchesImportChinaFilter(p) {
+/** Hub import international (Chine, Inde, France, etc.) */
+export function productMatchesInternationalImportFilter(p) {
   if (!productMatchesWholesaleFilter(p)) return false;
-  const origin = String(p.country_of_origin || "").toUpperCase();
-  return origin === "CN" || p.b2b_enabled;
+  if (isImportProduct(p)) return true;
+  return Boolean(p.b2b_enabled);
 }
+
+/** @deprecated alias */
+export const productMatchesImportChinaFilter = productMatchesInternationalImportFilter;
 
 export const B2B_STATUS_LABELS = {
   fr: {
