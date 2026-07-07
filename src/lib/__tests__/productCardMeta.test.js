@@ -5,12 +5,13 @@ import { productProtectScore } from "../productCardMeta.js";
 describe("productCardMeta", () => {
   it("defaults MOQ to 1", () => {
     expect(productMoq({})).toBe(1);
-    expect(productMoqLabel({}, "fr")).toBe("1 pc min.");
+    expect(productMoqLabel({}, "fr")).toBe("Qté min. 1 pc");
   });
 
-  it("reads custom MOQ", () => {
+  it("reads custom MOQ from min_qty_gros or moq", () => {
     expect(productMoq({ moq: 10 })).toBe(10);
-    expect(productMoqLabel({ moq: 10 }, "fr")).toBe("MOQ 10 pcs");
+    expect(productMoq({ min_qty_gros: 25 })).toBe(25);
+    expect(productMoqLabel({ moq: 10 }, "fr")).toBe("Qté min. 10 pcs");
   });
 
   it("computes protect score", () => {

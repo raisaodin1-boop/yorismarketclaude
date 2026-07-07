@@ -14,6 +14,7 @@ import { HomeTrendingProducts } from "../components/home/HomeTrendingProducts";
 import { HomeBuyerSellerCta } from "../components/home/HomeBuyerSellerCta";
 import { HomeBrandStory } from "../components/home/HomeBrandStory";
 import { HomeSocialProof } from "../components/home/HomeSocialProof";
+import { HomeEscrowTrust } from "../components/home/HomeEscrowTrust";
 import { categoryLabel } from "../lib/marketplaceCategories";
 import { SEO_CITIES } from "../lib/seoRoutes";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
@@ -21,105 +22,62 @@ import { usePlatformStats } from "../hooks/usePlatformStats";
 import { formatPlatformStat } from "../lib/platformStats";
 import homePremiumCss from "./homePageV3Premium.css?raw";
 
-/** 3 parcours principaux — hiérarchie claire pour le visiteur */
-const PRIMARY_PATHS = [
-  {
-    key: "produits",
-    labelFr: "Acheter",
-    labelEn: "Shop",
-    descFr: "Catalogue vérifié · MoMo & escrow",
-    descEn: "Verified catalog · MoMo & escrow",
-    iconKey: "shoppingBag",
-    color: "#1a6b3a",
-  },
-  {
-    key: "devenirVendeur",
-    labelFr: "Vendre",
-    labelEn: "Sell",
-    descFr: "Boutique en ligne en quelques minutes",
-    descEn: "Online store in minutes",
-    iconKey: "store",
-    color: "#f59e0b",
-  },
-  {
-    key: "prestataires",
-    labelFr: "Trouver un pro",
-    labelEn: "Find a pro",
-    descFr: "Plomberie, beauté, IT, BTP…",
-    descEn: "Plumbing, beauty, IT, construction…",
-    iconKey: "wrench",
-    color: "#0891b2",
-  },
-];
-
-/** Services secondaires — visibles sans surcharger le hero */
+/** Services secondaires — visibles sans diluer le message principal */
 const SECONDARY_PATHS = [
   { key: "livraison", labelFr: "Livraison", labelEn: "Delivery", iconKey: "truck" },
   { key: "escrow", labelFr: "Escrow", labelEn: "Escrow", iconKey: "shield" },
-  { key: "business", labelFr: "Business", labelEn: "Business", iconKey: "briefcase" },
-  { key: "academy", labelFr: "Academy", labelEn: "Academy", iconKey: "graduationCap" },
-];
-
-const ECOSYSTEM_SECONDARY = [
-  { key: "livraison", iconKey: "truck", titleFr: "Yorix Ride", titleEn: "Yorix Ride", descFr: "Livraison suivie, zones prioritaires.", descEn: "Tracked delivery, priority zones." },
-  { key: "business", iconKey: "briefcase", titleFr: "Yorix Business", titleEn: "Yorix Business", descFr: "Visibilité B2B et croissance.", descEn: "B2B visibility and growth." },
-  { key: "academy", iconKey: "graduationCap", titleFr: "Yorix Academy", titleEn: "Yorix Academy", descFr: "Former vos équipes au digital.", descEn: "Upskill your teams digitally." },
-];
-
-const WHY = [
-  { iconKey: "rocket", title: "Vitesse & clarté", desc: "Moins de friction entre l'intention et le paiement — tunnel optimisé mobile." },
-  { iconKey: "globe", title: "Local first", desc: "Conçu au Cameroun pour les usages MoMo, WhatsApp et la logistique réelle." },
-  { iconKey: "target", title: "Multi-canal", desc: "Achat catalogue, réservation pros, livraison, business & formation — tout-en-un." },
-  { iconKey: "messageCircle", title: "Humain accessible", desc: "Support WhatsApp 7j/7 quand il faut trancher vite." },
+  { key: "prestataires", labelFr: "Services", labelEn: "Services", iconKey: "wrench" },
+  { key: "aide", labelFr: "Aide", labelEn: "Help", iconKey: "lifeBuoy" },
 ];
 
 const TRUST_BADGES = [
-  { iconKey: "truck", t: "Livraison prioritaire" },
-  { iconKey: "smartphone", t: "Mobile money intégré" },
-  { iconKey: "lock", t: "Escrow protection" },
+  { iconKey: "shield", t: "Escrow — argent protégé" },
+  { iconKey: "smartphone", t: "MTN MoMo & Orange Money" },
+  { iconKey: "check", t: "Vendeurs vérifiés" },
+  { iconKey: "truck", t: "Livraison suivie" },
   { iconKey: "messageCircle", t: "Support WhatsApp 7j/7" },
-  { iconKey: "flag", t: "100% Cameroun" },
+  { iconKey: "flag", t: "Entreprise camerounaise" },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: "Enfin une plateforme camerounaise qui ressemble aux géants — mais avec le sens du détail local.",
+    quote: "J'avais peur de payer en ligne. Avec l'escrow Yorix, je savais que mon argent était protégé jusqu'à réception.",
     author: "Marie N.",
-    meta: "Douala · Acheteuse vérifiée",
+    meta: "Douala · Acheteuse",
     avatar: "M",
     color: "#1a6b3a",
     stars: 5,
   },
   {
-    quote: "Paiement MoMo fluide, escrow rassurant. Mes clients commandent en confiance via Yorix.",
+    quote: "Mes clients paient en MoMo sans crainte grâce à l'escrow. Plus de « je paierai à la livraison » qui ne paie jamais.",
     author: "Jean-Paul K.",
-    meta: "Vendeur mode · 120+ ventes",
+    meta: "Vendeur mode · Yaoundé",
     avatar: "J",
     color: "#f59e0b",
     stars: 5,
   },
   {
-    quote: "Les prestataires sont notés, la prise de contact est simple. Parfait pour nos urgences à Yaoundé.",
+    quote: "Enfin une alternative sérieuse à Facebook — vendeurs vérifiés, livraison suivie et quelqu'un au bout du WhatsApp.",
     author: "Sophie A.",
-    meta: "PME services · Yaoundé",
+    meta: "Acheteuse · Douala",
     avatar: "S",
     color: "#7c3aed",
-    stars: 4,
+    stars: 5,
   },
 ];
 
 const SEO_FAQS = [
   {
-    q: "Quel site utiliser pour acheter en ligne au Cameroun ?",
-    a: "Yorix.cm centralise produits, vendeurs, prestataires et livraison avec paiement MTN MoMo, Orange Money, cash ou carte selon les options disponibles.",
+    q: "Pourquoi acheter sur Yorix plutôt que sur Facebook ?",
+    a: "Sur Facebook, vous payez sans garantie. Sur Yorix, votre argent reste bloqué en escrow jusqu'à ce que vous confirmiez la livraison. Vendeurs vérifiés, suivi commande et support WhatsApp inclus.",
+  },
+  {
+    q: "Comment fonctionne l'Escrow Yorix ?",
+    a: "Vous payez (MoMo, Orange Money ou carte). Yorix conserve les fonds. Le vendeur expédie. Vous validez la réception — seulement alors le vendeur est payé. En cas de litige, notre équipe intervient.",
   },
   {
     q: "Comment commander rapidement sur Yorix.cm ?",
-    a: "Recherchez un produit ou une ville, ajoutez au panier ou contactez le support WhatsApp express. L'objectif est de finaliser l'achat ou la demande en moins d'une minute.",
-  },
-  {
-    q: "Comment vendre en ligne au Cameroun avec Yorix ?",
-    a: "Créez un compte vendeur, publiez vos fiches avec photos, prix en FCFA et ville, puis suivez commandes, messages et paiements dans votre tableau de bord.",
+    a: "Recherchez un produit ou une ville, ajoutez au panier ou contactez le support WhatsApp. Paiement sécurisé et livraison suivie à chaque étape.",
   },
 ];
 
@@ -223,23 +181,21 @@ export function HomePage({
               <div>
                 <span className="yhm3-eyebrow">
                   <span className="yhm3-eyebrow-dot" /> <ContentIcon name="flag" size={14} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
-                  {isEn ? "Cameroonian super-app" : "Super-app camerounaise"}
+                  {isEn ? "Cameroonian company · Secure checkout" : "Entreprise camerounaise · Paiement sécurisé"}
                 </span>
 
                 <h1 className="yhm3-h1">
                   {isEn ? (
                     <>
-                      The platform that connects
+                      Shop safely across
                       <br />
-                      <em>all Cameroonian commerce</em>
+                      <em>all of Cameroon</em>
                     </>
                   ) : (
                     <>
-                      Le super-app camerounais
+                      Achetez sans risque
                       <br />
-                      pour <em>acheter, vendre</em>
-                      <br />
-                      et développer votre activité
+                      <em>partout au Cameroun</em>
                     </>
                   )}
                 </h1>
@@ -247,24 +203,23 @@ export function HomePage({
                 <p className="yhm3-sub">
                   {isEn ? (
                     <>
-                      Products, trusted providers, delivery and Mobile Money — one technology platform built in Cameroon,
-                      for Cameroonians.
+                      Your money is only released to the seller <strong>after delivery</strong>. MTN MoMo, Orange Money,
+                      verified sellers and tracked delivery — a marketplace built in Cameroon, for Cameroonians.
                     </>
                   ) : (
                     <>
-                      Produits, prestataires vérifiés, livraison et paiement{" "}
-                      <strong>MTN MoMo / Orange Money</strong> — une plateforme technologique 100 % camerounaise qui
-                      connecte tout le commerce local.
+                      Votre argent n&apos;est versé au vendeur <strong>qu&apos;après la livraison</strong>. MTN MoMo,
+                      Orange Money, vendeurs vérifiés et livraison suivie — une marketplace 100 % camerounaise.
                     </>
                   )}
                 </p>
 
                 <div className="yhm3-hero-ctas yx-reveal yx-reveal-d2">
                   <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => goPage("produits")}>
-                    {isEn ? "Start shopping" : "Commencer à acheter"}
+                    {isEn ? "Shop now" : "Acheter"}
                   </button>
                   <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("devenirVendeur")}>
-                    {isEn ? "Open my store" : "Ouvrir ma boutique"}
+                    {isEn ? "Sell" : "Vendre"}
                   </button>
                   <button
                     type="button"
@@ -283,22 +238,30 @@ export function HomePage({
                 </div>
 
                 <div className="yhm3-hero-trust yx-reveal yx-reveal-d3">
-                  <div className="yhm3-trust-pill">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--hm-yellow)" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                    Avis vérifiés
+                  <div className="yhm3-trust-pill yhm3-trust-pill--escrow">
+                    <ContentIcon name="shield" size={13} />
+                    {isEn ? "Escrow protected" : "Escrow — argent protégé"}
                   </div>
                   <div className="yhm3-trust-pill">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    Paiements sécurisés
+                    <ContentIcon name="lock" size={13} />
+                    {isEn ? "Secure payment" : "Paiement sécurisé"}
                   </div>
                   <div className="yhm3-trust-pill">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                    Vendeurs vérifiés
+                    <ContentIcon name="check" size={13} />
+                    {isEn ? "Verified sellers" : "Vendeurs vérifiés"}
                   </div>
                   <div className="yhm3-trust-pill">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    MoMo &amp; Orange Money
+                    <ContentIcon name="truck" size={13} />
+                    {isEn ? "Tracked delivery" : "Livraison suivie"}
                   </div>
+                  <div className="yhm3-trust-pill">
+                    <ContentIcon name="messageCircle" size={13} />
+                    {isEn ? "WhatsApp support" : "WhatsApp 7j/7"}
+                  </div>
+                  <button type="button" className="yhm3-trust-pill yhm3-trust-pill--link" onClick={() => goPage("cgv")}>
+                    <ContentIcon name="refresh" size={13} />
+                    {isEn ? "Refund policy" : "Remboursement"}
+                  </button>
                 </div>
 
                 <div className="yhm3-hero-stats">
@@ -318,7 +281,7 @@ export function HomePage({
                     <div className="yhm3-hero-stat-val">
                       {platformStats ? formatPlatformStat(platformStats.orders) : "350+"}
                     </div>
-                    <div className="yhm3-hero-stat-lbl">{isEn ? "Orders" : "Commandes"}</div>
+                    <div className="yhm3-hero-stat-lbl">{isEn ? "Delivered orders" : "Commandes livrées"}</div>
                   </div>
                   <div>
                     <div className="yhm3-hero-stat-val">{platformStats?.cities || 10}+</div>
@@ -445,60 +408,13 @@ export function HomePage({
           </div>
         </header>
 
-        <section className="yhm3-section yhm3-primary-paths yx-reveal" aria-labelledby="yhm3-primary-title">
-          <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">{isEn ? "Where to start" : "Par où commencer ?"}</span>
-            <h2 id="yhm3-primary-title" className="yhm3-h2 yhm3-h2--center">
-              {isEn ? "Three clear paths, " : "Trois parcours clairs, "}
-              <em>{isEn ? "one platform" : "une seule plateforme"}</em>
-            </h2>
-          </div>
-
-          <div className="yhm3-primary-grid">
-            {PRIMARY_PATHS.map((p, i) => (
-              <button
-                key={p.key}
-                type="button"
-                className={`yhm3-primary-card yx-reveal yx-reveal-d${Math.min(i + 1, 3)}`}
-                style={{ "--path-color": p.color }}
-                onClick={() => goPage(p.key)}
-              >
-                <div className="yhm3-primary-card__ico">
-                  <ContentIcon name={p.iconKey} size={24} />
-                </div>
-                <div className="yhm3-primary-card__label">{isEn ? p.labelEn : p.labelFr}</div>
-                <div className="yhm3-primary-card__desc">{isEn ? p.descEn : p.descFr}</div>
-              </button>
-            ))}
-          </div>
-
-          <div className="yhm3-secondary-strip" aria-label={isEn ? "More services" : "Autres services"}>
-            <span className="yhm3-secondary-strip__lbl">{isEn ? "Also on Yorix" : "Aussi sur Yorix"}</span>
-            {SECONDARY_PATHS.map((p) => (
-              <button key={p.key} type="button" className="yhm3-secondary-pill" onClick={() => goPage(p.key)}>
-                <ContentIcon name={p.iconKey} size={13} /> {isEn ? p.labelEn : p.labelFr}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {categoryTree.length > 0 && (
-          <HomeCategoryGrid
-            tree={categoryTree}
-            locale={siteLocale}
-            onCategoryClick={(v) => goToCategory?.(v)}
-          />
-        )}
+        <HomeEscrowTrust locale={siteLocale} goPage={goPage} />
 
         <HomeBuyerSellerCta
           locale={siteLocale}
           onBrowse={() => goPage("produits")}
           onSell={() => goPage("devenirVendeur")}
         />
-
-        <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
-
-        <HomeBrandStory locale={siteLocale} />
 
         <HomeTrendingProducts
           produits={safeProduits}
@@ -513,6 +429,93 @@ export function HomePage({
           openSellerUrl={openSellerUrl}
           onSeeAll={() => goPage("merchHub", { merchHub: "produits-tendance" })}
         />
+
+        <section className="yhm3-section">
+          <div className="yhm3-section-head">
+            <div>
+              <span className="yhm3-eyebrow-light">{isEn ? "Catalog" : "Catalogue"}</span>
+              <h2 className="yhm3-h2">
+                {isEn ? "Popular " : "Produits "}
+                <em>{isEn ? "products" : "populaires"}</em>
+              </h2>
+              <p className="yhm3-lead">
+                {isEn
+                  ? "A daily selection from verified Cameroonian sellers — every purchase protected by escrow."
+                  : "Une sélection quotidienne de vendeurs camerounais — chaque achat protégé par l'escrow."}
+              </p>
+            </div>
+            <button type="button" className="yhm3-section-link" onClick={() => goPage("produits")}>
+              {isEn ? "View all" : "Tout voir"} <span>→</span>
+            </button>
+          </div>
+
+          {produitsLoading ? (
+            <div className="yhm3-loading">
+              <div className="yhm3-spinner" />
+              {isEn ? "Loading catalog…" : "Chargement du catalogue…"}
+            </div>
+          ) : safeProduits.length === 0 ? (
+            <div className="yhm3-empty">
+              <div className="yhm3-empty-ico"><ContentIcon name="shoppingBag" size={32} /></div>
+              <p>{isEn ? "Catalog filling up — check back soon." : "Le catalogue se remplit — revenez très vite."}</p>
+            </div>
+          ) : (
+            <ProdGrid
+              prods={safeProduits.slice(0, 10)}
+              user={user}
+              userData={userData}
+              onAddToCart={addToCart}
+              onWish={toggleWish}
+              wishlist={wishlist}
+              onOpenProductUrl={openProductUrl}
+              onOpenSellerUrl={openSellerUrl}
+            />
+          )}
+        </section>
+
+        {categoryTree.length > 0 && (
+          <HomeCategoryGrid
+            tree={categoryTree}
+            locale={siteLocale}
+            onCategoryClick={(v) => goToCategory?.(v)}
+            onSeeAll={() => goPage("produits")}
+          />
+        )}
+
+        <section className="yhm3-section">
+          <div className="yhm3-section-head yhm3-section-head--center">
+            <span className="yhm3-eyebrow-light">{isEn ? "Testimonials" : "Témoignages"}</span>
+            <h2 className="yhm3-h2 yhm3-h2--center">
+              {isEn ? "They " : "Ils "}
+              <em>{isEn ? "trust Yorix" : "nous font confiance"}</em>
+            </h2>
+            <p className="yhm3-lead yhm3-lead--center">
+              {isEn
+                ? "Buyers and sellers who chose security over informal deals."
+                : "Acheteurs et vendeurs qui ont choisi la sécurité plutôt que les achats informels."}
+            </p>
+          </div>
+
+          <div className="yhm3-stories">
+            {TESTIMONIALS.map((t, i) => (
+              <figure key={t.author} className={`yhm3-story yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`} style={{ "--story-color": t.color }}>
+                <div className="yhm3-story-stars" aria-label={`${t.stars} sur 5`}>
+                  {Array.from({ length: t.stars }).map((_, si) => (
+                    <ContentIcon key={si} name="star" size={12} />
+                  ))}
+                </div>
+                <blockquote className="yhm3-story-quote">&ldquo;{t.quote}&rdquo;</blockquote>
+                <figcaption className="yhm3-story-foot">
+                  <div className="yhm3-story-av">{t.avatar}</div>
+                  <div>
+                    <div className="yhm3-story-name">{t.author}</div>
+                    <div className="yhm3-story-meta">{t.meta}</div>
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
 
         <HomeSocialProof locale={siteLocale} stats={platformStats} isLoading={statsLoading} />
 
@@ -566,112 +569,21 @@ export function HomePage({
           )}
         </section>
 
-        <section className="yhm3-section">
-          <div className="yhm3-section-head">
-            <div>
-              <span className="yhm3-eyebrow-light">Catalogue</span>
-              <h2 className="yhm3-h2">
-                Produits du <em>moment</em>
-              </h2>
-              <p className="yhm3-lead">Une sélection mise à jour quotidiennement par nos vendeurs.</p>
-            </div>
-            <button type="button" className="yhm3-section-link" onClick={() => goPage("produits")}>
-              Tout voir <span>→</span>
-            </button>
-          </div>
+        <HomePremiumMerch goPage={goPage} produits={safeProduits} locale={siteLocale} />
 
-          {produitsLoading ? (
-            <div className="yhm3-loading">
-              <div className="yhm3-spinner" />
-              Chargement du marché…
-            </div>
-          ) : safeProduits.length === 0 ? (
-            <div className="yhm3-empty">
-              <div className="yhm3-empty-ico"><ContentIcon name="shoppingBag" size={32} /></div>
-              <p>Le catalogue se remplit — revenez très vite.</p>
-            </div>
-          ) : (
-            <ProdGrid
-              prods={safeProduits.slice(0, 10)}
-              user={user}
-              userData={userData}
-              onAddToCart={addToCart}
-              onWish={toggleWish}
-              wishlist={wishlist}
-              onOpenProductUrl={openProductUrl}
-              onOpenSellerUrl={openSellerUrl}
-            />
-          )}
-        </section>
-
-        <section className="yhm3-section--tinted">
-          <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">{isEn ? "Beyond shopping" : "Au-delà du catalogue"}</span>
-            <h2 className="yhm3-h2 yhm3-h2--center">
-              {isEn ? "Grow with the " : "Grandir avec l'"}
-              <em>{isEn ? "Yorix ecosystem" : "écosystème Yorix"}</em>
-            </h2>
-            <p className="yhm3-lead yhm3-lead--center">
-              {isEn
-                ? "Delivery, B2B tools and training — when you're ready to go further."
-                : "Livraison, outils pro et formation — quand vous êtes prêt à aller plus loin."}
-            </p>
-          </div>
-
-          <div className="yhm3-eco-secondary">
-            {ECOSYSTEM_SECONDARY.map((e, i) => (
-              <article
-                key={e.key}
-                className={`yhm3-eco-card yx-reveal yx-reveal-d${Math.min(i + 1, 3)}`}
-                onClick={() => goPage(e.key)}
-                role="link"
-                tabIndex={0}
-                onKeyDown={(ev) => {
-                  if (ev.key === "Enter" || ev.key === " ") {
-                    ev.preventDefault();
-                    goPage(e.key);
-                  }
-                }}
-              >
-                <div className="yhm3-eco-card__ico"><ContentIcon name={e.iconKey} size={22} /></div>
-                <h3>{isEn ? e.titleEn : e.titleFr}</h3>
-                <p>{isEn ? e.descEn : e.descFr}</p>
-                <span className="yhm3-eco-card__link">{isEn ? "Explore" : "Explorer"} →</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="yhm3-section">
-          <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">Différenciation Yorix</span>
-            <h2 className="yhm3-h2 yhm3-h2--center">
-              Une expérience premium, <em>pensée conversion</em>
-            </h2>
-            <p className="yhm3-lead yhm3-lead--center">
-              Clarté des prix · Parcours mobile irréprochable · Réassurance à chaque étape.
-            </p>
-          </div>
-
-          <div className="yhm3-why-grid">
-            {WHY.map((w, i) => (
-              <article key={w.title} className={`yhm3-why-card yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`}>
-                <div className="yhm3-why-icon"><ContentIcon name={w.iconKey} size={22} /></div>
-                <h3>{w.title}</h3>
-                <p>{w.desc}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <HomeBrandStory locale={siteLocale} />
 
         <section className="yhm3-section--tinted" aria-labelledby="seo-faq-title">
           <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">Questions fréquentes</span>
+            <span className="yhm3-eyebrow-light">{isEn ? "FAQ" : "Questions fréquentes"}</span>
             <h2 id="seo-faq-title" className="yhm3-h2 yhm3-h2--center">
-              Réponses rapides avant de <em>commander</em>
+              {isEn ? "Quick answers before you " : "Réponses rapides avant de "}
+              <em>{isEn ? "order" : "commander"}</em>
             </h2>
             <p className="yhm3-lead yhm3-lead--center">
-              Des réponses courtes pour rassurer les visiteurs venus de Google et accélérer la conversion.
+              {isEn
+                ? "Trust, escrow and delivery — the questions every buyer asks."
+                : "Confiance, escrow et livraison — les questions que se posent tous les acheteurs."}
             </p>
           </div>
 
@@ -689,38 +601,6 @@ export function HomePage({
                 <summary style={{ cursor: "pointer", fontWeight: 800, color: "var(--ink)" }}>{item.q}</summary>
                 <p style={{ color: "var(--gray)", fontSize: ".9rem", lineHeight: 1.7, marginTop: 10 }}>{item.a}</p>
               </details>
-            ))}
-          </div>
-        </section>
-
-        <section className="yhm3-section">
-          <div className="yhm3-section-head yhm3-section-head--center">
-            <span className="yhm3-eyebrow-light">Témoignages</span>
-            <h2 className="yhm3-h2 yhm3-h2--center">
-              Ils <em>nous font confiance</em>
-            </h2>
-            <p className="yhm3-lead yhm3-lead--center">
-              Acheteurs, vendeurs, professionnels — la communauté Yorix grandit chaque jour.
-            </p>
-          </div>
-
-          <div className="yhm3-stories">
-            {TESTIMONIALS.map((t, i) => (
-              <figure key={t.author} className={`yhm3-story yx-reveal yx-reveal-d${Math.min(i + 1, 4)}`} style={{ "--story-color": t.color }}>
-                <div className="yhm3-story-stars" aria-label={`${t.stars} sur 5`}>
-                  {Array.from({ length: t.stars }).map((_, si) => (
-                    <ContentIcon key={si} name="star" size={12} />
-                  ))}
-                </div>
-                <blockquote className="yhm3-story-quote">&ldquo;{t.quote}&rdquo;</blockquote>
-                <figcaption className="yhm3-story-foot">
-                  <div className="yhm3-story-av">{t.avatar}</div>
-                  <div>
-                    <div className="yhm3-story-name">{t.author}</div>
-                    <div className="yhm3-story-meta">{t.meta}</div>
-                  </div>
-                </figcaption>
-              </figure>
             ))}
           </div>
         </section>
@@ -788,6 +668,15 @@ export function HomePage({
           </div>
         </section>
 
+        <div className="yhm3-secondary-strip yhm3-secondary-strip--footer yx-reveal" aria-label={isEn ? "More on Yorix" : "Aussi sur Yorix"}>
+          <span className="yhm3-secondary-strip__lbl">{isEn ? "Also on Yorix" : "Aussi sur Yorix"}</span>
+          {SECONDARY_PATHS.map((p) => (
+            <button key={p.key} type="button" className="yhm3-secondary-pill" onClick={() => goPage(p.key)}>
+              <ContentIcon name={p.iconKey} size={13} /> {isEn ? p.labelEn : p.labelFr}
+            </button>
+          ))}
+        </div>
+
         <section className="yhm3-section">
           <div className="yhm3-nl">
             <div className="yhm3-nl-left">
@@ -795,21 +684,23 @@ export function HomePage({
                 <span className="yhm3-eyebrow-dot" /> Newsletter Yorix
               </span>
               <h2 className="yhm3-h2 yhm3-h2--on-dark">
-                Restez dans la <em>momentum Yorix</em>
+                {isEn ? "Deals & " : "Bons plans & "}
+                <em>{isEn ? "new arrivals" : "nouveautés"}</em>
               </h2>
               <p className="yhm3-sub" style={{ color: "rgba(255,255,255,.78)" }}>
-                Alertes bons plans, nouveaux hubs villes et masterclass Academy —
-                <strong style={{ color: "#fff" }}> sans spam</strong>.
+                {isEn
+                  ? "Exclusive deals, new sellers in your city — no spam."
+                  : "Offres exclusives, nouveaux vendeurs dans votre ville — sans spam."}
               </p>
               <ul className="yhm3-nl-perks">
                 <li>
-                  <span aria-hidden><ContentIcon name="gift" size={14} /></span> Bons plans exclusifs
+                  <span aria-hidden><ContentIcon name="gift" size={14} /></span> {isEn ? "Exclusive deals" : "Bons plans exclusifs"}
                 </li>
                 <li>
-                  <span aria-hidden><ContentIcon name="mapPin" size={14} /></span> Nouveaux hubs villes
+                  <span aria-hidden><ContentIcon name="mapPin" size={14} /></span> {isEn ? "New city hubs" : "Nouvelles villes"}
                 </li>
                 <li>
-                  <span aria-hidden><ContentIcon name="graduationCap" size={14} /></span> Masterclass Academy
+                  <span aria-hidden><ContentIcon name="shield" size={14} /></span> {isEn ? "Escrow tips" : "Conseils escrow"}
                 </li>
               </ul>
             </div>
@@ -860,53 +751,53 @@ export function HomePage({
               <h2 className="yhm3-h2 yhm3-h2--on-dark">
                 {isEn ? (
                   <>
-                    Join the Cameroonian
+                    Buy and sell with
                     <br />
-                    <em>commerce revolution</em>
+                    <em>complete peace of mind</em>
                   </>
                 ) : (
                   <>
-                    Rejoignez la révolution
+                    Achetez et vendez en
                     <br />
-                    du <em>commerce camerounais</em>
+                    <em>toute confiance</em>
                   </>
                 )}
               </h2>
               <p className="yhm3-sub" style={{ color: "rgba(255,255,255,.78)" }}>
                 {isEn ? (
                   <>
-                    <strong style={{ color: "#fff" }}>Free signup</strong> · MoMo & Orange Money · WhatsApp support 7/7.
-                    Start buying, selling or offering services in under 30 seconds.
+                    <strong style={{ color: "#fff" }}>Escrow on every order</strong> · MoMo & Orange Money · WhatsApp support 7/7.
+                    The Cameroonian marketplace where your money is protected.
                   </>
                 ) : (
                   <>
-                    <strong style={{ color: "#fff" }}>Inscription gratuite</strong> · MoMo & Orange Money · support WhatsApp
-                    7j/7. Commencez à acheter, vendre ou proposer vos services en moins de 30 secondes.
+                    <strong style={{ color: "#fff" }}>Escrow sur chaque commande</strong> · MoMo & Orange Money · WhatsApp 7j/7.
+                    La marketplace camerounaise où votre argent est protégé.
                   </>
                 )}
               </p>
 
               <div className="yhm3-final-actions">
-                <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => setOnboardingOpen(true)}>
-                  <ContentIcon name="rocket" size={16} /> Démarrer maintenant
+                <button type="button" className="yhm3-btn yhm3-btn--pri" onClick={() => goPage("produits")}>
+                  <ContentIcon name="shoppingBag" size={16} /> {isEn ? "Shop now" : "Acheter maintenant"}
                 </button>
-                <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("aide")}>
-                  <ContentIcon name="lifeBuoy" size={16} /> Centre d&apos;aide
+                <button type="button" className="yhm3-btn yhm3-btn--sec" onClick={() => goPage("devenirVendeur")}>
+                  <ContentIcon name="store" size={16} /> {isEn ? "Become a seller" : "Devenir vendeur"}
                 </button>
               </div>
 
               <ul className="yhm3-final-trust">
                 <li>
-                  <span aria-hidden><ContentIcon name="flag" size={14} /></span> 100% Cameroun
+                  <span aria-hidden><ContentIcon name="shield" size={14} /></span> Escrow inclus
                 </li>
                 <li>
-                  <span aria-hidden><ContentIcon name="lock" size={14} /></span> Escrow inclus
+                  <span aria-hidden><ContentIcon name="flag" size={14} /></span> {isEn ? "100% Cameroon" : "100% Cameroun"}
                 </li>
                 <li>
-                  <span aria-hidden><ContentIcon name="smartphone" size={14} /></span> Mobile money
+                  <span aria-hidden><ContentIcon name="smartphone" size={14} /></span> Mobile Money
                 </li>
                 <li>
-                  <span aria-hidden><ContentIcon name="zap" size={14} /></span> 30s d&apos;inscription
+                  <span aria-hidden><ContentIcon name="check" size={14} /></span> {isEn ? "Verified sellers" : "Vendeurs vérifiés"}
                 </li>
               </ul>
             </div>

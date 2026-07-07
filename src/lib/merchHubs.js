@@ -155,13 +155,13 @@ export const MERCH_HUBS = {
     slug: "sourcer-en-gros",
     page: "merchHub",
     categorySlug: "sourcing-gros",
-    titleFr: "Sourcer en gros — Fournisseurs & MOQ Cameroun",
-    titleEn: "Wholesale sourcing — Suppliers & MOQ Cameroon",
+    titleFr: "Achetez au prix d'usine",
+    titleEn: "Buy at factory price",
     descFr:
-      "Achat groupé, fournisseurs vérifiés et quantités minimum (MOQ) pour professionnels, boutiques et distributeurs.",
+      "Le hub de gros n°1 pour les revendeurs au Cameroun — import direct, MOQ, escrow et fournisseurs certifiés Yorix.",
     descEn:
-      "Bulk buying, verified suppliers and minimum order quantities (MOQ) for pros, shops and distributors.",
-    keywordsFr: "gros cameroun, sourcing fournisseur, moq marketplace, achat groupé",
+      "Cameroon's #1 wholesale hub for resellers — direct import, MOQ, escrow and Yorix-certified suppliers.",
+    keywordsFr: "gros cameroun, prix usine, sourcing revendeur, moq marketplace, import douala",
     emoji: "📦",
     theme: "wholesale",
     filter: "wholesale",
@@ -194,6 +194,11 @@ export const HOMEPAGE_MERCH_TILES = [
   { hub: "livraison-express", accent: "#0891b2" },
   { hub: "top-vendeurs", accent: "#1a4a9a" },
 ];
+
+/** Accueil grand public — sans B2B/gros (réservé aux pages dédiées) */
+export const HOMEPAGE_MERCH_TILES_PUBLIC = HOMEPAGE_MERCH_TILES.filter(
+  (t) => t.hub !== "sourcer-en-gros",
+);
 
 /** Alias SEO avec contenu hub dédié (immobilier, emploi). */
 export const SEO_HUB_ALIAS_KEYS = new Set([

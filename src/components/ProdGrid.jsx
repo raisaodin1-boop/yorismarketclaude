@@ -6,11 +6,17 @@ import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
 import { isImportProduct } from "../lib/importWholesale";
 import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
+import {
+  wholesalePriceSummary,
+  nextWholesaleTierHint,
+  importLogisticsHint,
+  buildWholesaleWhatsAppText,
+} from "../lib/wholesaleCardMeta";
+import { openWhatsAppShare, buildProductWhatsAppText } from "../lib/shareUtils";
 import { resolveMadeInCameroon } from "../lib/madeInCameroon";
 import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
 import { SocialProofLine } from "./conversion/SocialProofLine";
-import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
 import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import {
@@ -39,6 +45,7 @@ export function ProdGrid({
   onOpenSellerUrl,
   siteLocale = "fr",
   showShare = false,
+  wholesaleMode = false,
 }) {
   const [ficheOpen, setFicheOpen]           = useState(null);
   const [cmdOpen, setCmdOpen]               = useState(null);
@@ -91,9 +98,12 @@ export function ProdGrid({
           const prixPromo  = isPromoActive(p) ? effectiveProductPrice(p) : null;
           const prixBarre  = productPromoListPrice(p);
           const buyable    = isPurchasable(p);
+          const wholesaleSummary = wholesaleMode ? wholesalePriceSummary(p) : null;
+          const tierHint = wholesaleMode ? nextWholesaleTierHint(p, siteLocale) : null;
+          const importHint = wholesaleMode && isImportProduct(p) ? importLogisticsHint(p, siteLocale) : null;
 
           return (
-            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}`}>
+            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}${wholesaleMode ? " prod-card--wholesale" : ""}`}>
               {/* ── IMAGE OPTIMISÉE (lazy + WebP + compression auto) ── */}
               <div
                 className="prod-img-wrap"
@@ -115,8 +125,14 @@ export function ProdGrid({
                 {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
                 {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
                 {(p.b2b_enabled || isImportProduct(p)) && (
-                  <span className="b2b-card-badge">
-                    {p.b2b_enabled ? "GROS" : "IMPORT"}
+                  <span className={`b2b-card-badge${wholesaleMode ? " b2b-card-badge--wholesale" : ""}`}>
+                    {p.b2b_enabled ? (wholesaleMode ? "GROS" : "GROS") : "IMPORT"}
+                  </span>
+                )}
+                {wholesaleMode && (p.vendeur_verifie || p.verifie) && (
+                  <span className="b2b-certified-badge" title={siteLocale === "en" ? "Yorix certified supplier" : "Fournisseur certifié Yorix"}>
+                    <BadgeCheck size={11} strokeWidth={2.5} aria-hidden />
+                    {siteLocale === "en" ? "Certified" : "Certifié"}
                   </span>
                 )}
                 {p.escrow                            && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
@@ -194,27 +210,57 @@ export function ProdGrid({
                     <Package size={10} aria-hidden />
                     {productMoqLabel(p, siteLocale)}
                   </span>
-                  <span className="prod-enriched-chip prod-enriched-chip--delivery">
-                    <Clock size={10} aria-hidden />
-                    {productDeliveryShort(p, siteLocale)}
-                  </span>
-                  <span className="prod-enriched-chip prod-enriched-chip--protect">
-                    <ShieldCheck size={10} aria-hidden />
-                    Protect+ {productProtectScore(p)}%
-                  </span>
+                  {!wholesaleMode && (
+                    <>
+                      <span className="prod-enriched-chip prod-enriched-chip--delivery">
+                        <Clock size={10} aria-hidden />
+                        {productDeliveryShort(p, siteLocale)}
+                      </span>
+                      <span className="prod-enriched-chip prod-enriched-chip--protect">
+                        <ShieldCheck size={10} aria-hidden />
+                        Protect+ {productProtectScore(p)}%
+                      </span>
+                    </>
+                  )}
+                  {wholesaleMode && p.escrow && (
+                    <span className="prod-enriched-chip prod-enriched-chip--escrow">
+                      <Lock size={10} aria-hidden />
+                      Escrow
+                    </span>
+                  )}
                   {(p.vendeur_verifie || p.verifie) && (
                     <VerifiedSellerBadge verified compact locale={siteLocale} />
                   )}
                 </div>
-                <SocialProofLine product={p} locale={siteLocale} />
 
+                {importHint && (
+                  <div className="prod-wholesale-logistics">
+                    <span title={importHint.escrow}>🛡️ {importHint.escrow}</span>
+                    <span>🚢 {importHint.lead} · {importHint.incoterm}</span>
+                    <span>📋 {importHint.customs}</span>
+                  </div>
+                )}
+
+                {tierHint && (
+                  <div className="prod-wholesale-tier">
+                    <div className="prod-wholesale-tier__bar" aria-hidden>
+                      <span style={{ width: `${tierHint.progressPct}%` }} />
+                    </div>
+                    <span className="prod-wholesale-tier__lbl">{tierHint.label}</span>
+                  </div>
+                )}
+
+                {!wholesaleMode && <SocialProofLine product={p} locale={siteLocale} />}
+
+                {!wholesaleMode && (
                 <div className="prod-badge-row">
                   {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire"><Flame size={11} aria-hidden /> Stock limité</span>}
                   <span className="pb pb-truck"><Truck size={11} aria-hidden /> Livraison rapide</span>
                   <span className="pb pb-cash"><Banknote size={11} aria-hidden /> Paiement livraison</span>
                 </div>
+                )}
 
-                {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
+                {!wholesaleMode && p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
 
                 {p.stock !== undefined && p.stock !== null && (
                   <div className={`prod-stock ${stockClass}`} style={{ fontSize: ".65rem" }}>
@@ -233,7 +279,28 @@ export function ProdGrid({
 
                 <div className="prod-price-row">
                   <div>
-                    {prixPromo ? (
+                    {wholesaleSummary && wholesaleSummary.wholesale > 0 ? (
+                      <div className="prod-wholesale-prices">
+                        {wholesaleSummary.retail > 0 && wholesaleSummary.retail !== wholesaleSummary.wholesale && (
+                          <div className="prod-wholesale-prices__retail">
+                            {siteLocale === "en" ? "Retail" : "Détail"} :{" "}
+                            <s>{wholesaleSummary.retail.toLocaleString()} F</s>
+                          </div>
+                        )}
+                        <div className="prod-wholesale-prices__gros">
+                          <span className="price">
+                            {wholesaleSummary.wholesale.toLocaleString()}{" "}
+                            <span className="price-unit">FCFA</span>
+                          </span>
+                          <span className="prod-wholesale-prices__moq">
+                            / {siteLocale === "en" ? "unit" : "unité"} ({wholesaleSummary.moq}+)
+                          </span>
+                        </div>
+                        {wholesaleSummary.savingsPct != null && wholesaleSummary.savingsPct > 0 && (
+                          <span className="prod-wholesale-savings">−{wholesaleSummary.savingsPct}% marge</span>
+                        )}
+                      </div>
+                    ) : prixPromo ? (
                       <>
                         <span className="price">
                           {prixPromo.toLocaleString()} <span className="price-unit">FCFA</span>
@@ -248,6 +315,7 @@ export function ProdGrid({
                       </span>
                     )}
                   </div>
+                  {!wholesaleMode && (
                   <button
                     className="add-btn"
                     disabled={!buyable}
@@ -258,11 +326,43 @@ export function ProdGrid({
                   >
                     +
                   </button>
+                  )}
                 </div>
               </div>
 
               {/* ── BOUTON PANIER ── */}
               <div className="prod-actions" style={{ padding: "0 11px 11px", display: "flex", flexDirection: "column", gap: 6 }}>
+                {wholesaleMode ? (
+                  <>
+                    <button
+                      type="button"
+                      className="add-btn-full prod-wholesale-wa"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openWhatsAppShare(buildWholesaleWhatsAppText(p, siteLocale));
+                      }}
+                    >
+                      <MessageCircle size={14} aria-hidden />
+                      {siteLocale === "en" ? "Quote on WhatsApp" : "Devis WhatsApp"}
+                    </button>
+                    {buyable && (
+                      <button
+                        type="button"
+                        className="add-btn-full"
+                        style={{
+                          width: "100%", padding: "8px", borderRadius: 8, fontSize: ".75rem",
+                          fontFamily: "var(--font-display)", fontWeight: 700,
+                          background: "var(--surface2)", color: "var(--ink)",
+                          border: "1px solid var(--border)", cursor: "pointer",
+                        }}
+                        onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                      >
+                        {siteLocale === "en" ? "Add to cart" : "Ajouter au panier"}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                <>
                 <button
                   className="add-btn-full"
                   disabled={!buyable}
@@ -304,6 +404,8 @@ export function ProdGrid({
                   >
                     <MessageCircle size={14} aria-hidden /> {siteLocale === "en" ? "Share" : "Partager"}
                   </button>
+                )}
+                </>
                 )}
               </div>
             </div>

@@ -45,14 +45,16 @@ describe("HomePage", () => {
   it("renders the public homepage without throwing when catalog data is absent", () => {
     const html = renderHome();
 
-    expect(html).toContain("Super-app camerounaise");
+    expect(html).toContain("Entreprise camerounaise");
     expect(html).toContain("Pourquoi");
-    expect(html).toContain("Par où commencer");
+    expect(html).toContain("Achetez sans risque");
+    expect(html).toContain("Escrow");
   });
 
   it("renders English hero when locale is en", () => {
     const html = renderHome({ siteLocale: "en" });
-    expect(html).toContain("Cameroonian super-app");
-    expect(html).toContain("Where to start");
+    expect(html).toContain("Cameroonian company");
+    expect(html).toContain("Shop safely");
+    expect(html).toContain("Why");
   });
 });
