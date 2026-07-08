@@ -6,6 +6,7 @@ import {
   HomeRefonteTrustBar,
   HomeRefonteCategories,
   HomeRefonteTrending,
+  HomeRefontePourquoi,
   HomeRefonteHowItWorks,
   HomeRefonteMadeIn,
   HomeRefonteTestimonials,
@@ -117,6 +118,8 @@ export function HomePage({
           openSellerUrl={openSellerUrl}
           goPage={goPage}
         />
+
+        <HomeRefontePourquoi locale={siteLocale} />
 
         <div className="yx-home__defer-mobile">
           <HomeRefonteHowItWorks locale={siteLocale} />

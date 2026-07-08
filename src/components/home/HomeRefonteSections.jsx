@@ -14,6 +14,9 @@ import {
   Search,
   Star,
   Lock,
+  Truck,
+  MessageCircle,
+  BadgeCheck,
 } from "lucide-react";
 import { ProdGrid } from "../ProdGrid";
 import { OptimizedImage } from "../OptimizedImage";
@@ -312,6 +315,52 @@ export function HomeRefonteTrending({
   );
 }
 
+export function HomeRefontePourquoi({ locale = "fr" }) {
+  const isEn = locale === "en";
+  const cards = isEn
+    ? [
+        { icon: ShieldCheck, title: "Escrow protection", desc: "Your money is held safely and released to the seller only after you confirm you received your order." },
+        { icon: BadgeCheck, title: "Verified sellers", desc: "Identity-checked sellers (KYC). No more anonymous scams like on social media." },
+        { icon: Truck, title: "Tracked delivery", desc: "A real tracking code and live status via Yorix Ride — not a vague WhatsApp promise." },
+        { icon: MessageCircle, title: "WhatsApp support", desc: "A human team reachable on WhatsApp to help before, during and after your order." },
+      ]
+    : [
+        { icon: ShieldCheck, title: "Protection escrow", desc: "Votre argent est bloqué en sécurité et versé au vendeur seulement après confirmation de réception." },
+        { icon: BadgeCheck, title: "Vendeurs vérifiés", desc: "Vendeurs contrôlés (KYC). Fini les arnaques anonymes des réseaux sociaux." },
+        { icon: Truck, title: "Livraison suivie", desc: "Un vrai code de suivi et un statut en temps réel via Yorix Ride — pas une promesse WhatsApp floue." },
+        { icon: MessageCircle, title: "Support WhatsApp", desc: "Une équipe humaine joignable sur WhatsApp avant, pendant et après votre commande." },
+      ];
+
+  return (
+    <section className="yx-section yx-reveal" aria-labelledby="yx-why-title">
+      <div className="yx-section__inner">
+        <div className="yx-section__head">
+          <span className="yx-label">{isEn ? "Why Yorix" : "Pourquoi Yorix"}</span>
+          <h2 id="yx-why-title" className="yx-h2">
+            {isEn ? "Why choose Yorix?" : "Pourquoi choisir Yorix ?"}
+          </h2>
+          <p className="yx-lead">
+            {isEn
+              ? "The trust a social-media marketplace can't give you."
+              : "La confiance qu'une vente sur les réseaux sociaux ne peut pas vous offrir."}
+          </p>
+        </div>
+        <div className="yx-why-grid">
+          {cards.map((c) => (
+            <div key={c.title} className="yx-why-card">
+              <div className="yx-why-card__icon">
+                <c.icon size={26} strokeWidth={1.6} aria-hidden />
+              </div>
+              <h3 className="yx-why-card__title">{c.title}</h3>
+              <p className="yx-why-card__desc">{c.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function HomeRefonteHowItWorks({ locale = "fr" }) {
   const isEn = locale === "en";
   const steps = isEn
@@ -358,6 +407,35 @@ export function HomeRefonteHowItWorks({ locale = "fr" }) {
               ? "Escrow-secured payments — your money is protected until you confirm delivery."
               : "Paiements sécurisés par escrow — votre argent est protégé tant que vous n'avez pas confirmé la réception."}
           </span>
+        </div>
+
+        <div className="yx-escrow-flow" aria-label={isEn ? "How escrow protects your money" : "Comment l'escrow protège votre argent"}>
+          {(isEn
+            ? [
+                { ico: "🧑", lbl: "Customer" },
+                { ico: "💳", lbl: "Payment" },
+                { ico: "🔒", lbl: "Held by Yorix" },
+                { ico: "🏍️", lbl: "Delivery" },
+                { ico: "✅", lbl: "You confirm" },
+                { ico: "💰", lbl: "Seller paid" },
+              ]
+            : [
+                { ico: "🧑", lbl: "Client" },
+                { ico: "💳", lbl: "Paiement" },
+                { ico: "🔒", lbl: "Bloqué chez Yorix" },
+                { ico: "🏍️", lbl: "Livraison" },
+                { ico: "✅", lbl: "Vous validez" },
+                { ico: "💰", lbl: "Vendeur payé" },
+              ]
+          ).map((s, i, arr) => (
+            <div className="yx-escrow-flow__cell" key={s.lbl}>
+              <div className="yx-escrow-flow__node">
+                <span className="yx-escrow-flow__ico" aria-hidden>{s.ico}</span>
+                <span className="yx-escrow-flow__lbl">{s.lbl}</span>
+              </div>
+              {i < arr.length - 1 && <span className="yx-escrow-flow__arrow" aria-hidden>→</span>}
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -457,7 +535,15 @@ export function HomeRefonteTestimonials({ locale = "fr", stats }) {
               </div>
               <blockquote className="yx-testi-quote">&ldquo;{isEn ? t.quoteEn : t.quoteFr}&rdquo;</blockquote>
               <figcaption className="yx-testi-foot">
-                <div className="yx-testi-av">{t.avatar}</div>
+                <div className="yx-testi-av">
+                  <span className="yx-testi-av__ini" aria-hidden>{t.avatar}</span>
+                  <img
+                    src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(t.author)}&radius=50&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf`}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  />
+                </div>
                 <div>
                   <div className="yx-testi-name">{t.author}</div>
                   <div className="yx-testi-meta">{isEn ? t.metaEn : t.metaFr}</div>

@@ -24,7 +24,7 @@ export function CompactSocialProof({ product, locale = "fr" }) {
   if (avis > 0 && note > 0) {
     parts.push(
       <span key="rating">
-        ⭐ <strong>{note.toFixed(1)}</strong>
+        ⭐ <strong>{note.toFixed(1)}</strong> ({avis})
       </span>,
     );
   }

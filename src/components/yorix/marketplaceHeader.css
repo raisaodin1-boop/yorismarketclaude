@@ -265,6 +265,24 @@
   }
 }
 
+/* ── Vendeur + ville sur carte compacte ── */
+.prod-compact-seller {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: 4px;
+  font-size: 0.62rem;
+  color: var(--gray, #6b7280);
+  line-height: 1.2;
+}
+.prod-compact-seller .pcs-seller,
+.prod-compact-seller .pcs-city {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 /* ── Règle de 3 : image, nom, prix ── */
 .prod-card--compact .prod-info {
   padding: 10px 12px 12px;

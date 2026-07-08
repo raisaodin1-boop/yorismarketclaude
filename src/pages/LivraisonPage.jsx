@@ -112,12 +112,12 @@ export function LivraisonPage({
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
             {[
-              { emoji: "🏍️", name: "Jean-Pierre M.", sub: "Moto · Douala · Akwa", livraisons: 342, note: 4.9, dispo: true, temps: "~15 min" },
-              { emoji: "🚐", name: "Augustin N.", sub: "Minibus · Yaoundé · Bastos", livraisons: 218, note: 4.8, dispo: true, temps: "~20 min" },
-              { emoji: "🚗", name: "Grace T.", sub: "Voiture · Douala · Bonanjo", livraisons: 156, note: 5.0, dispo: true, temps: "~10 min" },
-              { emoji: "🚚", name: "Fabrice K.", sub: "Camionnette · Bafoussam", livraisons: 189, note: 4.7, dispo: false, temps: null },
-              { emoji: "🏍️", name: "Bertrand A.", sub: "Moto · Yaoundé · Mvan", livraisons: 271, note: 4.8, dispo: true, temps: "~18 min" },
-              { emoji: "🚐", name: "Carine M.", sub: "Minibus · Douala · Bonapriso", livraisons: 98, note: 4.9, dispo: false, temps: null },
+              { emoji: "🏍️", photo: "/images/livreurs/yorix-livreur-1.jpg", name: "Jean-Pierre M.", sub: "Moto · Douala · Akwa", livraisons: 342, note: 4.9, dispo: true, temps: "~15 min" },
+              { emoji: "🚐", photo: "/images/livreurs/yorix-livreur-2.jpg", name: "Augustin N.", sub: "Minibus · Yaoundé · Bastos", livraisons: 218, note: 4.8, dispo: true, temps: "~20 min" },
+              { emoji: "🚗", photo: "/images/livreurs/yorix-livreur-3.jpg", name: "Grace T.", sub: "Voiture · Douala · Bonanjo", livraisons: 156, note: 5.0, dispo: true, temps: "~10 min" },
+              { emoji: "🚚", photo: "/images/livreurs/yorix-livreur-4.jpg", name: "Fabrice K.", sub: "Camionnette · Bafoussam", livraisons: 189, note: 4.7, dispo: false, temps: null },
+              { emoji: "🏍️", photo: "/images/livreurs/yorix-livreur-5.jpg", name: "Bertrand A.", sub: "Moto · Yaoundé · Mvan", livraisons: 271, note: 4.8, dispo: true, temps: "~18 min" },
+              { emoji: "🚐", photo: "/images/livreurs/yorix-livreur-6.jpg", name: "Carine M.", sub: "Minibus · Douala · Bonapriso", livraisons: 98, note: 4.9, dispo: false, temps: null },
             ].map((d) => (
               <div
                 key={d.name}
@@ -133,18 +133,30 @@ export function LivraisonPage({
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
                   <div
                     style={{
-                      width: 44,
-                      height: 44,
+                      position: "relative",
+                      width: 48,
+                      height: 48,
                       borderRadius: "50%",
+                      overflow: "hidden",
                       background: d.dispo ? "var(--green)" : "var(--border)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontSize: "1.3rem",
                       flexShrink: 0,
+                      filter: d.dispo ? "none" : "grayscale(1)",
                     }}
                   >
-                    {d.emoji}
+                    <span aria-hidden>{d.emoji}</span>
+                    {d.photo && (
+                      <img
+                        src={d.photo}
+                        alt={d.name}
+                        loading="lazy"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    )}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".86rem", color: "var(--ink)" }}>{d.name}</div>

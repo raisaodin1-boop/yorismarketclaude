@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { ESCROW_STATUSES } from "../lib/constants";
+import { OrderDetailModal } from "./orders/OrderDetailModal";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : CARTE COMMANDE AVEC CODE DE SUIVI
 // ─────────────────────────────────────────────────────────────
 export function OrderCardWithTracking({ commande, goPage }) {
   const [codeSuivi, setCodeSuivi] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
     // Chercher la livraison associée à cette commande
@@ -30,14 +32,32 @@ export function OrderCardWithTracking({ commande, goPage }) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Voir le détail de la commande ${String(commande.id).slice(-8)}`}
+      onClick={() => setShowDetail(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setShowDetail(true);
+        }
+      }}
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
         borderRadius: 12,
         padding: 14,
         marginBottom: 10,
+        cursor: "pointer",
       }}
     >
+      {showDetail && (
+        <OrderDetailModal
+          order={commande}
+          goPage={goPage}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
       {/* Ligne principale */}
       <div
         style={{
@@ -143,7 +163,8 @@ export function OrderCardWithTracking({ commande, goPage }) {
             </div>
           </div>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               navigator.clipboard?.writeText(codeSuivi.code_suivi);
               goPage("livraison");
               setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);

@@ -107,9 +107,15 @@
 }
 
 .yx-btn--secondary {
-  background: transparent;
-  color: var(--yx-primary);
-  border: 1.5px solid var(--yx-primary);
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  color: var(--yx-primary-dark);
+  border: 1.5px solid var(--yx-gold);
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.18);
+}
+
+.yx-btn--secondary:hover {
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.24);
+  transform: translateY(-1px);
 }
 
 .yx-btn--white {
@@ -404,8 +410,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.65)),
-    url("https://images.unsplash.com/photo-1593113598332-c057c7a4f2a6?w=1600&q=80") center / cover no-repeat;
+    radial-gradient(120% 120% at 85% 15%, rgba(52, 211, 153, 0.28) 0%, rgba(52, 211, 153, 0) 55%),
+    linear-gradient(135deg, var(--yx-primary-dark) 0%, var(--yx-primary) 55%, #0a5533 100%);
   z-index: 0;
 }
 
@@ -488,8 +494,10 @@
 }
 
 .yx-testi-av {
+  position: relative;
   width: 48px;
   height: 48px;
+  flex: 0 0 48px;
   border-radius: 50%;
   border: 2px solid var(--yx-accent);
   display: flex;
@@ -498,6 +506,15 @@
   font-weight: 700;
   color: var(--yx-primary);
   background: #f0fdf4;
+  overflow: hidden;
+}
+
+.yx-testi-av img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .yx-testi-name {
@@ -881,5 +898,149 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+}
+
+/* ── Pourquoi Yorix ── */
+.yx-why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.yx-why-card {
+  background: #fff;
+  border: 1px solid var(--yx-border);
+  border-radius: 16px;
+  padding: 28px 22px;
+  text-align: left;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.yx-why-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(13, 107, 62, 0.1);
+  border-color: var(--yx-accent);
+}
+
+.yx-why-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #f0fdf4;
+  color: var(--yx-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.yx-why-card__title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--yx-ink);
+}
+
+.yx-why-card__desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--yx-muted);
+  margin: 0;
+}
+
+/* ── Flux escrow (6 étapes) ── */
+.yx-escrow-flow {
+  margin: 28px auto 0;
+  max-width: var(--yx-max);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yx-escrow-flow__cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.yx-escrow-flow__node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 96px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--yx-border);
+  text-align: center;
+}
+
+.yx-escrow-flow__ico {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.yx-escrow-flow__lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--yx-ink);
+  line-height: 1.25;
+}
+
+.yx-escrow-flow__arrow {
+  color: var(--yx-accent);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .yx-why-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .yx-why-card {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .yx-why-card__icon {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 12px;
+  }
+
+  .yx-why-card__title {
+    font-size: 15px;
+  }
+
+  .yx-why-card__desc {
+    font-size: 12.5px;
+  }
+
+  .yx-escrow-flow {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .yx-escrow-flow__arrow {
+    transform: rotate(90deg);
+    margin: -2px 0;
+  }
+
+  .yx-escrow-flow__cell {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .yx-escrow-flow__node {
+    min-width: 200px;
+    padding: 10px 12px;
+    flex-direction: row;
+    justify-content: center;
   }
 }

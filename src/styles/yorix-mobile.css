@@ -549,7 +549,8 @@ button,
 /* ─── Bonus: Back to top ─── */
 .yx-back-to-top {
   position: fixed;
-  right: max(12px, env(safe-area-inset-right));
+  left: max(12px, env(safe-area-inset-left));
+  right: auto;
   bottom: calc(72px + env(safe-area-inset-bottom));
   z-index: 515;
   width: 44px;
@@ -583,6 +584,7 @@ button,
   .yx-back-to-top {
     bottom: calc(24px + env(safe-area-inset-bottom));
     right: max(20px, env(safe-area-inset-right));
+    left: auto;
   }
 }
 

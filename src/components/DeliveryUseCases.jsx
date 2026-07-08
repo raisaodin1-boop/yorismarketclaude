@@ -441,7 +441,7 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
                   boxShadow: "0 4px 14px rgba(13,31,20,.25)",
                 }}
               >
-                💼 Devenir partenaire
+                🚀 Passer à la livraison pro
               </button>
               <button
                 onClick={onOpenFullModal}

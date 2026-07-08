@@ -607,9 +607,9 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                 list="quartiers-yorix"
                 style={{
                   width: "100%", padding: "12px 14px 12px 42px",
-                  borderRadius: 10, border: "1.5px solid rgba(255,255,255,.15)",
-                  background: "rgba(255,255,255,.08)", color: "#fff",
-                  fontSize: ".88rem", fontFamily: "var(--font-body)",
+                  borderRadius: 10, border: "1.5px solid rgba(255,255,255,.35)",
+                  background: "#ffffff", color: "#0d1f14",
+                  fontSize: ".88rem", fontFamily: "var(--font-body)", fontWeight: 600,
                   outline: "none", boxSizing: "border-box",
                 }}
               />
@@ -624,9 +624,9 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
                 list="quartiers-yorix"
                 style={{
                   width: "100%", padding: "12px 14px 12px 42px",
-                  borderRadius: 10, border: "1.5px solid rgba(255,255,255,.15)",
-                  background: "rgba(255,255,255,.08)", color: "#fff",
-                  fontSize: ".88rem", fontFamily: "var(--font-body)",
+                  borderRadius: 10, border: "1.5px solid rgba(255,255,255,.35)",
+                  background: "#ffffff", color: "#0d1f14",
+                  fontSize: ".88rem", fontFamily: "var(--font-body)", fontWeight: 600,
                   outline: "none", boxSizing: "border-box",
                 }}
               />
@@ -646,14 +646,14 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
               onChange={(e) => setVille(e.target.value)}
               style={{
                 flex: "1 1 140px", padding: "10px 12px", borderRadius: 9,
-                border: "1.5px solid rgba(255,255,255,.15)",
-                background: "rgba(255,255,255,.08)", color: "#fff",
-                fontSize: ".82rem", fontFamily: "var(--font-body)",
+                border: "1.5px solid rgba(255,255,255,.35)",
+                background: "#ffffff", color: "#0d1f14",
+                fontSize: ".82rem", fontFamily: "var(--font-body)", fontWeight: 600,
                 outline: "none", cursor: "pointer",
               }}
             >
               {Object.keys(DISTANCES_MOYENNES).map((v) => (
-                <option key={v} value={v} style={{ background: "#1a3a24" }}>📍 {v}</option>
+                <option key={v} value={v} style={{ background: "#fff", color: "#0d1f14" }}>📍 {v}</option>
               ))}
             </select>
             <button
@@ -731,6 +731,34 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
           </div>
         )}
 
+        {/* MINI-CARTE TRAJET A → B */}
+        {estimation && (
+          <div
+            style={{
+              background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
+              borderRadius: 12, padding: "12px 14px", marginBottom: 14, animation: "yfadeIn .3s ease",
+            }}
+          >
+            <svg viewBox="0 0 320 46" width="100%" height="46" role="img" aria-label={`Trajet de ${depart} à ${arrivee}, environ ${estimation.distance} km`}>
+              <line x1="24" y1="30" x2="296" y2="30" stroke="rgba(255,255,255,.2)" strokeWidth="3" strokeDasharray="6 5" strokeLinecap="round" />
+              <line x1="24" y1="30" x2="296" y2="30" stroke="#4fd17d" strokeWidth="3" strokeDasharray="6 5" strokeLinecap="round" opacity="0.5" />
+              <circle cx="24" cy="30" r="7" fill="#ef4444" />
+              <circle cx="296" cy="30" r="7" fill="#4fd17d" />
+              <g style={{ transform: "translate(150px, 30px)" }}>
+                <circle cx="0" cy="0" r="12" fill="#fff" />
+                <text x="0" y="4" textAnchor="middle" fontSize="12">🏍️</text>
+              </g>
+              <text x="24" y="14" textAnchor="middle" fontSize="9" fill="#fff" fontWeight="700">Départ</text>
+              <text x="296" y="14" textAnchor="middle" fontSize="9" fill="#fff" fontWeight="700">Arrivée</text>
+            </svg>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginTop: 4 }}>
+              <span style={{ flex: 1, minWidth: 0, fontSize: ".68rem", color: "rgba(255,255,255,.75)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📍 {depart}</span>
+              <span style={{ fontSize: ".66rem", color: "var(--yellow, #fcd116)", fontWeight: 700, whiteSpace: "nowrap" }}>~{estimation.distance} km</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: ".68rem", color: "rgba(255,255,255,.75)", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{arrivee} 🏁</span>
+            </div>
+          </div>
+        )}
+
         {/* CTA */}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button
@@ -768,11 +796,19 @@ export function DeliveryQuickOrder({ user, userData, onOpenFullModal }) {
 
         {/* Trust badges */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 14, justifyContent: "center" }}>
-          {["🔒 Paiement sécurisé", "📍 Suivi GPS", "💰 Tarif transparent", "🆘 Support 7j/7"].map((t) => (
+          {["🛡️ Colis assuré jusqu'à 25 000 F", "🔒 Paiement sécurisé", "📍 Suivi GPS", "💰 Tarif transparent", "🆘 Support 7j/7"].map((t) => (
             <span key={t} style={{ background: "rgba(255,255,255,.08)", color: "rgba(255,255,255,.85)", padding: "5px 11px", borderRadius: 50, fontSize: ".68rem", fontWeight: 600, border: "1px solid rgba(255,255,255,.1)" }}>
               {t}
             </span>
           ))}
+        </div>
+
+        {/* Réassurance assurance colis */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "10px 12px", background: "rgba(79,209,125,.1)", border: "1px solid rgba(79,209,125,.25)", borderRadius: 10 }}>
+          <span style={{ fontSize: "1rem" }} aria-hidden>🛡️</span>
+          <span style={{ fontSize: ".72rem", color: "rgba(255,255,255,.82)", lineHeight: 1.4 }}>
+            <strong style={{ color: "#4fd17d" }}>Assurance incluse.</strong> Colis perdu ou endommagé pendant la livraison ? Vous êtes couvert jusqu'à 25 000 FCFA, contrairement aux livreurs indépendants.
+          </span>
         </div>
       </div>
 

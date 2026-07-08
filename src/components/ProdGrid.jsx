@@ -220,6 +220,12 @@ export function ProdGrid({
                       )}
                     </div>
                     <CompactSocialProof product={p} locale={siteLocale} />
+                    {(p.vendeur_nom || p.ville) && (
+                      <div className="prod-compact-seller">
+                        {p.vendeur_nom && <span className="pcs-seller">🏪 {p.vendeur_nom}</span>}
+                        {p.ville && <span className="pcs-city">📍 {p.ville}</span>}
+                      </div>
+                    )}
                     <div className="prod-trust-badges-mobile">
                       {(p.escrow !== false) && <span>🛡 Escrow</span>}
                       <span>🚚 {productDeliveryShort(p, siteLocale) || (siteLocale === "en" ? "Delivery" : "Livraison")}</span>
