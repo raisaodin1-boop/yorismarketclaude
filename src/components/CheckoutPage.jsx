@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShoppingCart, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CITIES } from "../lib/constants";
+import { CITIES, YORIX_HQ_ADDRESS } from "../lib/constants";
 import {
   clearCheckoutDraft,
   composeFullAddress,
@@ -12,6 +12,7 @@ import {
   saveCheckoutDraft,
   validateCheckoutAddressStep,
 } from "../domain/checkoutForm";
+import { computeCartDeliverySummary } from "../domain/deliveryPolicy";
 import { buildCheckoutIntent, detectCheckoutType } from "../domain/checkoutOrchestrator";
 import {
   CheckoutError,
@@ -139,6 +140,8 @@ export function CheckoutPage({
   const [momoStatus, setMomoStatus] = useState(""); // "" | "waiting" | "failed" | "timeout"
   const [locationType, setLocationType] = useState("home");
   const [carrier, setCarrier] = useState("seller");
+  // "seller" (retrait chez le vendeur) | "hq" (retrait au siège Yorix) — actif uniquement si locationType === "shop".
+  const [pickupPoint, setPickupPoint] = useState("seller");
   const [checkoutError, setCheckoutError] = useState("");
   const [orderDone, setOrderDone] = useState(null);
 
@@ -157,6 +160,26 @@ export function CheckoutPage({
   const hasServices = checkoutType !== "product_only";
 
   const hasItems = cartItems.length > 0;
+
+  // Retrait sur place ("shop") : les produits deviennent fulfillmentMode="pickup",
+  // ce qui exclut leur sous-total du calcul des frais de livraison (même règle
+  // que côté serveur, cf. domain/deliveryPolicy.js / _shared/delivery_policy.ts)
+  // — la livraison passe donc à 0 F automatiquement, sans logique dupliquée.
+  const isPickup = locationType === "shop";
+  const effectiveCartItems = useMemo(() => {
+    if (!isPickup) return cartItems;
+    return cartItems.map((item) =>
+      (item.kind || "product") === "product" ? { ...item, fulfillmentMode: "pickup" } : item,
+    );
+  }, [cartItems, isPickup]);
+  const effectiveSummary = useMemo(() => {
+    if (!isPickup) return summary;
+    return computeCartDeliverySummary(effectiveCartItems, {
+      freeShippingThresholdXaf: summary?.policyThreshold,
+      standardDeliveryFeeXaf: summary?.policyStandardFee,
+    });
+  }, [isPickup, effectiveCartItems, summary]);
+  const pickupAddressLabel = pickupPoint === "hq" ? YORIX_HQ_ADDRESS : null; // adresse vendeur affichée par article, cf. panier
 
   /** Profil fusionné avec saisie checkout (pour Edge + WhatsApp). */
   const mergedUserData = useMemo(() => {
@@ -408,9 +431,9 @@ export function CheckoutPage({
 
   const openWhatsAppFallback = (intentId, recapTotals) => {
     const t = recapTotals || {
-      subtotal: summary.subtotal,
-      delivery: summary.delivery,
-      total: summary.total,
+      subtotal: effectiveSummary.subtotal,
+      delivery: effectiveSummary.delivery,
+      total: effectiveSummary.total,
     };
     const lines = cartItems
       .map((i) => `• [${i.kind === "service" ? "Service" : "Produit"}] ${i.name} x${i.qty} = ${(i.prix * i.qty).toLocaleString()} FCFA`)
@@ -463,8 +486,8 @@ export function CheckoutPage({
   // Total affiché avec réduction coupon
   const couponDiscount = couponApplied?.discount || 0;
   const summaryWithDiscount = couponDiscount > 0
-    ? { ...summary, total: Math.max(0, summary.total - couponDiscount), couponDiscount }
-    : summary;
+    ? { ...effectiveSummary, total: Math.max(0, effectiveSummary.total - couponDiscount), couponDiscount }
+    : effectiveSummary;
 
   const handlePlaceOrder = async () => {
     if (!hasItems) return;
@@ -482,10 +505,10 @@ export function CheckoutPage({
     if (paymentMethod === "whatsapp_backup") {
       try {
         const intentPayload = buildCheckoutIntent({
-          items: cartItems,
+          items: effectiveCartItems,
           user,
           userData: mergedUserData,
-          summary,
+          summary: effectiveSummary,
           couponCode: couponApplied?.code,
         });
         const intent = await createCheckoutIntent(intentPayload);
@@ -493,15 +516,16 @@ export function CheckoutPage({
           throw new Error(t("errors.checkoutFailed"));
         }
         const serverRecap = {
-          subtotal: Math.round(Number(intent.subtotal ?? summary.subtotal)),
-          delivery: Math.round(Number(intent.delivery_fee ?? summary.delivery)),
-          total: Math.round(Number(intent.total ?? summary.total)),
+          subtotal: Math.round(Number(intent.subtotal ?? effectiveSummary.subtotal)),
+          delivery: Math.round(Number(intent.delivery_fee ?? effectiveSummary.delivery)),
+          total: Math.round(Number(intent.total ?? effectiveSummary.total)),
         };
         const confirmation = await confirmCheckout({
           checkout_intent_id: intent.checkout_intent_id,
           payment_method: paymentMethod,
           location_type: locationType,
-          address: mergedUserData.adresse,
+          pickup_point: isPickup ? pickupPoint : undefined,
+          address: isPickup ? (pickupAddressLabel || mergedUserData.adresse) : mergedUserData.adresse,
           idempotency_key: getIdempotencyKey(),
         });
         if (!confirmation?.order_group_id) {
@@ -540,10 +564,10 @@ export function CheckoutPage({
 
     try {
       const intentPayload = buildCheckoutIntent({
-        items: cartItems,
+        items: effectiveCartItems,
         user,
         userData: mergedUserData,
-        summary,
+        summary: effectiveSummary,
         couponCode: couponApplied?.code,
       });
       const intent = await createCheckoutIntent(intentPayload);
@@ -551,11 +575,12 @@ export function CheckoutPage({
         checkout_intent_id: intent.checkout_intent_id,
         payment_method: paymentMethod,
         location_type: locationType,
-        address: mergedUserData.adresse,
+        pickup_point: isPickup ? pickupPoint : undefined,
+        address: isPickup ? (pickupAddressLabel || mergedUserData.adresse) : mergedUserData.adresse,
         idempotency_key: getIdempotencyKey(),
       });
       const serverPayTotal = Math.round(
-        Number(confirmation?.total ?? intent?.total ?? summary.total),
+        Number(confirmation?.total ?? intent?.total ?? effectiveSummary.total),
       );
 
       if (paymentMethod === "cinetpay") {
@@ -705,37 +730,45 @@ export function CheckoutPage({
 
   const locationBody = useMemo(() => {
     if (locationType === "online") return t("location.online");
-    if (locationType === "shop") return hasProducts ? t("location.shopProducts") : t("location.shop");
+    if (locationType === "shop") {
+      return pickupPoint === "hq"
+        ? `Retrait au siège Yorix — ${YORIX_HQ_ADDRESS}`
+        : (hasProducts ? t("location.shopProducts") : t("location.shop"));
+    }
     if (carrier === "yorix") return t("location.yorix", { city: ville || "—" });
     return t("location.standard");
-  }, [locationType, carrier, ville, hasProducts, t]);
+  }, [locationType, pickupPoint, carrier, ville, hasProducts, t]);
 
-  const deliveryHintText = deliveryEstimateHint(ville, locationType, carrier, summary?.total || 0);
+  const deliveryHintText = isPickup
+    ? (pickupPoint === "hq"
+        ? `Retrait sur place au siège Yorix : ${YORIX_HQ_ADDRESS}.`
+        : "Retrait sur place chez le vendeur — l'adresse exacte vous sera communiquée après confirmation.")
+    : deliveryEstimateHint(ville, locationType, carrier, effectiveSummary?.total || 0);
 
   const orderPdfPayload = useMemo(() => {
     const total =
       orderDone?.mode === "cinetpay_return" && Number.isFinite(Number(orderDone?.amountReturned))
         ? Number(orderDone.amountReturned)
-        : Number(summaryWithDiscount?.total || summary?.total || 0);
-    const subtotal = Number(summary?.subtotal || 0);
-    const delivery = Number(summary?.delivery || 0);
+        : Number(summaryWithDiscount?.total || effectiveSummary?.total || 0);
+    const subtotal = Number(effectiveSummary?.subtotal || 0);
+    const delivery = Number(effectiveSummary?.delivery || 0);
     return {
       orderRef: orderDone?.orderGroupId || orderDone?.intentId || "N/A",
       intentId: orderDone?.intentId || "N/A",
       dateLabel: new Date().toLocaleString("fr-FR"),
       clientName: mergedUserData?.nom || user?.email || "Client Yorix",
       phone: mergedUserData?.telephoneDisplay || mergedUserData?.telephone || "N/A",
-      address: mergedUserData?.adresse || "N/A",
+      address: isPickup ? (pickupAddressLabel || "Retrait chez le vendeur") : (mergedUserData?.adresse || "N/A"),
       city: mergedUserData?.ville || "N/A",
       paymentMethod: paymentMethod === "cinetpay" ? "CinetPay (Escrow)" : paymentMethod === "cod" ? "Paiement à la livraison" : "WhatsApp backup",
       trackingCode: Array.isArray(orderDone?.deliveryTracking) && orderDone.deliveryTracking[0]?.code_suivi ? orderDone.deliveryTracking[0].code_suivi : null,
-      carrier: carrier === "yorix" ? "Yorix Delivery" : "Standard vendeur",
+      carrier: isPickup ? "Retrait sur place" : (carrier === "yorix" ? "Yorix Delivery" : "Standard vendeur"),
       status: orderDone?.mode === "cinetpay_return" ? "Paiement confirmé" : "Commande confirmée",
       subtotalLabel: `${subtotal.toLocaleString("fr-FR")} FCFA`,
       deliveryLabel: delivery > 0 ? `${delivery.toLocaleString("fr-FR")} FCFA` : "Offerte / N/A",
       totalLabel: `${total.toLocaleString("fr-FR")} FCFA`,
     };
-  }, [orderDone, summaryWithDiscount?.total, summary?.total, summary?.subtotal, summary?.delivery, mergedUserData, user?.email, paymentMethod, carrier]);
+  }, [orderDone, summaryWithDiscount?.total, effectiveSummary, mergedUserData, user?.email, paymentMethod, carrier, isPickup, pickupAddressLabel]);
 
   return (
     <section className="sec anim checkout-page-wrap yorix-page-flow yorix-pro-page">
@@ -745,7 +778,7 @@ export function CheckoutPage({
         navigationDisabled={Boolean(orderDone)}
       />
 
-      {!orderDone && hasItems && <FreeShippingProgress summary={summary} variant={step >= 2 ? "compact" : "cart"} />}
+      {!orderDone && hasItems && <FreeShippingProgress summary={effectiveSummary} variant={step >= 2 ? "compact" : "cart"} />}
 
       <h1 className="sec-title yorix-ds-tight">
         {orderDone ? t("title.done") : t("title.active")}
@@ -986,6 +1019,21 @@ export function CheckoutPage({
                   {hasServices && <option value="online">{t("step2.online")}</option>}
                 </select>
 
+                {locationType === "shop" && hasProducts && (
+                  <>
+                    <label className="form-label">Point de retrait</label>
+                    <select className="form-input" value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)}>
+                      <option value="seller">Chez le vendeur (boutique)</option>
+                      <option value="hq">Au siège Yorix</option>
+                    </select>
+                    <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: -6 }}>
+                      {pickupPoint === "hq"
+                        ? `📍 ${YORIX_HQ_ADDRESS}`
+                        : "📍 L'adresse exacte de la boutique du vendeur vous sera communiquée après confirmation."}
+                    </div>
+                  </>
+                )}
+
                 {locationType === "home" && hasProducts && (
                   <>
                     <label className="form-label">Option livraison</label>
@@ -1002,16 +1050,18 @@ export function CheckoutPage({
                   <div style={{ marginTop: 8, fontSize: ".78rem", color: "var(--ink)" }}>
                     Frais livraison (articles à livrer) :{" "}
                     <strong>
-                      {!summary.hasShippableProducts
-                        ? "N/A pour ce panier"
-                        : summary.freeShippingUnlocked
-                          ? "offerts"
-                          : `${summary.delivery.toLocaleString()} FCFA`}
+                      {isPickup
+                        ? "0 FCFA — retrait sur place"
+                        : !effectiveSummary.hasShippableProducts
+                          ? "N/A pour ce panier"
+                          : effectiveSummary.freeShippingUnlocked
+                            ? "offerts"
+                            : `${effectiveSummary.delivery.toLocaleString()} FCFA`}
                     </strong>
-                    {summary.freeShippingUnlocked && hasProducts && summary.hasShippableProducts && (
+                    {!isPickup && effectiveSummary.freeShippingUnlocked && hasProducts && effectiveSummary.hasShippableProducts && (
                       <span style={{ color: "var(--green)", fontWeight: 700 }}>
                         {" "}
-                        — Livraison standard offerte ({(summary.policyThreshold ?? 50000).toLocaleString("fr-FR")} FCFA d’articles
+                        — Livraison standard offerte ({(effectiveSummary.policyThreshold ?? 50000).toLocaleString("fr-FR")} FCFA d’articles
                         livrables atteints).
                       </span>
                     )}
@@ -1094,23 +1144,30 @@ export function CheckoutPage({
                 </div>
 
                 <div className="yorix-ds-inset-panel checkout-pay-recap" style={{ marginBottom: 0 }}>
-                  {summary.hasShippableProducts && summary.freeShippingUnlocked && (
+                  {isPickup && (
+                    <div className="fs-ship-badge" style={{ marginBottom: 10 }}>
+                      🏪 Retrait sur place — aucun frais de livraison
+                    </div>
+                  )}
+                  {!isPickup && effectiveSummary.hasShippableProducts && effectiveSummary.freeShippingUnlocked && (
                     <div className="fs-ship-badge" style={{ marginBottom: 10 }}>
                       Livraison standard offerte · Bon plan Yorix
                     </div>
                   )}
                   <div className="checkout-pay-recap-row">
                     <span>Sous-total</span>
-                    <strong>{summary.subtotal.toLocaleString()} FCFA</strong>
+                    <strong>{effectiveSummary.subtotal.toLocaleString()} FCFA</strong>
                   </div>
                   <div className="checkout-pay-recap-row">
                     <span>Livraison (produits à expédier)</span>
                     <strong>
-                      {!summary.hasShippableProducts
-                        ? "N/A"
-                        : summary.freeShippingUnlocked
-                          ? "0 FCFA (offerte)"
-                          : `${summary.delivery.toLocaleString()} FCFA`}
+                      {isPickup
+                        ? "0 FCFA (retrait)"
+                        : !effectiveSummary.hasShippableProducts
+                          ? "N/A"
+                          : effectiveSummary.freeShippingUnlocked
+                            ? "0 FCFA (offerte)"
+                            : `${effectiveSummary.delivery.toLocaleString()} FCFA`}
                     </strong>
                   </div>
                   {couponDiscount > 0 && (
