@@ -422,7 +422,13 @@ Deno.serve(async (req) => {
         await releaseIdempotency(supabase, idempotencyKey);
       }
     } catch { /* best-effort */ }
-    return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
+    // Les erreurs Postgrest (supabase-js) ne sont pas des instances d'Error —
+    // `instanceof Error` échoue et masquait le vrai message derrière "unknown error".
+    const msg = e instanceof Error
+      ? e.message
+      : (e as { message?: string })?.message || String(e) || "unknown error";
+    console.error("[confirm_checkout] unhandled:", msg, e);
+    return ok({ error: msg }, { status: 500 });
   }
 });
 

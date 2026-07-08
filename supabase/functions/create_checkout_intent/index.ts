@@ -85,6 +85,10 @@ Deno.serve(async (req) => {
       shippable_products_subtotal: totals.shippableProductsSubtotal,
     });
   } catch (e) {
-    return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
+    const msg = e instanceof Error
+      ? e.message
+      : (e as { message?: string })?.message || String(e) || "unknown error";
+    console.error("[create_checkout_intent] unhandled:", msg, e);
+    return ok({ error: msg }, { status: 500 });
   }
 });
