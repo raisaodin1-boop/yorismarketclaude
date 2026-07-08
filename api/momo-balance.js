@@ -2,11 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { checkPaynoteMtnBalance } from "./_lib/paynote.js";
 
 /*
- * Solde du compte marchand MTN MoMo (Paynote) — réservé aux admins.
- * Donnée financière sensible : jamais exposée à un utilisateur standard.
+ * Solde du compte marchand MTN MoMo (Paynote) — réservé au superadmin strict
+ * (ni admin, ni admin_partner). Donnée financière sensible.
  */
 
-async function getAuthenticatedAdmin(req) {
+async function getAuthenticatedSuperAdmin(req) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
@@ -22,7 +22,7 @@ async function getAuthenticatedAdmin(req) {
     .eq("id", userData.user.id)
     .maybeSingle();
   if (profileErr || !profile) return null;
-  if (!["admin", "superadmin"].includes(profile.role)) return null;
+  if (profile.role !== "superadmin") return null;
 
   return userData.user;
 }
@@ -32,9 +32,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const admin = await getAuthenticatedAdmin(req);
+  const admin = await getAuthenticatedSuperAdmin(req);
   if (!admin) {
-    return res.status(403).json({ error: "Accès réservé aux administrateurs" });
+    return res.status(403).json({ error: "Accès réservé au super administrateur" });
   }
 
   try {
