@@ -83,6 +83,10 @@ Deno.serve(async (req) => {
     }
 
     const paymentMethod = String(body?.payment_method || "cinetpay");
+    // "hq" (siège Yorix) | "seller" (boutique du vendeur) — actif seulement
+    // quand le produit a fulfillmentMode="pickup" (choisi côté client).
+    const pickupPointType = body?.pickup_point === "hq" ? "hq" : "seller";
+    const YORIX_HQ_ADDRESS = "Yaoundé, Barrière Ahala, en face de Skymotors";
 
     // Clé d'idempotency générée côté client (une seule fois par session de
     // checkout). Optionnelle pour rester rétrocompatible, mais le frontend
@@ -180,6 +184,7 @@ Deno.serve(async (req) => {
     }
 
     const deliveryTracking: { order_id: string; code_suivi: string }[] = [];
+    const pickupAddresses = new Set<string>();
 
     const clientNom = String(customer.nom || "Client Yorix");
     const clientTel = String(customer.telephone || "");
@@ -368,6 +373,19 @@ Deno.serve(async (req) => {
             derr instanceof Error ? derr.message : derr,
           );
         }
+      } else {
+        // Retrait sur place : aucune livraison à créer. On mémorise l'adresse
+        // de retrait (siège Yorix ou boutique vendeur) pour l'inclure dans la
+        // notification de confirmation envoyée à l'acheteur.
+        if (pickupPointType === "hq") {
+          pickupAddresses.add(`Siège Yorix — ${YORIX_HQ_ADDRESS}`);
+        } else {
+          const vn = String((item as { vendeur_nom?: string }).vendeur_nom || "vendeur");
+          const vville = String((item as { ville?: string }).ville || "").trim();
+          pickupAddresses.add(
+            vville !== "" ? `Boutique ${vn}, ${vville}` : `Boutique ${vn}`,
+          );
+        }
       }
 
       ordersCreated.push({ type: "order", id: order.id });
@@ -382,7 +400,10 @@ Deno.serve(async (req) => {
         type: "buyer_order_confirmed",
         title: "Commande confirmée",
         message:
-          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(expectedTotal)).toLocaleString("fr-FR")} FCFA.`,
+          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(expectedTotal)).toLocaleString("fr-FR")} FCFA.` +
+          (pickupAddresses.size
+            ? ` Retrait sur place : ${[...pickupAddresses].join(" · ")}.`
+            : ""),
         link: "/dashboard",
         lu: false,
         priority: "high",

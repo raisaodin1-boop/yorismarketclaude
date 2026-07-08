@@ -5,6 +5,9 @@ export const CATS = getRootCategoryLabels("fr");
 
 export const CITIES = ["Toutes les villes","Douala","Yaoundé","Bafoussam","Bamenda","Garoua","Kribi","Ngaoundéré","Maroua","Ebolowa","Buea","Bertoua"];
 
+/** Point de retrait sur place (option "Retrait au siège Yorix" au checkout). */
+export const YORIX_HQ_ADDRESS = "Yaoundé, Barrière Ahala, en face de Skymotors";
+
 export const ROLE_LABELS = { buyer: "Acheteur", seller: "Vendeur", delivery: "Livreur", provider: "Prestataire", admin: "Administrateur", admin_partner: "Partenaire", superadmin: "Super Admin" };
 
 export const DELIVERY_STATUSES = { pending: "En attente", en_cours: "En cours", livre: "Livré", echec: "Échoué" };
