@@ -21,6 +21,27 @@ describe("sellerKyc", () => {
     expect(complete).toBe(false);
   });
 
+  it("checklist passes import business with address only (no shop plan)", () => {
+    const { complete } = kycChecklist({
+      seller_category: "import_business",
+      company_name: "Import SARL",
+      rccm: "RC/CN/2024/1",
+      business_country_code: "CN",
+      city: "Douala",
+      quartier: "Akwa",
+      address: "Rue 1",
+      doc_url: "http://cni",
+      selfie_url: "http://selfie",
+      extra_docs: [
+        { type: "rccm", url: "http://rccm" },
+        { type: "import_proof", url: "http://p1" },
+        { type: "import_proof", url: "http://p2" },
+        { type: "import_proof", url: "http://p3" },
+      ],
+    });
+    expect(complete).toBe(true);
+  });
+
   it("collects legacy and extra docs", () => {
     const docs = collectKycDocuments({
       doc_url: "http://a",

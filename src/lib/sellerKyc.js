@@ -119,9 +119,9 @@ export function kycChecklist(kyc) {
   const addressOk = Boolean(
     kyc?.city?.trim?.() && kyc?.quartier?.trim?.() && kyc?.address?.trim?.(),
   );
-  const mapOk = category === "online"
-    ? addressOk
-    : addressOk && Boolean(kyc?.location_map_url?.trim?.() || kyc?.shop_photo_url || countDocsByType(docs, "shop_plan") > 0);
+  const mapOk = category === "physical_store"
+    ? addressOk && Boolean(kyc?.location_map_url?.trim?.() || kyc?.shop_photo_url || countDocsByType(docs, "shop_plan") > 0)
+    : addressOk;
 
   const rccmTextOk = category === "local_business" || category === "import_business"
     ? Boolean(kyc?.rccm?.trim?.() || countDocsByType(docs, "rccm") > 0)
@@ -145,7 +145,7 @@ export function kycChecklist(kyc) {
     ok: addressOk,
   });
 
-  if (category !== "online") {
+  if (category === "physical_store") {
     items.push({
       type: "location_map",
       label: "Localisation / plan boutique",

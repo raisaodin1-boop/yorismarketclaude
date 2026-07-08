@@ -1223,6 +1223,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);transi
 .footer-col li .footer-seo-link{display:block;font-size:.72rem;margin:0;color:rgba(255,255,255,.48);transition:color .2s;text-align:left;width:100%;padding:4px 0;text-decoration:none;font-family:'Inter',sans-serif;line-height:1.45;border-radius:6px;}
 .footer-col li .footer-seo-link:hover{color:#b7e4c7;}
 .footer-bottom{max-width:1200px;margin:0 auto;padding-top:18px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-size:.65rem;align-items:center;flex-wrap:wrap;gap:10px;color:rgba(255,255,255,.35);}
+.footer-grid--refonte{grid-template-columns:minmax(200px,1.4fr) repeat(3,minmax(120px,1fr));gap:clamp(20px,3vw,32px);}
+.footer-social{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.footer-social a{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;border-radius:8px;background:#1f2937;color:#9ca3af;font-size:.62rem;font-weight:700;text-decoration:none;border:1px solid #374151;transition:color .2s,background .2s;}
+.footer-social a:hover{color:#fff;background:#374151;}
+.footer-newsletter{max-width:1200px;margin:0 auto 24px;padding:0 4px;}
+.footer-newsletter__label{display:block;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;}
+.footer-newsletter__row{display:flex;flex-wrap:wrap;gap:8px;}
+.footer-newsletter__input{flex:1 1 220px;min-height:44px;padding:10px 14px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;font-size:.85rem;font-family:'Inter',sans-serif;}
+.footer-newsletter__input::placeholder{color:#6b7280;}
+.footer-newsletter__btn{min-height:44px;padding:0 20px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.footer-newsletter__btn:disabled{opacity:.65;cursor:not-allowed;}
+.footer-bottom--refonte{flex-direction:column;align-items:flex-start;gap:6px;}
+.footer-made{font-size:.65rem;color:rgba(255,255,255,.4);}
+@media(max-width:768px){.footer-grid--refonte{grid-template-columns:1fr 1fr;}.footer-brand-col{grid-column:1/-1;}}
 .footer-copy{max-width:100%;}
 .fb-badges{display:flex;gap:6px;flex-wrap:wrap;}
 .fbb{background:rgba(255,255,255,.06);padding:5px 9px;border-radius:8px;font-size:.61rem;color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.08);}

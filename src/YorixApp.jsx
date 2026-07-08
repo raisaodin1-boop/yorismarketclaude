@@ -202,7 +202,7 @@ export default function YorixApp() {
       ticking = true;
       requestAnimationFrame(() => {
         ticking = false;
-        setNavCompact(window.scrollY > 16);
+        setNavCompact(window.scrollY > 48);
       });
     };
     onScroll();
@@ -1704,7 +1704,14 @@ export default function YorixApp() {
       />
 
       {shouldShowSiteFooter(page) && (
-        <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+        <PremiumSiteFooter
+          goPage={goPage}
+          freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf}
+          nlEmail={nlEmail}
+          setNlEmail={setNlEmail}
+          nlSent={nlSent}
+          setNlSent={setNlSent}
+        />
       )}
 
       <CommandPalette

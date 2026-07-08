@@ -4,6 +4,33 @@
   display: none;
 }
 
+.header-sticky-stack--slim .navbar {
+  min-height: 64px;
+  transition: min-height 0.2s ease, padding 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-sticky-stack--slim.header-sticky-stack--compact .navbar {
+  min-height: 56px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.header-sticky-stack--slim .logo-txt {
+  font-size: 1.35rem !important;
+  line-height: 1;
+  transition: font-size 0.2s ease;
+}
+
+.header-sticky-stack--slim.header-sticky-stack--compact .logo-txt {
+  font-size: 1.15rem !important;
+}
+
+.header-sticky-stack--slim.header-sticky-stack--compact .nav-search--breathing .nav-search-field input {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
 .navbar--slim {
   gap: 10px;
   padding: 10px 14px;

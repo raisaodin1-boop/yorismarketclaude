@@ -15,6 +15,12 @@ import {
   resolveCountryLabel,
 } from "../lib/importWholesale";
 import { CountrySelectWithOther } from "./seller/CountrySelectWithOther";
+import {
+  ensureFreshAuthSession,
+  formatKycError,
+  mergeExtraDocs,
+  upsertSellerKyc,
+} from "../lib/kycSubmit";
 
 // Compresse une image via canvas — réduit les photos mobile (5-10 MB) à ~300 KB
 async function compressImage(file, maxPx = 1200, quality = 0.82) {
@@ -178,12 +184,18 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   // ── Chargement initial : Supabase en priorité, sinon localStorage ──
   useEffect(() => {
     if (!userId) return;
-    supabase.from("seller_kyc").select("*").eq("user_id", userId).maybeSingle()
-      .then(({ data }) => {
+    let cancelled = false;
+    supabase
+      .from("seller_kyc")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn("KYC load:", error.message);
         if (data) {
           setKyc(data);
           populateForm(data);
-          // Restaurer l'étape depuis localStorage si plus avancée
           try {
             const raw = localStorage.getItem(`kyc_draft_${userId}`);
             if (raw) {
@@ -193,21 +205,32 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
               }
             }
           } catch {}
-        } else {
-          // Aucun enregistrement Supabase → essayer localStorage
+        } else if (!error) {
           try {
             const raw = localStorage.getItem(`kyc_draft_${userId}`);
             if (raw) {
               const draft = JSON.parse(raw);
-              if (draft.form) setForm(f => ({ ...f, ...draft.form }));
+              if (draft.form) setForm((f) => ({ ...f, ...draft.form }));
               if (draft.step) setStep(draft.step);
               showAppToast("Brouillon restauré — continuez où vous étiez !", "success", 4000);
             }
           } catch {}
         }
         setLoading(false);
-        setTimeout(() => { initialLoad.current = false; }, 100);
+        setTimeout(() => {
+          initialLoad.current = false;
+        }, 100);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.warn("KYC load:", err?.message || err);
+          setLoading(false);
+          initialLoad.current = false;
+        }
       });
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   const populateForm = (data) => {
@@ -294,21 +317,39 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
 
     setSaving(true);
     try {
-      const url1 = fileCniR ? await uploadFile(fileCniR, "cni_recto") : (kyc?.doc_url || null);
-      const url2 = fileCniV ? await uploadFile(fileCniV, "cni_verso") : (kyc?.doc_url2 || null);
-      const urlSelfie = fileSelfie ? await uploadFile(fileSelfie, "selfie") : (kyc?.selfie_url || null);
-      const urlShop = fileShop ? await uploadFile(fileShop, "shop") : (kyc?.shop_photo_url || null);
+      await ensureFreshAuthSession();
 
-      const extra = Array.isArray(kyc?.extra_docs) ? kyc.extra_docs.filter((d) => d?.url) : [];
-      const mergeExtra = (type, url, label) => {
-        if (url) extra.push({ type, url, label });
+      const uploadIfNeeded = async (file, slot, existingUrl) => {
+        if (file) return uploadFile(file, slot);
+        return existingUrl || null;
       };
-      if (fileShopPlan) mergeExtra("shop_plan", await uploadFile(fileShopPlan, "shop_plan"), "Plan boutique");
-      if (fileLocationProof) mergeExtra("location_proof", await uploadFile(fileLocationProof, "location_proof"), "Justificatif local");
-      if (fileRccmDoc) mergeExtra("rccm", await uploadFile(fileRccmDoc, "rccm"), "RCCM");
-      const legalUploaded = await uploadMany(fileLegalDocs, "legal_doc", "Document légal");
-      const importUploaded = await uploadMany(fileImportProofs, "import_proof", "Pièce import");
-      const extra_docs = [...extra, ...legalUploaded, ...importUploaded];
+
+      const [url1, url2, urlSelfie, urlShop] = await Promise.all([
+        uploadIfNeeded(fileCniR, "cni_recto", kyc?.doc_url),
+        uploadIfNeeded(fileCniV, "cni_verso", kyc?.doc_url2),
+        uploadIfNeeded(fileSelfie, "selfie", kyc?.selfie_url),
+        uploadIfNeeded(fileShop, "shop", kyc?.shop_photo_url),
+      ]);
+
+      await ensureFreshAuthSession();
+
+      const additions = [];
+      const pushExtra = async (file, slot, type, label) => {
+        if (!file) return;
+        additions.push({ type, url: await uploadFile(file, slot), label });
+      };
+
+      await Promise.all([
+        pushExtra(fileShopPlan, "shop_plan", "shop_plan", "Plan boutique"),
+        pushExtra(fileLocationProof, "location_proof", "location_proof", "Justificatif local"),
+        pushExtra(fileRccmDoc, "rccm", "rccm", "RCCM"),
+      ]);
+
+      const legalUploaded = fileLegalDocs.length ? await uploadMany(fileLegalDocs, "legal_doc", "Document légal") : [];
+      const importUploaded = fileImportProofs.length ? await uploadMany(fileImportProofs, "import_proof", "Pièce import") : [];
+      const extra_docs = mergeExtraDocs(kyc?.extra_docs, [...additions, ...legalUploaded, ...importUploaded]);
+
+      await ensureFreshAuthSession();
 
       const seller_type = ["local_business", "import_business"].includes(form.seller_category) ? "entreprise" : "particulier";
 
@@ -349,35 +390,33 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         reviewer_note: null,
       };
 
-      const { data: saved, error: upsertErr } = await supabase
-        .from("seller_kyc")
-        .upsert(payload, { onConflict: "user_id" })
-        .select()
-        .single();
-      if (upsertErr) throw upsertErr;
+      const saved = await upsertSellerKyc(payload);
 
       const { error: notifErr } = await supabase.from("notifications").insert({
         user_id: userId,
         type: "kyc",
         title: "Demande KYC envoyée",
         message: "Votre dossier de vérification vendeur est en cours d'examen (24–48h). Le badge sera activé après validation admin.",
-        link: "/dashboard?tab=kyc",
         lu: false,
+        payload: { link: "/dashboard?tab=kyc", status: "pending" },
       });
       if (notifErr) console.warn("KYC notification:", notifErr.message);
 
       setKyc(saved || { ...payload, status: "pending" });
       setStep(5);
+      setFileCniR(null);
+      setFileCniV(null);
+      setFileSelfie(null);
+      setFileShop(null);
+      setFileShopPlan(null);
+      setFileLocationProof(null);
+      setFileRccmDoc(null);
+      setFileLegalDocs([]);
+      setFileImportProofs([]);
       try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
       showAppToast("Dossier envoyé — validation par l'équipe admin sous 24–48h", "success", 5000);
     } catch (e) {
-      const msg = e?.message || "";
-      const friendly = /failed to fetch|network|load failed|timeout|aborted/i.test(msg)
-        ? "Connexion instable — vérifiez votre réseau et réessayez"
-        : /column|schema cache|does not exist/i.test(msg)
-          ? "Configuration serveur incomplète — contactez le support Yorix"
-          : msg || "Connexion interrompue, réessayez";
-      showAppToast("Erreur : " + friendly, "error", 6000);
+      showAppToast("Erreur : " + formatKycError(e), "error", 7000);
     } finally {
       setSaving(false);
     }

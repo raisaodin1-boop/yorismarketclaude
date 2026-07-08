@@ -1,16 +1,28 @@
 import { useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 
-/** Bouton retour en haut — bonus UX mobile & desktop */
-export function BackToTop({ threshold = 400 }) {
+/** Bouton retour en haut — spec homepage (discret, après ~2 scrolls) */
+export function BackToTop({ threshold }) {
   const [visible, setVisible] = useState(false);
+  const [resolvedThreshold, setResolvedThreshold] = useState(threshold ?? 480);
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > threshold);
+    if (threshold != null) {
+      setResolvedThreshold(threshold);
+      return undefined;
+    }
+    const compute = () => setResolvedThreshold(Math.max(320, Math.round(window.innerHeight * 0.85)));
+    compute();
+    window.addEventListener("resize", compute, { passive: true });
+    return () => window.removeEventListener("resize", compute);
+  }, [threshold]);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > resolvedThreshold);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [threshold]);
+  }, [resolvedThreshold]);
 
   return (
     <button

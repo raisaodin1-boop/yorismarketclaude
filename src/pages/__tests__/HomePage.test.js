@@ -26,13 +26,9 @@ function renderHome(props = {}) {
       QueryClientProvider,
       { client },
       React.createElement(HomePage, {
-        produits: null,
+        produits: [],
         allServices: null,
         produitsLoading: false,
-        filterCat: "",
-        setFilterCat: vi.fn(),
-        search: "",
-        setSearch: vi.fn(),
         goPage: vi.fn(),
         setOnboardingOpen: vi.fn(),
         ...props,
@@ -42,19 +38,20 @@ function renderHome(props = {}) {
 }
 
 describe("HomePage", () => {
-  it("renders the public homepage without throwing when catalog data is absent", () => {
+  it("renders refonte homepage with trust hero and escrow", () => {
     const html = renderHome();
 
-    expect(html).toContain("Entreprise camerounaise");
-    expect(html).toContain("Pourquoi");
-    expect(html).toContain("Achetez sans risque");
+    expect(html).toContain("Achetez en");
+    expect(html).toContain("toute confiance");
     expect(html).toContain("Escrow");
+    expect(html).toContain("Tendances du moment");
+    expect(html).toContain("Made in Cameroun");
   });
 
-  it("renders English hero when locale is en", () => {
+  it("renders English homepage when locale is en", () => {
     const html = renderHome({ siteLocale: "en" });
-    expect(html).toContain("Cameroonian company");
-    expect(html).toContain("Shop safely");
-    expect(html).toContain("Why");
+    expect(html).toContain("Shop with");
+    expect(html).toContain("confidence");
+    expect(html).toContain("Trending now");
   });
 });
