@@ -213,8 +213,10 @@ export default function YorixApp() {
   useEffect(() => {
     document.body.classList.toggle("page-admin", page === "admin");
     document.body.classList.toggle("page-dashboard", page === "dashboard");
+    document.body.classList.toggle("page-checkout", page === "checkout");
+    document.body.classList.toggle("page-cart", page === "cart");
     return () => {
-      document.body.classList.remove("page-admin", "page-dashboard");
+      document.body.classList.remove("page-admin", "page-dashboard", "page-checkout", "page-cart");
     };
   }, [page]);
 

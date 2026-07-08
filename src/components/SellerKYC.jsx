@@ -21,6 +21,7 @@ import {
   mergeExtraDocs,
   upsertSellerKyc,
 } from "../lib/kycSubmit";
+import { getKycSubmitLogBuffer, isKycDebugEnabled, logKycError, logKycEvent } from "../lib/kycSubmitLog";
 
 // Compresse une image via canvas — réduit les photos mobile (5-10 MB) à ~300 KB
 async function compressImage(file, maxPx = 1200, quality = 0.82) {
@@ -55,6 +56,43 @@ const STEPS = [
   { id: 4, label: "Documents",   icon: "📄" },
   { id: 5, label: "Validation",  icon: "✅" },
 ];
+
+function KycSubmitLogPanel() {
+  const [open, setOpen] = useState(false);
+  const [entries, setEntries] = useState([]);
+
+  if (!isKycDebugEnabled()) return null;
+
+  const refresh = () => setEntries(getKycSubmitLogBuffer());
+
+  return (
+    <div style={{ marginTop: 20, border: "1px dashed var(--border)", borderRadius: 10, padding: 12, background: "var(--surface2)" }}>
+      <button
+        type="button"
+        onClick={() => { refresh(); setOpen((v) => !v); }}
+        style={{ background: "none", border: "none", cursor: "pointer", fontSize: ".72rem", fontWeight: 700, color: "var(--gray)" }}
+      >
+        {open ? "▼" : "▶"} Journal d&apos;envoi KYC ({entries.length || getKycSubmitLogBuffer().length})
+      </button>
+      {open && (
+        <pre
+          style={{
+            marginTop: 8,
+            maxHeight: 200,
+            overflow: "auto",
+            fontSize: ".62rem",
+            lineHeight: 1.45,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            color: "var(--ink)",
+          }}
+        >
+          {JSON.stringify(entries.length ? entries : getKycSubmitLogBuffer(), null, 2) || "Aucun log pour l'instant."}
+        </pre>
+      )}
+    </div>
+  );
+}
 
 function ProgressBar({ step }) {
   return (
@@ -277,13 +315,16 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
 
   const uploadFile = async (file, slot, attempt = 0) => {
     try {
+      logKycEvent("upload.start", { slot, attempt, sizeKb: Math.round((file?.size || 0) / 1024) });
       const compressed = await compressImage(file);
       const url = await uploadCloudinaryFile(compressed, { folder: `kyc/${userId}` });
+      logKycEvent("upload.ok", { slot, attempt });
       // Sauvegarder immédiatement l'URL en base (draft) pour ne pas perdre l'upload
       const field = slotToField[slot];
       if (field) saveDraft({ [field]: url });
       return url;
     } catch (e) {
+      logKycError("upload.fail", e, { slot, attempt });
       if (attempt < 2) {
         await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
         return uploadFile(file, slot, attempt + 1);
@@ -313,9 +354,14 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       legal_docs: fileLegalDocs,
       import_proofs: fileImportProofs,
     });
-    if (!preCheck.ok) { showAppToast(preCheck.message, "error", 5000); return; }
+    if (!preCheck.ok) {
+      logKycEvent("submit.validation_fail", { message: preCheck.message }, "warn");
+      showAppToast(preCheck.message, "error", 5000);
+      return;
+    }
 
     setSaving(true);
+    logKycEvent("submit.start", { user_id: userId, seller_category: form.seller_category });
     try {
       await ensureFreshAuthSession();
 
@@ -400,7 +446,14 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         lu: false,
         payload: { link: "/dashboard?tab=kyc", status: "pending" },
       });
-      if (notifErr) console.warn("KYC notification:", notifErr.message);
+      if (notifErr) {
+        logKycError("notify.fail", notifErr, { user_id: userId });
+        console.warn("KYC notification:", notifErr.message);
+      } else {
+        logKycEvent("notify.ok", { user_id: userId });
+      }
+
+      logKycEvent("submit.success", { user_id: userId, status: saved?.status || "pending" });
 
       setKyc(saved || { ...payload, status: "pending" });
       setStep(5);
@@ -416,6 +469,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
       showAppToast("Dossier envoyé — validation par l'équipe admin sous 24–48h", "success", 5000);
     } catch (e) {
+      logKycError("submit.fail", e, { user_id: userId, seller_category: form.seller_category });
       showAppToast("Erreur : " + formatKycError(e), "error", 7000);
     } finally {
       setSaving(false);
@@ -790,6 +844,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         <p style={{ fontSize: ".65rem", color: "var(--gray)", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
           Vos documents sont chiffrés et utilisés uniquement pour la vérification. Traitement sous 24–48h ouvrées.
         </p>
+        <KycSubmitLogPanel />
       </div>
     );
   }
