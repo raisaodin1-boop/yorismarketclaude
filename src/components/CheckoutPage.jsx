@@ -7,6 +7,7 @@ import {
   clearCheckoutDraft,
   composeFullAddress,
   loadCheckoutDraft,
+  isValidCmMobile,
   normalizeCmMobileDigits,
   saveCheckoutDraft,
   validateCheckoutAddressStep,
@@ -20,7 +21,7 @@ import {
   initPaymentCinetPay,
 } from "../lib/checkoutApi";
 import { PAGE_PATH, parseLocaleSegments, localePath } from "../lib/seoRoutes";
-import { YORIX_WA_NUMBER } from "../lib/supabase";
+import { YORIX_WA_NUMBER, supabase } from "../lib/supabase";
 import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 import { TrustStrip } from "./ui/TrustStrip";
@@ -134,6 +135,8 @@ export function CheckoutPage({
 
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cinetpay");
+  const [momoPhone, setMomoPhone] = useState("");
+  const [momoStatus, setMomoStatus] = useState(""); // "" | "waiting" | "failed" | "timeout"
   const [locationType, setLocationType] = useState("home");
   const [carrier, setCarrier] = useState("seller");
   const [checkoutError, setCheckoutError] = useState("");
@@ -179,6 +182,12 @@ export function CheckoutPage({
       ville: (ville || userData?.ville || "").trim(),
     };
   }, [userData, user, nomLocal, phoneLocal, addressLine, quartier, ville, landmark, locationType, carrier, hasProducts]);
+
+  useEffect(() => {
+    if (paymentMethod === "momo_direct" && !momoPhone && mergedUserData.telephone) {
+      setMomoPhone(mergedUserData.telephone);
+    }
+  }, [paymentMethod, momoPhone, mergedUserData.telephone]);
 
   const addressValidation = useMemo(
     () =>
@@ -519,12 +528,23 @@ export function CheckoutPage({
       return;
     }
 
+    let momoPhoneDigits = "";
+    if (paymentMethod === "momo_direct") {
+      momoPhoneDigits = normalizeCmMobileDigits(momoPhone || mergedUserData.telephone || "");
+      if (!isValidCmMobile(momoPhoneDigits)) {
+        setCheckoutError("Numéro MTN MoMo invalide — format attendu : 6XXXXXXXX.");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const intentPayload = buildCheckoutIntent({
         items: cartItems,
         user,
         userData: mergedUserData,
         summary,
+        couponCode: couponApplied?.code,
       });
       const intent = await createCheckoutIntent(intentPayload);
       const confirmation = await confirmCheckout({
@@ -563,10 +583,28 @@ export function CheckoutPage({
         throw new Error(t("errors.checkoutFailed"));
       }
 
+      // La commande est créée dès ce point (statut "pending" côté paiement) —
+      // on ne la recrée jamais en cas d'échec/relance MoMo pour éviter les doublons.
+      let momoOutcome = null;
+      if (paymentMethod === "momo_direct") {
+        momoOutcome = await runMomoDirectPayment({
+          checkoutIntentId: intent.checkout_intent_id,
+          orderGroupId: confirmation.order_group_id,
+          phone: momoPhoneDigits,
+        });
+      }
+
       // Succès confirmé (HTTP 200) → panier vidé.
       setCartItems([]);
       idempotencyKeyRef.current = null; // commande aboutie → clé consommée
-      userFacingSuccess("✅ Commande confirmée ! Vous recevrez une notification de suivi sous peu.", 6000);
+
+      if (momoOutcome === "paid") {
+        userFacingSuccess("✅ Paiement MTN MoMo confirmé ! Vous recevrez une notification de suivi sous peu.", 6000);
+      } else if (momoOutcome === "failed" || momoOutcome === "timeout") {
+        userFacingSuccess("Commande enregistrée — le paiement MoMo n'a pas été confirmé automatiquement, notre équipe vérifie et vous contactera.", 7000);
+      } else {
+        userFacingSuccess("✅ Commande confirmée ! Vous recevrez une notification de suivi sous peu.", 6000);
+      }
 
       // Enregistrer coupon + crédit bonus parrainage (non-bloquant)
       const confirmedOrderId = confirmation?.order_group_id || intent.checkout_intent_id;
@@ -591,8 +629,64 @@ export function CheckoutPage({
       setCheckoutError(describeCheckoutError(e));
     } finally {
       setLoading(false);
+      setMomoStatus("");
     }
   };
+
+  /**
+   * Initie un paiement MTN MoMo (Paynote) puis sonde son statut jusqu'à
+   * résolution. Retourne "paid" | "failed" | "timeout" — n'échoue jamais par
+   * exception : la commande existe déjà (confirmCheckout), on ne veut pas la
+   * faire disparaître d'un écran d'erreur si seul le paiement traîne.
+   */
+  const runMomoDirectPayment = useCallback(async ({ checkoutIntentId, orderGroupId, phone }) => {
+    setMomoStatus("waiting");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Session expirée — reconnectez-vous");
+
+      const initRes = await fetch("/api/momo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ checkout_intent_id: checkoutIntentId, order_group_id: orderGroupId, phone }),
+      });
+      const initData = await initRes.json();
+      if (!initRes.ok || !initData?.reference_id) {
+        console.warn("MoMo init:", initData?.error || initRes.status);
+        setMomoStatus("failed");
+        return "failed";
+      }
+
+      const referenceId = initData.reference_id;
+      const maxAttempts = 30; // ~90s à 3s d'intervalle
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        try {
+          const statusRes = await fetch(`/api/momo-status?reference_id=${encodeURIComponent(referenceId)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const statusData = await statusRes.json();
+          if (statusData?.status === "paid") {
+            setMomoStatus("");
+            return "paid";
+          }
+          if (statusData?.status === "failed") {
+            setMomoStatus("failed");
+            return "failed";
+          }
+        } catch (pollErr) {
+          console.warn("MoMo poll:", pollErr?.message || pollErr);
+        }
+      }
+      setMomoStatus("timeout");
+      return "timeout";
+    } catch (e) {
+      console.warn("MoMo direct:", e?.message || e);
+      setMomoStatus("failed");
+      return "failed";
+    }
+  }, []);
 
   const tryAdvanceFromStep1 = async () => {
     setAttemptedAdvance(true);
@@ -938,10 +1032,34 @@ export function CheckoutPage({
                 <div className="checkout-step-heading">{t("step3.heading")}</div>
                 <label className="form-label">{t("step3.method")}</label>
                 <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                  <option value="momo_direct">📱 MTN MoMo — paiement direct</option>
                   <option value="cinetpay">CinetPay — MTN MoMo, Orange Money ou carte</option>
                   <option value="cod">Espèces — paiement à la livraison</option>
                   <option value="whatsapp_backup">WhatsApp — backup & preuve manuelle</option>
                 </select>
+
+                {paymentMethod === "momo_direct" && (
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Numéro MTN MoMo</label>
+                    <input
+                      className="form-input"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="6XXXXXXXX"
+                      value={momoPhone}
+                      onChange={(e) => setMomoPhone(e.target.value)}
+                      disabled={loading}
+                    />
+                    <div style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 3 }}>
+                      Vous recevrez une notification MTN MoMo à valider avec votre code PIN.
+                    </div>
+                    {momoStatus === "waiting" && (
+                      <div className="info-msg" style={{ marginTop: 8, background: "#fef3c7", color: "#92400e" }}>
+                        ⏳ Vérifiez votre téléphone et validez la demande de paiement MTN MoMo…
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* ── Champ coupon promo ── */}
                 <div className="yx-coupon-box">
