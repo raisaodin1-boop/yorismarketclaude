@@ -1459,6 +1459,7 @@ export default function YorixApp() {
     userRole,
     dark,
     goPage,
+    goDash,
     filterCat,
     setFilterCat,
     categoryFilter,
@@ -1733,9 +1734,11 @@ export default function YorixApp() {
       <MobileBottomNav
         page={page}
         cartQty={totalQty}
+        wishlistCount={wishlist.size}
         user={user}
         onOpenCart={openCart}
         goPage={goPage}
+        goDash={goDash}
         onOpenUser={() => { setAuthTab("login"); setAuthOpen(true); }}
       />
     </>

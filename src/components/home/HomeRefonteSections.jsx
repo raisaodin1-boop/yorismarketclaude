@@ -23,6 +23,7 @@ import { HOME_UNIVERSES, TRENDING_FILTERS } from "../../lib/homeCategories";
 import { computeHomepageTrendingProducts } from "../../lib/merchPlacement";
 import { productMatchesMadeInFilter } from "../../lib/madeInCameroon";
 import { buildEntitySlug } from "../../lib/seoRoutes";
+import { HOME_HERO_IMAGE_AFRICA } from "./HomeRefonteMobile";
 
 const ICONS = {
   smartphone: Smartphone,
@@ -124,11 +125,14 @@ export function HomeRefonteHero({ locale = "fr", goPage }) {
             </button>
           </div>
         </div>
-        <div className="yx-hero__visual" aria-hidden>
-          <img
-            src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=900&q=80"
-            alt=""
+        <div className="yx-hero__visual">
+          <OptimizedImage
+            src={HOME_HERO_IMAGE_AFRICA}
+            alt={isEn ? "Cameroonian seller with smartphone at local market" : "Commerçant camerounais avec smartphone au marché local"}
+            size="hero"
             loading="eager"
+            priority
+            className="yx-hero__img"
           />
         </div>
       </div>
@@ -199,7 +203,7 @@ export function HomeRefonteCategories({ locale = "fr", goPage, goToCategory }) {
           </h2>
           <p className="yx-lead">{isEn ? "Find exactly what you need" : "Trouvez exactement ce qu'il vous faut"}</p>
         </div>
-        <div className="yx-cat-grid">
+        <div className="yx-cat-grid yx-cat-grid--desktop">
           {HOME_UNIVERSES.map((u) => {
             const Icon = ICONS[u.icon] || Package;
             return (
@@ -209,6 +213,24 @@ export function HomeRefonteCategories({ locale = "fr", goPage, goToCategory }) {
               </button>
             );
           })}
+        </div>
+        <div className="yx-cat-rail yx-mobile-only">
+          {HOME_UNIVERSES.slice(0, 7).map((u) => {
+            const Icon = ICONS[u.icon] || Package;
+            const short = isEn ? u.labelEn.split(" ")[0] : u.labelFr.split(/[\s&]/)[0];
+            return (
+              <button key={`m-${u.id}`} type="button" className="yx-cat-rail__item" onClick={() => onClick(u)}>
+                <span className="yx-cat-rail__ico">
+                  <Icon size={22} strokeWidth={1.75} aria-hidden />
+                </span>
+                <span className="yx-cat-rail__lbl">{short}</span>
+              </button>
+            );
+          })}
+          <button type="button" className="yx-cat-rail__item yx-cat-rail__item--more" onClick={() => goPage("produits")}>
+            <span className="yx-cat-rail__ico">+</span>
+            <span className="yx-cat-rail__lbl">{isEn ? "More" : "Voir +"}</span>
+          </button>
         </div>
       </div>
     </section>
@@ -234,7 +256,8 @@ export function HomeRefonteTrending({
 
   const filtered = useMemo(() => {
     const f = TRENDING_FILTERS.find((x) => x.id === filter) || TRENDING_FILTERS[0];
-    return base.filter(f.match).slice(0, 8);
+    const limit = typeof window !== "undefined" && window.innerWidth < 768 ? 6 : 8;
+    return base.filter(f.match).slice(0, limit);
   }, [base, filter]);
 
   return (

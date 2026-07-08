@@ -10,6 +10,7 @@ import { CategoryMobileNav } from "../categories/CategoryMobileNav";
 import { NotificationBell } from "../NotificationBell";
 import { OptimizedImage } from "../OptimizedImage";
 import { Button } from "../ui/Button";
+import { YorixMobileHeader } from "./YorixMobileHeader";
 import "../categories/categoryUi.css";
 import "./marketplaceHeader.css";
 
@@ -144,6 +145,24 @@ export function YorixHeader({
       </div>
 
       <nav className="navbar navbar--yorix-mobile navbar--marketplace navbar--slim">
+        <YorixMobileHeader
+          siteLocale={siteLocale}
+          search={search}
+          setSearch={setSearch}
+          produits={produits}
+          filterCat={filterCat}
+          setFilterCat={setFilterCat}
+          categoryTree={categoryTree}
+          goPage={goPage}
+          goToCategory={goToCategory}
+          onOpenProduct={onOpenProduct}
+          openCart={openCart}
+          totalQty={totalQty}
+          onOpenCategories={() => setNavQuickOpen(true)}
+          onOpenMenu={onOpenUserMenu}
+        />
+
+        <div className="yx-nav-desktop-inner">
         <div className="logo-wrap" onClick={() => goPage("home")}>
           <div className="logo-txt">
             Yo<span>rix</span>
@@ -384,7 +403,7 @@ export function YorixHeader({
           )}
         </div>
 
-        <div className="nav-actions">
+        <div className="nav-actions yx-nav-desktop-only">
           <button
             type="button"
             className="icon-btn nav-menu-btn"
@@ -473,6 +492,7 @@ export function YorixHeader({
               </>
             )}
           </div>
+        </div>
         </div>
       </nav>
     </div>

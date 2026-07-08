@@ -220,6 +220,13 @@ export function ProdGrid({
                       )}
                     </div>
                     <CompactSocialProof product={p} locale={siteLocale} />
+                    <div className="prod-trust-badges-mobile">
+                      {(p.escrow !== false) && <span>🛡 Escrow</span>}
+                      <span>🚚 {productDeliveryShort(p, siteLocale) || (siteLocale === "en" ? "Delivery" : "Livraison")}</span>
+                      {(p.vendeur_verifie || p.verifie) && (
+                        <span>{siteLocale === "en" ? "✅ Verified" : "✅ Vérifié"}</span>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <>

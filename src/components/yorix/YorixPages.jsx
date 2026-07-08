@@ -46,6 +46,7 @@ export function YorixPages({ ctx }) {
     userRole,
     dark,
     goPage,
+    goDash,
     filterCat,
     setFilterCat,
     categoryTree,
@@ -183,6 +184,7 @@ export function YorixPages({ ctx }) {
             openSellerUrl={openSellerUrl}
             setOnboardingOpen={setOnboardingOpen}
             goPage={goPage}
+            goDash={goDash}
             categoryTree={categoryTree}
             goToCategory={goToCategory}
             allServices={allServices}

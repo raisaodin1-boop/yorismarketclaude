@@ -77,6 +77,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);transi
 .icon-btn{position:relative;cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .2s;}
 .icon-btn:hover{border-color:var(--green);}
 .ibadge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.ibadge--subtle{background:#64748b;width:18px;height:18px;font-size:.58rem;}
 .dark-toggle{background:var(--surface2);border:1.5px solid var(--border);width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;}
 .user-av{width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;cursor:pointer;border:2px solid var(--green-pale);}
 .role-chip{padding:3px 9px;border-radius:50px;font-size:.64rem;font-weight:700;border:none;cursor:default;}
@@ -5855,9 +5856,23 @@ ${dark?`
   border-radius:50%;min-width:18px;height:18px;
   font-size:.55rem;font-weight:800;
   display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--surface);
   padding:0 3px;
-  border:2px solid ${dark?"#0d1a12":"#fff"};
-  font-family:'Inter',sans-serif;
+}
+.mobile-bottom-nav--v2 .mbn-cart-btn{display:none;}
+.mobile-bottom-nav--v2{justify-content:space-between;gap:2px;}
+.mobile-bottom-nav--v2 .mbn-item{flex:1;max-width:none;}
+.mbn-icon{position:relative;}
+.mbn-dot-badge{
+  position:absolute;top:-5px;right:-8px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:999px;background:var(--green);color:#fff;font-size:.52rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;border:1.5px solid var(--surface);
+}
+.yorix-wa-fab{transition:transform .25s ease,opacity .25s ease;}
+.yorix-wa-fab--hidden{opacity:0;pointer-events:none;transform:translateY(12px) scale(.92);}
+.yorix-wa-fab__pulse{
+  position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid rgba(37,211,102,.55);animation:waPulse 2.2s ease-out infinite;pointer-events:none;
 }
 
 /* ── BODY PADDING so content doesn't hide behind bottom nav ── */

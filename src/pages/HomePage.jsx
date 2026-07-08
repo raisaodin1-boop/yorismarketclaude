@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════════════════════════
-//  YORIX CM — HOMEPAGE REFONTE v1.0 (9 sections stratégiques)
-// ═══════════════════════════════════════════════════════════════
-
 import { useEffect, useRef } from "react";
 import { usePlatformStats } from "../hooks/usePlatformStats";
 import homeRefonteCss from "./homePageRefonte.css?raw";
@@ -15,6 +11,11 @@ import {
   HomeRefonteTestimonials,
   HomeRefonteFinalCta,
 } from "../components/home/HomeRefonteSections";
+import {
+  HomeRefontePersonalized,
+  HomeRefonteMobileShortcuts,
+  HomeRefonteTrustMicro,
+} from "../components/home/HomeRefonteMobile";
 
 export function HomePage({
   siteLocale = "fr",
@@ -30,7 +31,7 @@ export function HomePage({
   setOnboardingOpen = () => {},
   goPage = () => {},
   goToCategory = () => {},
-  // Props conservés pour compatibilité YorixPages (non utilisés sur la homepage épurée)
+  goDash,
   filterCat: _filterCat,
   setFilterCat: _setFilterCat,
   search: _search,
@@ -79,16 +80,30 @@ export function HomePage({
     <>
       <style>{homeRefonteCss}</style>
       <div className="yx-home home-premium anim" ref={homeRef}>
-        {/* ② Hero */}
+        <HomeRefontePersonalized
+          locale={siteLocale}
+          user={user}
+          userData={userData}
+          goPage={goPage}
+          goDash={goDash}
+          produits={safeProduits}
+        />
+
         <HomeRefonteHero locale={siteLocale} goPage={goPage} />
 
-        {/* ③ Barre de confiance */}
-        <HomeRefonteTrustBar locale={siteLocale} stats={platformStats} isLoading={statsLoading} />
+        <HomeRefonteMobileShortcuts locale={siteLocale} goPage={goPage} goDash={goDash} />
 
-        {/* ④ Catégories (8 univers) */}
+        <HomeRefonteTrustMicro locale={siteLocale} />
+
+        <div className="yx-home__trust-compact yx-mobile-only">
+          <HomeRefonteTrustBar locale={siteLocale} stats={platformStats} isLoading={statsLoading} />
+        </div>
+        <div className="yx-home__trust-full yx-desktop-only">
+          <HomeRefonteTrustBar locale={siteLocale} stats={platformStats} isLoading={statsLoading} />
+        </div>
+
         <HomeRefonteCategories locale={siteLocale} goPage={goPage} goToCategory={goToCategory} />
 
-        {/* ⑤ Produits tendance */}
         <HomeRefonteTrending
           locale={siteLocale}
           produits={safeProduits}
@@ -103,21 +118,17 @@ export function HomePage({
           goPage={goPage}
         />
 
-        {/* ⑥ Comment ça marche */}
-        <HomeRefonteHowItWorks locale={siteLocale} />
+        <div className="yx-home__defer-mobile">
+          <HomeRefonteHowItWorks locale={siteLocale} />
+          <HomeRefonteMadeIn
+            locale={siteLocale}
+            produits={safeProduits}
+            goPage={goPage}
+            openProductUrl={openProductUrl}
+          />
+          <HomeRefonteTestimonials locale={siteLocale} stats={platformStats} />
+        </div>
 
-        {/* ⑦ Made in Cameroun */}
-        <HomeRefonteMadeIn
-          locale={siteLocale}
-          produits={safeProduits}
-          goPage={goPage}
-          openProductUrl={openProductUrl}
-        />
-
-        {/* ⑧ Témoignages */}
-        <HomeRefonteTestimonials locale={siteLocale} stats={platformStats} />
-
-        {/* ⑨ CTA final (footer global = PremiumSiteFooter) */}
         <HomeRefonteFinalCta locale={siteLocale} goPage={goPage} setOnboardingOpen={setOnboardingOpen} />
       </div>
     </>
