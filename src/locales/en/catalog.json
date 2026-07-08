@@ -31,6 +31,8 @@
   "heroCount": "Over {{count}} products available today",
   "allProducts": "All products",
   "resultsCount": "{{count}} result(s)",
+  "resultsCountFiltered": "{{count}} filtered result(s)",
+  "filteredHint": "Filters apply to the loaded products. Refine by category or search to explore the full catalog.",
   "loadError": "Could not load products. Try again shortly.",
   "noProducts": "No products found.",
   "noProductsSearch": "No products for « {{query}} ».",
