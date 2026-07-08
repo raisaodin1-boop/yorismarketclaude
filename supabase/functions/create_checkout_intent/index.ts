@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
+import { resolveCouponDiscount } from "../_shared/coupon.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -40,6 +41,17 @@ Deno.serve(async (req) => {
     const policy = await resolveDeliveryPolicy(supabase);
     const totals = computeCheckoutTotals(items, policy);
 
+    // Revalidation serveur du coupon : le client n'a plus le dernier mot sur
+    // la remise, seule cette valeur (jamais celle envoyée par le navigateur)
+    // sert de base au total encaissé.
+    const { code: couponCode, discount: couponDiscount } = await resolveCouponDiscount(
+      supabase,
+      body?.coupon_code,
+      customerId,
+      totals.total,
+    );
+    const discountedTotal = Math.max(0, Math.round(totals.total - couponDiscount));
+
     const { data, error } = await supabase
       .from("checkout_intents")
       .insert({
@@ -49,10 +61,12 @@ Deno.serve(async (req) => {
         status: "ready",
         subtotal: totals.subtotalFull,
         delivery_fee: totals.deliveryFee,
-        total: totals.total,
+        total: discountedTotal,
+        coupon_code: couponCode,
+        coupon_discount: couponDiscount,
       })
       .select(
-        "id, checkout_type, subtotal, delivery_fee, total, status",
+        "id, checkout_type, subtotal, delivery_fee, total, status, coupon_code, coupon_discount",
       )
       .single();
 
@@ -65,6 +79,8 @@ Deno.serve(async (req) => {
       delivery_fee: data.delivery_fee,
       total: data.total,
       status: data.status,
+      coupon_code: data.coupon_code,
+      coupon_discount: data.coupon_discount,
       free_shipping_unlocked: totals.freeShippingUnlocked,
       shippable_products_subtotal: totals.shippableProductsSubtotal,
     });

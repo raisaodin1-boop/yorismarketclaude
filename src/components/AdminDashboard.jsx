@@ -8,6 +8,7 @@ import { deliveryTrackingPath } from "../lib/seoRoutes";
 import {
   isAdminViewer,
   canWriteAdmin,
+  isSuperAdmin,
   ROLE_ADMIN_PARTNER,
   ADMIN_ROLE_LABELS,
 } from "../lib/roles";
@@ -65,7 +66,7 @@ export function AdminDashboard({ user, userData, goPage }) {
     () => [
       "overview", "deliveries", "livreurs", "categories", "packs", "produits",
       "commandes", "utilisateurs", "vendeurs", "kyc", "prestataires", "revenus",
-      "commerce_promo", "loyalty", "messagerie", "notif_center", "alertes",
+      "commerce_promo", "loyalty", "messagerie", "notif_center", "alertes", "finances",
     ],
     [],
   );
@@ -106,6 +107,9 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [chartInscrits, setChartInscrits]       = useState([]);
   const [topProduits, setTopProduits]           = useState([]);
   const [paymentTx, setPaymentTx]               = useState([]);
+  const [momoBalance, setMomoBalance]           = useState(null); // { value, body } | null
+  const [momoBalanceLoading, setMomoBalanceLoading] = useState(false);
+  const [momoBalanceError, setMomoBalanceError] = useState("");
   const [deliveryPromoStats, setDeliveryPromoStats] = useState({
     ordersWithShippable: 0,
     freeShippingOrders: 0,
@@ -151,6 +155,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const isAuthorized = Boolean(user && isAdminViewer(userData));
   const canWrite = canWriteAdmin(userData);
   const isPartnerReadOnly = isAuthorized && !canWrite;
+  const isSuperAdminUser = Boolean(user && isSuperAdmin(userData));
 
   // ═══════════ TOAST ═══════════
   const showToast = (msg, type = "success") => {
@@ -379,6 +384,56 @@ export function AdminDashboard({ user, userData, goPage }) {
       .then(({ data }) => setKycList(data || []));
 
     setLoading(false);
+  };
+
+  // ═══════════ FINANCES (superadmin) ═══════════
+  const financeStats = useMemo(() => {
+    const paid = paymentTx.filter((p) => p.status === "paid");
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfDay); startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const sum = (rows) => rows.reduce((t, r) => t + (Number(r.amount) || 0), 0);
+    const since = (d) => paid.filter((p) => new Date(p.created_at) >= d);
+
+    const byProvider = {};
+    for (const p of paid) {
+      const key = p.provider || "inconnu";
+      if (!byProvider[key]) byProvider[key] = { count: 0, total: 0 };
+      byProvider[key].count += 1;
+      byProvider[key].total += Number(p.amount) || 0;
+    }
+
+    return {
+      totalCollected: sum(paid),
+      totalToday: sum(since(startOfDay)),
+      totalWeek: sum(since(startOfWeek)),
+      totalMonth: sum(since(startOfMonth)),
+      countPaid: paid.length,
+      countPending: paymentTx.filter((p) => p.status === "pending").length,
+      countFailed: paymentTx.filter((p) => p.status === "failed").length,
+      byProvider,
+    };
+  }, [paymentTx]);
+
+  const refreshMomoBalance = async () => {
+    setMomoBalanceLoading(true);
+    setMomoBalanceError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Session expirée — reconnectez-vous");
+      const res = await fetch("/api/momo-balance", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Erreur inconnue");
+      setMomoBalance(data);
+    } catch (e) {
+      setMomoBalanceError(e.message);
+    }
+    setMomoBalanceLoading(false);
   };
 
   // ═══════════ KYC ACTIONS ═══════════
@@ -862,9 +917,10 @@ export function AdminDashboard({ user, userData, goPage }) {
         { id: "loyalty", label: t("nav.loyalty") },
         { id: "alertes", label: t("nav.alerts"), badge: alertes.length || null },
       ];
+      if (isSuperAdminUser) items.push({ id: "finances", label: "💰 Finances" });
       return items.filter((n) => canWrite || n.id !== "messagerie");
     },
-    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite, pendingPacksCount],
+    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite, pendingPacksCount, isSuperAdminUser],
   );
 
   const ROLE_ASSIGN_OPTIONS = useMemo(
@@ -2723,6 +2779,120 @@ export function AdminDashboard({ user, userData, goPage }) {
                 </div>
               </>
             )}
+          </>
+        )}
+
+        {/* ════════ FINANCES (superadmin uniquement) ════════ */}
+        {adminTab === "finances" && isSuperAdminUser && (
+          <>
+            <div className="admin-page-title">
+              💰 Trésorerie & Paiements
+              <span style={{ fontSize: ".7rem", background: "var(--surface2)", color: "var(--gray)", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
+                Réservé au super admin
+              </span>
+            </div>
+
+            {/* Totaux collectés */}
+            <div className="stat-cards-grid" style={{ marginBottom: 16 }}>
+              <StatCard icon={DollarSign} val={`${financeStats.totalToday.toLocaleString()} F`} lbl="Collecté aujourd'hui" col="#d1fae5" ic="#065f46" />
+              <StatCard icon={DollarSign} val={`${financeStats.totalWeek.toLocaleString()} F`} lbl="Cette semaine" col="#dbeafe" ic="#1d4ed8" />
+              <StatCard icon={DollarSign} val={`${financeStats.totalMonth.toLocaleString()} F`} lbl="Ce mois" col="#fef3c7" ic="#92400e" />
+              <StatCard icon={TrendingUp} val={`${financeStats.totalCollected.toLocaleString()} F`} lbl="Total collecté (historique)" col="#eff6ff" ic="#1d4ed8" />
+            </div>
+
+            <div className="stat-cards-grid" style={{ marginBottom: 20 }}>
+              <StatCard val={financeStats.countPaid} lbl="Paiements réussis" col="#d1fae5" ic="#065f46" />
+              <StatCard val={financeStats.countPending} lbl="En attente" col="#fef3c7" ic="#92400e" />
+              <StatCard val={financeStats.countFailed} lbl="Échoués" col="#fee2e2" ic="#991b1b" />
+            </div>
+
+            {/* Répartition par fournisseur de paiement */}
+            <div className="admin-section" style={{ marginBottom: 20 }}>
+              <div className="admin-section-title">📊 Répartition par fournisseur</div>
+              {Object.keys(financeStats.byProvider).length === 0 ? (
+                <div style={{ color: "var(--gray)", fontSize: ".82rem", padding: "12px 0" }}>Aucun paiement réussi enregistré.</div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                  {Object.entries(financeStats.byProvider).map(([provider, s]) => (
+                    <div key={provider} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ fontSize: ".72rem", color: "var(--gray)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em" }}>{provider}</div>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "var(--ink)", marginTop: 4 }}>{s.total.toLocaleString()} F</div>
+                      <div style={{ fontSize: ".72rem", color: "var(--gray)" }}>{s.count} transaction{s.count > 1 ? "s" : ""}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Solde MTN MoMo en direct (Paynote) */}
+            <div className="admin-section" style={{ marginBottom: 20 }}>
+              <div className="admin-section-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                📱 Solde MTN MoMo (compte marchand)
+                <button
+                  onClick={refreshMomoBalance}
+                  disabled={momoBalanceLoading}
+                  style={{ marginLeft: "auto", padding: "5px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: momoBalanceLoading ? "wait" : "pointer", fontSize: ".72rem", fontWeight: 700, color: "var(--ink)" }}
+                >
+                  {momoBalanceLoading ? "…" : "🔄 Rafraîchir"}
+                </button>
+              </div>
+              {momoBalanceError && (
+                <div className="admin-alert admin-alert-red" style={{ marginTop: 8 }}>❌ {momoBalanceError}</div>
+              )}
+              {momoBalance && !momoBalanceError && (
+                <div style={{ marginTop: 8, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "14px 18px" }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.4rem", color: "var(--green)" }}>
+                    {Number(momoBalance.value || 0).toLocaleString()} FCFA
+                  </div>
+                  <div style={{ fontSize: ".72rem", color: "var(--gray)", marginTop: 2 }}>{momoBalance.body}</div>
+                </div>
+              )}
+              {!momoBalance && !momoBalanceError && !momoBalanceLoading && (
+                <div style={{ color: "var(--gray)", fontSize: ".82rem", padding: "8px 0" }}>Clique sur « Rafraîchir » pour interroger le solde en direct.</div>
+              )}
+            </div>
+
+            {/* Dernières transactions */}
+            <div className="admin-section">
+              <div className="admin-section-title">🧾 Dernières transactions</div>
+              <div style={{ overflowX: "auto" }}>
+                <table className="admin-table" style={{ width: "100%", fontSize: ".78rem" }}>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Fournisseur</th>
+                      <th>Méthode</th>
+                      <th>Montant</th>
+                      <th>Statut</th>
+                      <th>Référence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentTx.slice(0, 50).map((p) => (
+                      <tr key={p.id}>
+                        <td>{p.created_at ? new Date(p.created_at).toLocaleString("fr-FR") : "—"}</td>
+                        <td>{p.provider || "—"}</td>
+                        <td>{p.payment_method || p.channel || "—"}</td>
+                        <td>{Number(p.amount || 0).toLocaleString()} F</td>
+                        <td>
+                          <span style={{
+                            padding: "2px 8px", borderRadius: 20, fontSize: ".68rem", fontWeight: 700,
+                            background: p.status === "paid" ? "#d1fae5" : p.status === "failed" ? "#fee2e2" : "#fef3c7",
+                            color: p.status === "paid" ? "#065f46" : p.status === "failed" ? "#991b1b" : "#92400e",
+                          }}>
+                            {p.status || "—"}
+                          </span>
+                        </td>
+                        <td style={{ fontFamily: "monospace", fontSize: ".7rem", color: "var(--gray)" }}>{p.provider_ref || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {paymentTx.length === 0 && (
+                  <div style={{ textAlign: "center", padding: 24, color: "var(--gray)" }}>Aucune transaction enregistrée.</div>
+                )}
+              </div>
+            </div>
           </>
         )}
 

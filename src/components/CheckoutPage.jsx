@@ -25,6 +25,7 @@ import { CheckoutProgressBar } from "./CheckoutProgressBar";
 import { FreeShippingProgress } from "./FreeShippingProgress";
 import { TrustStrip } from "./ui/TrustStrip";
 import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
+import { creditReferralBonusIfEligible } from "../lib/referralApi";
 import { explainDeliveryEta } from "../lib/logisticsAi";
 import { userFacingSuccess } from "../lib/appToast";
 import { generateAttestationPdf, generateDeliveryNotePdf, generateInvoicePdf } from "../lib/pdfDocumentGenerator";
@@ -476,6 +477,7 @@ export function CheckoutPage({
           user,
           userData: mergedUserData,
           summary,
+          couponCode: couponApplied?.code,
         });
         const intent = await createCheckoutIntent(intentPayload);
         if (!intent?.checkout_intent_id) {

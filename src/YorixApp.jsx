@@ -301,12 +301,20 @@ export default function YorixApp() {
     [goPage],
   );
 
+  // Stables (via ref, deps vides) : une identité changeante ici force useYorixAuth
+  // à recréer chargerProfil à chaque rendu, ce qui re-déclenche l'abonnement
+  // onAuthStateChange en boucle (Supabase ré-émet la session courante à chaque
+  // (ré)abonnement) — provoquait des dizaines de milliers de requêtes profiles/
+  // notifications en rafale.
+  const stableSetNotifs = useCallback((...args) => notifBridge.current.setNotifs(...args), []);
+  const stableOnProfileLoaded = useCallback((uid) => notifBridge.current.loadNotifsForUser(uid), []);
+
   const authSession = useYorixAuth({
     goPage,
     setDashTab,
     setDemandeLivraisonOpen,
-    setNotifs: (...args) => notifBridge.current.setNotifs(...args),
-    onProfileLoaded: (uid) => notifBridge.current.loadNotifsForUser(uid),
+    setNotifs: stableSetNotifs,
+    onProfileLoaded: stableOnProfileLoaded,
   });
 
   const {

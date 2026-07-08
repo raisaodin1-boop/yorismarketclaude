@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
-import { uploadCloudinaryFile } from "../utils/helpers";
 import {
   SELLER_CATEGORIES,
   categoryLabel,
@@ -22,6 +21,24 @@ import {
   upsertSellerKyc,
 } from "../lib/kycSubmit";
 import { getKycSubmitLogBuffer, isKycDebugEnabled, logKycError, logKycEvent } from "../lib/kycSubmitLog";
+
+// Upload un document KYC vers le bucket Supabase Storage privé "kyc-docs"
+// et retourne une URL signée (10 ans). Les documents d'identité ne doivent
+// jamais transiter par un stockage public — contrairement aux images produit
+// (Cloudinary, non sensibles), qui restent inchangées.
+async function uploadKycDocument(file, userId, slot) {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${userId}/${slot}_${Date.now()}.${ext}`;
+  const { data, error } = await supabase.storage
+    .from("kyc-docs")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data: signed, error: signErr } = await supabase.storage
+    .from("kyc-docs")
+    .createSignedUrl(data.path, 60 * 60 * 24 * 365 * 10);
+  if (signErr) throw signErr;
+  return signed.signedUrl;
+}
 
 // Compresse une image via canvas — réduit les photos mobile (5-10 MB) à ~300 KB
 async function compressImage(file, maxPx = 1200, quality = 0.82) {
@@ -317,7 +334,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     try {
       logKycEvent("upload.start", { slot, attempt, sizeKb: Math.round((file?.size || 0) / 1024) });
       const compressed = await compressImage(file);
-      const url = await uploadCloudinaryFile(compressed, { folder: `kyc/${userId}` });
+      const url = await uploadKycDocument(compressed, userId, slot);
       logKycEvent("upload.ok", { slot, attempt });
       // Sauvegarder immédiatement l'URL en base (draft) pour ne pas perdre l'upload
       const field = slotToField[slot];

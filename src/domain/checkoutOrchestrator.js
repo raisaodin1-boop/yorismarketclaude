@@ -6,10 +6,11 @@ export function detectCheckoutType(items) {
   return "product_only";
 }
 
-export function buildCheckoutIntent({ items, user, userData, summary }) {
+export function buildCheckoutIntent({ items, user, userData, summary, couponCode }) {
   const checkoutType = detectCheckoutType(items);
   return {
     checkoutType,
+    coupon_code: couponCode || null,
     customer: {
       id: user?.id || null,
       nom: userData?.nom || "",

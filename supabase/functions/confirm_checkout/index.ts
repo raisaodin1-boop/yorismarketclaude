@@ -141,14 +141,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Le coupon (revalidé et figé côté serveur par create_checkout_intent) est
+    // une remise sur le total dû, distincte du recalcul brut depuis le panier :
+    // on la ré-applique au total recalculé plutôt que de la perdre en écrasant
+    // avec `totals.total`.
+    const couponDiscount = Math.max(0, Math.round(Number(intent.coupon_discount ?? 0)));
+    const expectedTotal = Math.max(0, totals.total - couponDiscount);
+
     const del = Math.round(Number(intent.delivery_fee ?? 0));
     const tot = Math.round(Number(intent.total ?? 0));
-    if (del !== totals.deliveryFee || tot !== totals.total) {
+    if (del !== totals.deliveryFee || tot !== expectedTotal) {
       const { error: patchErr } = await supabase
         .from("checkout_intents")
         .update({
           delivery_fee: totals.deliveryFee,
-          total: totals.total,
+          total: expectedTotal,
           updated_at: new Date().toISOString(),
         })
         .eq("id", checkoutIntentId);
@@ -368,7 +375,7 @@ Deno.serve(async (req) => {
         type: "buyer_order_confirmed",
         title: "Commande confirmée",
         message:
-          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(totals.total)).toLocaleString("fr-FR")} FCFA.`,
+          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(expectedTotal)).toLocaleString("fr-FR")} FCFA.`,
         link: "/dashboard",
         lu: false,
         priority: "high",

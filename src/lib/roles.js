@@ -16,6 +16,11 @@ export function isAdminFull(profile) {
   return ROLES_ADMIN_FULL.includes(r);
 }
 
+/** Superadmin strict — ni admin, ni admin_partner. Réservé aux données financières sensibles. */
+export function isSuperAdmin(profile) {
+  return getProfileRole(profile) === "superadmin";
+}
+
 /** Accès panneau admin (lecture ou écriture) */
 export function isAdminViewer(profile) {
   const r = getProfileRole(profile);
