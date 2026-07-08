@@ -1,18 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
+import { checkPaynoteMtnStatus } from "./_lib/paynote.js";
 
 /*
- * MTN MoMo — sondage du statut d'un "Request to Pay" en cours.
+ * Sondage du statut d'un paiement MTN MoMo initié via Paynote.
  *
- * Le compte marchand n'a pas encore de callback URL enregistrée côté MTN
- * (aucun webhook possible pour l'instant), donc le client interroge cet
- * endpoint après avoir initié le paiement via /api/momo, jusqu'à obtenir un
- * statut final. Sur succès, applique exactement la même mise à jour de
- * commande que webhook_cinetpay (payment_status/escrow_status/status),
- * pour rester cohérent entre les deux rails de paiement.
+ * Le champ `status` documenté par Paynote confirme explicitement la valeur
+ * "SUCCESSFUL" pour un paiement réussi. Aucune autre valeur terminale n'est
+ * documentée à ce jour — par prudence (argent réel), seule "SUCCESSFUL" est
+ * traitée comme un succès ; les statuts explicitement négatifs connus dans
+ * l'écosystème MTN MoMo (FAILED, REJECTED, CANCELLED, EXPIRED, TIMEOUT)
+ * sont traités comme un échec définitif. Toute autre valeur (y compris
+ * inconnue) est traitée comme "encore en attente" plutôt que faussement
+ * marquée échouée.
  */
 
-const MOMO_BASE_URL = "https://proxy.momoapi.mtn.com";
-const MOMO_TARGET_ENVIRONMENT = "mtncameroon";
+const KNOWN_FAILURE_STATUSES = new Set(["FAILED", "REJECTED", "CANCELLED", "CANCELED", "EXPIRED", "TIMEOUT"]);
 
 async function getAuthenticatedUser(req) {
   const authHeader = req.headers.authorization || "";
@@ -22,22 +24,6 @@ async function getAuthenticatedUser(req) {
   const { data, error } = await anon.auth.getUser(token);
   if (error || !data?.user) return null;
   return data.user;
-}
-
-async function getMomoAccessToken() {
-  const tokenRes = await fetch(`${MOMO_BASE_URL}/collection/token/`, {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + Buffer.from(
-        `${process.env.MOMO_USER_ID}:${process.env.MOMO_API_KEY}`,
-      ).toString("base64"),
-      "Ocp-Apim-Subscription-Key": process.env.MOMO_SUB_KEY,
-    },
-  });
-  if (!tokenRes.ok) throw new Error(`MTN auth failed (${tokenRes.status})`);
-  const tokenData = await tokenRes.json();
-  if (!tokenData?.access_token) throw new Error("MTN auth: no access_token returned");
-  return tokenData.access_token;
 }
 
 export default async function handler(req, res) {
@@ -60,7 +46,7 @@ export default async function handler(req, res) {
   const { data: tx, error: txErr } = await supabase
     .from("payment_transactions")
     .select("*")
-    .eq("provider", "mtn_momo")
+    .eq("provider", "paynote_mtn")
     .eq("provider_ref", referenceId)
     .maybeSingle();
 
@@ -82,28 +68,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const accessToken = await getMomoAccessToken();
-    const statusRes = await fetch(
-      `${MOMO_BASE_URL}/collection/v1_0/requesttopay/${referenceId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "X-Target-Environment": MOMO_TARGET_ENVIRONMENT,
-          "Ocp-Apim-Subscription-Key": process.env.MOMO_SUB_KEY,
-        },
-      },
-    );
-    if (!statusRes.ok) {
-      throw new Error(`MTN status check failed (${statusRes.status})`);
-    }
-    const statusData = await statusRes.json();
-    const mtnStatus = String(statusData?.status || "").toUpperCase();
+    const statusData = await checkPaynoteMtnStatus(referenceId);
+    const paynoteStatus = String(statusData?.status || "").toUpperCase();
 
-    if (mtnStatus === "PENDING") {
+    if (!paynoteStatus || (!KNOWN_FAILURE_STATUSES.has(paynoteStatus) && paynoteStatus !== "SUCCESSFUL")) {
       return res.status(200).json({ status: "pending" });
     }
 
-    const finalStatus = mtnStatus === "SUCCESSFUL" ? "paid" : "failed";
+    const finalStatus = paynoteStatus === "SUCCESSFUL" ? "paid" : "failed";
 
     await supabase
       .from("payment_transactions")
@@ -116,7 +88,7 @@ export default async function handler(req, res) {
         .update({
           payment_status: "paid",
           escrow_status: "securise",
-          payment_provider: "mtn_momo",
+          payment_provider: "paynote_mtn",
           provider_tx_ref: referenceId,
           status: "validee",
         })
