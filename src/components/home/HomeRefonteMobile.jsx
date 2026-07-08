@@ -1,9 +1,8 @@
 import { Package, Heart, CreditCard, Gift, Store } from "lucide-react";
 import { computeHomepageTrendingProducts } from "../../lib/merchPlacement";
 
-/** Image hero — contexte africain / marketplace locale */
-export const HOME_HERO_IMAGE_AFRICA =
-  "https://images.unsplash.com/photo-1611348586804-61bf6c080472?w=900&q=75&auto=format&fit=crop";
+/** Image hero — collaboration commerciale Chine-Cameroun (import/B2B). */
+export const HOME_HERO_IMAGE_AFRICA = "/images/hero-china-cameroon.jpg";
 
 export function HomeRefontePersonalized({ locale = "fr", user, userData, goPage, goDash, produits = [] }) {
   if (!user) return null;

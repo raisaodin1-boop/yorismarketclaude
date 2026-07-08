@@ -38,8 +38,11 @@ export function OptimizedImage({
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
 
-  // Pas d'URL ou URL cassée → fallback emoji
-  if (!src || typeof src !== "string" || !src.startsWith("http") || errored) {
+  // Pas d'URL ou URL cassée → fallback emoji. Accepte http(s) et les chemins
+  // locaux racine (ex. /images/x.jpg, servis depuis public/) — le reste de la
+  // fonction dégrade déjà proprement pour toute URL non-Cloudinary (passthrough).
+  const isUsableSrc = typeof src === "string" && (src.startsWith("http") || src.startsWith("/"));
+  if (!isUsableSrc || errored) {
     return (
       <div
         className={className}

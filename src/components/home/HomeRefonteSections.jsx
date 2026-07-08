@@ -128,7 +128,7 @@ export function HomeRefonteHero({ locale = "fr", goPage }) {
         <div className="yx-hero__visual">
           <OptimizedImage
             src={HOME_HERO_IMAGE_AFRICA}
-            alt={isEn ? "Cameroonian seller with smartphone at local market" : "Commerçant camerounais avec smartphone au marché local"}
+            alt={isEn ? "Chinese and Cameroonian business partners shaking hands at a logistics warehouse" : "Partenaires commerciaux chinois et camerounais se serrant la main dans un entrepôt logistique"}
             size="hero"
             loading="eager"
             priority
