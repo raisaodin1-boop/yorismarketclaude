@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
   supabase,
-  MOMO_NUMBER,
   ORANGE_NUMBER,
   PAYMENT_WA_NUMBER,
 } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
 import { ContentIcon } from "../lib/contentIcons";
+import { normalizeCmMobileDigits, isValidCmMobile } from "../domain/checkoutForm";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : MODAL ACHAT PACK POINTS
@@ -14,9 +14,10 @@ import { ContentIcon } from "../lib/contentIcons";
 export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
   const [nom, setNom]         = useState(userData?.nom || "");
   const [tel, setTel]         = useState(userData?.telephone || "");
-  const [moyen, setMoyen]     = useState("momo");
+  const [moyen, setMoyen]     = useState("momo_direct");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState({});
+  const [momoStatus, setMomoStatus] = useState(""); // "" | "waiting" | "failed" | "timeout"
 
   if (!pack) return null;
 
@@ -28,8 +29,55 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
     const e = {};
     if (!nom.trim()) e.nom = "Nom obligatoire";
     if (!tel.trim()) e.tel = "Téléphone obligatoire";
+    if (moyen === "momo_direct" && !isValidCmMobile(normalizeCmMobileDigits(tel))) {
+      e.tel = "Numéro MTN MoMo invalide (format 6XXXXXXXX)";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
+  };
+
+  /** Paiement MTN MoMo direct (Paynote) — initie puis sonde jusqu'à résolution. */
+  const payViaMomoDirect = async (purchaseId) => {
+    setMomoStatus("waiting");
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) throw new Error("Session expirée — reconnectez-vous");
+
+    const initRes = await fetch("/api/momo-loyalty", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ purchase_id: purchaseId, phone: normalizeCmMobileDigits(tel) }),
+    });
+    const initData = await initRes.json();
+    if (!initRes.ok || !initData?.reference_id) {
+      setMomoStatus("failed");
+      throw new Error(initData?.error || "Échec de l'initiation du paiement MoMo");
+    }
+
+    const referenceId = initData.reference_id;
+    const maxAttempts = 30; // ~90s
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      try {
+        const statusRes = await fetch(`/api/momo-loyalty-status?reference_id=${encodeURIComponent(referenceId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const statusData = await statusRes.json();
+        if (statusData?.status === "paid") {
+          setMomoStatus("");
+          return statusData.points_credited;
+        }
+        if (statusData?.status === "failed") {
+          setMomoStatus("failed");
+          throw new Error("Paiement MoMo refusé ou annulé");
+        }
+      } catch (pollErr) {
+        if (pollErr.message?.includes("refusé")) throw pollErr;
+        console.warn("MoMo loyalty poll:", pollErr?.message || pollErr);
+      }
+    }
+    setMomoStatus("timeout");
+    throw new Error("Délai dépassé — vérifiez si le paiement a bien été validé sur votre téléphone");
   };
 
   const acheter = async () => {
@@ -54,8 +102,18 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
 
       if (error) throw error;
 
-      const numero    = moyen === "momo" ? MOMO_NUMBER : ORANGE_NUMBER;
-      const operateur = moyen === "momo" ? "MTN Mobile Money" : "Orange Money";
+      if (moyen === "momo_direct") {
+        const pointsCredited = await payViaMomoDirect(data.id);
+        showAppToast(`✅ Paiement confirmé — ${pointsCredited ?? totalPoints} points crédités !`, "success");
+        onSuccess?.();
+        onClose();
+        setLoading(false);
+        return;
+      }
+
+      // Ce point n'est atteint que pour moyen === "orange" (momo_direct retourne plus haut).
+      const numero    = ORANGE_NUMBER;
+      const operateur = "Orange Money";
       const msg = [
         "🌟 *ACHAT DE POINTS YORIX*",
         "",
@@ -86,6 +144,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
       showAppToast("Erreur : " + err.message, "error");
     }
     setLoading(false);
+    setMomoStatus("");
   };
 
   return (
@@ -166,16 +225,16 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
           <label className="form-label">Moyen de paiement <span>*</span></label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div
-              onClick={() => setMoyen("momo")}
+              onClick={() => setMoyen("momo_direct")}
               style={{
-                border: `2px solid ${moyen === "momo" ? "var(--green)" : "var(--border)"}`,
-                background: moyen === "momo" ? "var(--green-pale)" : "var(--surface)",
+                border: `2px solid ${moyen === "momo_direct" ? "var(--green)" : "var(--border)"}`,
+                background: moyen === "momo_direct" ? "var(--green-pale)" : "var(--surface)",
                 borderRadius: 10, padding: 12, cursor: "pointer", textAlign: "center",
               }}
             >
-              <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>📱</div>
+              <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>⚡</div>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem" }}>MTN MoMo</div>
-              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{MOMO_NUMBER}</div>
+              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>Paiement direct · instantané</div>
             </div>
             <div
               onClick={() => setMoyen("orange")}
@@ -187,24 +246,31 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
             >
               <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>🔶</div>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem" }}>Orange Money</div>
-              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{ORANGE_NUMBER}</div>
+              <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{ORANGE_NUMBER} · via WhatsApp</div>
             </div>
           </div>
+          {momoStatus === "waiting" && (
+            <div className="info-msg" style={{ marginTop: 8, background: "#fef3c7", color: "#92400e" }}>
+              ⏳ Vérifiez votre téléphone et validez la demande MTN MoMo…
+            </div>
+          )}
         </div>
 
         <button className="form-submit" onClick={acheter} disabled={loading}>
           {loading ? (
             <>
               <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-              Traitement...
+              {momoStatus === "waiting" ? "En attente de validation…" : "Traitement..."}
             </>
+          ) : moyen === "momo_direct" ? (
+            `⚡ Payer ${pack.prix_fcfa.toLocaleString("fr-FR")} FCFA — MTN MoMo`
           ) : (
             `💳 Payer ${pack.prix_fcfa.toLocaleString("fr-FR")} FCFA via WhatsApp`
           )}
         </button>
 
         <p style={{ fontSize: ".68rem", color: "var(--gray)", textAlign: "center", marginTop: 8 }}>
-          🔒 Paiement sécurisé · Points crédités sous 1h après confirmation
+          🔒 Paiement sécurisé · {moyen === "momo_direct" ? "Points crédités instantanément" : "Points crédités sous 1h après confirmation"}
         </p>
       </div>
     </div>
