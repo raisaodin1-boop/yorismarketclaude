@@ -240,7 +240,10 @@ export function CheckoutPage({
         return;
       }
       if (i === 1 && step >= 3) {
-        setStep(1);
+        // Le nœud "Adresse / Livraison" ramène à l'étape livraison (2), qui
+        // conserve la saisie et propose "Retour adresse" — évite de renvoyer
+        // l'utilisateur tout au début du formulaire.
+        setStep(2);
         setCheckoutError("");
       }
     },
@@ -602,6 +605,10 @@ export function CheckoutPage({
           window.location.href = payment.payment_url;
           return;
         }
+        // Pas d'URL de paiement → on ne peut pas encaisser. Ne PAS afficher un
+        // faux succès ni vider le panier : on remonte l'erreur et on conserve
+        // la clé d'idempotency pour que le retry déduplique la commande créée.
+        throw new Error(t("errors.paymentUnavailable"));
       }
 
       if (!confirmation?.order_group_id) {
@@ -760,7 +767,14 @@ export function CheckoutPage({
       phone: mergedUserData?.telephoneDisplay || mergedUserData?.telephone || "N/A",
       address: isPickup ? (pickupAddressLabel || "Retrait chez le vendeur") : (mergedUserData?.adresse || "N/A"),
       city: mergedUserData?.ville || "N/A",
-      paymentMethod: paymentMethod === "cinetpay" ? "CinetPay (Escrow)" : paymentMethod === "cod" ? "Paiement à la livraison" : "WhatsApp backup",
+      paymentMethod:
+        paymentMethod === "cinetpay"
+          ? "CinetPay (Escrow)"
+          : paymentMethod === "momo_direct"
+            ? "MTN MoMo (paiement direct)"
+            : paymentMethod === "cod"
+              ? "Paiement à la livraison"
+              : "WhatsApp backup",
       trackingCode: Array.isArray(orderDone?.deliveryTracking) && orderDone.deliveryTracking[0]?.code_suivi ? orderDone.deliveryTracking[0].code_suivi : null,
       carrier: isPickup ? "Retrait sur place" : (carrier === "yorix" ? "Yorix Delivery" : "Standard vendeur"),
       status: orderDone?.mode === "cinetpay_return" ? "Paiement confirmé" : "Commande confirmée",

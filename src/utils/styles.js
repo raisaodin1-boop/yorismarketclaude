@@ -473,6 +473,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);transi
 .qty-btn{width:36px;height:36px;background:transparent;border:none;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;color:var(--ink);font-weight:700;transition:background .15s;}
 .qty-btn:hover{background:var(--green-pale);color:var(--green);}
 .qty-val{font-size:.78rem;font-weight:700;min-width:24px;text-align:center;color:var(--ink);padding:0 2px;}
+.ci-qty-fixed{display:inline-flex;align-items:center;font-size:.72rem;font-weight:700;color:var(--gray);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;white-space:nowrap;}
 
 .ci-del{position:absolute;top:8px;right:8px;background:transparent;border:none;cursor:pointer;font-size:.9rem;color:var(--gray);width:36px;height:36px;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .ci-del:hover{background:#f8d7da;color:var(--red);}

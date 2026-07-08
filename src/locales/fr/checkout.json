@@ -98,6 +98,7 @@
     "stockInsufficient": "Stock insuffisant pour « {{product}} » : il n'en reste que {{available}} alors que vous en demandez {{requested}}. Ajustez la quantité dans votre panier.",
     "thisProduct": "ce produit",
     "network": "Connexion interrompue. Votre panier est conservé — vérifiez votre réseau et réessayez.",
-    "inProgress": "Une confirmation est déjà en cours pour cette commande. Patientez quelques secondes avant de réessayer."
+    "inProgress": "Une confirmation est déjà en cours pour cette commande. Patientez quelques secondes avant de réessayer.",
+    "paymentUnavailable": "Le paiement n'a pas pu démarrer. Choisissez un autre moyen (Espèces à la livraison ou WhatsApp) ou réessayez dans un instant."
   }
 }

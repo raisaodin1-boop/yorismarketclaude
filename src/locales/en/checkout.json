@@ -98,6 +98,7 @@
     "stockInsufficient": "Not enough stock for \"{{product}}\": only {{available}} left but you requested {{requested}}. Adjust the quantity in your cart.",
     "thisProduct": "this product",
     "network": "Connection lost. Your cart is kept — check your network and try again.",
-    "inProgress": "A confirmation is already in progress for this order. Wait a few seconds before retrying."
+    "inProgress": "A confirmation is already in progress for this order. Wait a few seconds before retrying.",
+    "paymentUnavailable": "Payment could not start. Choose another method (Cash on delivery or WhatsApp) or try again shortly."
   }
 }

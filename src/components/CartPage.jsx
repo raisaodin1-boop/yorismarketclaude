@@ -77,15 +77,21 @@ export function CartPage({
                       <div className="ci-total-price">{subtotal.toLocaleString()} FCFA</div>
                     </div>
                     <div className="cart-page-actions">
-                      <div className="ci-qty">
-                        <button className="qty-btn" onClick={() => changeQty(item.id, -1, item.kind)}>
-                          −
-                        </button>
-                        <span className="qty-val">{item.qty}</span>
-                        <button className="qty-btn" onClick={() => changeQty(item.id, 1, item.kind)}>
-                          +
-                        </button>
-                      </div>
+                      {item.kind === "service" ? (
+                        <span className="ci-qty-fixed" aria-label="Prestation — quantité fixée à 1">
+                          Prestation ×1
+                        </span>
+                      ) : (
+                        <div className="ci-qty">
+                          <button className="qty-btn" onClick={() => changeQty(item.id, -1, item.kind)}>
+                            −
+                          </button>
+                          <span className="qty-val">{item.qty}</span>
+                          <button className="qty-btn" onClick={() => changeQty(item.id, 1, item.kind)}>
+                            +
+                          </button>
+                        </div>
+                      )}
                       <button className="btn-action-sm" onClick={() => removeItem(item.id, item.kind)}>
                         Retirer
                       </button>

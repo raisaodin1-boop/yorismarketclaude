@@ -204,25 +204,33 @@ export function CartDrawer({
                           <div className="ci-unit-price">{item.prix?.toLocaleString()} FCFA</div>
                           <div className="ci-total-price">{subtotal.toLocaleString()} FCFA</div>
                         </div>
-                        <div className="ci-qty" role="group" aria-label={`Quantité pour ${item.name}`}>
-                          <button
-                            type="button"
-                            className="qty-btn"
-                            aria-label={`Diminuer la quantité de ${item.name}`}
-                            onClick={() => handleQty(item, -1)}
-                          >
-                            <Minus size={14} aria-hidden />
-                          </button>
-                          <span className="qty-val" aria-live="polite">{item.qty}</span>
-                          <button
-                            type="button"
-                            className="qty-btn"
-                            aria-label={`Augmenter la quantité de ${item.name}`}
-                            onClick={() => handleQty(item, 1)}
-                          >
-                            <Plus size={14} aria-hidden />
-                          </button>
-                        </div>
+                        {item.kind === "service" ? (
+                          // Une prestation est facturée à l'unité — pas de stepper
+                          // (le "+" était sans effet, le "-" supprimait la ligne).
+                          <span className="ci-qty-fixed" aria-label="Prestation — quantité fixée à 1">
+                            Prestation ×1
+                          </span>
+                        ) : (
+                          <div className="ci-qty" role="group" aria-label={`Quantité pour ${item.name}`}>
+                            <button
+                              type="button"
+                              className="qty-btn"
+                              aria-label={`Diminuer la quantité de ${item.name}`}
+                              onClick={() => handleQty(item, -1)}
+                            >
+                              <Minus size={14} aria-hidden />
+                            </button>
+                            <span className="qty-val" aria-live="polite">{item.qty}</span>
+                            <button
+                              type="button"
+                              className="qty-btn"
+                              aria-label={`Augmenter la quantité de ${item.name}`}
+                              onClick={() => handleQty(item, 1)}
+                            >
+                              <Plus size={14} aria-hidden />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </article>
