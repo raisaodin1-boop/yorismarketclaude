@@ -98,18 +98,25 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ reference_id: messageId, status: "pending" });
   } catch (error) {
-    await supabase.from("payment_transactions").insert({
-      checkout_intent_id: checkoutIntentId,
-      order_group_id: orderGroupId || null,
-      provider: "paynote_mtn",
-      provider_ref: null,
-      payment_method: "mtn_momo",
-      amount,
-      currency: "XAF",
-      status: "failed",
-      channel: "momo",
-      payload: { phone: msisdn, error: error.message },
-    }).catch(() => {});
+    // .insert() renvoie un PostgrestFilterBuilder thenable, pas une vraie
+    // Promise — pas de .catch() dessus (TypeError). On isole l'échec de ce
+    // log dans son propre try/catch pour ne jamais masquer l'erreur réelle.
+    try {
+      await supabase.from("payment_transactions").insert({
+        checkout_intent_id: checkoutIntentId,
+        order_group_id: orderGroupId || null,
+        provider: "paynote_mtn",
+        provider_ref: null,
+        payment_method: "mtn_momo",
+        amount,
+        currency: "XAF",
+        status: "failed",
+        channel: "momo",
+        payload: { phone: msisdn, error: error.message },
+      });
+    } catch {
+      /* best-effort */
+    }
     return res.status(502).json({ error: error.message });
   }
 }
