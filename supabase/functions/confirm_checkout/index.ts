@@ -329,15 +329,22 @@ Deno.serve(async (req) => {
       if (stockErr) {
         console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
         if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
-        return ok(
-          {
-            error: "STOCK_INSUFFICIENT",
-            product: String((item as { name_fr?: string }).name_fr || "Produit"),
-            available: 0,
-            requested: qty,
-          },
-          { status: 409 },
-        );
+        // Ne mapper en STOCK_INSUFFICIENT que si l'erreur vient réellement du
+        // contrôle de stock — toute autre erreur (schéma, permissions, etc.)
+        // était auparavant maquillée en "0 disponible", ce qui a déjà masqué
+        // un vrai bug de schéma. On la laisse remonter telle quelle sinon.
+        if (/stock insuffisant/i.test(stockErr.message)) {
+          return ok(
+            {
+              error: "STOCK_INSUFFICIENT",
+              product: String((item as { name_fr?: string }).name_fr || "Produit"),
+              available: 0,
+              requested: qty,
+            },
+            { status: 409 },
+          );
+        }
+        return ok({ error: stockErr.message }, { status: 500 });
       }
 
       if (fulfillment !== "pickup") {
