@@ -201,3 +201,14 @@
   border-style: dashed !important;
   font-weight: 800 !important;
 }
+
+.catalog-filtered-hint {
+  margin: -4px 0 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--gray);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}

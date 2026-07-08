@@ -31,6 +31,8 @@
   "heroCount": "Plus de {{count}} produits disponibles aujourd'hui",
   "allProducts": "Tous les produits",
   "resultsCount": "{{count}} résultat(s)",
+  "resultsCountFiltered": "{{count}} résultat(s) filtré(s)",
+  "filteredHint": "Filtres appliqués aux produits chargés. Affinez par catégorie ou recherche pour explorer tout le catalogue.",
   "loadError": "Impossible de charger les produits. Réessayez dans un instant.",
   "noProducts": "Aucun produit trouvé.",
   "noProductsSearch": "Aucun produit pour « {{query}} ».",

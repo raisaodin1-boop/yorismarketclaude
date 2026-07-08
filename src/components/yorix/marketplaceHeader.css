@@ -790,3 +790,40 @@
     top: auto !important;
   }
 }
+
+/* Badge « Made in Cameroun » — utilisé par MadeInCameroonBadge (ProdGrid).
+   Rapatrié depuis homePremiumMerch.css lors du nettoyage de la homepage V3. */
+.mic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.mic-badge--standard {
+  background: linear-gradient(135deg, #007a5e, #1a6b3a);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 122, 94, 0.35);
+}
+
+.mic-badge--verified {
+  background: linear-gradient(135deg, #ce1126, #fcd116 45%, #007a5e);
+  color: #fff;
+}
+
+.mic-badge--lg {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+}
+
+.prod-img-wrap .mic-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+}

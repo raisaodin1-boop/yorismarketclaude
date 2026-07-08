@@ -214,7 +214,11 @@ export function CatalogProducts({
       <div className="catalog-all-head">
         <h2>{t("catalog:allProducts")}</h2>
         <span className="yorix-catalog-meta">
-          {isLoading ? "…" : t("catalog:resultsCount", { count: hasQuickFilters ? displayProducts.length : total })}
+          {isLoading
+            ? "…"
+            : hasQuickFilters
+              ? t("catalog:resultsCountFiltered", { count: displayProducts.length })
+              : t("catalog:resultsCount", { count: total })}
         </span>
         {activeLabel && (
           <button type="button" className="btn-ghost yorix-pill--ghost" onClick={() => setParent("")}>
@@ -222,6 +226,12 @@ export function CatalogProducts({
           </button>
         )}
       </div>
+
+      {hasQuickFilters && !isLoading && (
+        <p className="catalog-filtered-hint" role="note">
+          {t("catalog:filteredHint")}
+        </p>
+      )}
 
       {isLoading ? (
         <SkeletonRow count={8} />
