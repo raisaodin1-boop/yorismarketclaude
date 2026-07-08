@@ -531,6 +531,7 @@ export function YorixPages({ ctx }) {
                     userData={userData}
                     dashTab={dashTab}
                     setDashTab={setDashTab}
+                    goPage={goPage}
                     categoryTree={categoryTree}
                     categoryFlat={categoryFlat}
                     categoryLoading={categoryLoading}
@@ -540,12 +541,12 @@ export function YorixPages({ ctx }) {
               )}
               {dashTab !== "messages" && userRole === "delivery" && (
                 <Suspense fallback={<RouteSuspenseFallback label="Chargement espace livreur..." />}>
-                  <LazyDeliveryDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab} />
+                  <LazyDeliveryDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab} goPage={goPage} />
                 </Suspense>
               )}
               {dashTab !== "messages" && userRole === "provider" && (
                 <Suspense fallback={<RouteSuspenseFallback label="Chargement espace prestataire..." />}>
-                  <LazyProviderDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab} />
+                  <LazyProviderDashboard user={user} userData={userData} dashTab={dashTab} setDashTab={setDashTab} goPage={goPage} />
                 </Suspense>
               )}
               {dashTab !== "messages" && !["seller","delivery","provider"].includes(userRole) && (

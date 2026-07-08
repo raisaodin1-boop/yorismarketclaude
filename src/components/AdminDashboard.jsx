@@ -50,6 +50,7 @@ import {
 import { resolveCountryLabel } from "../lib/importWholesale";
 import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
 import { ADMIN_NAV_ICONS } from "../lib/lucideNavIcons";
+import { MyOrdersPanel } from "./orders/MyOrdersPanel";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : ADMIN DASHBOARD — Yorix CM (version pro complète)
@@ -67,6 +68,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       "overview", "deliveries", "livreurs", "categories", "packs", "produits",
       "commandes", "utilisateurs", "vendeurs", "kyc", "prestataires", "revenus",
       "commerce_promo", "loyalty", "messagerie", "notif_center", "alertes", "finances",
+      "mes_achats",
     ],
     [],
   );
@@ -918,6 +920,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         { id: "alertes", label: t("nav.alerts"), badge: alertes.length || null },
       ];
       if (isSuperAdminUser) items.push({ id: "finances", label: "💰 Finances" });
+      items.push({ id: "mes_achats", label: "🛒 Mes achats" });
       return items.filter((n) => canWrite || n.id !== "messagerie");
     },
     [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite, pendingPacksCount, isSuperAdminUser],
@@ -2783,6 +2786,10 @@ export function AdminDashboard({ user, userData, goPage }) {
         )}
 
         {/* ════════ FINANCES (superadmin uniquement) ════════ */}
+        {adminTab === "mes_achats" && (
+          <MyOrdersPanel user={user} goPage={goPage} />
+        )}
+
         {adminTab === "finances" && isSuperAdminUser && (
           <>
             <div className="admin-page-title">

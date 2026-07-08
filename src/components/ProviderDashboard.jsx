@@ -3,11 +3,12 @@ import { supabase } from "../lib/supabase";
 import { CITIES } from "../lib/constants";
 import { DASHBOARD_SERVICES_LIMIT } from "../lib/queryLimits";
 import { showAppToast } from "../lib/appToast";
+import { MyOrdersPanel } from "./orders/MyOrdersPanel";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : DASHBOARD PROVIDER (PRESTATAIRE)
 // ─────────────────────────────────────────────────────────────
-export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
+export function ProviderDashboard({ user, userData, dashTab, setDashTab, goPage }) {
   const [demandes, setDemandes] = useState([]);
   const [serviceForm, setServiceForm]     = useState({ nom: "", categorie: "", description: "", prix: "", tarif_type: "projet", ville: "", disponible: true });
   const [serviceSaved, setServiceSaved]   = useState(false);
@@ -299,6 +300,10 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
             </div>
           )}
         </>
+      )}
+
+      {dashTab === "mesAchats" && (
+        <MyOrdersPanel user={user} goPage={goPage} />
       )}
     </>
   );

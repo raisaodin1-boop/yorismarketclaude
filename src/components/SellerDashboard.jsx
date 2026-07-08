@@ -27,6 +27,7 @@ import { SellerB2BInbox } from "./seller/SellerB2BInbox";
 import { INCOTERMS, ORIGIN_COUNTRIES, isOtherCountryCode } from "../lib/importWholesale";
 import { CountrySelectWithOther } from "./seller/CountrySelectWithOther";
 import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons.jsx";
+import { MyOrdersPanel } from "./orders/MyOrdersPanel";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : SELLER DASHBOARD — Yorix CM (version complète)
@@ -36,6 +37,7 @@ export function SellerDashboard({
   userData,
   dashTab,
   setDashTab,
+  goPage,
   categoryTree = [],
   categoryFlat = [],
   categoryLoading = false,
@@ -1338,6 +1340,10 @@ export function SellerDashboard({
             onSuccess={(amt) => setWallet(w => ({ ...w, solde: w.solde - amt }))}
           />
         </>
+      )}
+
+      {dashTab === "mesAchats" && (
+        <MyOrdersPanel user={user} goPage={goPage} />
       )}
     </>
   );

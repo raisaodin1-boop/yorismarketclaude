@@ -20,6 +20,7 @@ import {
   computeLivreurStats,
   openWhatsApp,
 } from "../utils/deliveryWorkflow";
+import { MyOrdersPanel } from "./orders/MyOrdersPanel";
 
 // ─── PETIT UTIL UI ──────────────────────────────────────────────────────────
 function StatutBadge({ statut, size = "md" }) {
@@ -461,7 +462,7 @@ function Row({ label, value, multiline }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════
-export function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
+export function DeliveryDashboard({ user, userData, dashTab, setDashTab, goPage }) {
   const [livraisons, setLivraisons] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
@@ -867,6 +868,10 @@ export function DeliveryDashboard({ user, userData, dashTab, setDashTab }) {
 
       {!loading && dashTab === "wallet" && (
         <WalletSection stats={stats} livraisons={livraisons} />
+      )}
+
+      {dashTab === "mesAchats" && (
+        <MyOrdersPanel user={user} goPage={goPage} />
       )}
     </>
   );

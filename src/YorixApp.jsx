@@ -890,6 +890,7 @@ export default function YorixApp() {
         dn("🏪", "mesProduits", "myProducts"),
         dn("➕", "ajouterProduit", "addProduct"),
         dn("📦", "commandes", "orders"),
+        { icon: "🛒", id: "mesAchats", label: "Mes achats" },
         { icon: "🏭", id: "b2bDemandes", label: tNav("dashNav.b2bRequests") },
         dn("💰", "wallet", "wallet"),
         { icon: "🤝", id: "parrainage", label: "Parrainage" },
@@ -903,6 +904,7 @@ export default function YorixApp() {
         dn("🚚", "enCours", "inProgress"),
         dn("✅", "historique", "history"),
         dn("💰", "wallet", "earnings"),
+        { icon: "🛒", id: "mesAchats", label: "Mes achats" },
       ];
     }
     if (userRole === "provider") {
@@ -911,6 +913,7 @@ export default function YorixApp() {
         dn("📋", "demandes", "requests"),
         dn("🛠️", "mesServices", "myServices"),
         dn("+", "ajouterService", "addService"),
+        { icon: "🛒", id: "mesAchats", label: "Mes achats" },
       ];
     }
     return [
