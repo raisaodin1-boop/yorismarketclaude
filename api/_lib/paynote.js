@@ -14,6 +14,7 @@
 const TOKEN_URL = "https://omapi-token.ynote.africa/oauth2/token";
 const PAYMENT_URL = "https://omapi.ynote.africa/prod/webpayment";
 const STATUS_URL = "https://omapi.ynote.africa/prod/webpayment/status";
+const BALANCE_URL = "https://omapi.ynote.africa/prod/balance/";
 
 // Cache best-effort au niveau du module : utile seulement si l'instance
 // serverless reste "chaude" entre deux appels. Sans effet si froid — dans ce
@@ -133,6 +134,42 @@ export async function checkPaynoteMtnStatus(messageId) {
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`Paynote status: ${res.status} ${body.slice(0, 200)}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Consulte le solde du compte marchand MTN via Paynote.
+ * Note : la prose de la doc indique "MTN_MOMO_CMR" pour payment_method,
+ * alors que l'exemple curl de cette section (copié d'un autre endpoint)
+ * montre "M2U_CMR" par erreur — on suit la prose, explicite pour MTN.
+ */
+export async function checkPaynoteMtnBalance() {
+  const customerkey = process.env.PAYNOTE_CUSTOMER_KEY;
+  const customersecret = process.env.PAYNOTE_CUSTOMER_SECRET;
+  if (!customerkey || !customersecret) {
+    throw new Error("PAYNOTE_CUSTOMER_KEY / PAYNOTE_CUSTOMER_SECRET manquants");
+  }
+
+  const token = await getPaynoteAccessToken();
+
+  const res = await fetch(BALANCE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      customerkey,
+      customersecret,
+      payment_method: "MTN_MOMO_CMR",
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Paynote balance: ${res.status} ${body.slice(0, 200)}`);
   }
 
   return res.json();
