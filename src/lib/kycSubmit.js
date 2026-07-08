@@ -1,20 +1,28 @@
 import { supabase } from "./supabase";
+import { logKycError, logKycEvent } from "./kycSubmitLog";
 
 /** Rafraîchit la session Supabase avant un envoi long (uploads + upsert). */
 export async function ensureFreshAuthSession() {
+  logKycEvent("session.check");
   const {
     data: { session },
     error,
   } = await supabase.auth.getSession();
   if (error || !session?.access_token) {
+    logKycError("session.missing", error || new Error("SESSION_EXPIRED"));
     throw Object.assign(new Error("SESSION_EXPIRED"), { code: "SESSION_EXPIRED" });
   }
   const expiresMs = (session.expires_at ?? 0) * 1000;
   if (expiresMs && Date.now() > expiresMs - 90_000) {
+    logKycEvent("session.refresh", { expiresInSec: Math.round((expiresMs - Date.now()) / 1000) });
     const { error: refreshErr } = await supabase.auth.refreshSession();
     if (refreshErr) {
+      logKycError("session.refresh_fail", refreshErr);
       throw Object.assign(new Error("SESSION_EXPIRED"), { code: "SESSION_EXPIRED" });
     }
+    logKycEvent("session.refresh_ok");
+  } else {
+    logKycEvent("session.ok");
   }
 }
 
@@ -43,31 +51,53 @@ function stripOptionalColumns(payload) {
 
 /** Upsert KYC avec repli si colonnes v2 absentes côté serveur. */
 export async function upsertSellerKyc(payload) {
-  const attempt = async (body) => {
+  logKycEvent("db.upsert_start", {
+    user_id: payload.user_id,
+    status: payload.status,
+    seller_category: payload.seller_category,
+    extraDocsCount: Array.isArray(payload.extra_docs) ? payload.extra_docs.length : 0,
+  });
+
+  const attempt = async (body, label) => {
     const { data, error } = await supabase
       .from("seller_kyc")
       .upsert(body, { onConflict: "user_id" })
       .select()
       .maybeSingle();
+    if (error) {
+      logKycError(`db.upsert_${label}_fail`, error, { user_id: payload.user_id });
+    }
     return { data, error };
   };
 
-  let { data, error } = await attempt(payload);
+  let { data, error } = await attempt(payload, "full");
   if (error && isMissingColumnError(error)) {
-    ({ data, error } = await attempt(stripOptionalColumns(payload)));
+    logKycEvent("db.upsert_fallback", { fallback: "strip_v2_columns" }, "warn");
+    ({ data, error } = await attempt(stripOptionalColumns(payload), "legacy"));
   }
   if (error) throw error;
 
-  if (data) return data;
+  if (data) {
+    logKycEvent("db.upsert_ok", { user_id: payload.user_id, status: data.status, id: data.id });
+    return data;
+  }
 
+  logKycEvent("db.upsert_empty_select", { user_id: payload.user_id }, "warn");
   const { data: row, error: readErr } = await supabase
     .from("seller_kyc")
     .select("*")
     .eq("user_id", payload.user_id)
     .maybeSingle();
-  if (readErr) throw readErr;
-  if (row) return row;
+  if (readErr) {
+    logKycError("db.read_after_upsert_fail", readErr, { user_id: payload.user_id });
+    throw readErr;
+  }
+  if (row) {
+    logKycEvent("db.read_after_upsert_ok", { user_id: payload.user_id, status: row.status });
+    return row;
+  }
 
+  logKycError("db.save_empty", new Error("KYC_SAVE_EMPTY"), { user_id: payload.user_id });
   throw new Error("KYC_SAVE_EMPTY");
 }
 

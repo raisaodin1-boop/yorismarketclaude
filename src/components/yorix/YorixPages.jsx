@@ -9,6 +9,7 @@ import { isAdminViewer, canWriteAdmin } from "../../lib/roles";
 import { shouldShowGlobalNewsletter } from "../../lib/pageChrome";
 import { SeoLocalIntro } from "../seo/SeoLocalIntro";
 import { ChatUsers } from "../ChatUsers";
+import { DashMobileNav, buildMobileDashNavItems } from "../dashboard/DashMobileNav";
 import {
   RouteSuspenseFallback,
   LazyHomePage,
@@ -474,7 +475,7 @@ export function YorixPages({ ctx }) {
               <div className="dash-role-badge">
                 <span className={`role-chip ${roleChipClass()}`}>{ROLE_LABELS[userRole || "buyer"]}</span>
               </div>
-              <nav className="dash-nav dash-nav--pills" aria-label="Onglets du tableau de bord">
+              <nav className="dash-nav dash-nav--pills dash-nav--desktop" aria-label="Onglets du tableau de bord">
                 {getDashNav().map((item) => (
                   <button
                     type="button"
@@ -493,6 +494,17 @@ export function YorixPages({ ctx }) {
                   💬 Messages
                 </button>
               </nav>
+              <DashMobileNav
+                items={buildMobileDashNavItems(getDashNav(), route.locale)}
+                activeId={dashTab}
+                onSelect={setDashTab}
+                messagesItem={{
+                  id: "messages",
+                  icon: "💬",
+                  label: route.locale === "en" ? "Messages" : "Messages",
+                  shortLabel: route.locale === "en" ? "Chat" : "Messages",
+                }}
+              />
             </aside>
 
             <main className="dash-content">

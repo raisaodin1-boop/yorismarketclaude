@@ -201,7 +201,7 @@ button.admin-nav-item {
   }
 
   .dash-layout--member .dash-content {
-    padding: 16px 14px calc(88px + env(safe-area-inset-bottom)) !important;
+    padding: 16px 14px calc(24px + env(safe-area-inset-bottom)) !important;
     min-width: 0 !important;
   }
 
@@ -500,12 +500,255 @@ button.admin-nav-item {
   body.page-admin .yx-back-to-top {
     bottom: calc(16px + env(safe-area-inset-bottom)) !important;
   }
+
+  /* Masquer bottom nav sur dashboard membre */
+  body.page-dashboard .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  body.page-dashboard main#main-content {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body.page-dashboard .yx-back-to-top {
+    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Nav desktop masquée — remplacée par dash-mnav */
+  .dash-nav--desktop {
+    display: none !important;
+  }
+
+  /* ── DashMobileNav (4 onglets + Plus) ── */
+  .dash-mnav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px 8px 8px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .dash-mnav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 4px 2px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--gray);
+    font-family: inherit;
+    font-size: 0.58rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .dash-mnav__item.is-active {
+    background: var(--green-pale);
+    color: var(--green);
+  }
+
+  .dash-mnav__item:active {
+    transform: scale(0.96);
+  }
+
+  .dash-mnav__icon {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .dash-mnav__label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .dash-mnav-sheet__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    border: none;
+    background: rgba(13, 31, 20, 0.45);
+    cursor: pointer;
+  }
+
+  .dash-mnav-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 401;
+    max-height: 70dvh;
+    border-radius: 20px 20px 0 0;
+    background: var(--surface);
+    box-shadow: 0 -12px 40px rgba(13, 31, 20, 0.15);
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: dashMnavSheetIn 0.28s cubic-bezier(0.32, 0, 0.15, 1);
+  }
+
+  @keyframes dashMnavSheetIn {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .dash-mnav-sheet__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dash-mnav-sheet__head strong {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 0.95rem;
+  }
+
+  .dash-mnav-sheet__head button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .dash-mnav-sheet__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 16px;
+    overflow-y: auto;
+    max-height: calc(70dvh - 64px);
+  }
+
+  .dash-mnav-sheet__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface2);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .dash-mnav-sheet__item.is-active {
+    background: var(--green-pale);
+    border-color: var(--green-light);
+    color: var(--green);
+  }
+
+  /* ── Panier mobile — barre paiement fixe ── */
+  .cart-mobile-paybar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(62px + env(safe-area-inset-bottom));
+    z-index: 190;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 24px rgba(13, 31, 20, 0.08);
+  }
+
+  body:has(.yx-mobile-auth-strip) .cart-mobile-paybar {
+    bottom: calc(114px + env(safe-area-inset-bottom));
+  }
+
+  .cart-mobile-paybar__total {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .cart-mobile-paybar__lbl {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cart-mobile-paybar__total strong {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--green);
+  }
+
+  .cart-mobile-paybar__btn {
+    flex-shrink: 0;
+    min-height: 48px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--green);
+    color: #fff;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 4px 14px rgba(26, 107, 58, 0.28);
+  }
+
+  .cart-page-wrap {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body.page-checkout .checkout-page-wrap {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Tiroir panier — scroll items + footer visible */
+  .cart-drawer__body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
 }
 
 @media (min-width: 769px) {
   .dash-mobile-bar,
   .admin-mobile-quickbar,
-  .admin-mobile-actions {
+  .admin-mobile-actions,
+  .dash-mnav,
+  .dash-mnav-sheet,
+  .dash-mnav-sheet__backdrop,
+  .cart-mobile-paybar {
     display: none;
   }
 }

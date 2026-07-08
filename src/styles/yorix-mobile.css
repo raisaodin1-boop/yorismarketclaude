@@ -501,11 +501,11 @@ button,
 
 /* ─── Dashboard mobile ─── */
 @media (max-width: 768px) {
-  .dash-layout {
+  .dash-layout:not(.dash-layout--member) {
     flex-direction: column !important;
   }
 
-  .dash-sidebar {
+  .dash-layout:not(.dash-layout--member) .dash-sidebar {
     position: sticky !important;
     top: 0 !important;
     z-index: 40 !important;

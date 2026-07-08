@@ -178,6 +178,18 @@ export function CartPage({
           </div>
         </div>
       )}
+
+      {cartItems.length > 0 && (
+        <div className="cart-mobile-paybar" role="region" aria-label="Paiement rapide">
+          <div className="cart-mobile-paybar__total">
+            <span className="cart-mobile-paybar__lbl">Total</span>
+            <strong>{cartSummary.total.toLocaleString()} FCFA</strong>
+          </div>
+          <button type="button" className="cart-mobile-paybar__btn" onClick={() => goPage("checkout")}>
+            Passer au paiement
+          </button>
+        </div>
+      )}
     </section>
   );
 }

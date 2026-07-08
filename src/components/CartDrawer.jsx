@@ -166,7 +166,7 @@ export function CartDrawer({
             )}
           </div>
         ) : (
-          <>
+          <div className="cart-drawer__body">
             <div className="cart-items">
               {cartItems.map((item) => {
                 const subtotal = item.prix * item.qty;
@@ -264,7 +264,7 @@ export function CartDrawer({
                 Voir panier complet
               </button>
             </div>
-          </>
+          </div>
         )}
       </aside>
     </>
