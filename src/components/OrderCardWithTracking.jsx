@@ -65,7 +65,7 @@ export function OrderCardWithTracking({ commande, goPage }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 700,
               fontSize: ".88rem",
               color: "var(--ink)",
@@ -118,7 +118,7 @@ export function OrderCardWithTracking({ commande, goPage }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: ".95rem",
                   color: "var(--green)",
@@ -154,7 +154,7 @@ export function OrderCardWithTracking({ commande, goPage }) {
               border: "none",
               padding: "8px 14px",
               borderRadius: 9,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 700,
               fontSize: ".78rem",
               cursor: "pointer",

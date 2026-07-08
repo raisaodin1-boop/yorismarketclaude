@@ -90,7 +90,7 @@ export function YorixAuthModal({
                   }}
                 >
                   <div style={{ fontSize: "1.8rem", marginBottom: 4 }}>{r.icon}</div>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem", color: "var(--ink)" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".82rem", color: "var(--ink)" }}>
                     {r.label}
                   </div>
                   <div style={{ fontSize: ".67rem", color: "var(--gray)", marginTop: 2 }}>{r.desc}</div>
@@ -114,7 +114,7 @@ export function YorixAuthModal({
                     value={authForm.refCode || ""}
                     onChange={(e) => setAuthForm((f) => ({ ...f, refCode: e.target.value.toUpperCase().slice(0, 6) }))}
                     maxLength={6}
-                    style={{ paddingLeft: 36, fontFamily: "'Syne',sans-serif", fontWeight: 700, letterSpacing: ".1em" }}
+                    style={{ paddingLeft: 36, fontFamily: "var(--font-display)", fontWeight: 700, letterSpacing: ".1em" }}
                     autoComplete="off"
                   />
                   <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none" }}>🤝</span>

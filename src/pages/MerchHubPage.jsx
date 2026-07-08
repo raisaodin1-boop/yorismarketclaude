@@ -1,21 +1,14 @@
 import { useMemo, useState } from "react";
+import { Package, Boxes } from "lucide-react";
 import { ProdGrid } from "../components/ProdGrid";
+import { WholesaleHubHeader } from "../components/wholesale/WholesaleHubHeader";
+import { MadeInCameroonHubHeader } from "../components/madeIn/MadeInCameroonHubHeader";
 import { MERCH_HUBS } from "../lib/merchHubs";
 import { productMoq } from "../lib/productMoq.js";
 import { useMerchHubProducts } from "../hooks/useMerchHubProducts";
 import "./merchHubPage.css";
 
 const HUB_TIPS = {
-  "made-in-cameroun": {
-    fr: [
-      "Produits déclarés ou vérifiés Made in Cameroun par les vendeurs.",
-      "Soutenez l'économie locale : artisans, marques et producteurs nationaux.",
-    ],
-    en: [
-      "Products declared or verified Made in Cameroon by sellers.",
-      "Support the local economy: artisans, brands and national producers.",
-    ],
-  },
   "top-produits": {
     fr: ["Meilleures ventes et nouveautés plébiscitées par les acheteurs."],
     en: ["Best sellers and new arrivals popular with buyers."],
@@ -24,23 +17,13 @@ const HUB_TIPS = {
     fr: ["Promos, offres flash et prix réduits — stock limité."],
     en: ["Deals, flash offers and discounted prices — limited stock."],
   },
-  "sourcer-en-gros": {
-    fr: [
-      "Filtrez par quantité minimum (MOQ) pour vos achats professionnels.",
-      "Fournisseurs vérifiés, Protect+ et escrow sur les annonces éligibles.",
-    ],
-    en: [
-      "Filter by minimum order quantity (MOQ) for professional buying.",
-      "Verified suppliers, Protect+ and escrow on eligible listings.",
-    ],
-  },
 };
 
 const MOQ_FILTERS = [
-  { id: "all", fr: "Tous", en: "All" },
-  { id: "1", fr: "1 pc", en: "1 pc" },
-  { id: "5", fr: "MOQ 5+", en: "MOQ 5+" },
-  { id: "10", fr: "MOQ 10+", en: "MOQ 10+" },
+  { id: "all", fr: "Tous", en: "All", icon: null },
+  { id: "1", fr: "1 pc", en: "1 pc", icon: Package },
+  { id: "5", fr: "Min. 5+", en: "Min. 5+", icon: Boxes },
+  { id: "10", fr: "Min. 10+", en: "Min. 10+", icon: Boxes },
 ];
 
 function filterByMoq(products, moqFilter) {
@@ -67,14 +50,16 @@ export function MerchHubPage({
 }) {
   const hub = MERCH_HUBS[merchHub];
   const isEn = locale === "en";
+  const isWholesaleHub = merchHub === "sourcer-en-gros";
+  const isMadeInHub = merchHub === "made-in-cameroun";
   const { products, isLoading } = useMerchHubProducts(merchHub);
   const tips = HUB_TIPS[merchHub]?.[isEn ? "en" : "fr"] || [];
   const [moqFilter, setMoqFilter] = useState("all");
 
   const displayProducts = useMemo(() => {
-    if (merchHub !== "sourcer-en-gros") return products;
+    if (!isWholesaleHub) return products;
     return filterByMoq(products, moqFilter);
-  }, [products, merchHub, moqFilter]);
+  }, [products, isWholesaleHub, moqFilter]);
 
   if (!hub) {
     return (
@@ -88,30 +73,38 @@ export function MerchHubPage({
   }
 
   return (
-    <section className="mhub-page sec anim yorix-page-flow">
-      <header className={`mhub-hero mhub-hero--${hub.theme}`}>
+    <section className={`mhub-page sec anim yorix-page-flow${isWholesaleHub ? " mhub-page--wholesale" : ""}${isMadeInHub ? " mhub-page--made-in" : ""}`}>
+      <header className={`mhub-hero mhub-hero--${hub.theme}${isWholesaleHub || isMadeInHub ? " mhub-hero--hub-compact" : ""}`}>
         <span className="mhub-hero-emoji" aria-hidden>
           {hub.emoji}
         </span>
-        <h1 className="mhub-hero-title">{isEn ? hub.titleEn : hub.titleFr}</h1>
-        <p className="mhub-hero-desc">{isEn ? hub.descEn : hub.descFr}</p>
-        {merchHub === "made-in-cameroun" && (
-          <p className="mhub-hero-note">
-            {isEn
-              ? "🇨🇲 Badge: seller choice + auto-detection + admin verification (✔)"
-              : "🇨🇲 Badge : choix vendeur + détection auto + validation admin (✔)"}
+        <h1 className="mhub-hero-title">
+          {isEn ? hub.titleEn : hub.titleFr}
+          {isWholesaleHub && (
+            <span className="mhub-hero-title-sub">
+              {isEn ? "Import without leaving your shop" : "Importez sans quitter votre boutique"}
+            </span>
+          )}
+          {isMadeInHub && (
+            <span className="mhub-hero-title-sub mhub-hero-title-sub--mic">
+              {isEn ? "Eat, wear and live Cameroonian" : "Mangez, portez et vivez camerounais"}
+            </span>
+          )}
+        </h1>
+        {(isWholesaleHub || isMadeInHub) ? (
+          <p className={`mhub-hero-desc${isWholesaleHub ? " mhub-hero-desc--wholesale" : " mhub-hero-desc--mic"}`}>
+            {isEn ? hub.descEn : hub.descFr}
           </p>
-        )}
-        {merchHub === "sourcer-en-gros" && (
-          <p className="mhub-hero-note">
-            {isEn
-              ? "B2B sourcing hub — filter by MOQ, contact suppliers via chat on product pages."
-              : "Hub sourcing B2B — filtrez par MOQ, contactez les fournisseurs via le chat sur les fiches produit."}
-          </p>
+        ) : (
+          <p className="mhub-hero-desc">{isEn ? hub.descEn : hub.descFr}</p>
         )}
       </header>
 
-      {tips.length > 0 && (
+      {isMadeInHub && <MadeInCameroonHubHeader locale={locale} />}
+
+      {isWholesaleHub && <WholesaleHubHeader locale={locale} goPage={goPage} />}
+
+      {!isWholesaleHub && !isMadeInHub && tips.length > 0 && (
         <ul className="mhub-tips">
           {tips.map((tip) => (
             <li key={tip}>{tip}</li>
@@ -119,18 +112,30 @@ export function MerchHubPage({
         </ul>
       )}
 
-      {merchHub === "sourcer-en-gros" && (
-        <div className="mhub-moq-filters" role="group" aria-label={isEn ? "MOQ filter" : "Filtre MOQ"}>
-          {MOQ_FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              className={`mhub-moq-btn${moqFilter === f.id ? " is-active" : ""}`}
-              onClick={() => setMoqFilter(f.id)}
-            >
-              {isEn ? f.en : f.fr}
-            </button>
-          ))}
+      {isWholesaleHub && (
+        <div
+          className="mhub-moq-filters mhub-moq-filters--wholesale"
+          role="group"
+          aria-label={isEn ? "Minimum quantity filter" : "Filtre quantité minimale"}
+        >
+          <span className="mhub-moq-filters__lbl">
+            <Boxes size={14} aria-hidden />
+            {isEn ? "Min. order qty" : "Quantité minimale"}
+          </span>
+          {MOQ_FILTERS.map((f) => {
+            const Icon = f.icon;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                className={`mhub-moq-btn${moqFilter === f.id ? " is-active" : ""}`}
+                onClick={() => setMoqFilter(f.id)}
+              >
+                {Icon && <Icon size={13} aria-hidden />}
+                {isEn ? f.en : f.fr}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -155,6 +160,8 @@ export function MerchHubPage({
           onOpenProductUrl={openProductUrl}
           onOpenSellerUrl={openSellerUrl}
           siteLocale={locale}
+          wholesaleMode={isWholesaleHub}
+          madeInMode={isMadeInHub}
         />
       )}
     </section>

@@ -40,7 +40,7 @@ class ProductCardModern extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              YorixNetworkImage(url: product.imageUrl),
+              YorixNetworkImage(url: product.imageUrl, width: 300, height: 300),
               if (product.promo || product.flash) _PromoRibbon(product: product),
               if (product.sponsored)
                 Positioned(
@@ -72,6 +72,8 @@ class ProductCardModern extends StatelessWidget {
               children: [
                 YorixNetworkImage(
                   url: product.imageUrl,
+                  width: 220,
+                  height: 220,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 if (product.promo) _PromoRibbon(product: product),

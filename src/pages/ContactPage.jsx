@@ -166,7 +166,7 @@ export function ContactPage({ goPage }) {
       --con-shadow: 0 12px 30px rgba(0,0,0,.08);
       --con-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
       --con-err: #dc2626;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--con-ink);
     }
     .yorix-con-v3 * { box-sizing: border-box; }
@@ -245,7 +245,7 @@ export function ContactPage({ goPage }) {
       50%      { opacity: .5; transform: scale(1.4); }
     }
     .ycon3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -325,7 +325,7 @@ export function ContactPage({ goPage }) {
       transform: scale(1.1) rotate(-5deg);
     }
     .ycon3-channel-label {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: .72rem;
       font-weight: 700;
       color: var(--con-gray);
@@ -334,7 +334,7 @@ export function ContactPage({ goPage }) {
       margin-bottom: 6px;
     }
     .ycon3-channel-value {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--con-ink);
@@ -353,7 +353,7 @@ export function ContactPage({ goPage }) {
       gap: 5px;
       padding: 8px 16px;
       border-radius: 9px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: .78rem;
       cursor: pointer;
@@ -401,7 +401,7 @@ export function ContactPage({ goPage }) {
       margin-bottom: 12px;
     }
     .ycon3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -455,7 +455,7 @@ export function ContactPage({ goPage }) {
       transform: scale(1.15) rotate(-5deg);
     }
     .ycon3-quick-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: .92rem;
       font-weight: 800;
       color: var(--con-ink);
@@ -476,7 +476,7 @@ export function ContactPage({ goPage }) {
     .ycon3-faq-q {
       width: 100%; text-align: left; padding: 14px 16px;
       border: none; background: transparent; cursor: pointer;
-      font-family: 'Syne', sans-serif; font-weight: 800; font-size: .82rem;
+      font-family: var(--font-display); font-weight: 800; font-size: .82rem;
       color: var(--con-ink); display: flex; justify-content: space-between; gap: 10px;
     }
     .ycon3-faq-q:focus-visible { outline: 3px solid var(--con-green); outline-offset: -2px; }
@@ -517,7 +517,7 @@ export function ContactPage({ goPage }) {
       flex-shrink: 0;
     }
     .ycon3-form-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.2rem;
       font-weight: 800;
       color: var(--con-ink);
@@ -555,7 +555,7 @@ export function ContactPage({ goPage }) {
       border: 1.5px solid var(--con-border);
       background: var(--con-surface);
       color: var(--con-ink);
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-size: .88rem;
       outline: none;
       transition: all .15s;
@@ -577,7 +577,7 @@ export function ContactPage({ goPage }) {
     .ycon3-textarea {
       min-height: 130px;
       resize: vertical;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
     }
     .ycon3-submit {
       width: 100%;
@@ -586,7 +586,7 @@ export function ContactPage({ goPage }) {
       color: #0d1f14;
       border: none;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .92rem;
       cursor: pointer;
@@ -643,7 +643,7 @@ export function ContactPage({ goPage }) {
       flex-shrink: 0;
     }
     .ycon3-info-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       color: var(--con-ink);
@@ -672,7 +672,7 @@ export function ContactPage({ goPage }) {
     .ycon3-office-emoji { font-size: 1.6rem; width: 38px; text-align: center; }
     .ycon3-office-text { flex: 1; }
     .ycon3-office-city {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .92rem;
       color: var(--con-ink);
@@ -709,7 +709,7 @@ export function ContactPage({ goPage }) {
     .ycon3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;

@@ -42,7 +42,7 @@ import { useCategoryTaxonomy } from "./hooks/useCategoryTaxonomy.js";
 import { useGlobalProducts } from "./hooks/useGlobalProducts.js";
 import { useYorixNotifications } from "./hooks/useYorixNotifications.js";
 import { SeoHead } from "./components/seo/SeoHead";
-import i18n from "./i18n/index.js";
+import { setSiteLanguage } from "./i18n/index.js";
 import { supabase, YORIX_WA_NUMBER } from "./lib/supabase";
 import { CATS, PREST_DATA } from "./lib/constants";
 import { isAdminViewer } from "./lib/roles";
@@ -91,7 +91,7 @@ export default function YorixApp() {
   }, [route.localeRewriteTo, location.pathname, location.search, location.hash, navigate]);
 
   useEffect(() => {
-    void i18n.changeLanguage(route.locale === "en" ? "en" : "fr");
+    setSiteLanguage(route.locale === "en" ? "en" : "fr");
   }, [route.locale]);
 
   const hrefLangAlternates = useMemo(
@@ -202,7 +202,7 @@ export default function YorixApp() {
       ticking = true;
       requestAnimationFrame(() => {
         ticking = false;
-        setNavCompact(window.scrollY > 16);
+        setNavCompact(window.scrollY > 48);
       });
     };
     onScroll();
@@ -809,6 +809,7 @@ export default function YorixApp() {
         "faq",
         "devenirVendeur",
         "devenirLivreur",
+        "importSupplier",
         "inscription",
         "business",
         "academy",
@@ -879,6 +880,7 @@ export default function YorixApp() {
         dn("🏪", "mesProduits", "myProducts"),
         dn("➕", "ajouterProduit", "addProduct"),
         dn("📦", "commandes", "orders"),
+        { icon: "🏭", id: "b2bDemandes", label: tNav("dashNav.b2bRequests") },
         dn("💰", "wallet", "wallet"),
         { icon: "🤝", id: "parrainage", label: "Parrainage" },
         { icon: "🛡", id: "kyc", label: "Vérification" },
@@ -904,6 +906,7 @@ export default function YorixApp() {
     return [
       dn("📊", "overview", "overview"),
       dn("📦", "commandes", "myOrders"),
+      { icon: "🏭", id: "b2bDemandes", label: tNav("dashNav.b2bRequests") },
       dn("❤️", "favoris", "favorites"),
       dn("🌟", "loyalty", "loyalty"),
       { icon: "🤝", id: "parrainage", label: "Parrainage" },
@@ -1346,6 +1349,7 @@ export default function YorixApp() {
       mentions: "Mentions légales — Yorix.cm",
       devenirVendeur: "Devenir vendeur sur Yorix — marketplace Cameroun",
       devenirLivreur: "Devenir livreur Yorix Ride — livraison Cameroun",
+      importSupplier: "Fournisseur import & gros — Chine → Cameroun | Yorix B2B",
       inscription: "Devenir prestataire Yorix — services Cameroun",
     };
     const fallbackDescription = {
@@ -1379,6 +1383,8 @@ export default function YorixApp() {
         "Devenir vendeur sur Yorix.cm : créez votre boutique marketplace, gagnez en visibilité et encaissez via Mobile Money au Cameroun.",
       devenirLivreur:
         "Devenir livreur Yorix Ride : rejoignez le réseau de livraison au Cameroun, recevez des missions et suivez vos gains.",
+      importSupplier:
+        "Fournisseurs import Chine et internationaux : publiez en gros sur Yorix, MOQ, Incoterms, devis B2B et escrow pour le Cameroun.",
       inscription:
         "Devenir prestataire Yorix : proposez vos services au Cameroun, recevez des demandes clients et développez votre activité locale.",
       bonsPlans:
@@ -1401,6 +1407,7 @@ export default function YorixApp() {
       mentions: "Mentions légales",
       devenirVendeur: "Devenir vendeur",
       devenirLivreur: "Devenir livreur",
+      importSupplier: "Fournisseur import",
       inscription: "Devenir prestataire",
       bonsPlans: "Bons plans",
     };
@@ -1452,6 +1459,7 @@ export default function YorixApp() {
     userRole,
     dark,
     goPage,
+    goDash,
     filterCat,
     setFilterCat,
     categoryFilter,
@@ -1652,9 +1660,7 @@ export default function YorixApp() {
         navQuickRef={navQuickRef}
         navQuickOpen={navQuickOpen}
         setNavQuickOpen={setNavQuickOpen}
-        TABS={TABS}
         tabActive={tabActive}
-        commerceDeliveryPolicy={commerceDeliveryPolicy}
         roleChipClass={roleChipClass}
       />
 
@@ -1699,7 +1705,14 @@ export default function YorixApp() {
       />
 
       {shouldShowSiteFooter(page) && (
-        <PremiumSiteFooter goPage={goPage} freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf} />
+        <PremiumSiteFooter
+          goPage={goPage}
+          freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf}
+          nlEmail={nlEmail}
+          setNlEmail={setNlEmail}
+          nlSent={nlSent}
+          setNlSent={setNlSent}
+        />
       )}
 
       <CommandPalette
@@ -1721,9 +1734,11 @@ export default function YorixApp() {
       <MobileBottomNav
         page={page}
         cartQty={totalQty}
+        wishlistCount={wishlist.size}
         user={user}
         onOpenCart={openCart}
         goPage={goPage}
+        goDash={goDash}
         onOpenUser={() => { setAuthTab("login"); setAuthOpen(true); }}
       />
     </>

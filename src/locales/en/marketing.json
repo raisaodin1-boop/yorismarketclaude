@@ -1,0 +1,8 @@
+{
+  "loading": "Loading…",
+  "hubNotFound": "Hub not found.",
+  "emptyHub": "No products in this selection yet.",
+  "browseCatalog": "Browse catalog",
+  "providersFound": "{{count}} provider(s) found",
+  "instantUpdate": "{{count}} provider(s) — live updates"
+}

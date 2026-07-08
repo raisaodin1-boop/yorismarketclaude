@@ -241,7 +241,7 @@ export function HelpCentrePage({ goPage }) {
       --hlp-shadow: 0 12px 30px rgba(0,0,0,.08);
       --hlp-shadow-hover: 0 22px 50px rgba(0,0,0,.14);
 
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--hlp-ink);
     }
     .yorix-hlp-v3 * { box-sizing: border-box; }
@@ -320,7 +320,7 @@ export function HelpCentrePage({ goPage }) {
       50%      { opacity: .5; transform: scale(1.4); }
     }
     .yhlp3-h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(2rem, 5vw, 3rem);
       font-weight: 800;
       line-height: 1.07;
@@ -361,7 +361,7 @@ export function HelpCentrePage({ goPage }) {
       background: rgba(255,255,255,.12);
       backdrop-filter: blur(10px);
       color: #fff;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       font-size: .95rem;
       outline: none;
       transition: all .2s;
@@ -464,7 +464,7 @@ export function HelpCentrePage({ goPage }) {
       margin-bottom: 12px;
     }
     .yhlp3-h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: clamp(1.5rem, 3.5vw, 2.1rem);
       font-weight: 800;
       line-height: 1.15;
@@ -553,7 +553,7 @@ export function HelpCentrePage({ goPage }) {
       margin-bottom: 8px;
     }
     .yhlp3-popular-title {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       color: var(--hlp-ink);
@@ -571,7 +571,7 @@ export function HelpCentrePage({ goPage }) {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: .78rem;
       color: var(--hlp-green);
@@ -662,7 +662,7 @@ export function HelpCentrePage({ goPage }) {
     .yhlp3-faq-item summary::-webkit-details-marker { display: none; }
     .yhlp3-faq-item summary::after {
       content: '+';
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.6rem;
       color: var(--hlp-green);
       transition: transform .25s;
@@ -693,7 +693,7 @@ export function HelpCentrePage({ goPage }) {
       opacity: .55;
     }
     .yhlp3-empty h3 {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--hlp-ink);
@@ -750,7 +750,7 @@ export function HelpCentrePage({ goPage }) {
     .yhlp3-btn {
       padding: 13px 24px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;
@@ -934,7 +934,7 @@ export function HelpCentrePage({ goPage }) {
                   <div key={cat.id} style={{ marginBottom: 20 }}>
                     <div
                       style={{
-                        fontFamily: "'Syne',sans-serif",
+                        fontFamily: "var(--font-display)",
                         fontWeight: 800,
                         fontSize: ".95rem",
                         color: cat.color,

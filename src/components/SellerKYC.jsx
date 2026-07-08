@@ -2,6 +2,25 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
 import { uploadCloudinaryFile } from "../utils/helpers";
+import {
+  SELLER_CATEGORIES,
+  categoryLabel,
+  kycChecklist,
+  validateKycSubmission,
+} from "../lib/sellerKyc";
+import {
+  BUSINESS_REGISTRATION_COUNTRIES,
+  IMPORT_BUSINESS_COUNTRIES,
+  isOtherCountryCode,
+  resolveCountryLabel,
+} from "../lib/importWholesale";
+import { CountrySelectWithOther } from "./seller/CountrySelectWithOther";
+import {
+  ensureFreshAuthSession,
+  formatKycError,
+  mergeExtraDocs,
+  upsertSellerKyc,
+} from "../lib/kycSubmit";
 
 // Compresse une image via canvas — réduit les photos mobile (5-10 MB) à ~300 KB
 async function compressImage(file, maxPx = 1200, quality = 0.82) {
@@ -126,20 +145,32 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   const [form, setForm] = useState({
     full_name: "", birth_date: "", birth_place: "", cni_number: "", cni_expiry: "",
     phone: userPhone || "", email: userEmail || "", whatsapp: "",
+    seller_category: "online",
     seller_type: "particulier", company_name: "", rccm: "",
+    business_country: "Cameroun",
+    business_country_code: "CM",
+    business_country_other: "",
     country: "Cameroun", city: "", quartier: "", address: "",
+    location_map_url: "",
     declaration: false,
   });
 
-  // Fichiers
-  const [fileCniR, setFileCniR]     = useState(null);
-  const [fileCniV, setFileCniV]     = useState(null);
+  const [fileCniR, setFileCniR] = useState(null);
+  const [fileCniV, setFileCniV] = useState(null);
   const [fileSelfie, setFileSelfie] = useState(null);
-  const [fileShop, setFileShop]     = useState(null);
+  const [fileShop, setFileShop] = useState(null);
+  const [fileShopPlan, setFileShopPlan] = useState(null);
+  const [fileLocationProof, setFileLocationProof] = useState(null);
+  const [fileRccmDoc, setFileRccmDoc] = useState(null);
+  const [fileLegalDocs, setFileLegalDocs] = useState([]);
+  const [fileImportProofs, setFileImportProofs] = useState([]);
   const refCniR   = useRef(null);
   const refCniV   = useRef(null);
   const refSelfie = useRef(null);
   const refShop   = useRef(null);
+  const refShopPlan = useRef(null);
+  const refLocationProof = useRef(null);
+  const refRccmDoc = useRef(null);
   const initialLoad = useRef(true);
 
   const upd = (field, val) => setForm(f => ({ ...f, [field]: val }));
@@ -153,12 +184,18 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   // ── Chargement initial : Supabase en priorité, sinon localStorage ──
   useEffect(() => {
     if (!userId) return;
-    supabase.from("seller_kyc").select("*").eq("user_id", userId).maybeSingle()
-      .then(({ data }) => {
+    let cancelled = false;
+    supabase
+      .from("seller_kyc")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn("KYC load:", error.message);
         if (data) {
           setKyc(data);
           populateForm(data);
-          // Restaurer l'étape depuis localStorage si plus avancée
           try {
             const raw = localStorage.getItem(`kyc_draft_${userId}`);
             if (raw) {
@@ -168,21 +205,32 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
               }
             }
           } catch {}
-        } else {
-          // Aucun enregistrement Supabase → essayer localStorage
+        } else if (!error) {
           try {
             const raw = localStorage.getItem(`kyc_draft_${userId}`);
             if (raw) {
               const draft = JSON.parse(raw);
-              if (draft.form) setForm(f => ({ ...f, ...draft.form }));
+              if (draft.form) setForm((f) => ({ ...f, ...draft.form }));
               if (draft.step) setStep(draft.step);
               showAppToast("Brouillon restauré — continuez où vous étiez !", "success", 4000);
             }
           } catch {}
         }
         setLoading(false);
-        setTimeout(() => { initialLoad.current = false; }, 100);
+        setTimeout(() => {
+          initialLoad.current = false;
+        }, 100);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.warn("KYC load:", err?.message || err);
+          setLoading(false);
+          initialLoad.current = false;
+        }
       });
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   const populateForm = (data) => {
@@ -197,12 +245,17 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       email:        data.email        || userEmail || "",
       whatsapp:     data.whatsapp     || "",
       seller_type:  data.seller_type  || "particulier",
+      seller_category: data.seller_category || (data.seller_type === "entreprise" ? "local_business" : "online"),
       company_name: data.company_name || "",
       rccm:         data.rccm         || "",
+      business_country: data.business_country || data.country || "Cameroun",
+      business_country_code: data.business_country_code || data.business_country || "CM",
+      business_country_other: data.business_country_other || "",
       country:      data.country      || "Cameroun",
       city:         data.city         || "",
       quartier:     data.quartier     || "",
       address:      data.address      || "",
+      location_map_url: data.location_map_url || "",
       declaration:  data.declaration  || false,
     }));
   };
@@ -210,11 +263,14 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   // ── Sauvegarde partielle vers Supabase (champs texte seulement) ──
   const saveDraft = async (fields = {}) => {
     try {
-      await supabase.from("seller_kyc").upsert(
+      const { error } = await supabase.from("seller_kyc").upsert(
         { user_id: userId, status: "draft", updated_at: new Date().toISOString(), ...fields },
-        { onConflict: "user_id" }
+        { onConflict: "user_id" },
       );
-    } catch {}
+      if (error) console.warn("KYC draft save:", error.message);
+    } catch (err) {
+      console.warn("KYC draft save:", err?.message || err);
+    }
   };
 
   const slotToField = { cni_recto: "doc_url", cni_verso: "doc_url2", selfie: "selfie_url", shop: "shop_photo_url" };
@@ -236,79 +292,165 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
     }
   };
 
+  const uploadMany = async (files, type, labelPrefix) => {
+    const out = [];
+    for (let i = 0; i < files.length; i += 1) {
+      const url = await uploadFile(files[i], type);
+      out.push({ type, url, label: `${labelPrefix} ${i + 1}` });
+    }
+    return out;
+  };
+
   const handleSubmit = async () => {
     if (!form.declaration) { showAppToast("Veuillez accepter la déclaration sur l'honneur", "error"); return; }
-    if (!fileCniR && !kyc?.doc_url)  { showAppToast("La photo recto de la CNI est obligatoire", "error"); return; }
-    if (!fileSelfie && !kyc?.selfie_url) { showAppToast("Le selfie avec votre CNI est obligatoire", "error"); return; }
+
+    const preCheck = validateKycSubmission(kyc, form, {
+      cni_recto: fileCniR || kyc?.doc_url,
+      selfie: fileSelfie || kyc?.selfie_url,
+      shop_plan: fileShopPlan,
+      location_proof: fileLocationProof,
+      rccm_doc: fileRccmDoc,
+      legal_docs: fileLegalDocs,
+      import_proofs: fileImportProofs,
+    });
+    if (!preCheck.ok) { showAppToast(preCheck.message, "error", 5000); return; }
+
     setSaving(true);
     try {
-      // Uploads séquentiels pour éviter les timeouts sur connexion mobile
-      const url1      = fileCniR   ? await uploadFile(fileCniR,   "cni_recto") : (kyc?.doc_url        || null);
-      const url2      = fileCniV   ? await uploadFile(fileCniV,   "cni_verso") : (kyc?.doc_url2       || null);
-      const urlSelfie = fileSelfie ? await uploadFile(fileSelfie, "selfie")    : (kyc?.selfie_url     || null);
-      const urlShop   = fileShop   ? await uploadFile(fileShop,   "shop")      : (kyc?.shop_photo_url || null);
+      await ensureFreshAuthSession();
 
-      const isFullKyc = Boolean(urlSelfie && urlShop && (form.seller_type === "particulier" || form.rccm));
-      const payload = {
-        user_id:        userId,
-        full_name:      form.full_name,
-        birth_date:     form.birth_date   || null,
-        birth_place:    form.birth_place,
-        cni_number:     form.cni_number,
-        cni_expiry:     form.cni_expiry   || null,
-        phone:          form.phone,
-        email:          form.email,
-        whatsapp:       form.whatsapp     || null,
-        seller_type:    form.seller_type,
-        company_name:   form.company_name || null,
-        rccm:           form.rccm         || null,
-        country:        form.country,
-        city:           form.city,
-        quartier:       form.quartier,
-        address:        form.address,
-        declaration:    form.declaration,
-        doc_url:        url1,
-        doc_url2:       url2,
-        selfie_url:     urlSelfie,
-        shop_photo_url: urlShop,
-        status:         "pending",
-        kyc_level:      isFullKyc ? "full" : "lite",
-        submitted_at:   new Date().toISOString(),
-        updated_at:     new Date().toISOString(),
-        reviewer_note:  null,
+      const uploadIfNeeded = async (file, slot, existingUrl) => {
+        if (file) return uploadFile(file, slot);
+        return existingUrl || null;
       };
 
-      const { error: upsertErr } = await supabase.from("seller_kyc").upsert(payload, { onConflict: "user_id" });
-      if (upsertErr) throw upsertErr;
+      const [url1, url2, urlSelfie, urlShop] = await Promise.all([
+        uploadIfNeeded(fileCniR, "cni_recto", kyc?.doc_url),
+        uploadIfNeeded(fileCniV, "cni_verso", kyc?.doc_url2),
+        uploadIfNeeded(fileSelfie, "selfie", kyc?.selfie_url),
+        uploadIfNeeded(fileShop, "shop", kyc?.shop_photo_url),
+      ]);
 
-      await supabase.from("notifications").insert({
+      await ensureFreshAuthSession();
+
+      const additions = [];
+      const pushExtra = async (file, slot, type, label) => {
+        if (!file) return;
+        additions.push({ type, url: await uploadFile(file, slot), label });
+      };
+
+      await Promise.all([
+        pushExtra(fileShopPlan, "shop_plan", "shop_plan", "Plan boutique"),
+        pushExtra(fileLocationProof, "location_proof", "location_proof", "Justificatif local"),
+        pushExtra(fileRccmDoc, "rccm", "rccm", "RCCM"),
+      ]);
+
+      const legalUploaded = fileLegalDocs.length ? await uploadMany(fileLegalDocs, "legal_doc", "Document légal") : [];
+      const importUploaded = fileImportProofs.length ? await uploadMany(fileImportProofs, "import_proof", "Pièce import") : [];
+      const extra_docs = mergeExtraDocs(kyc?.extra_docs, [...additions, ...legalUploaded, ...importUploaded]);
+
+      await ensureFreshAuthSession();
+
+      const seller_type = ["local_business", "import_business"].includes(form.seller_category) ? "entreprise" : "particulier";
+
+      const payload = {
+        user_id: userId,
+        full_name: form.full_name,
+        birth_date: form.birth_date || null,
+        birth_place: form.birth_place,
+        cni_number: form.cni_number,
+        cni_expiry: form.cni_expiry || null,
+        phone: form.phone,
+        email: form.email,
+        whatsapp: form.whatsapp || null,
+        seller_type,
+        seller_category: form.seller_category,
+        company_name: form.company_name || null,
+        rccm: form.rccm || null,
+        business_country: resolveCountryLabel(form.business_country_code, form.business_country_other),
+        business_country_code: form.business_country_code || null,
+        business_country_other: isOtherCountryCode(form.business_country_code)
+          ? (form.business_country_other?.trim() || null)
+          : null,
+        country: form.country,
+        city: form.city,
+        quartier: form.quartier,
+        address: form.address,
+        location_map_url: form.location_map_url || null,
+        declaration: form.declaration,
+        doc_url: url1,
+        doc_url2: url2,
+        selfie_url: urlSelfie,
+        shop_photo_url: urlShop,
+        extra_docs,
+        status: "pending",
+        kyc_level: form.seller_category === "import_business" ? "full" : "lite",
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        reviewer_note: null,
+      };
+
+      const saved = await upsertSellerKyc(payload);
+
+      const { error: notifErr } = await supabase.from("notifications").insert({
         user_id: userId,
         type: "kyc",
         title: "Demande KYC envoyée",
-        message: "Votre dossier de vérification est en cours d'examen. Réponse sous 24–48h ouvrées.",
-        link: "/dashboard?tab=kyc",
+        message: "Votre dossier de vérification vendeur est en cours d'examen (24–48h). Le badge sera activé après validation admin.",
         lu: false,
-      }).catch(() => {});
+        payload: { link: "/dashboard?tab=kyc", status: "pending" },
+      });
+      if (notifErr) console.warn("KYC notification:", notifErr.message);
 
-      setKyc({ ...payload, status: "pending" });
+      setKyc(saved || { ...payload, status: "pending" });
+      setStep(5);
+      setFileCniR(null);
+      setFileCniV(null);
+      setFileSelfie(null);
+      setFileShop(null);
+      setFileShopPlan(null);
+      setFileLocationProof(null);
+      setFileRccmDoc(null);
+      setFileLegalDocs([]);
+      setFileImportProofs([]);
       try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
-      showAppToast("Dossier envoyé — vérification sous 24–48h", "success", 5000);
+      showAppToast("Dossier envoyé — validation par l'équipe admin sous 24–48h", "success", 5000);
     } catch (e) {
-      const msg = e?.message || "";
-      const friendly = /failed to fetch|network|load failed/i.test(msg)
-        ? "Connexion instable — vérifiez votre réseau et réessayez"
-        : msg || "Connexion interrompue, réessayez";
-      showAppToast("Erreur : " + friendly + " — vos données sont sauvegardées, réessayez.", "error", 6000);
+      showAppToast("Erreur : " + formatKycError(e), "error", 7000);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   // ── Validation par étape ──
   const canNext = () => {
     if (step === 1) return form.full_name.trim() && form.birth_date && form.birth_place.trim() && form.cni_number.trim();
     if (step === 2) return form.phone.replace(/\s/g,"").length >= 8 && form.email.includes("@");
-    if (step === 3) return form.city.trim() && form.quartier.trim() && form.address.trim() && (form.seller_type === "particulier" || form.company_name.trim());
-    if (step === 4) return (fileCniR || kyc?.doc_url) && (fileSelfie || kyc?.selfie_url);
+    if (step === 3) {
+      const needsCompany = ["local_business", "import_business"].includes(form.seller_category);
+      return form.city.trim() && form.quartier.trim() && form.address.trim()
+        && (!needsCompany || form.company_name.trim());
+    }
+    if (step === 4) {
+      const hasCni = fileCniR || kyc?.doc_url;
+      const hasSelfie = fileSelfie || kyc?.selfie_url;
+      if (!hasCni || !hasSelfie) return false;
+      if (form.seller_category === "physical_store") {
+        return (fileShopPlan || kyc?.extra_docs?.some?.((d) => d.type === "shop_plan"))
+          && (fileLocationProof || kyc?.extra_docs?.some?.((d) => d.type === "location_proof"));
+      }
+      if (form.seller_category === "local_business") {
+        const legalCount = fileLegalDocs.length + (kyc?.extra_docs?.filter?.((d) => d.type === "legal_doc")?.length || 0);
+        return (form.rccm.trim() || fileRccmDoc) && legalCount >= 2 && (fileRccmDoc || kyc?.extra_docs?.some?.((d) => d.type === "rccm"));
+      }
+      if (form.seller_category === "import_business") {
+        const importCount = fileImportProofs.length + (kyc?.extra_docs?.filter?.((d) => d.type === "import_proof")?.length || 0);
+        const countryOk = form.business_country_code
+          && (!isOtherCountryCode(form.business_country_code) || form.business_country_other?.trim?.());
+        return (form.rccm.trim() || fileRccmDoc) && importCount >= 3 && countryOk;
+      }
+      return true;
+    }
     return true;
   };
 
@@ -322,10 +464,10 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" style={{ display: "block", margin: "0 auto 12px" }} aria-hidden="true">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
       </svg>
-      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#065f46", marginBottom: 6 }}>Identité vérifiée ✓</div>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.1rem", color: "#065f46", marginBottom: 6 }}>Identité vérifiée ✓</div>
       <div style={{ fontSize: ".82rem", color: "#047857", lineHeight: 1.6 }}>
         Votre identité a été vérifiée avec succès.<br/>
-        Le badge <strong>Vendeur Vérifié</strong> est visible sur vos produits.
+        Le badge <strong style={{ color: "#1d4ed8" }}>Vendeur vérifié</strong> (coche bleue) sera visible sur vos produits après validation admin.
       </div>
       {kyc?.kyc_level === "full" && (
         <div style={{ marginTop: 12, background: "#fff", borderRadius: 10, padding: "8px 14px", fontSize: ".75rem", color: "#059669", fontWeight: 700 }}>
@@ -340,7 +482,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" style={{ display: "block", margin: "0 auto 10px" }} aria-hidden="true">
         <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
       </svg>
-      <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem", color: "#92400e", marginBottom: 6 }}>Dossier en cours d'examen</div>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "#92400e", marginBottom: 6 }}>Dossier en cours d'examen</div>
       <div style={{ fontSize: ".8rem", color: "#78350f", lineHeight: 1.6 }}>
         Soumis le <strong>{kyc.submitted_at ? new Date(kyc.submitted_at).toLocaleDateString("fr-FR") : "—"}</strong><br/>
         Nos équipes traitent votre dossier sous 24–48h ouvrées.
@@ -354,6 +496,18 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
       >
         Modifier mon dossier
       </button>
+    </div>
+  );
+
+  if (status === "info_requested") return (
+    <div>
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 14, padding: 16, marginBottom: 20 }}>
+        <div style={{ fontWeight: 700, color: "#1d4ed8", marginBottom: 6 }}>💬 Compléments demandés</div>
+        <div style={{ fontSize: ".8rem", color: "#1e40af", lineHeight: 1.6 }}>
+          {kyc.reviewer_note || "Merci de compléter votre dossier."}
+        </div>
+      </div>
+      {renderForm()}
     </div>
   );
 
@@ -379,7 +533,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 1 : IDENTITÉ ── */}
         {step === 1 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>👤 Informations d'identité</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>👤 Informations d'identité</div>
             <Field label="Nom complet (prénom + nom)" required>
               <input className="form-input" placeholder="Ex: Marie Ngono Biya" value={form.full_name} onChange={e => upd("full_name", e.target.value)} />
             </Field>
@@ -403,7 +557,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 2 : COORDONNÉES ── */}
         {step === 2 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>📞 Coordonnées</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>📞 Coordonnées</div>
             <Field label="Téléphone principal" required hint="Numéro MTN ou Orange actif">
               <input className="form-input" type="tel" inputMode="numeric" placeholder="Ex: 677 123 456" value={form.phone} onChange={e => upd("phone", e.target.value)} />
             </Field>
@@ -419,37 +573,53 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         {/* ── ÉTAPE 3 : ACTIVITÉ ── */}
         {step === 3 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>🏪 Activité commerciale</div>
-            <Field label="Type de vendeur" required>
-              <div style={{ display: "flex", gap: 10 }}>
-                {["particulier","entreprise"].map(t => (
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>🏪 Type de vendeur & localisation</div>
+            <Field label="Profil vendeur" required hint="Les pièces demandées à l'étape suivante s'adaptent à votre profil.">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {Object.values(SELLER_CATEGORIES).map((cat) => (
                   <button
-                    key={t} type="button"
-                    onClick={() => upd("seller_type", t)}
+                    key={cat.id}
+                    type="button"
+                    onClick={() => upd("seller_category", cat.id)}
                     style={{
-                      flex: 1, padding: "10px 12px", borderRadius: 10, border: `2px solid ${form.seller_type === t ? "var(--green)" : "var(--border)"}`,
-                      background: form.seller_type === t ? "var(--green-pale,#f0fdf4)" : "var(--surface)",
-                      color: form.seller_type === t ? "var(--green)" : "var(--ink)",
-                      fontWeight: 700, fontSize: ".82rem", cursor: "pointer", transition: "all .15s",
+                      textAlign: "left",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `2px solid ${form.seller_category === cat.id ? "#1d4ed8" : "var(--border)"}`,
+                      background: form.seller_category === cat.id ? "#eff6ff" : "var(--surface)",
+                      cursor: "pointer",
                     }}
                   >
-                    {t === "particulier" ? "👤 Particulier" : "🏢 Entreprise"}
+                    <div style={{ fontWeight: 800, fontSize: ".8rem" }}>{cat.icon} {cat.labelFr}</div>
+                    <div style={{ fontSize: ".65rem", color: "var(--gray)", marginTop: 4, lineHeight: 1.4 }}>{cat.descFr}</div>
                   </button>
                 ))}
               </div>
             </Field>
-            {form.seller_type === "entreprise" && (
+            {(form.seller_category === "local_business" || form.seller_category === "import_business") && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <Field label="Nom commercial / Entreprise" required>
+                <Field label="Raison sociale / Entreprise" required>
                   <input className="form-input" placeholder="Ex: SARL Afro Market" value={form.company_name} onChange={e => upd("company_name", e.target.value)} />
                 </Field>
-                <Field label="Numéro RCCM" hint="Registre de commerce">
-                  <input className="form-input" placeholder="Ex: RC/DLA/2023/B/123" value={form.rccm} onChange={e => upd("rccm", e.target.value)} />
+                <Field label="N° RCCM (pays d'implantation)" required hint="Registre du commerce du pays où la société est enregistrée">
+                  <input className="form-input" placeholder="Ex: RC/DLA/2023/B/123 ou équivalent" value={form.rccm} onChange={e => upd("rccm", e.target.value)} />
                 </Field>
+                <CountrySelectWithOther
+                  label="Pays d'enregistrement (RCCM)"
+                  required
+                  value={form.business_country_code}
+                  other={form.business_country_other}
+                  onChange={(code) => upd("business_country_code", code)}
+                  onOtherChange={(v) => upd("business_country_other", v)}
+                  options={form.seller_category === "import_business"
+                    ? IMPORT_BUSINESS_COUNTRIES
+                    : BUSINESS_REGISTRATION_COUNTRIES}
+                  hint="Chine, Inde, France, Nigeria… ou Autre avec précision"
+                />
               </div>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field label="Pays" required>
+              <Field label="Pays (localisation)" required>
                 <input className="form-input" value={form.country} onChange={e => upd("country", e.target.value)} />
               </Field>
               <Field label="Ville" required>
@@ -460,45 +630,68 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
                 </select>
               </Field>
               <Field label="Quartier" required>
-                <input className="form-input" placeholder="Ex: Bastos, Akwa, Biyem-Assi…" value={form.quartier} onChange={e => upd("quartier", e.target.value)} />
+                <input className="form-input" placeholder="Ex: Bastos, Akwa…" value={form.quartier} onChange={e => upd("quartier", e.target.value)} />
               </Field>
               <Field label="Adresse précise" required>
-                <input className="form-input" placeholder="Ex: Rue des brasseries, face pharmacie…" value={form.address} onChange={e => upd("address", e.target.value)} />
+                <input className="form-input" placeholder="Rue, repère, immeuble…" value={form.address} onChange={e => upd("address", e.target.value)} />
               </Field>
             </div>
+            {form.seller_category !== "online" && (
+              <Field label="Lien Google Maps / plan (optionnel)" hint="Collez un lien Maps ou plan de la boutique">
+                <input className="form-input" placeholder="https://maps.google.com/…" value={form.location_map_url} onChange={e => upd("location_map_url", e.target.value)} />
+              </Field>
+            )}
           </div>
         )}
 
         {/* ── ÉTAPE 4 : DOCUMENTS ── */}
         {step === 4 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 8 }}>📄 Documents justificatifs</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 8 }}>📄 Documents — {categoryLabel(form.seller_category)}</div>
             <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 14px", fontSize: ".75rem", color: "#1d4ed8", marginBottom: 16, lineHeight: 1.6 }}>
-              Photos nettes, bien éclairées · Max 10 Mo · JPG, PNG ou PDF
+              Validation <strong>uniquement par l'équipe admin</strong> après examen. Le badge apparaît seulement après approbation.
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <UploadZone label="📷 CNI — Recto *" file={fileCniR} onFile={setFileCniR} inputRef={refCniR}
-                hint={kyc?.doc_url ? "Déjà envoyé — choisir pour remplacer" : "Obligatoire"} />
-              <UploadZone label="📷 CNI — Verso" file={fileCniV} onFile={setFileCniV} inputRef={refCniV}
-                hint={kyc?.doc_url2 ? "Déjà envoyé" : "Recommandé"} />
+              <UploadZone label="📷 CNI — Recto *" file={fileCniR} onFile={setFileCniR} inputRef={refCniR} hint={kyc?.doc_url ? "Déjà envoyé" : "Obligatoire"} />
+              <UploadZone label="📷 CNI — Verso" file={fileCniV} onFile={setFileCniV} inputRef={refCniV} />
+              <UploadZone label="🤳 Selfie avec CNI *" file={fileSelfie} onFile={setFileSelfie} inputRef={refSelfie} hint="Obligatoire" />
+              {(form.seller_category === "online" || form.seller_category === "physical_store") && (
+                <UploadZone label="🏪 Photo lieu / stock" file={fileShop} onFile={setFileShop} inputRef={refShop} />
+              )}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
-              <UploadZone label="🤳 Selfie avec la CNI *" file={fileSelfie} onFile={setFileSelfie} inputRef={refSelfie}
-                hint={kyc?.selfie_url ? "Déjà envoyé — choisir pour remplacer" : "Obligatoire — tenez votre CNI à côté de votre visage"} />
-              <UploadZone label="🏪 Photo de la boutique" file={fileShop} onFile={setFileShop} inputRef={refShop}
-                hint="Façade, enseigne ou lieu d'activité visible" />
-            </div>
-            <div style={{ background: "#d1fae5", border: "1px solid #86efac", borderRadius: 10, padding: "10px 14px", fontSize: ".75rem", color: "#065f46", marginTop: 12 }}>
-              <strong>⭐ KYC Complet</strong> (CNI + selfie + photo boutique) = retrait jusqu'à 500 000 FCFA/mois + accès B2B.<br/>
-              <strong>KYC Standard</strong> (CNI + selfie) = retrait jusqu'à 50 000 FCFA/mois.
-            </div>
+            {form.seller_category === "physical_store" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
+                <UploadZone label="🗺 Plan / photo boutique *" file={fileShopPlan} onFile={setFileShopPlan} inputRef={refShopPlan} hint="Façade, enseigne ou plan" />
+                <UploadZone label="📋 Justificatif local *" file={fileLocationProof} onFile={setFileLocationProof} inputRef={refLocationProof} hint="Bail, impôt, quittance loyer…" />
+              </div>
+            )}
+            {form.seller_category === "local_business" && (
+              <div style={{ marginTop: 8 }}>
+                <UploadZone label="📋 Scan RCCM *" file={fileRccmDoc} onFile={setFileRccmDoc} inputRef={refRccmDoc} />
+                <div style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--gray)", margin: "12px 0 8px" }}>Documents légaux (min. 2) — patente, NIU, statuts…</div>
+                {fileLegalDocs.map((f, i) => (
+                  <div key={i} style={{ fontSize: ".75rem", marginBottom: 4 }}>✓ {f.name}</div>
+                ))}
+                <input type="file" accept="image/*,.pdf" multiple onChange={(e) => setFileLegalDocs(Array.from(e.target.files || []))} />
+              </div>
+            )}
+            {form.seller_category === "import_business" && (
+              <div style={{ marginTop: 8 }}>
+                <UploadZone label="📋 RCCM / licence pays d'implantation *" file={fileRccmDoc} onFile={setFileRccmDoc} inputRef={refRccmDoc} />
+                <div style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--gray)", margin: "12px 0 8px" }}>Pièces de fiabilité import (min. 3) — contrat usine, BL, licence import…</div>
+                {fileImportProofs.map((f, i) => (
+                  <div key={i} style={{ fontSize: ".75rem", marginBottom: 4 }}>✓ {f.name}</div>
+                ))}
+                <input type="file" accept="image/*,.pdf" multiple onChange={(e) => setFileImportProofs(Array.from(e.target.files || []))} />
+              </div>
+            )}
           </div>
         )}
 
         {/* ── ÉTAPE 5 : VALIDATION ── */}
         {step === 5 && (
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>✅ Récapitulatif & Déclaration</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)", marginBottom: 16 }}>✅ Récapitulatif & Déclaration</div>
 
             {/* Récap */}
             <div style={{ background: "var(--surface2)", borderRadius: 12, padding: "14px 16px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 8, fontSize: ".78rem" }}>
@@ -508,7 +701,9 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
                 ["CNI n°",      form.cni_number],
                 ["Téléphone",   form.phone],
                 ["Email",       form.email],
-                ["Type",        form.seller_type === "entreprise" ? `Entreprise — ${form.company_name}` : "Particulier"],
+                ["Type",        categoryLabel(form.seller_category || (form.seller_type === "entreprise" ? "local_business" : "online"))],
+                form.company_name && ["Entreprise", form.company_name],
+                form.rccm && ["RCCM", `${form.rccm} (${resolveCountryLabel(form.business_country_code, form.business_country_other)})`],
                 ["Localisation",`${form.quartier}, ${form.city}, ${form.country}`],
                 ["Documents",   [fileCniR && "CNI recto", fileCniV && "CNI verso", fileSelfie && "Selfie", fileShop && "Boutique"].filter(Boolean).join(" · ") || (kyc?.doc_url ? "Déjà soumis" : "Aucun")],
               ].map(([lbl, val]) => (
@@ -553,7 +748,7 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
                 const stepFields = [
                   { full_name: form.full_name, birth_date: form.birth_date || null, birth_place: form.birth_place, cni_number: form.cni_number, cni_expiry: form.cni_expiry || null },
                   { phone: form.phone, email: form.email, whatsapp: form.whatsapp || null },
-                  { seller_type: form.seller_type, company_name: form.company_name || null, rccm: form.rccm || null, country: form.country, city: form.city, quartier: form.quartier, address: form.address },
+                  { seller_type: form.seller_category === "local_business" || form.seller_category === "import_business" ? "entreprise" : "particulier", seller_category: form.seller_category, company_name: form.company_name || null, rccm: form.rccm || null, business_country_code: form.business_country_code, business_country_other: form.business_country_other || null, country: form.country, city: form.city, quartier: form.quartier, address: form.address, location_map_url: form.location_map_url || null },
                   {},
                 ][step - 1] || {};
                 if (Object.keys(stepFields).length) saveDraft(stepFields);

@@ -53,6 +53,23 @@ export async function publishInAppNotification(client, p) {
     payload: meta,
   };
 
+  const { data: rpcId, error: rpcErr } = await client.rpc("fn_publish_notification", {
+    p_user_id: userId,
+    p_type: row.type,
+    p_title: row.title,
+    p_message: row.message,
+    p_link: row.link,
+    p_priority: row.priority,
+    p_category: row.category,
+    p_payload: meta,
+  });
+
+  if (!rpcErr && rpcId) return { ok: true, id: rpcId };
+
+  if (rpcErr && !/function.*does not exist|could not find/i.test(rpcErr.message || "")) {
+    return { ok: false, error: rpcErr.message };
+  }
+
   const { data, error } = await client.from("notifications").insert(row).select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: data?.id };

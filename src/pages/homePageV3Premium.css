@@ -2265,3 +2265,146 @@
   .yhm3-hero-mesh { animation: none; }
   .yhm3-live-dot { animation: none; }
 }
+
+/* ── Escrow trust section ── */
+.yhm3-escrow-trust {
+  padding-top: 8px;
+}
+.yhm3-escrow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 960px;
+  margin: 0 auto 24px;
+}
+.yhm3-escrow-step {
+  position: relative;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 18px;
+  padding: 22px 18px 18px;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.yhm3-escrow-step:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(26, 107, 58, 0.08);
+}
+.yhm3-escrow-step__n {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--hm-green, #1a6b3a);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.yhm3-escrow-step__ico {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.yhm3-escrow-step h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink, #111);
+}
+.yhm3-escrow-step p {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--gray, #6b7280);
+}
+.yhm3-escrow-cta-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.yhm3-trust-signals {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+.yhm3-trust-signal {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  text-align: left;
+}
+.yhm3-trust-signal--link {
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+  transition: border-color 0.2s, background 0.2s;
+}
+.yhm3-trust-signal--link:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+.yhm3-trust-signal__ico {
+  flex-shrink: 0;
+  color: #1d4ed8;
+}
+.yhm3-trust-signal__lbl {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--ink, #111);
+  line-height: 1.3;
+}
+.yhm3-trust-signal__sub {
+  font-size: 0.62rem;
+  color: var(--gray, #6b7280);
+  margin-top: 2px;
+}
+.yhm3-trust-pill--escrow {
+  background: rgba(29, 78, 216, 0.22);
+  border-color: rgba(191, 219, 254, 0.45);
+  color: #fff;
+}
+.yhm3-trust-pill--link {
+  cursor: pointer;
+  font: inherit;
+}
+.yhm3-secondary-strip--footer {
+  max-width: 920px;
+  margin: 0 auto 8px;
+  padding: 12px 16px;
+  justify-content: center;
+}
+.yhm3-cat-featured__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+@media (max-width: 900px) {
+  .yhm3-escrow-steps { grid-template-columns: 1fr; }
+  .yhm3-trust-signals { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .yhm3-trust-signals { grid-template-columns: 1fr; }
+}

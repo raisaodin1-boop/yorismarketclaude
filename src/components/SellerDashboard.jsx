@@ -23,6 +23,9 @@ import { ReferralPanel } from "./ReferralPanel";
 import { WalletWithdrawal } from "./WalletWithdrawal";
 import { SellerKYC } from "./SellerKYC";
 import { BusinessAiAssistant } from "./seller/BusinessAiAssistant";
+import { SellerB2BInbox } from "./seller/SellerB2BInbox";
+import { INCOTERMS, ORIGIN_COUNTRIES, isOtherCountryCode } from "../lib/importWholesale";
+import { CountrySelectWithOther } from "./seller/CountrySelectWithOther";
 import { SELLER_STAT_ICONS } from "../lib/lucideNavIcons.jsx";
 
 // ─────────────────────────────────────────────────────────────
@@ -63,9 +66,16 @@ export function SellerDashboard({
     madeInChoice: "no",
     localBrandName: "",
     countryOfOrigin: "CM",
+    countryOfOriginOther: "",
     isPack: false,
     packDescription: "",
     linkedProductIds: [],
+    b2bEnabled: false,
+    prixGros: "",
+    minQtyGros: "",
+    leadTimeDays: "",
+    incoterm: "FOB",
+    wholesaleTiers: [{ min_qty: "", unit_price: "" }],
   });
   const [images, setImages]     = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -203,12 +213,16 @@ export function SellerDashboard({
       madeInChoice: "no",
       localBrandName: "",
       countryOfOrigin: "CM",
+      countryOfOriginOther: "",
       isPack: false,
       packDescription: "",
       linkedProductIds: [],
       b2bEnabled: false,
       prixGros: "",
       minQtyGros: "",
+      leadTimeDays: "",
+      incoterm: "FOB",
+      wholesaleTiers: [{ min_qty: "", unit_price: "" }],
     });
     setImages([]); setPreviews([]); setProgress(0);
     setHasVariants(false);
@@ -297,6 +311,13 @@ export function SellerDashboard({
             .map((v) => ({ id: v.id, label: v.label.trim(), prix: Number(v.prix), stock: Number(v.stock || 0) }))
         : [];
 
+      const validTiers = (form.wholesaleTiers || [])
+        .map((t) => ({
+          min_qty: Number(t.min_qty),
+          unit_price: Number(t.unit_price),
+        }))
+        .filter((t) => t.min_qty > 0 && t.unit_price > 0);
+
       const { error } = await supabase.from("products").insert({
         name_fr:        form.name_fr,
         name_en:        form.name_en || form.name_fr,
@@ -323,6 +344,15 @@ export function SellerDashboard({
         b2b_enabled: Boolean(form.b2bEnabled),
         prix_gros: form.b2bEnabled && form.prixGros ? Number(form.prixGros) : null,
         min_qty_gros: form.b2bEnabled && form.minQtyGros ? Number(form.minQtyGros) : 10,
+        lead_time_days: form.b2bEnabled && form.leadTimeDays ? Number(form.leadTimeDays) : null,
+        incoterm: form.b2bEnabled ? (form.incoterm || null) : null,
+        wholesale_tiers: form.b2bEnabled && validTiers.length ? validTiers : null,
+        ...(form.b2bEnabled ? {
+          country_of_origin: form.countryOfOrigin || "CM",
+          country_of_origin_other: isOtherCountryCode(form.countryOfOrigin)
+            ? (form.countryOfOriginOther?.trim() || null)
+            : null,
+        } : {}),
         vues: 0, clics: 0, vente_total: 0, note: 0, nombre_avis: 0,
       });
       if (error) throw error;
@@ -445,14 +475,14 @@ export function SellerDashboard({
   // ── STYLES INLINE PARTAGÉS ──
   const S = {
     card:     { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 20, marginBottom: 14 },
-    input:    { border: "1.5px solid var(--border)", borderRadius: 8, padding: "8px 11px", fontFamily: "'DM Sans',sans-serif", fontSize: ".82rem", background: "var(--surface)", color: "var(--ink)", outline: "none", width: "100%" },
+    input:    { border: "1.5px solid var(--border)", borderRadius: 8, padding: "8px 11px", fontFamily: "var(--font-body)", fontSize: ".82rem", background: "var(--surface)", color: "var(--ink)", outline: "none", width: "100%" },
     label:    { fontSize: ".72rem", fontWeight: 600, color: "var(--ink)", marginBottom: 4, display: "block" },
-    btnGreen: { background: "var(--green)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem" },
-    btnGhost: { background: "var(--surface2)", color: "var(--ink)", border: "1.5px solid var(--border)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".78rem" },
-    btnRed:   { background: "transparent", color: "#ce1126", border: "1.5px solid #fecaca", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".75rem" },
-    btnBlue:  { background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".75rem" },
+    btnGreen: { background: "var(--green)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem" },
+    btnGhost: { background: "var(--surface2)", color: "var(--ink)", border: "1.5px solid var(--border)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".78rem" },
+    btnRed:   { background: "transparent", color: "#ce1126", border: "1.5px solid #fecaca", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".75rem" },
+    btnBlue:  { background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".75rem" },
     row:      { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-    secTitle: { fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 14 },
+    secTitle: { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 14 },
   };
 
   if (loadingData) {
@@ -470,7 +500,7 @@ export function SellerDashboard({
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "var(--surface)", borderRadius: 14, padding: 28, maxWidth: 340, width: "90%", textAlign: "center", border: "1px solid var(--border)" }}>
             <div style={{ fontSize: "2rem", marginBottom: 10 }}>🗑️</div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 8 }}>{t("products.deleteTitle")}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 8 }}>{t("products.deleteTitle")}</div>
             <p style={{ fontSize: ".82rem", color: "var(--gray)", marginBottom: 20, lineHeight: 1.6 }}>
               {t("products.deleteBody", { name: pendingDelete.nom })}
             </p>
@@ -629,7 +659,7 @@ export function SellerDashboard({
                       <div style={{ fontWeight: 700, fontSize: ".83rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name_fr}</div>
                       <div style={{ fontSize: ".7rem", color: "var(--gray)", marginTop: 2 }}>{p.categorie} · {p.ville}</div>
                     </div>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".88rem", color: "var(--green)", flexShrink: 0 }}>{p.prix?.toLocaleString()} F</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".88rem", color: "var(--green)", flexShrink: 0 }}>{p.prix?.toLocaleString()} F</div>
                     <span style={{ fontSize: ".65rem", padding: "2px 8px", borderRadius: 20, background: p.actif ? "var(--green-pale)" : "var(--surface2)", color: p.actif ? "var(--green)" : "var(--gray)", border: `1px solid ${p.actif ? "var(--green-light)" : "var(--border)"}`, flexShrink: 0 }}>
                       {p.actif ? t("products.active") : t("products.inactive")}
                     </span>
@@ -684,7 +714,7 @@ export function SellerDashboard({
               <div key={p.id} style={{ ...S.card, opacity: p.actif ? 1 : 0.65, transition: "opacity .2s" }}>
                 {editingId === p.id ? (
                   <>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".9rem", color: "var(--green)", marginBottom: 14 }}>✏️ {t("products.edit")}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".9rem", color: "var(--green)", marginBottom: 14 }}>✏️ {t("products.edit")}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       <div>
                         <label style={S.label}>Nom (FR) *</label>
@@ -736,7 +766,7 @@ export function SellerDashboard({
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                          <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)" }}>{p.name_fr}</div>
+                          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".92rem", color: "var(--ink)" }}>{p.name_fr}</div>
                           <span style={{ fontSize: ".62rem", padding: "2px 8px", borderRadius: 20, background: p.actif ? "var(--green-pale)" : "var(--surface2)", color: p.actif ? "var(--green)" : "var(--gray)", border: `1px solid ${p.actif ? "var(--green-light)" : "var(--border)"}` }}>
                             {p.actif ? "✅ Actif" : "⛔ Inactif"}
                           </span>
@@ -1011,14 +1041,98 @@ export function SellerDashboard({
                 🏭 Activer la vente en gros (B2B)
               </label>
               {form.b2bEnabled && (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10 }}>
-                  <div className="form-group">
-                    <label className="form-label">Prix de gros (FCFA/unité)</label>
-                    <input className="form-input" type="number" min="0" placeholder="Ex: 18000" value={form.prixGros||""} onChange={e => setForm(f => ({...f, prixGros: e.target.value}))} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <div className="form-group">
+                      <label className="form-label">Prix de gros (FCFA/unité)</label>
+                      <input className="form-input" type="number" min="0" placeholder="Ex: 18000" value={form.prixGros || ""} onChange={(e) => setForm((f) => ({ ...f, prixGros: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Quantité minimum (MOQ)</label>
+                      <input className="form-input" type="number" min="2" placeholder="Ex: 10" value={form.minQtyGros || ""} onChange={(e) => setForm((f) => ({ ...f, minQtyGros: e.target.value }))} />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Quantité minimum</label>
-                    <input className="form-input" type="number" min="2" placeholder="Ex: 10" value={form.minQtyGros||""} onChange={e => setForm(f => ({...f, minQtyGros: e.target.value}))} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    <CountrySelectWithOther
+                      label="Pays d'origine / sourcing"
+                      value={form.countryOfOrigin}
+                      other={form.countryOfOriginOther}
+                      onChange={(code) => setForm((f) => ({
+                        ...f,
+                        countryOfOrigin: code,
+                        countryOfOriginOther: code === "XX" ? f.countryOfOriginOther : "",
+                      }))}
+                      onOtherChange={(v) => setForm((f) => ({ ...f, countryOfOriginOther: v }))}
+                      options={ORIGIN_COUNTRIES}
+                      hint="Chine, Inde, France… ou Autre"
+                    />
+                    <div className="form-group">
+                      <label className="form-label">Délai (jours)</label>
+                      <input className="form-input" type="number" min="1" placeholder="Ex: 21" value={form.leadTimeDays || ""} onChange={(e) => setForm((f) => ({ ...f, leadTimeDays: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Incoterm</label>
+                      <select className="form-select" value={form.incoterm || "FOB"} onChange={(e) => setForm((f) => ({ ...f, incoterm: e.target.value }))}>
+                        {INCOTERMS.map((i) => (
+                          <option key={i.code} value={i.code}>{i.code}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label">Paliers MOQ (optionnel)</label>
+                    <p style={{ fontSize: ".68rem", color: "var(--gray)", margin: "0 0 8px" }}>
+                      Ex. 10 pcs → 18 000 F, 50 pcs → 16 000 F
+                    </p>
+                    {(form.wholesaleTiers || []).map((tier, idx) => (
+                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 32px", gap: 6, marginBottom: 6 }}>
+                        <input
+                          className="form-input"
+                          type="number"
+                          min="1"
+                          placeholder="Qté min"
+                          value={tier.min_qty}
+                          onChange={(e) => setForm((f) => {
+                            const tiers = [...(f.wholesaleTiers || [])];
+                            tiers[idx] = { ...tiers[idx], min_qty: e.target.value };
+                            return { ...f, wholesaleTiers: tiers };
+                          })}
+                        />
+                        <input
+                          className="form-input"
+                          type="number"
+                          min="0"
+                          placeholder="Prix unitaire"
+                          value={tier.unit_price}
+                          onChange={(e) => setForm((f) => {
+                            const tiers = [...(f.wholesaleTiers || [])];
+                            tiers[idx] = { ...tiers[idx], unit_price: e.target.value };
+                            return { ...f, wholesaleTiers: tiers };
+                          })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({
+                            ...f,
+                            wholesaleTiers: (f.wholesaleTiers || []).filter((_, i) => i !== idx),
+                          }))}
+                          style={{ border: "1px solid var(--border)", borderRadius: 6, background: "none", cursor: "pointer" }}
+                          disabled={(form.wholesaleTiers || []).length <= 1}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({
+                        ...f,
+                        wholesaleTiers: [...(f.wholesaleTiers || []), { min_qty: "", unit_price: "" }],
+                      }))}
+                      style={{ fontSize: ".75rem", color: "var(--green)", fontWeight: 700, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    >
+                      + Ajouter un palier
+                    </button>
                   </div>
                 </div>
               )}
@@ -1130,7 +1244,7 @@ export function SellerDashboard({
               <div key={c.id} style={{ ...S.card, marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".88rem", color: "var(--ink)" }}>{c.client_nom || "Client"}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".88rem", color: "var(--ink)" }}>{c.client_nom || "Client"}</div>
                     <div style={{ fontSize: ".7rem", color: "var(--gray)", marginTop: 2 }}>
                       📞 {c.telephone || "—"} · #{String(c.id).slice(-8)}
                     </div>
@@ -1163,7 +1277,7 @@ export function SellerDashboard({
                   )}
                   {c.telephone && (
                     <button
-                      style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".75rem" }}
+                      style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".75rem" }}
                       onClick={() => window.open(`https://wa.me/${c.telephone.replace(/[^0-9]/g, "").replace(/^0/, "237")}?text=${encodeURIComponent(`Bonjour ${c.client_nom || ""}! Votre commande Yorix est en cours. 📦`)}`, "_blank")}
                     >
                       📱 WhatsApp
@@ -1173,6 +1287,14 @@ export function SellerDashboard({
               </div>
             ))
           )}
+        </>
+      )}
+
+      {/* ════ INBOX B2B ════ */}
+      {dashTab === "b2bDemandes" && (
+        <>
+          <div className="dash-page-title">🏭 Demandes d&apos;achat en gros (B2B)</div>
+          <SellerB2BInbox userId={user.id} />
         </>
       )}
 
@@ -1199,13 +1321,13 @@ export function SellerDashboard({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }} className="dash-wallet-grid">
             <div style={{ padding: 20, background: "var(--green-pale)", border: "1px solid var(--green-light)", borderRadius: 12 }}>
               <div style={{ fontSize: ".72rem", color: "var(--gray)", fontWeight: 600, marginBottom: 6 }}>SOLDE DISPONIBLE</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.8rem", fontWeight: 800, color: "var(--green)" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", fontWeight: 800, color: "var(--green)" }}>
                 {Number(wallet.solde).toLocaleString("fr-FR")} <span style={{ fontSize: ".8rem", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
               </div>
             </div>
             <div style={{ padding: 20, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12 }}>
               <div style={{ fontSize: ".72rem", color: "var(--gray)", fontWeight: 600, marginBottom: 6 }}>TOTAL GAGNÉ</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.8rem", fontWeight: 800, color: "#2563eb" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", fontWeight: 800, color: "#2563eb" }}>
                 {Number(wallet.total_gagne).toLocaleString("fr-FR")} <span style={{ fontSize: ".8rem", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
               </div>
             </div>

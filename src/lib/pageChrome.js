@@ -13,6 +13,7 @@ const GLOBAL_NEWSLETTER_PAGES = new Set([
   "escrow",
   "devenirVendeur",
   "devenirLivreur",
+  "importSupplier",
 ]);
 
 /** Pages outil / transaction / espace membre — pas de footer marketing. */
@@ -32,4 +33,12 @@ export function shouldShowGlobalNewsletter(page) {
 /** @param {string} page */
 export function shouldShowSiteFooter(page) {
   return !SITE_FOOTER_HIDDEN_PAGES.has(page);
+}
+
+const CATALOG_FOCUS_MERCH_HUBS = new Set(["made-in-cameroun", "sourcer-en-gros"]);
+
+/** @param {string} page @param {string | undefined} merchHub */
+export function shouldUseCatalogFocusHeader(page, merchHub) {
+  if (page === "prestataires") return true;
+  return page === "merchHub" && CATALOG_FOCUS_MERCH_HUBS.has(merchHub);
 }

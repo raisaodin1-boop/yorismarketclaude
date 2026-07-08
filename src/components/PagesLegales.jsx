@@ -63,7 +63,7 @@ export function PagesLegales({ type, goPage }) {
           ← Retour à l'accueil
         </button>
 
-        <h1 style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1.8rem", color:"var(--ink)", marginBottom:6, letterSpacing:"-.5px" }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight:800, fontSize:"1.8rem", color:"var(--ink)", marginBottom:6, letterSpacing:"-.5px" }}>
           {page.title}
         </h1>
         <p style={{ fontSize:".78rem", color:"var(--gray)", marginBottom:28 }}>
@@ -73,7 +73,7 @@ export function PagesLegales({ type, goPage }) {
         <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14, padding:"26px 30px" }}>
           {page.content.map((section, i) => (
             <div key={i} style={{ marginBottom:24 }}>
-              <h2 style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1rem", color:"var(--green)", marginBottom:8 }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight:800, fontSize:"1rem", color:"var(--green)", marginBottom:8 }}>
                 {section.h}
               </h2>
               <p style={{ fontSize:".85rem", color:"var(--ink)", lineHeight:1.75, whiteSpace:"pre-line" }}>
@@ -87,15 +87,15 @@ export function PagesLegales({ type, goPage }) {
         <div style={{ display:"flex", gap:8, justifyContent:"center", marginTop:24, flexWrap:"wrap" }}>
           <button
             onClick={() => goPage("cgv")}
-            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${type==="cgv" ? "var(--green)" : "var(--border)"}`, background:type==="cgv" ? "var(--green)" : "var(--surface)", color:type==="cgv" ? "#fff" : "var(--ink)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".8rem" }}
+            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${type==="cgv" ? "var(--green)" : "var(--border)"}`, background:type==="cgv" ? "var(--green)" : "var(--surface)", color:type==="cgv" ? "#fff" : "var(--ink)", cursor:"pointer", fontFamily: "var(--font-body)", fontWeight:600, fontSize:".8rem" }}
           >📜 CGV</button>
           <button
             onClick={() => goPage("mentions")}
-            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${type==="mentions" ? "var(--green)" : "var(--border)"}`, background:type==="mentions" ? "var(--green)" : "var(--surface)", color:type==="mentions" ? "#fff" : "var(--ink)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".8rem" }}
+            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${type==="mentions" ? "var(--green)" : "var(--border)"}`, background:type==="mentions" ? "var(--green)" : "var(--surface)", color:type==="mentions" ? "#fff" : "var(--ink)", cursor:"pointer", fontFamily: "var(--font-body)", fontWeight:600, fontSize:".8rem" }}
           >📋 Mentions légales</button>
           <button
             onClick={() => goPage("confidentialite")}
-            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${type==="confidentialite" ? "var(--green)" : "var(--border)"}`, background:type==="confidentialite" ? "var(--green)" : "var(--surface)", color:type==="confidentialite" ? "#fff" : "var(--ink)", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".8rem" }}
+            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${type==="confidentialite" ? "var(--green)" : "var(--border)"}`, background:type==="confidentialite" ? "var(--green)" : "var(--surface)", color:type==="confidentialite" ? "#fff" : "var(--ink)", cursor:"pointer", fontFamily: "var(--font-body)", fontWeight:600, fontSize:".8rem" }}
           >🔒 Confidentialité</button>
         </div>
 

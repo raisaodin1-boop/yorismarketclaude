@@ -70,7 +70,7 @@ export function BusinessForm() {
     return (
       <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, padding:40, textAlign:"center" }}>
         <div style={{ fontSize:"3.5rem", marginBottom:14 }}>✅</div>
-        <h3 style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1.2rem", color:"var(--green)", marginBottom:10 }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontWeight:800, fontSize:"1.2rem", color:"var(--green)", marginBottom:10 }}>
           Message envoyé avec succès !
         </h3>
         <p style={{ fontSize:".88rem", color:"var(--gray)", lineHeight:1.7, maxWidth:420, margin:"0 auto 20px" }}>
@@ -78,7 +78,7 @@ export function BusinessForm() {
         </p>
         <button
           onClick={() => setSent(false)}
-          style={{ background:"var(--surface2)", color:"var(--ink)", border:"1.5px solid var(--border)", borderRadius:8, padding:"9px 20px", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:".82rem" }}
+          style={{ background:"var(--surface2)", color:"var(--ink)", border:"1.5px solid var(--border)", borderRadius:8, padding:"9px 20px", cursor:"pointer", fontFamily: "var(--font-body)", fontWeight:600, fontSize:".82rem" }}
         >
           Envoyer une autre demande
         </button>
@@ -88,7 +88,7 @@ export function BusinessForm() {
 
   return (
     <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, padding:22 }}>
-      <h3 style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:"1rem", color:"var(--ink)", marginBottom:4 }}>
+      <h3 style={{ fontFamily: "var(--font-display)", fontWeight:800, fontSize:"1rem", color:"var(--ink)", marginBottom:4 }}>
         📋 Demande d'accès Business
       </h3>
       <p style={{ fontSize:".78rem", color:"var(--gray)", marginBottom:16 }}>

@@ -36,7 +36,7 @@ export function LivraisonPage({
     <div className="anim">
       <section className="sec">
         <header style={{ marginBottom: 20, maxWidth: 760 }}>
-          <h1 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "clamp(1.15rem,2.5vw,1.35rem)", color: "var(--ink)", margin: "0 0 10px", letterSpacing: "-.3px" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(1.15rem,2.5vw,1.35rem)", color: "var(--ink)", margin: "0 0 10px", letterSpacing: "-.3px" }}>
             {route.citySlug && CITY_BY_SLUG[route.citySlug]
               ? `Livraison à ${CITY_BY_SLUG[route.citySlug].name} — livreurs Yorix`
               : "Livraison Cameroun — Yorix Ride express"}
@@ -53,7 +53,7 @@ export function LivraisonPage({
         </Suspense>
 
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 22, marginBottom: 20 }}>
-          <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 16, letterSpacing: "-.3px" }}>🗺️ Comment fonctionne Yorix Ride ?</h3>
+          <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 16, letterSpacing: "-.3px" }}>🗺️ Comment fonctionne Yorix Ride ?</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
             {[
               { n: 1, icon: "🛍️", t: "Vous commandez", d: "Passez commande sur Yorix ou via WhatsApp" },
@@ -72,7 +72,7 @@ export function LivraisonPage({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 800,
                     fontSize: ".78rem",
                     margin: "0 auto 8px",
@@ -81,7 +81,7 @@ export function LivraisonPage({
                   {s.n}
                 </div>
                 <div style={{ fontSize: "1.4rem", marginBottom: 5 }}>{s.icon}</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem", color: "var(--ink)", marginBottom: 3 }}>{s.t}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem", color: "var(--ink)", marginBottom: 3 }}>{s.t}</div>
                 <div style={{ fontSize: ".68rem", color: "var(--gray)", lineHeight: 1.5 }}>{s.d}</div>
               </div>
             ))}
@@ -89,7 +89,7 @@ export function LivraisonPage({
         </div>
 
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 22, marginBottom: 20 }}>
-          <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 14 }}>💰 Tarifs de livraison</h3>
+          <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", color: "var(--ink)", marginBottom: 14 }}>💰 Tarifs de livraison</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
             {[
               { zone: "🏙️ Intra-ville", prix: "500 – 1 500 FCFA", delai: "20 – 45 min", dispo: "Douala, Yaoundé" },
@@ -97,8 +97,8 @@ export function LivraisonPage({
               { zone: "🗺️ Inter-villes", prix: "3 000 – 8 000 FCFA", delai: "J+1", dispo: "Tout le Cameroun" },
             ].map((t) => (
               <div key={t.zone} style={{ background: "var(--surface2)", borderRadius: 10, padding: 14, border: "1px solid var(--border)" }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".84rem", color: "var(--ink)", marginBottom: 5 }}>{t.zone}</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1rem", fontWeight: 800, color: "var(--green)", marginBottom: 3 }}>{t.prix}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".84rem", color: "var(--ink)", marginBottom: 5 }}>{t.zone}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 800, color: "var(--green)", marginBottom: 3 }}>{t.prix}</div>
                 <div style={{ fontSize: ".69rem", color: "var(--gray)", marginBottom: 2 }}>⏱ {t.delai}</div>
                 <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{t.dispo}</div>
               </div>
@@ -147,7 +147,7 @@ export function LivraisonPage({
                     {d.emoji}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".86rem", color: "var(--ink)" }}>{d.name}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".86rem", color: "var(--ink)" }}>{d.name}</div>
                     <div style={{ fontSize: ".65rem", color: "var(--gray)", lineHeight: 1.4 }}>{d.sub}</div>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ export function LivraisonPage({
                     border: "none",
                     padding: "8px",
                     borderRadius: 8,
-                    fontFamily: "'Syne',sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontWeight: 700,
                     fontSize: ".75rem",
                     cursor: d.dispo ? "pointer" : "default",
@@ -193,7 +193,7 @@ export function LivraisonPage({
 
         <div style={{ background: "linear-gradient(135deg,#1a3a24,#0d3320)", borderRadius: 14, padding: 24, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1.1rem", color: "#fff", marginBottom: 5 }}>🏍️ Devenez livreur Yorix</div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.1rem", color: "#fff", marginBottom: 5 }}>🏍️ Devenez livreur Yorix</div>
             <div style={{ color: "rgba(255,255,255,.6)", fontSize: ".82rem", lineHeight: 1.6, maxWidth: 360 }}>
               Gagnez 15 000 – 80 000 FCFA/mois selon votre activité. Horaires libres, votre propre véhicule, paiement quotidien.
             </div>
@@ -212,7 +212,7 @@ export function LivraisonPage({
               border: "none",
               padding: "12px 22px",
               borderRadius: 10,
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: ".85rem",
               cursor: "pointer",

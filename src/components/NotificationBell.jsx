@@ -317,7 +317,7 @@ export function NotificationBell({
     .ybell-badge {
       position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px;
       padding: 0 4px; background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff;
-      border-radius: 50px; font-size: .6rem; font-weight: 800; font-family: 'DM Sans', sans-serif;
+      border-radius: 50px; font-size: .6rem; font-weight: 800; font-family: var(--font-body);
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 2px 8px rgba(220, 38, 38, .45);
       animation: ybellPulse 2s ease-in-out infinite; pointer-events: none;
@@ -359,7 +359,7 @@ export function NotificationBell({
       display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 10px;
       position: sticky; top: 0; z-index: 2;
     }
-    .ybell-head-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; letter-spacing: -.3px; min-width: 0; }
+    .ybell-head-title { font-family: var(--font-display); font-weight: 800; font-size: 1rem; letter-spacing: -.3px; min-width: 0; }
     .ybell-head-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .ybell-head-action {
       background: rgba(252, 209, 22, .14); color: #fcd116;
@@ -401,7 +401,7 @@ export function NotificationBell({
       border-top: 1px solid var(--border); padding: 12px 14px; background: var(--surface2);
       max-height: 42vh; overflow-y: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0;
     }
-    .ybell-detail-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .92rem; margin: 0 0 8px; color: var(--ink); }
+    .ybell-detail-title { font-family: var(--font-display); font-weight: 800; font-size: .92rem; margin: 0 0 8px; color: var(--ink); }
     .ybell-detail-body { font-size: .88rem; line-height: 1.55; color: var(--ink); white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; margin: 0 0 12px; }
     .ybell-detail-actions { display: flex; flex-direction: column; gap: 8px; }
     .ybell-detail-btn {

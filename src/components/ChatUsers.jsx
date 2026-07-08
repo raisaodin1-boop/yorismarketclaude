@@ -8,9 +8,6 @@ import {
   filtrerMsg,
   publicDisplayName,
   adminContactLines,
-  CHAT_ESCROW_GUIDANCE,
-  CHAT_ESCROW_HINT,
-  CHAT_ESCROW_BLOCK_TITLE,
 } from "../lib/chatSecurity";
 import { insertChatMessage, classifyChatInsertError } from "../lib/chatMessages";
 import { findOrCreateConversation } from "../lib/chatConversations";
@@ -19,6 +16,7 @@ import { CHAT_CONVERSATIONS_LIMIT, CHAT_MESSAGES_LIMIT } from "../lib/queryLimit
 import { ChatMessageBody } from "./ChatMessageBody";
 import { NewMessageModal } from "./chat/NewMessageModal";
 import { YorixToast, useYorixToast } from "./ui/YorixToast";
+import { useSiteT } from "../hooks/useSiteT";
 
 export const YORIX_TEAM_CHANNEL = "__yorix_team__";
 
@@ -33,11 +31,11 @@ function safeHttpsUrl(raw) {
   return null;
 }
 
-function messagePreview(m) {
-  if (m.image_url) return "📷 Photo";
-  if (m.link_url) return "🔗 Lien";
-  const t = (m.content || m.texte || "").trim();
-  return t ? t.slice(0, 60) : "Message";
+function messagePreview(m, t) {
+  if (m.image_url) return t("chat:photoPreview");
+  if (m.link_url) return t("chat:linkPreview");
+  const txt = (m.content || m.texte || "").trim();
+  return txt ? txt.slice(0, 60) : t("chat:messageDefault");
 }
 
 export function ChatUsers({
@@ -47,7 +45,20 @@ export function ChatUsers({
   initialConversationId = null,
   onClose,
   isModal = false,
+  siteLocale = "fr",
 }) {
+  const { t, isEn } = useSiteT(siteLocale);
+  const dateLocale = isEn ? "en-GB" : "fr-FR";
+  const [autoTranslate, setAutoTranslate] = useState(() => {
+    try {
+      const stored = localStorage.getItem("yorix-chat-auto-translate");
+      if (stored === "0") return false;
+      if (stored === "1") return true;
+    } catch {
+      /* ignore */
+    }
+    return true;
+  });
   const isAdmin = canWriteAdmin(userData);
   const revealPII = isAdmin;
 
@@ -82,6 +93,29 @@ export function ChatUsers({
       /* ignore */
     }
   };
+
+  const toggleAutoTranslate = () => {
+    setAutoTranslate((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("yorix-chat-auto-translate", next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+    hapticTap();
+  };
+
+  const chatBodyLabels = useMemo(
+    () => ({
+      openLinkLabel: t("chat:openLink"),
+      translatedLabel: t("chat:translatedLabel"),
+      showOriginalLabel: t("chat:showOriginal"),
+      translatingLabel: t("chat:translating"),
+    }),
+    [t],
+  );
 
   const hydrateProfilesAndProducts = useCallback(async (convs) => {
     if (!user?.id) return;
@@ -174,10 +208,10 @@ export function ChatUsers({
         setTimeout(() => composeInputRef.current?.focus(), 120);
       } catch (err) {
         console.error("startConversation:", err);
-        showToast(err.message || "Impossible d'ouvrir la conversation", "error");
+        showToast(err.message || t("chat:openConversationFailed"), "error");
       }
     },
-    [user?.id, showToast, loadConversations],
+    [user?.id, showToast, loadConversations, t],
   );
 
   useEffect(() => {
@@ -411,14 +445,14 @@ export function ChatUsers({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      showToast("Image max 5 Mo", "error");
+      showToast(t("chat:imageMaxSize"), "error");
       return;
     }
     setUploading(true);
     try {
       setPendingImage(await uploadSingleImage(file));
     } catch (err) {
-      showToast(err.message || "Échec upload", "error");
+      showToast(err.message || t("chat:uploadFailed"), "error");
     }
     setUploading(false);
     e.target.value = "";
@@ -434,7 +468,7 @@ export function ChatUsers({
     }
 
     if (!user?.id) {
-      showToast("Session expirée — reconnectez-vous.", "error");
+      showToast(t("chat:sessionExpired"), "error");
       return;
     }
 
@@ -442,12 +476,8 @@ export function ChatUsers({
       const filtre = filtrerMsg(text);
       if (filtre.bloque) {
         setBlocked(true);
-        setBlockReason(filtre.raison || "Partage de contact interdit");
-        showToast(
-          `${filtre.raison} Restez sur Yorix et payez via la plateforme (escrow) pour une transaction sécurisée.`,
-          "error",
-          7000,
-        );
+        setBlockReason(filtre.raison || t("chat:contactBlocked"));
+        showToast(`${filtre.raison || t("chat:contactBlocked")} ${t("chat:stayOnPlatform")}`, "error", 7000);
         setTimeout(() => setBlocked(false), 8000);
         if (user) {
           supabase
@@ -470,19 +500,15 @@ export function ChatUsers({
       const linkFilter = filtrerMsg(linkText);
       if (linkFilter.bloque) {
         setBlocked(true);
-        setBlockReason(linkFilter.raison || "Lien de contact interdit");
-        showToast(
-          `${linkFilter.raison} Restez sur Yorix et payez via la plateforme (escrow) pour une transaction sécurisée.`,
-          "error",
-          7000,
-        );
+        setBlockReason(linkFilter.raison || t("chat:forbiddenContactLink"));
+        showToast(`${linkFilter.raison || t("chat:forbiddenContactLink")} ${t("chat:stayOnPlatform")}`, "error", 7000);
         setTimeout(() => setBlocked(false), 8000);
         return;
       }
     }
 
     if (linkText && !link) {
-      setBlockReason("Seuls les liens https:// sont acceptés.");
+      setBlockReason(t("chat:httpsOnly"));
       setBlocked(true);
       setTimeout(() => setBlocked(false), 4000);
       return;
@@ -513,15 +539,11 @@ export function ChatUsers({
       loadConversations();
       scrollToBottom(true);
       if (result.usedFallback && result.notificationOk === false) {
-        showToast(
-          "Message envoyé. La notification du destinataire sera retardée.",
-          "warning",
-          5000,
-        );
+        showToast(t("chat:sentDelayedNotif"), "warning", 5000);
       }
     } catch (err) {
       console.warn("sendMessage:", err?.message || err);
-      const { kind, userMessage } = classifyChatInsertError(err);
+      const { kind, userMessage } = classifyChatInsertError(err, t);
       if (kind === "notification") {
         showToast(userMessage, "warning", 6000);
       } else {
@@ -541,7 +563,7 @@ export function ChatUsers({
     return (
       <div className="msg-hub-empty">
         <div className="msg-hub-empty-icon">🔐</div>
-        <p>Connectez-vous pour accéder à la messagerie Yorix.</p>
+        <p>{t("chat:loginRequired")}</p>
       </div>
     );
   }
@@ -570,7 +592,7 @@ export function ChatUsers({
       >
         <div className="msg-hub-toolbar">
           <div className="msg-hub-title-row">
-            <h2 className="msg-hub-title">Messages</h2>
+            <h2 className="msg-hub-title">{t("chat:title")}</h2>
             <button
               type="button"
               className="msg-hub-new-btn"
@@ -578,18 +600,18 @@ export function ChatUsers({
                 setShowNewMessage(true);
                 hapticTap();
               }}
-              aria-label="Nouveau message"
+              aria-label={t("chat:newMessageAria")}
             >
-              + Nouveau
+              + {t("chat:newMessage")}
             </button>
           </div>
           <input
             type="search"
             className="msg-hub-search"
-            placeholder="Rechercher une conversation…"
+            placeholder={t("chat:searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Rechercher"
+            aria-label={t("chat:searchAria")}
           />
         </div>
 
@@ -601,30 +623,28 @@ export function ChatUsers({
           >
             <div className="msg-conv-av msg-conv-av--brand">🇨🇲</div>
             <div className="msg-conv-copy">
-              <div className="msg-conv-name">Yorix Équipe</div>
+              <div className="msg-conv-name">{t("chat:yorixTeam")}</div>
               <div className="msg-conv-preview">
                 {broadcasts.length
-                  ? messagePreview(broadcasts[broadcasts.length - 1])
-                  : "Annonces et infos officielles"}
+                  ? messagePreview(broadcasts[broadcasts.length - 1], t)
+                  : t("chat:officialAnnouncements")}
               </div>
             </div>
             {broadcasts.length > 0 && <span className="msg-conv-badge">●</span>}
           </button>
 
           {loading ? (
-            <div className="msg-hub-loading">Chargement…</div>
+            <div className="msg-hub-loading">{t("chat:loading")}</div>
           ) : filteredConversations.length === 0 ? (
             <div className="msg-hub-empty-inline">
-              <p>Aucune conversation privée.</p>
-              <p className="msg-hub-hint">
-                Utilisez « + Nouveau » ou contactez un vendeur depuis une fiche produit.
-              </p>
+              <p>{t("chat:noPrivateConversations")}</p>
+              <p className="msg-hub-hint">{t("chat:newConvHint")}</p>
               <button
                 type="button"
                 className="msg-hub-new-btn msg-hub-new-btn--inline"
                 onClick={() => setShowNewMessage(true)}
               >
-                + Nouveau message
+                {t("chat:newMessageFull")}
               </button>
             </div>
           ) : (
@@ -640,15 +660,15 @@ export function ChatUsers({
                   <div className="msg-conv-name">{partnerLabel(c)}</div>
                   <div className="msg-conv-preview">
                     {c.product_id && products[c.product_id]
-                      ? `🛍️ ${products[c.product_id].name_fr?.slice(0, 40) || "Produit"}`
+                      ? `🛍️ ${products[c.product_id].name_fr?.slice(0, 40) || t("chat:productLabel")}`
                       : c.last_message_at
-                        ? new Date(c.last_message_at).toLocaleString("fr-FR", {
+                        ? new Date(c.last_message_at).toLocaleString(dateLocale, {
                             day: "2-digit",
                             month: "short",
                             hour: "2-digit",
                             minute: "2-digit",
                           })
-                        : "Nouvelle conversation"}
+                        : t("chat:newConversation")}
                   </div>
                 </div>
               </button>
@@ -667,26 +687,36 @@ export function ChatUsers({
             onClick={() => {
               setMobileShowThread(false);
             }}
-            aria-label="Retour"
+            aria-label={t("chat:back")}
           >
             ←
           </button>
           <div className="msg-hub-header-copy">
             <div className="msg-hub-header-title">
               {activeId === YORIX_TEAM_CHANNEL
-                ? "Yorix Équipe"
+                ? t("chat:yorixTeam")
                 : activeConv
                   ? partnerLabel(activeConv)
-                  : "Messagerie"}
+                  : t("chat:messaging")}
             </div>
             <div className="msg-hub-header-sub">
               {activeId === YORIX_TEAM_CHANNEL
-                ? "Annonces officielles · Communauté Yorix"
-                : "🔒 Contacts masqués · Échanges sécurisés sur Yorix"}
+                ? t("chat:officialAnnouncementsSub")
+                : t("chat:secureExchangeSub")}
             </div>
           </div>
+          <button
+            type="button"
+            className={`msg-translate-btn${autoTranslate ? " msg-translate-btn--on" : ""}`}
+            onClick={toggleAutoTranslate}
+            title={autoTranslate ? t("chat:autoTranslateOn") : t("chat:autoTranslateOff")}
+            aria-pressed={autoTranslate}
+            aria-label={t("chat:autoTranslate")}
+          >
+            🌐
+          </button>
           {onClose && (
-            <button type="button" className="msg-hub-close" onClick={onClose} aria-label="Fermer">
+            <button type="button" className="msg-hub-close" onClick={onClose} aria-label={t("chat:close")}>
               ✕
             </button>
           )}
@@ -694,7 +724,7 @@ export function ChatUsers({
 
         {isAdmin && activePartner && activeId !== YORIX_TEAM_CHANNEL && (
           <div className="msg-admin-contact-panel">
-            <span className="msg-admin-contact-label">Vue admin — coordonnées</span>
+            <span className="msg-admin-contact-label">{t("chat:adminContactView")}</span>
             {adminContactLines(activePartner).map((line) => (
               <span key={line.k} className="msg-admin-contact-line">
                 <strong>{line.k}:</strong> {line.v}
@@ -707,15 +737,15 @@ export function ChatUsers({
           {!activeId ? (
             <div className="msg-hub-empty">
               <div className="msg-hub-empty-icon">💬</div>
-              <p>Sélectionnez une conversation ou Yorix Équipe</p>
+              <p>{t("chat:selectConversation")}</p>
             </div>
           ) : displayMessages.length === 0 ? (
             <div className="msg-hub-empty">
               <div className="msg-hub-empty-icon">✨</div>
               <p>
                 {activeId === YORIX_TEAM_CHANNEL
-                  ? "Les annonces de l'équipe Yorix apparaîtront ici."
-                  : "Aucun message. Envoyez le premier !"}
+                  ? t("chat:yorixAnnouncementsEmpty")
+                  : t("chat:noMessagesYet")}
               </p>
             </div>
           ) : (
@@ -738,6 +768,9 @@ export function ChatUsers({
                           imageUrl={m.image_url}
                           linkUrl={m.link_url}
                           revealPII={revealPII}
+                          viewerLocale={siteLocale}
+                          autoTranslate={autoTranslate}
+                          {...chatBodyLabels}
                         />
                       </>
                     ) : (
@@ -746,14 +779,17 @@ export function ChatUsers({
                         imageUrl={m.image_url}
                         linkUrl={m.link_url}
                         revealPII={revealPII}
+                        viewerLocale={siteLocale}
+                        autoTranslate={autoTranslate}
+                        {...chatBodyLabels}
                       />
                     )}
                     <div className="msg-bubble-foot">
-                      {new Date(m.created_at).toLocaleTimeString("fr-FR", {
+                      {new Date(m.created_at).toLocaleTimeString(dateLocale, {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                      {isMine && !isSystem && (m.is_read ? " · Lu" : "")}
+                      {isMine && !isSystem && (m.is_read ? ` · ${t("chat:read")}` : "")}
                     </div>
                   </div>
                 </div>
@@ -763,10 +799,10 @@ export function ChatUsers({
 
           {blocked && (
             <div className="msg-blocked-banner" role="alert">
-              <strong>🛡️ {CHAT_ESCROW_BLOCK_TITLE}</strong>
+              <strong>🛡️ {t("chat:escrow.blockTitle")}</strong>
               <p className="msg-blocked-reason">{blockReason}</p>
-              <p className="msg-blocked-body">{CHAT_ESCROW_GUIDANCE}</p>
-              <p className="msg-blocked-hint">{CHAT_ESCROW_HINT}</p>
+              <p className="msg-blocked-body">{t("chat:escrow.guidance")}</p>
+              <p className="msg-blocked-hint">{t("chat:escrow.hint")}</p>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -778,12 +814,12 @@ export function ChatUsers({
               <div className="msg-composer-attachments">
                 {pendingImage && (
                   <div className="msg-composer-preview">
-                    <img src={pendingImage} alt="Aperçu" loading="lazy" />
+                    <img src={pendingImage} alt={t("chat:previewAlt")} loading="lazy" />
                     <button
                       type="button"
                       className="msg-composer-preview-remove"
                       onClick={() => setPendingImage("")}
-                      aria-label="Retirer l'image"
+                      aria-label={t("chat:removeImage")}
                     >
                       ×
                     </button>
@@ -795,7 +831,7 @@ export function ChatUsers({
                     <button
                       type="button"
                       onClick={() => setPendingLink("")}
-                      aria-label="Retirer le lien"
+                      aria-label={t("chat:removeLink")}
                     >
                       ×
                     </button>
@@ -809,7 +845,7 @@ export function ChatUsers({
                 className="msg-composer-icon"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                title="Photo"
+                title={t("chat:attachPhoto")}
               >
                 {uploading ? "…" : "📷"}
               </button>
@@ -817,7 +853,7 @@ export function ChatUsers({
               <input
                 type="url"
                 className="msg-composer-link"
-                placeholder="Lien https (opt.)"
+                placeholder={t("chat:linkPlaceholder")}
                 value={pendingLink}
                 onChange={(e) => setPendingLink(e.target.value)}
               />
@@ -825,7 +861,7 @@ export function ChatUsers({
                 ref={composeInputRef}
                 type="text"
                 className="msg-composer-input"
-                placeholder="Écrivez votre message…"
+                placeholder={t("chat:composePlaceholder")}
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -835,7 +871,7 @@ export function ChatUsers({
                   }
                 }}
                 disabled={sending}
-                aria-label="Message"
+                aria-label={t("chat:messageAria")}
                 enterKeyHint="send"
               />
               <button
@@ -847,7 +883,7 @@ export function ChatUsers({
                   uploading ||
                   (!messageInput.trim() && !pendingImage && !safeHttpsUrl(pendingLink))
                 }
-                aria-label={sending ? "Envoi en cours" : "Envoyer"}
+                aria-label={sending ? t("chat:sending") : t("chat:send")}
               >
                 {sending ? <span className="msg-composer-spinner" aria-hidden /> : "➤"}
               </button>
@@ -857,7 +893,7 @@ export function ChatUsers({
 
         {activeId === YORIX_TEAM_CHANNEL && (
           <footer className="msg-hub-composer msg-hub-composer--readonly">
-            <p>Canal officiel en lecture seule. Répondez via le support si besoin.</p>
+            <p>{t("chat:readonlyChannel")}</p>
           </footer>
         )}
       </section>

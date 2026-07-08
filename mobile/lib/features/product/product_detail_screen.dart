@@ -108,7 +108,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           controller: _pageController,
                           itemCount: images.length,
                           onPageChanged: (i) => setState(() => _imageIndex = i),
-                          itemBuilder: (_, i) => YorixNetworkImage(url: images[i]),
+                          itemBuilder: (_, i) => YorixNetworkImage(
+                            url: images[i],
+                            width: 800,
+                            height: 600,
+                          ),
                         ),
                         if (images.length > 1)
                           Positioned(

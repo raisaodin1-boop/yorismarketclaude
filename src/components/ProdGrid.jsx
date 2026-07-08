@@ -4,11 +4,19 @@ import { ShoppingCart, MessageCircle, Lock, Flame, Zap, Star, Trophy, BadgeCheck
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
 import { MadeInCameroonBadge } from "./MadeInCameroonBadge";
+import { isImportProduct } from "../lib/importWholesale";
+import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
+import {
+  wholesalePriceSummary,
+  nextWholesaleTierHint,
+  importLogisticsHint,
+  buildWholesaleWhatsAppText,
+} from "../lib/wholesaleCardMeta";
+import { openWhatsAppShare, buildProductWhatsAppText } from "../lib/shareUtils";
 import { resolveMadeInCameroon } from "../lib/madeInCameroon";
 import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
 import { SocialProofLine } from "./conversion/SocialProofLine";
-import { buildProductWhatsAppText, openWhatsAppShare } from "../lib/shareUtils";
 import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import {
@@ -16,6 +24,9 @@ import {
   productDeliveryShort,
   productProtectScore,
 } from "../lib/productCardMeta";
+import { formatProductDisplayName } from "../lib/productDisplayName";
+import { useSiteT } from "../hooks/useSiteT";
+import { CompactSocialProof } from "./conversion/CompactSocialProof";
 import "../components/yorix/marketplaceHeader.css";
 
 const LazyFicheProduit = lazy(() =>
@@ -37,7 +48,10 @@ export function ProdGrid({
   onOpenSellerUrl,
   siteLocale = "fr",
   showShare = false,
+  wholesaleMode = false,
+  madeInMode = false,
 }) {
+  const { t } = useSiteT(siteLocale);
   const [ficheOpen, setFicheOpen]           = useState(null);
   const [cmdOpen, setCmdOpen]               = useState(null);
   const [addedIds, setAddedIds]             = useState(new Set());
@@ -53,14 +67,14 @@ export function ProdGrid({
       ? { ...p, prix: variant.prix, stock: variant.stock, _variantId: variant.id, _variantLabel: variant.label }
       : p;
     onAddToCart(cartProduct);
-    showAppToast(`✓ ${(p.name_fr || "Produit").slice(0, 32)} ajouté au panier`, "success", 2200);
+    showAppToast(t("ui:addedToCartToast", { name: (p.name_fr || t("catalog:productDefault")).slice(0, 32) }), "success", 2200);
     setAddedIds((prev) => {
       const next = new Set(prev);
       next.add(p.id);
       setTimeout(() => setAddedIds((s) => { const c = new Set(s); c.delete(p.id); return c; }), 1200);
       return next;
     });
-  }, [onAddToCart]);
+  }, [onAddToCart, t]);
 
   // ── Image sécurisée
   const getSafeImg = (p) => {
@@ -72,11 +86,10 @@ export function ProdGrid({
   // ── Badges vendeur
   const getVendeurBadges = (p) => {
     const badges = [];
-    if (p.sponsorise)                   badges.push({ label: "Top Vendeur",   cls: "badge-top",   icon: Star });
-    if (p.verifie || p.vendeur_verifie) badges.push({ label: "Vérifié",        cls: "badge-verif", icon: BadgeCheck });
-    if (isPromoActive(p))               badges.push({ label: "Promo du jour", cls: "badge-promo", icon: Flame });
-    if (p.flash)                        badges.push({ label: "Offre flash",   cls: "badge-flash", icon: Zap });
-    if (p.vente_total > 50)             badges.push({ label: "Best seller",   cls: "badge-best",  icon: Trophy });
+    if (p.sponsorise)                   badges.push({ label: t("catalog:topSeller"),   cls: "badge-top",   icon: Star });
+    if (isPromoActive(p))               badges.push({ label: t("catalog:dailyPromo"), cls: "badge-promo", icon: Flame });
+    if (p.flash)                        badges.push({ label: t("catalog:flashOffer"),   cls: "badge-flash", icon: Zap });
+    if (p.vente_total > 50)             badges.push({ label: t("catalog:bestSeller"),   cls: "badge-best",  icon: Trophy });
     return badges;
   };
 
@@ -90,12 +103,17 @@ export function ProdGrid({
           const prixPromo  = isPromoActive(p) ? effectiveProductPrice(p) : null;
           const prixBarre  = productPromoListPrice(p);
           const buyable    = isPurchasable(p);
+          const wholesaleSummary = wholesaleMode ? wholesalePriceSummary(p) : null;
+          const tierHint = wholesaleMode ? nextWholesaleTierHint(p, siteLocale) : null;
+          const importHint = wholesaleMode && isImportProduct(p) ? importLogisticsHint(p, siteLocale) : null;
+          const compactList = !wholesaleMode;
+          const displayName = formatProductDisplayName(p.name_fr);
 
           return (
-            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}`}>
+            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}${wholesaleMode ? " prod-card--wholesale" : " prod-card--compact"}${madeInMode ? " prod-card--made-in" : ""}`}>
               {/* ── IMAGE OPTIMISÉE (lazy + WebP + compression auto) ── */}
               <div
-                className="prod-img-wrap"
+                className={`prod-img-wrap${compactList ? " prod-img-wrap--hover-actions" : ""}`}
                 onClick={() => {
                   if (onOpenProductUrl) onOpenProductUrl(p);
                   else setFicheOpen(p);
@@ -105,30 +123,45 @@ export function ProdGrid({
                   src={safeImg}
                   alt={p.name_fr || "Produit Yorix"}
                   size="card"
-                  priority={i === 0}
+                  priority={i < 4}
                   fallbackEmoji="📦"
                   style={{ width: "100%", height: "100%" }}
                 />
-                {p.flash                             && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> Flash</span>}
-                {!p.flash && isPromoActive(p)        && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
-                {!p.flash && !p.promo && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> Top</span>}
-                {resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
-                {p.escrow                            && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
+                {p.flash && !compactList && <span className="pbadge-flash"><Zap size={10} strokeWidth={2.5} aria-hidden /> {t("catalog:flash")}</span>}
+                {!compactList && !p.flash && isPromoActive(p) && <span className="pbadge-promo">-{p.promo_pct || 15}%</span>}
+                {!compactList && !p.flash && !isPromoActive(p) && p.sponsorise && <span className="pbadge-r"><Star size={10} strokeWidth={2.5} aria-hidden /> {t("catalog:top")}</span>}
+                {!compactList && resolveMadeInCameroon(p).show && <MadeInCameroonBadge product={p} size="sm" />}
+                {compactList && resolveMadeInCameroon(p).show && (
+                  <span className="prod-mic-badge-compact" aria-hidden>🇨🇲</span>
+                )}
+                {!compactList && (p.b2b_enabled || isImportProduct(p)) && (
+                  <span className={`b2b-card-badge${wholesaleMode ? " b2b-card-badge--wholesale" : ""}`}>
+                    {p.b2b_enabled ? t("catalog:wholesale") : t("catalog:import")}
+                  </span>
+                )}
+                {wholesaleMode && (p.vendeur_verifie || p.verifie) && (
+                  <span className="b2b-certified-badge" title={t("catalog:certified")}>
+                    <BadgeCheck size={11} strokeWidth={2.5} aria-hidden />
+                    {t("catalog:certified")}
+                  </span>
+                )}
+                {!compactList && p.escrow && <span className="escrow-badge" title="Escrow"><Lock size={12} strokeWidth={2.5} aria-hidden /></span>}
                 {!buyable && (
                   <span
                     style={{
                       position: "absolute", top: 8, left: 8, zIndex: 3,
                       background: "rgba(206,17,38,.92)", color: "#fff",
                       padding: "3px 9px", borderRadius: 999, fontSize: ".62rem",
-                      fontFamily: "'Syne',sans-serif", fontWeight: 800, letterSpacing: ".02em",
+                      fontFamily: "var(--font-display)", fontWeight: 800, letterSpacing: ".02em",
                       boxShadow: "0 4px 12px rgba(206,17,38,.35)",
                     }}
                   >
-                    Rupture
+                    {t("ui:outOfStock")}
                   </span>
                 )}
                 <button
-                  className="wish-btn"
+                  className={`wish-btn${compactList ? " wish-btn--compact" : ""}`}
+                  aria-label={t("ui:wishlist")}
                   onClick={e => { e.stopPropagation(); onWish(p.id); }}
                 >
                   {wishlist.has(p.id) ? (
@@ -137,6 +170,28 @@ export function ProdGrid({
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                   )}
                 </button>
+                {compactList && (
+                  <div className="prod-hover-actions">
+                    <button
+                      type="button"
+                      className="prod-buy-now-btn"
+                      disabled={!buyable}
+                      aria-disabled={!buyable}
+                      onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                    >
+                      {t("ui:buy")}
+                    </button>
+                    <button
+                      className="add-btn add-btn--overlay"
+                      disabled={!buyable}
+                      aria-disabled={!buyable}
+                      aria-label={buyable ? t("ui:addToCart") : t("ui:unavailable")}
+                      onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* ── INFOS ── */}
@@ -147,6 +202,34 @@ export function ProdGrid({
                   else setFicheOpen(p);
                 }}
               >
+                {compactList ? (
+                  <>
+                    <div className="prod-name prod-name--rule3">{displayName}</div>
+                    <div className="prod-price-row prod-price-row--rule3">
+                      {prixPromo ? (
+                        <>
+                          <span className="price">
+                            {prixPromo.toLocaleString()} <span className="price-unit">FCFA</span>
+                          </span>
+                          <span className="prod-price-was">{p.prix?.toLocaleString()} F</span>
+                        </>
+                      ) : (
+                        <span className="price">
+                          {p.prix?.toLocaleString()} <span className="price-unit">FCFA</span>
+                        </span>
+                      )}
+                    </div>
+                    <CompactSocialProof product={p} locale={siteLocale} />
+                    <div className="prod-trust-badges-mobile">
+                      {(p.escrow !== false) && <span>🛡 Escrow</span>}
+                      <span>🚚 {productDeliveryShort(p, siteLocale) || (siteLocale === "en" ? "Delivery" : "Livraison")}</span>
+                      {(p.vendeur_verifie || p.verifie) && (
+                        <span>{siteLocale === "en" ? "✅ Verified" : "✅ Vérifié"}</span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
                 {vendBadges.length > 0 && (
                   <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
                     {vendBadges.map(b => (
@@ -158,10 +241,10 @@ export function ProdGrid({
                   </div>
                 )}
 
-                <div className="prod-name">{p.name_fr}</div>
+                <div className="prod-name">{displayName}</div>
                 <div className="prod-loc">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {p.ville || "Cameroun"}
+                  {p.ville || t("catalog:defaultCountry")}
                   {p.vendeur_nom && (
                     <>
                       {" · "}
@@ -183,54 +266,104 @@ export function ProdGrid({
                   )}
                 </div>
 
-                <div className="prod-enriched-row" aria-label={siteLocale === "en" ? "Product trust" : "Confiance produit"}>
+                <div className="prod-enriched-row" aria-label={t("catalog:productTrust")}>
                   <span className="prod-enriched-chip prod-enriched-chip--moq">
                     <Package size={10} aria-hidden />
                     {productMoqLabel(p, siteLocale)}
                   </span>
-                  <span className="prod-enriched-chip prod-enriched-chip--delivery">
-                    <Clock size={10} aria-hidden />
-                    {productDeliveryShort(p, siteLocale)}
-                  </span>
-                  <span className="prod-enriched-chip prod-enriched-chip--protect">
-                    <ShieldCheck size={10} aria-hidden />
-                    Protect+ {productProtectScore(p)}%
-                  </span>
-                  {(p.verifie || p.vendeur_verifie) && (
-                    <span className="prod-enriched-chip prod-enriched-chip--verified">
-                      <BadgeCheck size={10} aria-hidden />
-                      {siteLocale === "en" ? "Verified" : "Vérifié"}
+                  {!wholesaleMode && (
+                    <>
+                      <span className="prod-enriched-chip prod-enriched-chip--delivery">
+                        <Clock size={10} aria-hidden />
+                        {productDeliveryShort(p, siteLocale)}
+                      </span>
+                      <span className="prod-enriched-chip prod-enriched-chip--protect">
+                        <ShieldCheck size={10} aria-hidden />
+                        Protect+ {productProtectScore(p)}%
+                      </span>
+                    </>
+                  )}
+                  {wholesaleMode && p.escrow && (
+                    <span className="prod-enriched-chip prod-enriched-chip--escrow">
+                      <Lock size={10} aria-hidden />
+                      Escrow
                     </span>
                   )}
+                  {(p.vendeur_verifie || p.verifie) && (
+                    <VerifiedSellerBadge verified compact locale={siteLocale} />
+                  )}
                 </div>
-                <SocialProofLine product={p} locale={siteLocale} />
 
+                {importHint && (
+                  <div className="prod-wholesale-logistics">
+                    <span title={importHint.escrow}>🛡️ {importHint.escrow}</span>
+                    <span>🚢 {importHint.lead} · {importHint.incoterm}</span>
+                    <span>📋 {importHint.customs}</span>
+                  </div>
+                )}
+
+                {tierHint && (
+                  <div className="prod-wholesale-tier">
+                    <div className="prod-wholesale-tier__bar" aria-hidden>
+                      <span style={{ width: `${tierHint.progressPct}%` }} />
+                    </div>
+                    <span className="prod-wholesale-tier__lbl">{tierHint.label}</span>
+                  </div>
+                )}
+
+                {!wholesaleMode && <SocialProofLine product={p} locale={siteLocale} />}
+
+                {!wholesaleMode && (
                 <div className="prod-badge-row">
-                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire"><Flame size={11} aria-hidden /> Stock limité</span>}
-                  <span className="pb pb-truck"><Truck size={11} aria-hidden /> Livraison rapide</span>
-                  <span className="pb pb-cash"><Banknote size={11} aria-hidden /> Paiement livraison</span>
+                  {p.stock > 0 && p.stock <= 5 && <span className="pb pb-fire"><Flame size={11} aria-hidden /> {t("catalog:limitedStockBadge")}</span>}
+                  <span className="pb pb-truck"><Truck size={11} aria-hidden /> {t("catalog:fastDelivery")}</span>
+                  <span className="pb pb-cash"><Banknote size={11} aria-hidden /> {t("catalog:cashOnDelivery")}</span>
                 </div>
+                )}
 
-                {p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
+                {!wholesaleMode && p.description_fr && <div className="prod-desc">{p.description_fr}</div>}
 
                 {p.stock !== undefined && p.stock !== null && (
                   <div className={`prod-stock ${stockClass}`} style={{ fontSize: ".65rem" }}>
                     {p.stock > 5
-                      ? `${p.stock} en stock`
+                      ? t("catalog:stockCount", { count: p.stock })
                       : p.stock > 0
-                        ? `${p.stock} restant(s)`
-                        : "Rupture de stock"}
+                        ? t("catalog:stockRemaining", { count: p.stock })
+                        : t("ui:outOfStockFull")}
                   </div>
                 )}
 
+                {p.nombre_avis > 0 && (
                 <div className="prod-rating">
                   <Stars value={Math.round(p.note || 0)} />
-                  <span className="rcount">({p.nombre_avis || 0})</span>
+                  <span className="rcount">({p.nombre_avis})</span>
                 </div>
+                )}
 
                 <div className="prod-price-row">
                   <div>
-                    {prixPromo ? (
+                    {wholesaleSummary && wholesaleSummary.wholesale > 0 ? (
+                      <div className="prod-wholesale-prices">
+                        {wholesaleSummary.retail > 0 && wholesaleSummary.retail !== wholesaleSummary.wholesale && (
+                          <div className="prod-wholesale-prices__retail">
+                            {t("catalog:retail")} :{" "}
+                            <s>{wholesaleSummary.retail.toLocaleString()} F</s>
+                          </div>
+                        )}
+                        <div className="prod-wholesale-prices__gros">
+                          <span className="price">
+                            {wholesaleSummary.wholesale.toLocaleString()}{" "}
+                            <span className="price-unit">FCFA</span>
+                          </span>
+                          <span className="prod-wholesale-prices__moq">
+                            / {t("catalog:unit")} ({wholesaleSummary.moq}+)
+                          </span>
+                        </div>
+                        {wholesaleSummary.savingsPct != null && wholesaleSummary.savingsPct > 0 && (
+                          <span className="prod-wholesale-savings">−{wholesaleSummary.savingsPct}% {t("catalog:margin")}</span>
+                        )}
+                      </div>
+                    ) : prixPromo ? (
                       <>
                         <span className="price">
                           {prixPromo.toLocaleString()} <span className="price-unit">FCFA</span>
@@ -245,64 +378,53 @@ export function ProdGrid({
                       </span>
                     )}
                   </div>
+                  {!wholesaleMode && (
                   <button
                     className="add-btn"
                     disabled={!buyable}
                     aria-disabled={!buyable}
-                    title={buyable ? "Ajouter au panier" : "Produit indisponible"}
+                    title={buyable ? t("ui:addToCart") : t("ui:unavailable")}
                     style={!buyable ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
                     onClick={e => { e.stopPropagation(); handleAdd(p); }}
                   >
                     +
                   </button>
+                  )}
                 </div>
-              </div>
-
-              {/* ── BOUTON PANIER ── */}
-              <div className="prod-actions" style={{ padding: "0 11px 11px", display: "flex", flexDirection: "column", gap: 6 }}>
-                <button
-                  className="add-btn-full"
-                  disabled={!buyable}
-                  aria-disabled={!buyable}
-                  style={{
-                    width: "100%", padding: "8px", borderRadius: 8, fontSize: ".78rem",
-                    fontFamily: "var(--font-display)", fontWeight: 700,
-                    background: addedIds.has(p.id) ? "#0f4a28" : buyable ? "var(--green)" : "var(--surface2)",
-                    color: buyable ? "#fff" : "var(--gray)",
-                    border: buyable ? "none" : "1px solid var(--border)",
-                    cursor: buyable ? "pointer" : "not-allowed",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                    opacity: buyable ? 1 : 0.75,
-                    transform: addedIds.has(p.id) ? "scale(.97)" : "none",
-                    transition: "background .2s, transform .15s",
-                  }}
-                  onClick={e => { e.stopPropagation(); handleAdd(p); }}
-                >
-                  {addedIds.has(p.id) ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                      Ajouté !
-                    </>
-                  ) : buyable ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                      Ajouter au panier
-                    </>
-                  ) : "Indisponible"}
-                </button>
-                {showShare && (
-                  <button
-                    type="button"
-                    className="prod-share-mini"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openWhatsAppShare(buildProductWhatsAppText(p, siteLocale));
-                    }}
-                  >
-                    <MessageCircle size={14} aria-hidden /> {siteLocale === "en" ? "Share" : "Partager"}
-                  </button>
+                  </>
                 )}
               </div>
+
+              {wholesaleMode && (
+              <div className="prod-actions" style={{ padding: "0 11px 11px", display: "flex", flexDirection: "column", gap: 6 }}>
+                    <button
+                      type="button"
+                      className="add-btn-full prod-wholesale-wa"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openWhatsAppShare(buildWholesaleWhatsAppText(p, siteLocale));
+                      }}
+                    >
+                      <MessageCircle size={14} aria-hidden />
+                      {t("catalog:quoteWhatsApp")}
+                    </button>
+                    {buyable && (
+                      <button
+                        type="button"
+                        className="add-btn-full"
+                        style={{
+                          width: "100%", padding: "8px", borderRadius: 8, fontSize: ".75rem",
+                          fontFamily: "var(--font-display)", fontWeight: 700,
+                          background: "var(--surface2)", color: "var(--ink)",
+                          border: "1px solid var(--border)", cursor: "pointer",
+                        }}
+                        onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                      >
+                        {t("ui:addToCart")}
+                      </button>
+                    )}
+              </div>
+              )}
             </div>
           );
         })}
@@ -312,7 +434,7 @@ export function ProdGrid({
         <Suspense
           fallback={
             <div className="loading" style={{ justifyContent: "center", padding: 40 }}>
-              <div className="spinner" /> Chargement...
+              <div className="spinner" /> {t("catalog:loadingGrid")}
             </div>
           }
         >

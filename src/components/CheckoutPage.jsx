@@ -27,6 +27,7 @@ import { TrustStrip } from "./ui/TrustStrip";
 import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
 import { explainDeliveryEta } from "../lib/logisticsAi";
 import { userFacingSuccess } from "../lib/appToast";
+import { generateAttestationPdf, generateDeliveryNotePdf, generateInvoicePdf } from "../lib/pdfDocumentGenerator";
 
 const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c)));
 
@@ -513,17 +514,6 @@ export function CheckoutPage({
       } finally {
         setLoading(false);
       }
-      openWhatsAppFallback(intentId, serverRecap);
-      setCartItems([]);
-      idempotencyKeyRef.current = null; // commande aboutie → clé consommée
-      userFacingSuccess("✅ Commande envoyée via WhatsApp — suivez la conversation pour confirmer.", 6000);
-      setOrderDone({
-        mode: "whatsapp",
-        orderGroupId,
-        intentId: intentId || `LOCAL-${Date.now()}`,
-        deliveryTracking,
-      });
-      setLoading(false);
       return;
     }
 
@@ -625,6 +615,31 @@ export function CheckoutPage({
   }, [locationType, carrier, ville, hasProducts, t]);
 
   const deliveryHintText = deliveryEstimateHint(ville, locationType, carrier, summary?.total || 0);
+
+  const orderPdfPayload = useMemo(() => {
+    const total =
+      orderDone?.mode === "cinetpay_return" && Number.isFinite(Number(orderDone?.amountReturned))
+        ? Number(orderDone.amountReturned)
+        : Number(summaryWithDiscount?.total || summary?.total || 0);
+    const subtotal = Number(summary?.subtotal || 0);
+    const delivery = Number(summary?.delivery || 0);
+    return {
+      orderRef: orderDone?.orderGroupId || orderDone?.intentId || "N/A",
+      intentId: orderDone?.intentId || "N/A",
+      dateLabel: new Date().toLocaleString("fr-FR"),
+      clientName: mergedUserData?.nom || user?.email || "Client Yorix",
+      phone: mergedUserData?.telephoneDisplay || mergedUserData?.telephone || "N/A",
+      address: mergedUserData?.adresse || "N/A",
+      city: mergedUserData?.ville || "N/A",
+      paymentMethod: paymentMethod === "cinetpay" ? "CinetPay (Escrow)" : paymentMethod === "cod" ? "Paiement à la livraison" : "WhatsApp backup",
+      trackingCode: Array.isArray(orderDone?.deliveryTracking) && orderDone.deliveryTracking[0]?.code_suivi ? orderDone.deliveryTracking[0].code_suivi : null,
+      carrier: carrier === "yorix" ? "Yorix Delivery" : "Standard vendeur",
+      status: orderDone?.mode === "cinetpay_return" ? "Paiement confirmé" : "Commande confirmée",
+      subtotalLabel: `${subtotal.toLocaleString("fr-FR")} FCFA`,
+      deliveryLabel: delivery > 0 ? `${delivery.toLocaleString("fr-FR")} FCFA` : "Offerte / N/A",
+      totalLabel: `${total.toLocaleString("fr-FR")} FCFA`,
+    };
+  }, [orderDone, summaryWithDiscount?.total, summary?.total, summary?.subtotal, summary?.delivery, mergedUserData, user?.email, paymentMethod, carrier]);
 
   return (
     <section className="sec anim checkout-page-wrap yorix-page-flow yorix-pro-page">
@@ -732,6 +747,17 @@ export function CheckoutPage({
             )}
           </div>
           <div className="yorix-ds-stack">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+              <button type="button" className="btn-ghost" onClick={() => generateInvoicePdf(orderPdfPayload)}>
+                Télécharger facture PDF
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => generateAttestationPdf(orderPdfPayload)}>
+                Télécharger attestation PDF
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => generateDeliveryNotePdf(orderPdfPayload)}>
+                Télécharger bon de livraison PDF
+              </button>
+            </div>
             <button type="button" className="form-submit" style={{ width: "auto", minWidth: 200 }} onClick={() => goPage("dashboard")}>
               {t("confirm.myAccount")}
             </button>

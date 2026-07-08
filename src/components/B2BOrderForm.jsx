@@ -2,6 +2,13 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { showAppToast } from "../lib/appToast";
 import { OptimizedImage } from "./OptimizedImage";
+import {
+  formatLeadTime,
+  isImportProduct,
+  parseWholesaleTiers,
+  productOriginLabel,
+  resolveWholesaleUnitPrice,
+} from "../lib/importWholesale";
 
 export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
   const [form, setForm] = useState({
@@ -16,35 +23,30 @@ export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
   const [done, setDone]       = useState(null);
 
   const minQty   = product?.min_qty_gros || 10;
-  const unitPrice = product?.prix_gros || product?.prix || 0;
+  const unitPrice = resolveWholesaleUnitPrice(product, form.quantity);
   const total    = Number(form.quantity || 0) * unitPrice;
+  const tiers    = parseWholesaleTiers(product);
+  const importFlag = isImportProduct(product);
 
   const handleSubmit = async () => {
+    if (!user?.id) { showAppToast("Connectez-vous pour envoyer une demande B2B", "error"); return; }
     if (!form.contact_name.trim()) { showAppToast("Nom du contact requis", "error"); return; }
-    if (!form.phone.replace(/s/g,"").match(/^d{8,}/)) { showAppToast("Numéro de téléphone invalide", "error"); return; }
+    if (!form.phone.replace(/\s/g, "").match(/^\d{8,}/)) { showAppToast("Numéro de téléphone invalide", "error"); return; }
     if (Number(form.quantity) < minQty) { showAppToast(`Quantité minimum : ${minQty} unités`, "error"); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.from("b2b_requests").insert({
-        buyer_id:     user?.id || null,
+        buyer_id:     user.id,
         product_id:   product.id,
         seller_id:    product.vendeur_id,
         company_name: form.company_name.trim() || null,
         contact_name: form.contact_name.trim(),
-        phone:        form.phone.replace(/s/g,""),
+        phone:        form.phone.replace(/\s/g, ""),
         email:        form.email.trim() || null,
         quantity:     Number(form.quantity),
         message:      form.message.trim() || null,
       }).select("id").single();
       if (error) throw error;
-
-      await supabase.from("notifications").insert({
-        user_id: product.vendeur_id,
-        type:    "b2b",
-        title:   "Nouvelle demande B2B",
-        body:    `${form.contact_name} veut commander ${Number(form.quantity).toLocaleString()} unités de "${product.name_fr}". Tél : ${form.phone}`,
-        lu:      false,
-      }).catch(() => {});
 
       setDone(data?.id || "OK");
       onSuccess?.();
@@ -105,11 +107,23 @@ export function B2BOrderForm({ product, user, userData, onClose, onSuccess }) {
         ) : (
           <>
             <div className="b2b-body">
-              {product?.prix_gros && (
+              {(product?.prix_gros || tiers.length > 0) && (
                 <div className="b2b-price-hint">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ display:"inline",verticalAlign:"middle",marginRight:4 }} aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>
-                  Prix de gros : <strong>{Number(product.prix_gros).toLocaleString()} FCFA/unité</strong> — minimum {minQty} unités
+                  Prix de gros : <strong>{Number(unitPrice).toLocaleString()} FCFA/unité</strong> — minimum {minQty} unités
                   {Number(form.quantity) >= minQty && <> · Total indicatif : <strong>{total.toLocaleString()} FCFA</strong></>}
+                </div>
+              )}
+              {importFlag && (
+                <div style={{ fontSize: ".75rem", background: "#fef3c7", padding: "8px 10px", borderRadius: 8, marginBottom: 10, color: "#92400e" }}>
+                  Import {productOriginLabel(product)}
+                  {product.lead_time_days ? ` · Délai ${formatLeadTime(product.lead_time_days)}` : ""}
+                  {product.incoterm ? ` · ${product.incoterm}` : ""}
+                </div>
+              )}
+              {tiers.length > 1 && (
+                <div style={{ fontSize: ".72rem", color: "var(--gray)", marginBottom: 10 }}>
+                  Paliers : {tiers.map((t) => `${t.min_qty}+ → ${t.unit_price.toLocaleString()} F`).join(" · ")}
                 </div>
               )}
 

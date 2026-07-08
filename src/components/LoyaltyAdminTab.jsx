@@ -89,7 +89,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
               <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;">
                 <div style="background:linear-gradient(135deg,#1a3a24,#2d9655);color:#fff;padding:30px;border-radius:12px 12px 0 0;text-align:center;">
                   <div style="font-size:48px;margin-bottom:10px;">🌟</div>
-                  <h1 style="margin:0;font-size:24px;font-family:'Syne',sans-serif;">Vos points sont arrivés !</h1>
+                  <h1 style="margin:0;font-size:24px;font-family: var(--font-display);">Vos points sont arrivés !</h1>
                 </div>
                 <div style="background:#fff;padding:30px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
                   <p style="color:#374151;font-size:15px;line-height:1.7;">
@@ -101,7 +101,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
                   </p>
                   <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:20px;text-align:center;margin:24px 0;">
                     <div style="color:#059669;font-size:14px;font-weight:600;margin-bottom:6px;">POINTS CRÉDITÉS</div>
-                    <div style="color:#059669;font-size:42px;font-weight:800;font-family:'Syne',sans-serif;">+${purchase.points.toLocaleString("fr-FR")} pts</div>
+                    <div style="color:#059669;font-size:42px;font-weight:800;font-family: var(--font-display);">+${purchase.points.toLocaleString("fr-FR")} pts</div>
                   </div>
                   <p style="color:#6b7280;font-size:14px;line-height:1.7;">
                     Vous pouvez dès maintenant échanger vos points contre des bons d'achat, livraisons gratuites, réductions et bien plus encore.
@@ -200,7 +200,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
 
             <div style={{ background: "var(--green-pale)", border: "1px solid var(--green-light)", borderRadius: 10, padding: 14, marginTop: 14 }}>
               <div style={{ fontSize: ".7rem", color: "var(--gray)", fontWeight: 700, marginBottom: 6 }}>📦 PACK COMMANDÉ</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", marginBottom: 4 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", marginBottom: 4 }}>
                 {selectedPurchase.pack_nom || "Pack"}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".82rem", marginTop: 8 }}>
@@ -223,7 +223,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
 
             <div style={{ background: "var(--surface2)", borderRadius: 10, padding: 14, marginTop: 10 }}>
               <div style={{ fontSize: ".7rem", color: "var(--gray)", fontWeight: 700, marginBottom: 6 }}>👤 CLIENT</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".92rem" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".92rem" }}>
                 {selectedPurchase.nom || selectedPurchase.client?.nom || "—"}
               </div>
               <div style={{ fontSize: ".78rem", color: "var(--gray)", marginTop: 3 }}>
@@ -263,7 +263,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
                   style={{
                     background: "var(--green)", color: "#fff", border: "none",
                     padding: "12px", borderRadius: 9, cursor: "pointer",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: ".82rem",
+                    fontFamily: "var(--font-display)", fontWeight: 800, fontSize: ".82rem",
                   }}
                 >
                   ✅ Valider & créditer
@@ -274,7 +274,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
                   style={{
                     background: "#fff0f0", color: "#ce1126", border: "1.5px solid #fecaca",
                     padding: "12px", borderRadius: 9, cursor: "pointer",
-                    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".82rem",
+                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".82rem",
                   }}
                 >
                   ❌ Annuler
@@ -291,7 +291,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
                 style={{
                   display: "block", marginTop: 10, background: "#25D366", color: "#fff",
                   padding: "10px", borderRadius: 8, textDecoration: "none", textAlign: "center",
-                  fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem",
                 }}
               >
                 📱 Contacter sur WhatsApp
@@ -351,7 +351,7 @@ export function LoyaltyAdminTab({ user, userData, showToast, readOnly = false })
               color: filter === f.id ? "#fff" : "var(--ink)",
               border: `1.5px solid ${filter === f.id ? "var(--green)" : "var(--border)"}`,
               borderRadius: 8, padding: "7px 14px", cursor: "pointer",
-              fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: ".78rem",
+              fontFamily: "var(--font-body)", fontWeight: 600, fontSize: ".78rem",
             }}
           >
             {f.label} ({f.count})

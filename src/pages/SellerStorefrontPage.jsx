@@ -68,7 +68,7 @@ export function SellerStorefrontPage({
     (isEn ? "Yorix supplier" : "Fournisseur Yorix");
 
   const totalSales = products.reduce((s, p) => s + (Number(p.vente_total) || 0), 0);
-  const verified = profile?.vendeur_verifie || products.some((p) => p.vendeur_verifie || p.verifie);
+  const verified = profile?.verifie === true;
   const avatarLetter = (displayName[0] || "Y").toUpperCase();
 
   if (!sellerId) {
@@ -114,8 +114,8 @@ export function SellerStorefrontPage({
           </p>
           <div className="seller-store-badges">
             {verified && (
-              <span className="seller-store-badge seller-store-badge--gold">
-                <BadgeCheck size={12} aria-hidden /> {isEn ? "Verified supplier" : "Fournisseur vérifié"}
+              <span className="seller-store-badge seller-store-badge--verified">
+                <BadgeCheck size={12} aria-hidden /> {isEn ? "Verified seller" : "Vendeur vérifié"}
               </span>
             )}
             <span className="seller-store-badge">

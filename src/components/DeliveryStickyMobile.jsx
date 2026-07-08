@@ -59,7 +59,7 @@ export function DeliveryStickyMobile({ onOpenFullModal }) {
           border: "none",
           padding: "13px 16px",
           borderRadius: 50,
-          fontFamily: "'Syne',sans-serif",
+          fontFamily: "var(--font-display)",
           fontWeight: 800,
           fontSize: ".88rem",
           cursor: "pointer",

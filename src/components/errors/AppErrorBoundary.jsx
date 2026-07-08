@@ -61,7 +61,7 @@ export class AppErrorBoundary extends Component {
           <div style={{ fontSize: "2rem", marginBottom: 12 }}>⚠️</div>
           <h2
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: "1.05rem",
               color: "var(--ink)",
@@ -106,7 +106,7 @@ export class AppErrorBoundary extends Component {
           justifyContent: "center",
           padding: 24,
           background: "var(--bg, #f5f1e8)",
-          fontFamily: "'DM Sans',sans-serif",
+          fontFamily: "var(--font-body)",
         }}
       >
         <div
@@ -125,7 +125,7 @@ export class AppErrorBoundary extends Component {
           <div style={{ fontSize: "2.5rem", marginBottom: 14 }}>🛠️</div>
           <h1
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: "1.25rem",
               color: "var(--ink, #0d1f14)",
@@ -171,7 +171,7 @@ export class AppErrorBoundary extends Component {
                 borderRadius: 10,
                 border: "1.5px solid var(--border, #e2ddd6)",
                 background: "var(--surface2, #faf8f5)",
-                fontFamily: "'DM Sans',sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 600,
                 fontSize: ".85rem",
                 cursor: "pointer",

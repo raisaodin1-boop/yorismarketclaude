@@ -54,6 +54,30 @@ export function optimizeCloudinaryUrl(url, options = {}) {
   return url.replace(/\/upload\//, `/upload/${transforms}/`);
 }
 
+/**
+ * Optimise une URL image (Cloudinary ou Supabase Storage) pour affichage catalogue.
+ */
+export function optimizeImageUrl(url, options = {}) {
+  if (!url || typeof url !== "string") return url;
+  if (url.includes("cloudinary.com")) return optimizeCloudinaryUrl(url, options);
+
+  if (url.includes("/storage/v1/object/public/")) {
+    const width = options.width ?? 400;
+    const height = options.height;
+    const quality = typeof options.quality === "number" ? options.quality : 75;
+    const renderUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    const params = new URLSearchParams({
+      width: String(width),
+      quality: String(quality),
+      resize: height ? "cover" : "contain",
+    });
+    if (height) params.set("height", String(height));
+    return `${renderUrl}?${params}`;
+  }
+
+  return url;
+}
+
 // Tailles d'affichage du catalogue → transformations Cloudinary.
 export const CLOUDINARY_PRESETS = {
   thumb: { width: 80, height: 80, crop: "fill", quality: "auto" },
@@ -113,15 +137,36 @@ export async function uploadCloudinaryFile(file, opts = {}) {
   fd.append("file", file);
   fd.append("upload_preset", UPLOAD_PRESET);
   if (opts.folder) fd.append("folder", opts.folder);
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
-    { method: "POST", body: fd }
-  );
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.error) {
-    throw new Error(data.error?.message || "Échec de l'envoi du fichier");
+
+  const timeoutMs = opts.timeoutMs ?? 120_000;
+  let timeoutId;
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  if (controller) {
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   }
-  return data.secure_url;
+
+  try {
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+      {
+        method: "POST",
+        body: fd,
+        signal: controller?.signal,
+      },
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      throw new Error(data.error?.message || "Échec de l'envoi du fichier");
+    }
+    return data.secure_url;
+  } catch (e) {
+    if (e?.name === "AbortError") {
+      throw new Error("L'envoi du fichier a expiré — réessayez avec une photo plus légère");
+    }
+    throw e;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 export async function uploadMultipleImages(files) {

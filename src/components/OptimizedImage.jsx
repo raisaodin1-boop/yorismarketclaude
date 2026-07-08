@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   optimizeCloudinaryUrl,
+  optimizeImageUrl,
   cloudinarySrcset,
   cloudinaryPlaceholder,
   cloudinaryResponsive,
@@ -61,11 +62,13 @@ export function OptimizedImage({
   }
 
   const responsive = size ? cloudinaryResponsive(src, size) : null;
-  const optimizedSrc = responsive ? responsive.src : optimizeCloudinaryUrl(src, { width });
-  const srcset = responsive ? responsive.srcSet : cloudinarySrcset(src);
-  // En mode preset, le srcset utilise des descripteurs de densité (1x/2x) → pas d'attribut sizes.
-  const sizesAttr = responsive ? undefined : `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, ${width}px`;
-  const placeholder = cloudinaryPlaceholder(src);
+  const preset = size ? { thumb: 80, card: 300, hero: 800 }[size] || 400 : width;
+  const optimizedSrc = responsive
+    ? responsive.src
+    : optimizeImageUrl(src, { width: preset, height: size === "card" || size === "thumb" ? preset : undefined });
+  const srcset = responsive ? responsive.srcSet : (src.includes("cloudinary.com") ? cloudinarySrcset(src) : undefined);
+  const sizesAttr = responsive ? undefined : `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, ${preset}px`;
+  const placeholder = cloudinaryPlaceholder(src) || optimizeImageUrl(src, { width: 24, quality: 40 });
 
   return (
     <div
@@ -101,8 +104,7 @@ export function OptimizedImage({
       {/* Image optimisée */}
       <img
         src={optimizedSrc}
-        srcSet={srcset}
-        sizes={sizesAttr}
+        {...(srcset ? { srcSet: srcset, sizes: sizesAttr } : {})}
         alt={alt}
         decoding="async"
         {...(priority

@@ -32,6 +32,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   bool _prefilled = false;
   String? _error;
   int? _serverTotal;
+  String? _idempotencyKey;
 
   @override
   void initState() {
@@ -173,6 +174,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         checkoutIntentId: intentId,
         paymentMethod: _paymentMethod == _PaymentMethod.cinetpay ? 'cinetpay' : 'whatsapp_backup',
         address: _address.text.trim(),
+        idempotencyKey: _idempotencyKey ??= '${DateTime.now().millisecondsSinceEpoch}-${currentUser.id}',
       );
 
       final orderGroupId = confirmation['order_group_id']?.toString();
@@ -196,6 +198,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
           throw Exception('Lien CinetPay indisponible');
         }
         cart.clear();
+        _idempotencyKey = null;
         if (!mounted) return;
         Navigator.of(context).pop();
         final opened = await launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication);

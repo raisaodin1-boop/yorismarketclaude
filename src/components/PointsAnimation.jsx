@@ -25,7 +25,7 @@ export function PointsAnimation({ show, points, onDone }) {
         color: "#0d1f14",
         padding: "20px 36px",
         borderRadius: 18,
-        fontFamily: "'Syne',sans-serif",
+        fontFamily: "var(--font-display)",
         fontWeight: 800,
         fontSize: "clamp(1.4rem, 5vw, 2rem)",
         boxShadow: "0 20px 60px rgba(245,158,11,.5), 0 0 0 4px rgba(252,209,22,.25)",

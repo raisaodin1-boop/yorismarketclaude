@@ -1,16 +1,17 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/product.dart';
+import '../product_list_columns.dart';
 
 class ProductRepository {
   ProductRepository(this._client);
 
   final SupabaseClient _client;
 
-  Future<List<Product>> fetchCatalog({int limit = 80}) async {
+  Future<List<Product>> fetchCatalog({int limit = 60}) async {
     final response = await _client
         .from('products')
-        .select()
+        .select(productListColumns)
         .or('actif.eq.true,actif.is.null')
         .order('sponsorise', ascending: false)
         .order('created_at', ascending: false)
@@ -23,10 +24,10 @@ class ProductRepository {
         .toList();
   }
 
-  Future<List<Product>> fetchSellerProducts(String vendeurId, {int limit = 100}) async {
+  Future<List<Product>> fetchSellerProducts(String vendeurId, {int limit = 60}) async {
     final response = await _client
         .from('products')
-        .select()
+        .select(productListColumns)
         .eq('vendeur_id', vendeurId)
         .order('created_at', ascending: false)
         .limit(limit);
@@ -40,7 +41,7 @@ class ProductRepository {
   Future<Product?> fetchById(String id) async {
     final response = await _client
         .from('products')
-        .select()
+        .select(productListColumns)
         .eq('id', id)
         .maybeSingle();
     if (response == null) return null;

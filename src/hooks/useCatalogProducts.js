@@ -1,35 +1,10 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
+import { PRODUCT_LIST_COLUMNS } from "../lib/productListColumns";
 
 export const CATALOG_PAGE_SIZE = 20;
 
-// Colonnes consommées par la grille (ProdGrid + productPricing + madeInCameroon), au lieu de SELECT *.
-const LIST_COLUMNS = [
-  "id",
-  "name_fr",
-  "description_fr",
-  "prix",
-  "stock",
-  "categorie",
-  "category_id",
-  "image",
-  "image_urls",
-  "ville",
-  "vendeur_nom",
-  "note",
-  "nombre_avis",
-  "sponsorise",
-  "flash",
-  "escrow",
-  "vente_total",
-  "promo",
-  "promo_pct",
-  "promo_starts_at",
-  "promo_ends_at",
-  "is_made_in_cameroon",
-  "made_in_cameroon_status",
-  "created_at",
-].join(",");
+const LIST_COLUMNS = PRODUCT_LIST_COLUMNS;
 
 // PostgREST coupe sur , % ( ) : on neutralise pour éviter une requête malformée.
 export function sanitizeTerm(value) {

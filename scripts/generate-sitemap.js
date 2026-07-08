@@ -116,6 +116,7 @@ const staticSeoPages = [
   [PAGE_PATH.confidentialite, "0.4", "yearly"],
   [PAGE_PATH.inscription, "0.75", "monthly"],
   [PAGE_PATH.devenirVendeur, "0.8", "monthly"],
+  [PAGE_PATH.importSupplier, "0.75", "monthly"],
   [PAGE_PATH.devenirLivreur, "0.8", "monthly"],
 ];
 

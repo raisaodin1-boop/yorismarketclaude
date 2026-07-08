@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../theme/yorix_theme.dart';
+import '../../utils/image_url_utils.dart';
 
 class YorixNetworkImage extends StatelessWidget {
   const YorixNetworkImage({
@@ -10,19 +11,32 @@ class YorixNetworkImage extends StatelessWidget {
     this.url,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.width = 300,
+    this.height = 300,
   });
 
   final String? url;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+  final int width;
+  final int height;
 
   @override
   Widget build(BuildContext context) {
-    final child = url == null
+    final optimized = ImageUrlUtils.optimize(url, width: width, height: height);
+    final dpr = MediaQuery.devicePixelRatioOf(context).ceil().clamp(1, 3);
+    final cacheW = width * dpr;
+    final cacheH = height * dpr;
+
+    final child = optimized == null
         ? const _Placeholder()
         : CachedNetworkImage(
-            imageUrl: url!,
+            imageUrl: optimized,
             fit: fit,
+            memCacheWidth: cacheW,
+            memCacheHeight: cacheH,
+            fadeInDuration: const Duration(milliseconds: 180),
+            fadeOutDuration: const Duration(milliseconds: 120),
             placeholder: (_, _) => const _ShimmerBox(),
             errorWidget: (_, _, _) => const _Placeholder(),
           );

@@ -1,5 +1,8 @@
 import { productMatchesMadeInFilter } from "./madeInCameroon.js";
-import { productMoq } from "./productMoq.js";
+import {
+  productMatchesInternationalImportFilter,
+  productMatchesWholesaleFilter,
+} from "./importWholesale.js";
 import {
   computeTopNewProducts,
   computeTrendingProducts,
@@ -21,12 +24,13 @@ export const MERCH_HUBS = {
     slug: "made-in-cameroun",
     page: "merchHub",
     categorySlug: "made-in-cameroun",
-    titleFr: "Made in Cameroun 🇨🇲 — Produits locaux vérifiés",
-    titleEn: "Made in Cameroon 🇨🇲 — Verified local products",
+    titleFr: "Fierté camerounaise, chez vous",
+    titleEn: "Cameroonian pride, at your door",
     descFr:
-      "Découvrez artisans, marques et producteurs camerounais sur Yorix.cm. Achetez local, soutenez l'économie nationale.",
-    descEn: "Discover Cameroonian makers and brands on Yorix.cm. Shop local, support the national economy.",
-    keywordsFr: "made in cameroun, produits camerounais, acheter local cameroun, marques camerounaises",
+      "Artisans, producteurs et marques du terroir — du pagne wax au poisson de Kribi, achetez local en toute confiance.",
+    descEn:
+      "Artisans, producers and local brands — from wax pagne to Kribi fish, shop local with confidence.",
+    keywordsFr: "made in cameroun, produits camerounais, acheter local, terroir cameroun, artisanat",
     emoji: "🇨🇲",
     theme: "cameroon-green",
     filter: "made_in_cameroon",
@@ -152,16 +156,31 @@ export const MERCH_HUBS = {
     slug: "sourcer-en-gros",
     page: "merchHub",
     categorySlug: "sourcing-gros",
-    titleFr: "Sourcer en gros — Fournisseurs & MOQ Cameroun",
-    titleEn: "Wholesale sourcing — Suppliers & MOQ Cameroon",
+    titleFr: "Achetez au prix d'usine",
+    titleEn: "Buy at factory price",
     descFr:
-      "Achat groupé, fournisseurs vérifiés et quantités minimum (MOQ) pour professionnels, boutiques et distributeurs.",
+      "Le hub de gros n°1 pour les revendeurs au Cameroun — import direct, MOQ, escrow et fournisseurs certifiés Yorix.",
     descEn:
-      "Bulk buying, verified suppliers and minimum order quantities (MOQ) for pros, shops and distributors.",
-    keywordsFr: "gros cameroun, sourcing fournisseur, moq marketplace, achat groupé",
+      "Cameroon's #1 wholesale hub for resellers — direct import, MOQ, escrow and Yorix-certified suppliers.",
+    keywordsFr: "gros cameroun, prix usine, sourcing revendeur, moq marketplace, import douala",
     emoji: "📦",
     theme: "wholesale",
     filter: "wholesale",
+  },
+  "import-chine": {
+    slug: "import-chine",
+    page: "merchHub",
+    categorySlug: "import-international",
+    titleFr: "Import international → Cameroun — Gros & devis B2B",
+    titleEn: "International import → Cameroon — Wholesale & B2B",
+    descFr:
+      "Sourcing Chine, Inde, France, Turquie, Émirats et plus : MOQ, délais FOB/CIF, devis B2B et escrow Yorix.",
+    descEn:
+      "Sourcing from China, India, France, Turkey, UAE and more: MOQ, FOB/CIF lead times, B2B quotes and Yorix escrow.",
+    keywordsFr: "import international cameroun, gros import, sourcing inde france chine, fournisseur étranger",
+    emoji: "🌏",
+    theme: "import-intl",
+    filter: "import_international",
   },
 };
 
@@ -176,6 +195,11 @@ export const HOMEPAGE_MERCH_TILES = [
   { hub: "livraison-express", accent: "#0891b2" },
   { hub: "top-vendeurs", accent: "#1a4a9a" },
 ];
+
+/** Accueil grand public — sans B2B/gros (réservé aux pages dédiées) */
+export const HOMEPAGE_MERCH_TILES_PUBLIC = HOMEPAGE_MERCH_TILES.filter(
+  (t) => t.hub !== "sourcer-en-gros",
+);
 
 /** Alias SEO avec contenu hub dédié (immobilier, emploi). */
 export const SEO_HUB_ALIAS_KEYS = new Set([
@@ -291,24 +315,21 @@ export function filterProductsByMerchHub(products, filterKey, opts = {}) {
       return active.filter((p) => String(p.ville || "").toLowerCase().includes(needle));
     }
     case "wholesale": {
-      const wholesale = active.filter((p) => {
-        const moq = productMoq(p);
-        return (
-          moq > 1 ||
-          p.vendeur_verifie ||
-          p.verifie ||
-          p.sponsorise ||
-          (Number(p.vente_total) || 0) >= 8
-        );
-      });
+      const wholesale = active.filter(productMatchesWholesaleFilter);
       if (wholesale.length >= 4) {
         return [...wholesale].sort(
-          (a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0),
+          (a, b) => (Number(b.min_qty_gros) || 0) - (Number(a.min_qty_gros) || 0),
         );
       }
       return [...active]
-        .sort((a, b) => (Number(b.vente_total) || 0) - (Number(a.vente_total) || 0))
+        .filter((p) => p.b2b_enabled || Number(p.min_qty_gros) > 1)
         .slice(0, 64);
+    }
+    case "import_international":
+    case "import_china": {
+      const imported = active.filter(productMatchesInternationalImportFilter);
+      if (imported.length >= 2) return imported;
+      return active.filter((p) => p.b2b_enabled).slice(0, 48);
     }
     default:
       return active;

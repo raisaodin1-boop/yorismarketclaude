@@ -9,9 +9,9 @@ export function AcademyDetail({ course, goPage, goContact }) {
   const renderMarkdown = (md) => {
     if (!md) return "";
     return md
-      .replace(/^# (.+)$/gm, '<h1 style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1.8rem;color:var(--ink);margin:20px 0 14px;letter-spacing:-.5px">$1</h1>')
-      .replace(/^## (.+)$/gm, '<h2 style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1.2rem;color:var(--green);margin:22px 0 10px">$1</h2>')
-      .replace(/^### (.+)$/gm, '<h3 style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:1rem;color:var(--ink);margin:16px 0 8px">$1</h3>')
+      .replace(/^# (.+)$/gm, '<h1 style="font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--ink);margin:20px 0 14px;letter-spacing:-.5px">$1</h1>')
+      .replace(/^## (.+)$/gm, '<h2 style="font-family:var(--font-display);font-weight:800;font-size:1.2rem;color:var(--green);margin:22px 0 10px">$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3 style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--ink);margin:16px 0 8px">$1</h3>')
       .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--ink)">$1</strong>')
       .replace(/_(.+?)_/g, '<em style="color:var(--gray);font-style:italic">$1</em>')
       .replace(/^\d+\. (.+)$/gm, '<li style="margin-left:22px;margin-bottom:6px;list-style:decimal;color:var(--ink);font-size:.88rem;line-height:1.75">$1</li>')
@@ -89,7 +89,7 @@ export function AcademyDetail({ course, goPage, goContact }) {
 
           <h1
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontSize: "1.8rem",
               fontWeight: 800,
               color: "var(--ink)",
@@ -133,7 +133,7 @@ export function AcademyDetail({ course, goPage, goContact }) {
             <div style={{ fontSize: "3rem", marginBottom: 10 }}>🎓</div>
             <h3
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontSize: "1.4rem",
                 fontWeight: 800,
                 color: "var(--ink)",
@@ -170,7 +170,7 @@ export function AcademyDetail({ course, goPage, goContact }) {
               </div>
               <div
                 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontSize: "2rem",
                   fontWeight: 800,
                   color: "var(--green)",
@@ -197,7 +197,7 @@ export function AcademyDetail({ course, goPage, goContact }) {
                   border: "none",
                   padding: "13px 26px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: ".9rem",
                   cursor: "pointer",
@@ -219,7 +219,7 @@ export function AcademyDetail({ course, goPage, goContact }) {
                   border: "none",
                   padding: "13px 26px",
                   borderRadius: 10,
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "var(--font-display)",
                   fontWeight: 800,
                   fontSize: ".9rem",
                   cursor: "pointer",
@@ -255,7 +255,7 @@ export function AcademyDetail({ course, goPage, goContact }) {
           >
             <h3
               style={{
-                fontFamily: "'Syne',sans-serif",
+                fontFamily: "var(--font-display)",
                 fontWeight: 800,
                 fontSize: "1.2rem",
                 color: "var(--green)",

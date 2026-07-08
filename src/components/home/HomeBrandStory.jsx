@@ -2,37 +2,37 @@ import { ContentIcon } from "../../lib/contentIcons";
 
 const COPY = {
   fr: {
-    eyebrow: "Notre histoire",
-    title: "Pourquoi",
-    titleEm: "Yorix",
-    lead: "Yorix, c'est votre index commerce — le point d'entrée unique pour tout le parcours : acheter, vendre, se faire livrer et trouver des talents locaux.",
-    missionLabel: "Mission",
+    eyebrow: "Made in Cameroun",
+    title: "Une marketplace",
+    titleEm: "camerounaise",
+    lead: "Entreprise locale, paiement Mobile Money, vendeurs camerounais et livraison nationale — avec escrow pour protéger acheteurs et vendeurs.",
+    missionLabel: "Notre promesse",
     mission:
-      "Rendre le commerce digital accessible à chaque Camerounais : sans barrière technique, avec les moyens de paiement qu'on utilise déjà (MoMo, Orange Money) et une logistique pensée pour nos villes.",
-    visionLabel: "Vision",
+      "Résoudre le problème n°1 du e-commerce au Cameroun : la confiance. Payer sans recevoir, recevoir un faux produit, se faire arnaquer sur Facebook — Yorix protège votre argent jusqu'à la livraison.",
+    visionLabel: "Pour qui ?",
     vision:
-      "Devenir l'infrastructure technologique du commerce local — une super-app camerounaise qui rivalise avec les géants mondiaux, ancrée dans la réalité du terrain.",
+      "Pour les acheteurs qui veulent acheter sans risque, et les vendeurs sérieux qui veulent des clients qui paient vraiment — partout à Douala, Yaoundé et dans tout le pays.",
     pillars: [
-      { iconKey: "flag", title: "100 % Cameroun", desc: "Conçu à Douala, pour Douala, Yaoundé et tout le pays." },
-      { iconKey: "smartphone", title: "Mobile first", desc: "WhatsApp, MoMo, parcours en 30 secondes — comme vous vivez au quotidien." },
-      { iconKey: "shield", title: "Confiance intégrée", desc: "Escrow, vendeurs vérifiés et support humain quand la tech ne suffit pas." },
+      { iconKey: "flag", title: "100 % Cameroun", desc: "Conçu à Douala, équipe locale, service client WhatsApp en français." },
+      { iconKey: "smartphone", title: "Mobile Money", desc: "MTN MoMo et Orange Money — les moyens de paiement que vous utilisez déjà." },
+      { iconKey: "shield", title: "Escrow intégré", desc: "L'argent du client reste bloqué jusqu'à validation de la livraison." },
     ],
   },
   en: {
-    eyebrow: "Our story",
-    title: "Why",
-    titleEm: "Yorix",
-    lead: "Yorix is your commerce index — one entry point for buying, selling, delivery and trusted local providers.",
-    missionLabel: "Mission",
+    eyebrow: "Made in Cameroon",
+    title: "A Cameroonian",
+    titleEm: "marketplace",
+    lead: "Local company, Mobile Money checkout, Cameroonian sellers and nationwide delivery — with escrow protecting buyers and sellers.",
+    missionLabel: "Our promise",
     mission:
-      "Make digital commerce accessible to every Cameroonian: no technical barriers, local payment rails (MoMo, Orange Money) and logistics built for our cities.",
-    visionLabel: "Vision",
+      "Solve e-commerce's #1 problem in Cameroon: trust. Paying without receiving, fake products, Facebook scams — Yorix protects your money until delivery.",
+    visionLabel: "For whom?",
     vision:
-      "Become the technology backbone of local commerce — a Cameroonian super-app that competes globally while staying rooted on the ground.",
+      "For buyers who want risk-free shopping, and serious sellers who want customers who actually pay — across Douala, Yaoundé and nationwide.",
     pillars: [
-      { iconKey: "flag", title: "100% Cameroon", desc: "Built in Douala, for Douala, Yaoundé and nationwide." },
-      { iconKey: "smartphone", title: "Mobile first", desc: "WhatsApp, MoMo, 30-second flows — how you live every day." },
-      { iconKey: "shield", title: "Trust built-in", desc: "Escrow, verified sellers and human support when tech isn't enough." },
+      { iconKey: "flag", title: "100% Cameroon", desc: "Built in Douala, local team, French WhatsApp support." },
+      { iconKey: "smartphone", title: "Mobile Money", desc: "MTN MoMo and Orange Money — the rails you already use." },
+      { iconKey: "shield", title: "Built-in escrow", desc: "Buyer funds stay locked until delivery is confirmed." },
     ],
   },
 };

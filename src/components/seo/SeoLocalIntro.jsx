@@ -33,7 +33,7 @@ export function SeoLocalIntro({ city, mode, goPage }) {
         <header>
           <h1
             style={{
-              fontFamily: "'Syne',sans-serif",
+              fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: "clamp(1.15rem, 2.5vw, 1.45rem)",
               color: "var(--ink)",

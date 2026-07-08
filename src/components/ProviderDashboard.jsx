@@ -120,7 +120,7 @@ export function ProviderDashboard({ user, userData, dashTab, setDashTab }) {
             ))}
           </div>
           <div style={{
-            fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".95rem",
+            fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem",
             color: "var(--ink)", marginBottom: 12,
           }}>
             Demandes en attente

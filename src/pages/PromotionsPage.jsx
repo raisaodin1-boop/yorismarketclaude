@@ -63,7 +63,7 @@ export function PromotionsPage({ goPage, goToCategory, freeShippingThresholdXaf 
         {cards.map((c) => (
           <article key={c.title} className="card" style={{ padding: 16 }}>
             <div style={{ fontSize: "2rem", marginBottom: 8 }}>{c.emoji}</div>
-            <h2 className="h2" style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: "1rem", marginBottom: 8 }}>
+            <h2 className="h2" style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1rem", marginBottom: 8 }}>
               {c.title}
             </h2>
             <p style={{ fontSize: ".82rem", color: "var(--gray)", lineHeight: 1.55, marginBottom: 12 }}>{c.body}</p>

@@ -1,0 +1,8 @@
+{
+  "loading": "Chargement…",
+  "hubNotFound": "Hub introuvable.",
+  "emptyHub": "Aucun produit dans cette sélection pour le moment.",
+  "browseCatalog": "Voir le catalogue",
+  "providersFound": "{{count}} prestataire(s) trouvé(s)",
+  "instantUpdate": "{{count}} prestataire(s) — mise à jour instantanée"
+}

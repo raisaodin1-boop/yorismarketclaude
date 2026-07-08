@@ -27,7 +27,7 @@ export function HomeSocialProof({ locale = "fr", stats, isLoading }) {
     },
     {
       val: formatPlatformStat(s.orders),
-      lbl: isEn ? "Orders processed" : "Commandes traitées",
+      lbl: isEn ? "Orders delivered" : "Commandes livrées",
       iconKey: "package",
       color: "#0891b2",
     },

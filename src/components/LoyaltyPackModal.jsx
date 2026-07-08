@@ -101,7 +101,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
             <ContentIcon name={pack.iconKey || "gem"} size={32} />
           </div>
           <div style={{
-            fontFamily: "'Syne',sans-serif", fontSize: "1.25rem", fontWeight: 800,
+            fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 800,
             color: "var(--ink)", marginTop: 8,
           }}>
             Pack {pack.nom}
@@ -124,7 +124,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
           )}
           <div style={{
             display: "flex", justifyContent: "space-between",
-            fontSize: ".95rem", fontFamily: "'Syne',sans-serif", fontWeight: 800,
+            fontSize: ".95rem", fontFamily: "var(--font-display)", fontWeight: 800,
             borderTop: "1px dashed var(--green-light)", paddingTop: 6, marginTop: 4, color: "var(--green)",
           }}>
             <span>TOTAL POINTS</span>
@@ -132,7 +132,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
           </div>
           <div style={{
             display: "flex", justifyContent: "space-between",
-            fontSize: ".95rem", fontFamily: "'Syne',sans-serif", fontWeight: 800,
+            fontSize: ".95rem", fontFamily: "var(--font-display)", fontWeight: 800,
             marginTop: 6, color: "var(--ink)",
           }}>
             <span>À PAYER</span>
@@ -174,7 +174,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
               }}
             >
               <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>📱</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem" }}>MTN MoMo</div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem" }}>MTN MoMo</div>
               <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{MOMO_NUMBER}</div>
             </div>
             <div
@@ -186,7 +186,7 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
               }}
             >
               <div style={{ fontSize: "1.4rem", marginBottom: 3 }}>🔶</div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: ".78rem" }}>Orange Money</div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".78rem" }}>Orange Money</div>
               <div style={{ fontSize: ".65rem", color: "var(--gray)" }}>{ORANGE_NUMBER}</div>
             </div>
           </div>

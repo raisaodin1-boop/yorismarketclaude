@@ -24,7 +24,7 @@ class OrderService {
       if (p.vendeurId != null) 'vendeur_id': p.vendeurId,
       'client_nom': clientName,
       'telephone': phone,
-      if (userId != null) 'client_id': userId,
+      'client_id': userId,
       'montant': amount,
       'commission': commission,
       'montant_vendeur': vendorAmount,

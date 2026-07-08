@@ -130,7 +130,7 @@ export function PasswordInput({
             background: "var(--surface, #fff)",
             color: "var(--ink, #111)",
             fontSize: ".88rem",
-            fontFamily: "'DM Sans',sans-serif",
+            fontFamily: "var(--font-body)",
             outline: "none",
             transition: "border-color .15s",
             boxSizing: "border-box",
@@ -238,7 +238,7 @@ export function PasswordInput({
               display: "flex",
               justifyContent: "space-between",
               fontSize: ".68rem",
-              fontFamily: "'DM Sans',sans-serif",
+              fontFamily: "var(--font-body)",
             }}
           >
             <span style={{ color: "var(--gray, #666)" }}>
@@ -277,7 +277,7 @@ export function PasswordInput({
           style={{
             marginTop: 6,
             fontSize: ".74rem",
-            fontFamily: "'DM Sans',sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             color: confirmMatch ? "var(--green, #16a34a)" : "var(--red, #dc2626)",
             display: "flex",
@@ -306,7 +306,7 @@ function RuleItem({ ok, text, optional }) {
         gap: 6,
         fontSize: ".72rem",
         color: ok ? "var(--green, #16a34a)" : "var(--gray, #666)",
-        fontFamily: "'DM Sans',sans-serif",
+        fontFamily: "var(--font-body)",
       }}
     >
       <span

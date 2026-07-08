@@ -511,6 +511,16 @@
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
 }
+.cat-home-grid--featured {
+  grid-template-columns: repeat(5, 1fr);
+  max-width: 920px;
+  margin: 0 auto;
+}
+@media (max-width: 768px) {
+  .cat-home-grid--featured {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .cat-home-tile {
   display: flex;
   flex-direction: column;

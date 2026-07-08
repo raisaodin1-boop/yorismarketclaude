@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
 import { filterProductsByMerchHub, getMerchHub } from "./merchHubs";
+import { PRODUCT_LIST_COLUMNS } from "./productListColumns";
 
-const HUB_FETCH_LIMIT = 400;
+const HUB_FETCH_LIMIT = 180;
 
 const SELLER_FILTERS = new Set(["top_sellers", "new_sellers"]);
 
@@ -29,7 +30,7 @@ export async function fetchMerchHubProducts(merchHubSlug) {
 
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_LIST_COLUMNS)
     .or("actif.eq.true,actif.is.null")
     .order("sponsorise", { ascending: false })
     .order("vente_total", { ascending: false, nullsFirst: false })
@@ -57,7 +58,7 @@ export async function fetchCategoryHighlightProducts(keywords, limit = 24) {
 
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_LIST_COLUMNS)
     .or("actif.eq.true,actif.is.null")
     .or(orClause)
     .order("sponsorise", { ascending: false })
@@ -75,7 +76,7 @@ export async function fetchCategoryHighlightProducts(keywords, limit = 24) {
 async function fetchHighlightFallback(limit = 24) {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_LIST_COLUMNS)
     .or("actif.eq.true,actif.is.null")
     .order("sponsorise", { ascending: false })
     .order("vente_total", { ascending: false, nullsFirst: false })

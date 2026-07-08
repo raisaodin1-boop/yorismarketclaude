@@ -18,31 +18,35 @@ export function isChatNotificationConfigError(error) {
 
 /**
  * @param {unknown} error
+ * @param {(key: string, opts?: object) => string} [t] traduction i18n (namespace chat)
  * @returns {{ kind: 'notification'|'auth'|'empty'|'network'|'unknown', userMessage: string }}
  */
-export function classifyChatInsertError(error) {
+export function classifyChatInsertError(error, t) {
   const msg = String(error?.message || error || "Erreur réseau");
+  const tx = (key, fallback) => (typeof t === "function" ? t(key, { ns: "chat", defaultValue: fallback }) : fallback);
 
   if (/non connecté|not authenticated|jwt/i.test(msg)) {
-    return { kind: "auth", userMessage: "Connectez-vous pour envoyer un message." };
+    return { kind: "auth", userMessage: tx("errors.auth", "Connectez-vous pour envoyer un message.") };
   }
   if (/vide|empty/i.test(msg)) {
-    return { kind: "empty", userMessage: "Écrivez un message ou ajoutez une photo." };
+    return { kind: "empty", userMessage: tx("errors.empty", "Écrivez un message ou ajoutez une photo.") };
   }
   if (/conversation|introuvable|accès refusé/i.test(msg)) {
-    return { kind: "unknown", userMessage: "Conversation indisponible. Réessayez." };
+    return { kind: "unknown", userMessage: tx("errors.conversation", "Conversation indisponible. Réessayez.") };
   }
   if (isChatNotificationConfigError(msg)) {
     return {
       kind: "notification",
-      userMessage:
+      userMessage: tx(
+        "errors.notification",
         "Notification temporairement indisponible. Le message a peut-être été envoyé — vérifiez la conversation.",
+      ),
     };
   }
   if (/fetch|network|timeout|failed/i.test(msg)) {
-    return { kind: "network", userMessage: "Connexion instable. Réessayez dans un instant." };
+    return { kind: "network", userMessage: tx("errors.network", "Connexion instable. Réessayez dans un instant.") };
   }
-  return { kind: "unknown", userMessage: "Message non envoyé. Réessayez." };
+  return { kind: "unknown", userMessage: tx("errors.unknown", "Message non envoyé. Réessayez.") };
 }
 
 /**

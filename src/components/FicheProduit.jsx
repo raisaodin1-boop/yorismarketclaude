@@ -16,6 +16,10 @@ import { isPurchasable } from "../lib/stockStatus";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import { YorixToast, useYorixToast } from "./ui/YorixToast";
 import { B2BOrderForm } from "./B2BOrderForm";
+import { ImportWholesaleBadge } from "./import/ImportWholesaleBadge";
+import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
+import { formatProductDisplayName } from "../lib/productDisplayName";
+import { resolveWholesaleUnitPrice } from "../lib/importWholesale";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : FICHE PRODUIT DÉTAIL
@@ -60,11 +64,14 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     supabase
       .from("orders")
       .select("id")
-      .eq("user_id", user.id)
-      .contains("items", [{ product_id: product.id }])
+      .eq("client_id", user.id)
+      .eq("product_id", product.id)
+      .in("status", ["livre", "validee", "paid", "completed"])
       .limit(1)
       .then(({ data }) => setHasVerifiedPurchase((data || []).length > 0));
   }, [user?.id, product.id]);
+
+  const displayName = formatProductDisplayName(product.name_fr);
 
   const avgNote = avis.length
     ? (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1)
@@ -216,8 +223,15 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               reviewsCount={avis.length}
               avgReviewNote={avgNote}
             />
-            <div className="modal-title fp-title">{product.name_fr}</div>
+            <div className="modal-title fp-title">{displayName}</div>
+            <ImportWholesaleBadge product={product} locale={siteLocale} />
+            {(product.vendeur_verifie || product.verifie) && (
+              <div style={{ marginBottom: 8 }}>
+                <VerifiedSellerBadge verified locale={siteLocale} />
+              </div>
+            )}
             <SocialProofLine product={product} locale={siteLocale} />
+            {avis.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 10px", flexWrap: "wrap" }}>
               <Stars value={Math.round(avgNote)} />
               <span style={{ fontSize: ".75rem", color: "var(--gray)" }}>
@@ -226,6 +240,12 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               {product.ville && <span className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} aria-hidden /> {product.ville}</span>}
               {product.categorie && <span className="tag">{product.categorie}</span>}
             </div>
+            )}
+            {avis.length === 0 && product.ville && (
+              <div style={{ margin: "6px 0 10px" }}>
+                <span className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} aria-hidden /> {product.ville}</span>
+              </div>
+            )}
 
             {product.description_fr && (
               <p className="fp-description" style={{ fontSize: ".82rem", color: "var(--gray)", lineHeight: 1.75, marginBottom: 12 }}>
@@ -422,7 +442,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                Commander en gros — {Number(product.prix_gros || product.prix).toLocaleString()} FCFA/unité (min {product.min_qty_gros || 10})
+                Commander en gros — {Number(resolveWholesaleUnitPrice(product, product.min_qty_gros || 10)).toLocaleString()} FCFA/unité (min {product.min_qty_gros || 10})
               </button>
             )}
 
@@ -533,6 +553,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 initialProduct={product}
                 onClose={() => setShowChatModal(false)}
                 isModal={true}
+                siteLocale={siteLocale}
               />
             </div>
           </div>
@@ -544,7 +565,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
         <div className="yx-pdp-sticky-bar" aria-label="Actions produit">
           <div className="yx-pdp-sticky-bar__price">
             {displayPrice?.toLocaleString()} FCFA
-            <small>{product.name_fr}</small>
+            <small>{displayName}</small>
           </div>
           <div className="yx-pdp-sticky-bar__actions">
             {onAddToCart && (

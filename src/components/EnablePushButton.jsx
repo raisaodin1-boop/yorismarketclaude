@@ -27,7 +27,7 @@ export function EnablePushButton({ className = "", variant = "default" }) {
       gap: 8px;
       padding: 11px 22px;
       border-radius: 11px;
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-weight: 800;
       font-size: .88rem;
       cursor: pointer;

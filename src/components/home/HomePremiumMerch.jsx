@@ -1,4 +1,4 @@
-import { HOMEPAGE_MERCH_TILES, MERCH_HUBS } from "../../lib/merchHubs";
+import { HOMEPAGE_MERCH_TILES_PUBLIC, MERCH_HUBS } from "../../lib/merchHubs";
 import { productMatchesMadeInFilter } from "../../lib/madeInCameroon";
 import { MadeInCameroonBadge } from "../MadeInCameroonBadge";
 import { OptimizedImage } from "../OptimizedImage";
@@ -16,17 +16,17 @@ export function HomePremiumMerch({ goPage, produits = [], locale = "fr" }) {
     <section className="hpm-root" aria-labelledby="hpm-title">
       <div className="hpm-head">
         <h2 id="hpm-title" className="hpm-title">
-          {isEn ? "Discover · Trust · Buy local" : "Découvrir · Confiance · Acheter local"}
+          {isEn ? "Discover · Buy local · With confidence" : "Découvrir · Acheter local · En confiance"}
         </h2>
         <p className="hpm-lead">
           {isEn
-            ? "Yorix is more than categories — it's national pride, trends and business opportunities."
-            : "Yorix, c'est plus que des rayons : fierté nationale, tendances et opportunités business."}
+            ? "Trending products, local brands and deals — protected by escrow on every purchase."
+            : "Tendances, marques camerounaises et bons plans — chaque achat protégé par l'escrow."}
         </p>
       </div>
 
       <div className="hpm-tiles">
-        {HOMEPAGE_MERCH_TILES.map(({ hub, accent }) => {
+        {HOMEPAGE_MERCH_TILES_PUBLIC.map(({ hub, accent }) => {
           const h = MERCH_HUBS[hub];
           if (!h) return null;
           const shortTitle = (isEn ? h.titleEn : h.titleFr).split("—")[0].trim();
