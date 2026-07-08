@@ -139,7 +139,7 @@ export async function uploadCloudinaryFile(file, opts = {}) {
   if (opts.folder) fd.append("folder", opts.folder);
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
-    { method: "POST", body: fd }
+    { method: "POST", body: fd, signal: AbortSignal.timeout(90000) },
   );
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.error) {

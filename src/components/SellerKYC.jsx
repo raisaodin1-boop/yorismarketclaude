@@ -240,11 +240,14 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
   // ── Sauvegarde partielle vers Supabase (champs texte seulement) ──
   const saveDraft = async (fields = {}) => {
     try {
-      await supabase.from("seller_kyc").upsert(
+      const { error } = await supabase.from("seller_kyc").upsert(
         { user_id: userId, status: "draft", updated_at: new Date().toISOString(), ...fields },
-        { onConflict: "user_id" }
+        { onConflict: "user_id" },
       );
-    } catch {}
+      if (error) console.warn("KYC draft save:", error.message);
+    } catch (err) {
+      console.warn("KYC draft save:", err?.message || err);
+    }
   };
 
   const slotToField = { cni_recto: "doc_url", cni_verso: "doc_url2", selfie: "selfie_url", shop: "shop_photo_url" };
@@ -346,29 +349,38 @@ export function SellerKYC({ userId, userEmail, userPhone }) {
         reviewer_note: null,
       };
 
-      const { error: upsertErr } = await supabase.from("seller_kyc").upsert(payload, { onConflict: "user_id" });
+      const { data: saved, error: upsertErr } = await supabase
+        .from("seller_kyc")
+        .upsert(payload, { onConflict: "user_id" })
+        .select()
+        .single();
       if (upsertErr) throw upsertErr;
 
-      await supabase.from("notifications").insert({
+      const { error: notifErr } = await supabase.from("notifications").insert({
         user_id: userId,
         type: "kyc",
         title: "Demande KYC envoyée",
         message: "Votre dossier de vérification vendeur est en cours d'examen (24–48h). Le badge sera activé après validation admin.",
         link: "/dashboard?tab=kyc",
         lu: false,
-      }).catch(() => {});
+      });
+      if (notifErr) console.warn("KYC notification:", notifErr.message);
 
-      setKyc({ ...payload, status: "pending" });
+      setKyc(saved || { ...payload, status: "pending" });
+      setStep(5);
       try { if (draftKey) localStorage.removeItem(draftKey); } catch {}
       showAppToast("Dossier envoyé — validation par l'équipe admin sous 24–48h", "success", 5000);
     } catch (e) {
       const msg = e?.message || "";
-      const friendly = /failed to fetch|network|load failed/i.test(msg)
+      const friendly = /failed to fetch|network|load failed|timeout|aborted/i.test(msg)
         ? "Connexion instable — vérifiez votre réseau et réessayez"
-        : msg || "Connexion interrompue, réessayez";
+        : /column|schema cache|does not exist/i.test(msg)
+          ? "Configuration serveur incomplète — contactez le support Yorix"
+          : msg || "Connexion interrompue, réessayez";
       showAppToast("Erreur : " + friendly, "error", 6000);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   // ── Validation par étape ──

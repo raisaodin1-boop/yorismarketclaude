@@ -579,7 +579,9 @@ export function YorixPages({ ctx }) {
                 className="nl-btn"
                 onClick={async () => {
                   if (nlEmail) {
-                    await supabase.from("newsletter").insert({ email: nlEmail }).catch((e) => console.warn(e?.message));
+                    await supabase.from("newsletter").insert({ email: nlEmail }).then(({ error: e }) => {
+                      if (e) console.warn(e.message);
+                    });
                     setNlSent(true);
                   }
                 }}
