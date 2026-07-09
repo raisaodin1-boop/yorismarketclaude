@@ -4,6 +4,7 @@ import { ProdGrid } from "../components/ProdGrid";
 import { WholesaleHubHeader } from "../components/wholesale/WholesaleHubHeader";
 import { MadeInCameroonHubHeader } from "../components/madeIn/MadeInCameroonHubHeader";
 import { MERCH_HUBS } from "../lib/merchHubs";
+import { PromotionsPremiumView } from "../components/promotions/PromotionsPremiumView";
 import { productMoq } from "../lib/productMoq.js";
 import { useMerchHubProducts } from "../hooks/useMerchHubProducts";
 import "./merchHubPage.css";
@@ -69,6 +70,22 @@ export function MerchHubPage({
           Catalogue
         </button>
       </section>
+    );
+  }
+
+  if (merchHub === "promotions") {
+    return (
+      <PromotionsPremiumView
+        locale={locale}
+        user={user}
+        userData={userData}
+        wishlist={wishlist}
+        addToCart={addToCart}
+        toggleWish={toggleWish}
+        openProductUrl={openProductUrl}
+        openSellerUrl={openSellerUrl}
+        goPage={goPage}
+      />
     );
   }
 

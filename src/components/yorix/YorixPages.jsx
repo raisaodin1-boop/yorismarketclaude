@@ -429,9 +429,17 @@ export function YorixPages({ ctx }) {
       {page === "bonsPlans" && (
         <Suspense fallback={<RouteSuspenseFallback label="Chargement bons plans..." />}>
           <LazyPromotionsPage
+            locale={route.locale || "fr"}
             goPage={goPage}
             goToCategory={goToCategory}
             freeShippingThresholdXaf={commerceDeliveryPolicy.freeShippingThresholdXaf}
+            user={user}
+            userData={userData}
+            wishlist={wishlist}
+            addToCart={addToCart}
+            toggleWish={toggleWish}
+            openProductUrl={openProductUrl}
+            openSellerUrl={openSellerUrl}
           />
         </Suspense>
       )}

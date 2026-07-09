@@ -50,6 +50,7 @@ export function ProdGrid({
   showShare = false,
   wholesaleMode = false,
   madeInMode = false,
+  promoMode = false,
 }) {
   const { t } = useSiteT(siteLocale);
   const [ficheOpen, setFicheOpen]           = useState(null);
@@ -106,11 +107,11 @@ export function ProdGrid({
           const wholesaleSummary = wholesaleMode ? wholesalePriceSummary(p) : null;
           const tierHint = wholesaleMode ? nextWholesaleTierHint(p, siteLocale) : null;
           const importHint = wholesaleMode && isImportProduct(p) ? importLogisticsHint(p, siteLocale) : null;
-          const compactList = !wholesaleMode;
+          const compactList = !wholesaleMode && !promoMode;
           const displayName = formatProductDisplayName(p.name_fr);
 
           return (
-            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}${wholesaleMode ? " prod-card--wholesale" : " prod-card--compact"}${madeInMode ? " prod-card--made-in" : ""}`}>
+            <div key={p.id} className={`prod-card${p.flash ? " prod-card-flash" : ""}${wholesaleMode ? " prod-card--wholesale" : promoMode ? " prod-card--promo" : " prod-card--compact"}${madeInMode ? " prod-card--made-in" : ""}`}>
               {/* ── IMAGE OPTIMISÉE (lazy + WebP + compression auto) ── */}
               <div
                 className={`prod-img-wrap${compactList ? " prod-img-wrap--hover-actions" : ""}`}
@@ -346,6 +347,26 @@ export function ProdGrid({
                 </div>
                 )}
 
+                {promoMode && p.stock > 0 && p.stock <= 30 && (
+                  <div className="prod-promo-stock-bar">
+                    <div className="prod-promo-stock-bar__track" aria-hidden>
+                      <span
+                        className="prod-promo-stock-bar__fill"
+                        style={{
+                          width: `${Math.min(95, Math.max(8, Math.round(((Number(p.vente_total) || 0) / ((Number(p.vente_total) || 0) + p.stock)) * 100)))}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="prod-promo-stock-bar__lbl">
+                      {p.stock <= 5
+                        ? (siteLocale === "en" ? `${p.stock} left` : `${p.stock} produits restants`)
+                        : (siteLocale === "en"
+                          ? `${Math.min(95, Math.round(((Number(p.vente_total) || 0) / ((Number(p.vente_total) || 0) + p.stock)) * 100))}% sold`
+                          : `Déjà vendu ${Math.min(95, Math.round(((Number(p.vente_total) || 0) / ((Number(p.vente_total) || 0) + p.stock)) * 100))}%`)}
+                    </span>
+                  </div>
+                )}
+
                 <div className="prod-price-row">
                   <div>
                     {wholesaleSummary && wholesaleSummary.wholesale > 0 ? (
@@ -377,6 +398,11 @@ export function ProdGrid({
                         <span style={{ fontSize: ".65rem", color: "var(--gray)", textDecoration: "line-through", marginLeft: 5 }}>
                           {p.prix?.toLocaleString()}
                         </span>
+                        {promoMode && prixBarre && prixBarre > prixPromo && (
+                          <div className="prod-promo-savings">
+                            {siteLocale === "en" ? "Save" : "Économie"} : {(prixBarre - prixPromo).toLocaleString()} FCFA
+                          </div>
+                        )}
                       </>
                     ) : (
                       <span className="price">
