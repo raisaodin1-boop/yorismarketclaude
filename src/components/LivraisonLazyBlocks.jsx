@@ -17,11 +17,12 @@ export function LivraisonTopInteractive({ user, userData, onOpenDemand }) {
   );
 }
 
-export function LivraisonBottomInteractive({ onOpenDemand }) {
+export function LivraisonBottomInteractive({ onOpenDemand, onOpenLivraisonPro }) {
   return (
     <DeliveryUseCases
       onCommander={onOpenDemand}
       onOpenFullModal={onOpenDemand}
+      onOpenLivraisonPro={onOpenLivraisonPro}
     />
   );
 }

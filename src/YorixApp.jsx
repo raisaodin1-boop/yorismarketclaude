@@ -48,6 +48,7 @@ import { CATS, PREST_DATA } from "./lib/constants";
 import { isAdminViewer } from "./lib/roles";
 import { makeCSS } from "./utils/styles";
 import { ModalDemandeLivraison } from "./components/ModalDemandeLivraison";
+import { ModalLivraisonPro } from "./components/ModalLivraisonPro";
 import { CartDrawer } from "./components/CartDrawer";
 import { UserMenuDrawer } from "./components/UserMenuDrawer";
 import { GlobalToastHost } from "./components/ui/GlobalToastHost";
@@ -112,6 +113,7 @@ export default function YorixApp() {
   const [dashTab, setDashTab] = useState("overview");
   const [pendingChatConversationId, setPendingChatConversationId] = useState(null);
   const [demandeLivraisonOpen, setDemandeLivraisonOpen] = useState(false);
+  const [livraisonProOpen, setLivraisonProOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
@@ -313,6 +315,7 @@ export default function YorixApp() {
     goPage,
     setDashTab,
     setDemandeLivraisonOpen,
+    setLivraisonProOpen,
     setNotifs: stableSetNotifs,
     onProfileLoaded: stableOnProfileLoaded,
   });
@@ -1521,6 +1524,7 @@ export default function YorixApp() {
     setSelectedRole,
     setAuthOpen,
     setDemandeLivraisonOpen,
+    setLivraisonProOpen,
     notifs,
     marquerNotifLue,
     openNotificationTarget,
@@ -1617,6 +1621,14 @@ export default function YorixApp() {
           onSuccess={(code) => {
             console.log("Livraison créée avec code:", code);
           }}
+        />
+      )}
+
+      {livraisonProOpen && (
+        <ModalLivraisonPro
+          user={user}
+          userData={userData}
+          onClose={() => setLivraisonProOpen(false)}
         />
       )}
 

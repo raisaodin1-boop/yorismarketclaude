@@ -92,8 +92,33 @@ function useInView(ref) {
   return active;
 }
 
-export function HomeRefonteHero({ locale = "fr", goPage }) {
+export function HomeRefonteHero({ locale = "fr", goPage, stats, isLoading }) {
   const isEn = locale === "en";
+  const sellers = stats?.sellers ?? 48;
+  const products = stats?.products ?? 184;
+  const cities = 3;
+
+  const trustCards = isEn
+    ? [
+        { ico: "✅", title: "Escrow payment", desc: "Funds released only after you confirm delivery." },
+        { ico: "🚚", title: "Tracked delivery", desc: "Real-time tracking across Cameroon." },
+        { ico: "📱", title: "MTN MoMo & Orange Money", desc: "Instant, secure mobile payment." },
+        { ico: "⭐", title: "Verified marketplace", desc: "KYC-checked sellers and Yorix support." },
+      ]
+    : [
+        { ico: "✅", title: "Paiement Escrow", desc: "Votre argent est libéré uniquement après confirmation de réception." },
+        { ico: "🚚", title: "Livraison suivie", desc: "Suivi en temps réel partout au Cameroun." },
+        { ico: "📱", title: "MTN MoMo & Orange Money", desc: "Paiement instantané et sécurisé." },
+        { ico: "⭐", title: "Marketplace vérifiée", desc: "Vendeurs vérifiés et support Yorix." },
+      ];
+
+  const miniStats = [
+    { ico: "👥", val: isLoading ? "…" : formatPlatformStat(sellers), lbl: isEn ? "sellers" : "vendeurs" },
+    { ico: "📦", val: isLoading ? "…" : formatPlatformStat(products), lbl: isEn ? "products" : "produits" },
+    { ico: "🏙️", val: String(cities), lbl: isEn ? "cities covered" : "villes couvertes" },
+    { ico: "🛡️", val: "100%", lbl: isEn ? "secure payments" : "paiements sécurisés" },
+  ];
+
   return (
     <header className="yx-hero yx-reveal">
       <div className="yx-hero__grid">
@@ -129,14 +154,35 @@ export function HomeRefonteHero({ locale = "fr", goPage }) {
           </div>
         </div>
         <div className="yx-hero__visual">
-          <OptimizedImage
-            src={HOME_HERO_IMAGE_AFRICA}
-            alt={isEn ? "Chinese and Cameroonian business partners shaking hands at a logistics warehouse" : "Partenaires commerciaux chinois et camerounais se serrant la main dans un entrepôt logistique"}
-            size="hero"
-            loading="eager"
-            priority
-            className="yx-hero__img"
-          />
+          <div className="yx-hero__img-wrap">
+            <OptimizedImage
+              src={HOME_HERO_IMAGE_AFRICA}
+              alt={isEn ? "Chinese and Cameroonian business partners shaking hands at a logistics warehouse" : "Partenaires commerciaux chinois et camerounais se serrant la main dans un entrepôt logistique"}
+              size="hero"
+              loading="eager"
+              priority
+              className="yx-hero__img"
+            />
+          </div>
+          <div className="yx-hero-trust-panel yx-desktop-only" aria-label={isEn ? "Trust guarantees" : "Garanties de confiance"}>
+            <div className="yx-hero-trust-grid">
+              {trustCards.map((c) => (
+                <article key={c.title} className="yx-hero-trust-card">
+                  <span className="yx-hero-trust-card__ico" aria-hidden>{c.ico}</span>
+                  <h3 className="yx-hero-trust-card__title">{c.title}</h3>
+                  <p className="yx-hero-trust-card__desc">{c.desc}</p>
+                </article>
+              ))}
+            </div>
+            <div className="yx-hero-mini-stats">
+              {miniStats.map((s) => (
+                <span key={s.lbl} className="yx-hero-mini-stat">
+                  <span aria-hidden>{s.ico}</span>
+                  <strong>{s.val}</strong> {s.lbl}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -436,6 +482,86 @@ export function HomeRefonteHowItWorks({ locale = "fr" }) {
               {i < arr.length - 1 && <span className="yx-escrow-flow__arrow" aria-hidden>→</span>}
             </div>
           ))}
+        </div>
+
+        <div className="yx-escrow-detail">
+          <div className="yx-escrow-detail__grid">
+            {(isEn
+              ? [
+                  { ico: "🛡️", title: "Buyer protection", desc: "Payment is held by Yorix until you confirm you received your order." },
+                  { ico: "✅", title: "Seller protection", desc: "Once delivery is confirmed, Yorix automatically releases funds to the seller." },
+                  { ico: "⚖️", title: "Dispute resolution", desc: "Our team steps in before any payout to protect both parties." },
+                ]
+              : [
+                  { ico: "🛡️", title: "Protection acheteur", desc: "Le paiement est conservé par Yorix jusqu'à ce que vous confirmiez la bonne réception du produit." },
+                  { ico: "✅", title: "Protection vendeur", desc: "Une fois la livraison confirmée, Yorix libère automatiquement les fonds." },
+                  { ico: "⚖️", title: "Résolution des litiges", desc: "Notre équipe intervient avant toute libération du paiement afin de protéger les deux parties." },
+                ]
+            ).map((c) => (
+              <article key={c.title} className="yx-escrow-detail-card">
+                <span className="yx-escrow-detail-card__ico" aria-hidden>{c.ico}</span>
+                <h3 className="yx-escrow-detail-card__title">{c.title}</h3>
+                <p className="yx-escrow-detail-card__desc">{c.desc}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="yx-escrow-stats-band" role="list">
+            {(isEn
+              ? [
+                  { val: "98.7%", lbl: "Successful transactions" },
+                  { val: "24h", lbl: "Avg. validation time" },
+                  { val: "100%", lbl: "Secure payments" },
+                  { val: "7/7", lbl: "Support" },
+                ]
+              : [
+                  { val: "98,7%", lbl: "Transactions réussies" },
+                  { val: "24h", lbl: "Temps moyen de validation" },
+                  { val: "100%", lbl: "Paiements sécurisés" },
+                  { val: "7j/7", lbl: "Support" },
+                ]
+            ).map((s) => (
+              <div key={s.lbl} className="yx-escrow-stats-band__item" role="listitem">
+                <div className="yx-escrow-stats-band__val">{s.val}</div>
+                <div className="yx-escrow-stats-band__lbl">{s.lbl}</div>
+              </div>
+            ))}
+          </div>
+
+          <aside className="yx-escrow-example" aria-label={isEn ? "Example escrow transaction" : "Exemple de transaction escrow"}>
+            <div className="yx-escrow-example__head">
+              <span className="yx-escrow-example__ref">Commande #YRX-24851</span>
+              <span className="yx-escrow-example__status">{isEn ? "Completed" : "Transaction terminée"}</span>
+            </div>
+            <ol className="yx-escrow-example__timeline">
+              {(isEn
+                ? [
+                    "✅ Payment received",
+                    "🔒 Funds secured by Yorix",
+                    "🚚 Courier en route",
+                    "✅ Package received",
+                    "💰 Payout to seller",
+                  ]
+                : [
+                    "✅ Paiement reçu",
+                    "🔒 Argent sécurisé chez Yorix",
+                    "🚚 Livreur en route",
+                    "✅ Colis reçu",
+                    "💰 Paiement transféré au vendeur",
+                  ]
+              ).map((step) => (
+                <li key={step} className="yx-escrow-example__step is-done">
+                  <span className="yx-escrow-example__dot" aria-hidden />
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="yx-escrow-example__foot">
+              <span><strong>45 000 FCFA</strong></span>
+              <span>·</span>
+              <span>{isEn ? "Total time: 2h15" : "Temps total : 2h15"}</span>
+            </div>
+          </aside>
         </div>
       </div>
     </section>

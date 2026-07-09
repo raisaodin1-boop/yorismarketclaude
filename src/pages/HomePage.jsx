@@ -90,7 +90,7 @@ export function HomePage({
           produits={safeProduits}
         />
 
-        <HomeRefonteHero locale={siteLocale} goPage={goPage} />
+        <HomeRefonteHero locale={siteLocale} goPage={goPage} stats={platformStats} isLoading={statsLoading} />
 
         <HomeRefonteMobileShortcuts locale={siteLocale} goPage={goPage} goDash={goDash} />
 

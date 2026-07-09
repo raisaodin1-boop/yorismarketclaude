@@ -95,6 +95,7 @@ export function YorixPages({ ctx }) {
     setSelectedRole,
     setAuthOpen,
     setDemandeLivraisonOpen,
+    setLivraisonProOpen,
     notifs,
     marquerNotifLue,
     openNotificationTarget,
@@ -278,6 +279,7 @@ export function YorixPages({ ctx }) {
             user={user}
             userData={userData}
             setDemandeLivraisonOpen={setDemandeLivraisonOpen}
+            setLivraisonProOpen={setLivraisonProOpen}
             setAuthTab={setAuthTab}
             setSelectedRole={setSelectedRole}
             setAuthOpen={setAuthOpen}

@@ -5,8 +5,6 @@
 //  ✅ Témoignages clients pour preuve sociale
 // ═══════════════════════════════════════════════════════════════
 
-import { YORIX_WA_NUMBER } from "../lib/supabase";
-
 const USE_CASES = [
   {
     icon: "📦",
@@ -85,7 +83,7 @@ const TEMOIGNAGES = [
   },
 ];
 
-export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
+export function DeliveryUseCases({ onCommander, onOpenFullModal, onOpenLivraisonPro }) {
   return (
     <>
       {/* ═══ SECTION : QUE LIVRER ? ═══ */}
@@ -423,11 +421,8 @@ export function DeliveryUseCases({ onCommander, onOpenFullModal }) {
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button
-                onClick={() => {
-                  const msg = "Bonjour Yorix ! Je suis vendeur et je souhaite intégrer Yorix Livraison pour livrer mes clients.";
-                  const url = "https://wa.me/" + YORIX_WA_NUMBER + "?text=" + encodeURIComponent(msg);
-                  window.open(url, "_blank");
-                }}
+                type="button"
+                onClick={() => onOpenLivraisonPro?.()}
                 style={{
                   background: "#0d1f14",
                   color: "#fcd116",

@@ -4,6 +4,20 @@ import { getUserProfile, sendEmail, emailBienvenue } from "../utils/helpers";
 import { isProfileAccessible } from "../lib/userMutations";
 import { applyReferralCode } from "../lib/referralApi";
 
+function validateRegistrationFields({ nom, email, password, tel }) {
+  const name = String(nom || "").trim();
+  const phone = String(tel || "").trim();
+  if (!name || name.length < 2) {
+    return "Nom obligatoire (2 caractères minimum).";
+  }
+  if (!phone || phone.replace(/\D/g, "").length < 9) {
+    return "Téléphone obligatoire (9 chiffres minimum).";
+  }
+  if (!email?.trim()) return "Email obligatoire.";
+  if (!password) return "Mot de passe obligatoire.";
+  return null;
+}
+
 /**
  * Session Supabase, profil, modale auth / contrat, actions login-register-logout.
  *
@@ -191,17 +205,16 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
     setAuthError("");
     setAuthLoading(true);
     try {
-      if (!authForm.nom || !authForm.email || !authForm.password || !authForm.tel) {
-        throw new Error("Tous les champs sont obligatoires.");
-      }
+      const fieldError = validateRegistrationFields(authForm);
+      if (fieldError) throw new Error(fieldError);
       if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
 
       const PRO_ROLES = ["seller", "provider", "delivery"];
       if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
         setPendingRegistration({
-          nom: authForm.nom,
-          email: authForm.email,
-          tel: authForm.tel,
+          nom: authForm.nom.trim(),
+          email: authForm.email.trim(),
+          tel: authForm.tel.trim(),
           password: authForm.password,
           role: selectedRole,
         });
@@ -229,9 +242,9 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
 
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: uid,
-        nom: authForm.nom,
-        email: authForm.email,
-        telephone: authForm.tel,
+        nom: authForm.nom.trim(),
+        email: authForm.email.trim(),
+        telephone: authForm.tel.trim(),
         role: selectedRole,
         langue: "fr",
         actif: true,

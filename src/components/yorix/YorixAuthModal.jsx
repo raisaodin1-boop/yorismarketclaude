@@ -134,6 +134,8 @@ export function YorixAuthModal({
               <input
                 className="form-input"
                 placeholder="Ex: Amina Bello"
+                required
+                minLength={2}
                 value={authForm.nom}
                 onChange={(e) => setAuthForm((f) => ({ ...f, nom: e.target.value }))}
               />
@@ -146,6 +148,7 @@ export function YorixAuthModal({
                 className="form-input"
                 type="tel"
                 placeholder="+237 6XX XXX XXX"
+                required
                 value={authForm.tel}
                 onChange={(e) => setAuthForm((f) => ({ ...f, tel: e.target.value }))}
               />

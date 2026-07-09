@@ -23,6 +23,7 @@ import {
   Gift,
   MessageCircle,
   Megaphone,
+  Rocket,
   BarChart3,
   CheckCircle2,
   Flame,
@@ -37,7 +38,6 @@ import {
   Moon,
   Sun,
   Search,
-  Rocket,
   LogIn,
   User,
   AlertTriangle,
@@ -80,6 +80,7 @@ export const ADMIN_NAV_ICONS = {
   notif_center: Megaphone,
   loyalty: Star,
   alertes: Bell,
+  livraison_pro: Rocket,
 };
 
 export const SELLER_STAT_ICONS = {

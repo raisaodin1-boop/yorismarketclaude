@@ -28,6 +28,7 @@ export function LivraisonPage({
   user,
   userData,
   setDemandeLivraisonOpen,
+  setLivraisonProOpen,
   setAuthTab,
   setSelectedRole,
   setAuthOpen,
@@ -200,7 +201,10 @@ export function LivraisonPage({
         </div>
 
         <Suspense fallback={<LivraisonSuspenseFallback minHeight={100} />}>
-          <LazyLivraisonBottomInteractive onOpenDemand={() => setDemandeLivraisonOpen(true)} />
+          <LazyLivraisonBottomInteractive
+            onOpenDemand={() => setDemandeLivraisonOpen(true)}
+            onOpenLivraisonPro={() => setLivraisonProOpen(true)}
+          />
         </Suspense>
 
         <div style={{ background: "linear-gradient(135deg,#1a3a24,#0d3320)", borderRadius: 14, padding: 24, marginTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>

@@ -47,6 +47,7 @@ import {
   kycChecklist,
   KYC_STATUS_LABELS,
 } from "../lib/sellerKyc";
+import { updateDeliveryProQuoteStatus } from "../lib/deliveryProQuoteApi";
 import { resolveCountryLabel } from "../lib/importWholesale";
 import { VerifiedSellerBadge } from "./seller/VerifiedSellerBadge";
 import { ADMIN_NAV_ICONS } from "../lib/lucideNavIcons";
@@ -66,7 +67,7 @@ export function AdminDashboard({ user, userData, goPage }) {
   const ADMIN_TABS = useMemo(
     () => [
       "overview", "deliveries", "livreurs", "categories", "packs", "produits",
-      "commandes", "utilisateurs", "vendeurs", "kyc", "prestataires", "revenus",
+      "commandes", "utilisateurs", "vendeurs", "kyc", "livraison_pro", "prestataires", "revenus",
       "commerce_promo", "loyalty", "messagerie", "notif_center", "alertes", "finances",
       "mes_achats",
     ],
@@ -105,6 +106,12 @@ export function AdminDashboard({ user, userData, goPage }) {
   const [kycAction, setKycAction]               = useState(null); // "approve"|"reject"|"info"
   const [kycNote, setKycNote]                   = useState("");
   const [kycSaving, setKycSaving]               = useState(false);
+  const [proQuotesList, setProQuotesList]         = useState([]);
+  const [proQuoteFilter, setProQuoteFilter]       = useState("pending");
+  const [proQuoteModal, setProQuoteModal]         = useState(null);
+  const [proQuoteStatus, setProQuoteStatus]       = useState("pending");
+  const [proQuoteAdminNotes, setProQuoteAdminNotes] = useState("");
+  const [proQuoteSaving, setProQuoteSaving]       = useState(false);
   const [chartVentes, setChartVentes]           = useState([]);
   const [chartInscrits, setChartInscrits]       = useState([]);
   const [topProduits, setTopProduits]           = useState([]);
@@ -385,6 +392,12 @@ export function AdminDashboard({ user, userData, goPage }) {
       .order("submitted_at", { ascending: false })
       .then(({ data }) => setKycList(data || []));
 
+    supabase
+      .from("delivery_pro_quotes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setProQuotesList(data || []));
+
     setLoading(false);
   };
 
@@ -442,6 +455,39 @@ export function AdminDashboard({ user, userData, goPage }) {
   const loadKyc = async () => {
     const { data } = await supabase.from("seller_kyc").select("*").order("submitted_at", { ascending: false });
     setKycList(data || []);
+  };
+
+  const loadProQuotes = async () => {
+    const { data } = await supabase.from("delivery_pro_quotes").select("*").order("created_at", { ascending: false });
+    setProQuotesList(data || []);
+  };
+
+  const PRO_QUOTE_STATUS_LABELS = {
+    pending: "En attente",
+    contacted: "Contacté",
+    quoted: "Devis envoyé",
+    closed: "Clôturé",
+  };
+
+  const PRO_QUOTE_VOLUME_LABELS = {
+    "1-50": "1 – 50 colis / mois",
+    "51-200": "51 – 200 colis / mois",
+    "201-500": "201 – 500 colis / mois",
+    "500+": "500+ colis / mois",
+  };
+
+  const saveProQuoteAdmin = async () => {
+    if (!proQuoteModal || !requireWrite()) return;
+    setProQuoteSaving(true);
+    try {
+      await updateDeliveryProQuoteStatus(proQuoteModal.id, proQuoteStatus, proQuoteAdminNotes);
+      showToast("Demande livraison pro mise à jour.");
+      setProQuoteModal(null);
+      await loadProQuotes();
+    } catch (e) {
+      showToast(e?.message || "Erreur mise à jour", "error");
+    }
+    setProQuoteSaving(false);
   };
 
   const handleKycDecision = async () => {
@@ -910,6 +956,7 @@ export function AdminDashboard({ user, userData, goPage }) {
         { id: "utilisateurs", label: t("nav.users") },
         { id: "vendeurs", label: t("nav.sellers") },
         { id: "kyc", label: "KYC Vendeurs", badge: kycList.filter(k => k.status === "pending").length || null },
+        { id: "livraison_pro", label: "Devis livraison pro", badge: proQuotesList.filter(q => q.status === "pending").length || null },
         { id: "livreurs", label: t("nav.couriers") },
         { id: "prestataires", label: t("nav.providers"), badge: prestPending || null },
         { id: "revenus", label: t("nav.revenue") },
@@ -923,7 +970,7 @@ export function AdminDashboard({ user, userData, goPage }) {
       items.push({ id: "mes_achats", label: "🛒 Mes achats" });
       return items.filter((n) => canWrite || n.id !== "messagerie");
     },
-    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite, pendingPacksCount, isSuperAdminUser],
+    [t, deliveriesEnAttente, produits, commandes, prestPending, alertes.length, canWrite, pendingPacksCount, isSuperAdminUser, kycList, proQuotesList],
   );
 
   const ROLE_ASSIGN_OPTIONS = useMemo(
@@ -2371,6 +2418,192 @@ export function AdminDashboard({ user, userData, goPage }) {
                     </button>
                     <button onClick={() => setKycModal(null)} style={{ padding: "11px 18px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: ".82rem", fontWeight: 600, color: "var(--gray)" }}>
                       Annuler
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════════ DEVIS LIVRAISON PRO ════════ */}
+        {adminTab === "livraison_pro" && (
+          <>
+            <div className="admin-page-title">
+              🚀 Devis livraison pro (vendeurs)
+              <span style={{ fontSize: ".75rem", background: proQuotesList.filter(q => q.status === "pending").length > 0 ? "#f59e0b" : "var(--green)", color: "#fff", padding: "3px 10px", borderRadius: 50, fontWeight: 600, marginLeft: 8 }}>
+                {proQuotesList.filter(q => q.status === "pending").length} en attente
+              </span>
+            </div>
+            <p style={{ fontSize: ".8rem", color: "var(--gray)", margin: "0 0 16px", maxWidth: 720 }}>
+              Demandes envoyées depuis la page Livraison. Contactez le vendeur par email hors plateforme, puis mettez à jour le statut ici.
+            </p>
+
+            <div className="stat-cards-grid" style={{ marginBottom: 18 }}>
+              <StatCard icon="⏳" val={proQuotesList.filter(q => q.status === "pending").length} lbl="En attente" col="#fef3c7" ic="#92400e" />
+              <StatCard icon="📧" val={proQuotesList.filter(q => q.status === "contacted").length} lbl="Contactés" col="#dbeafe" ic="#1d4ed8" />
+              <StatCard icon="📋" val={proQuotesList.filter(q => q.status === "quoted").length} lbl="Devis envoyés" col="#d1fae5" ic="#065f46" />
+              <StatCard icon="✅" val={proQuotesList.length} lbl="Total" col="#eff6ff" ic="#1d4ed8" />
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              {[
+                { id: "all", label: "Tous" },
+                { id: "pending", label: "En attente" },
+                { id: "contacted", label: "Contactés" },
+                { id: "quoted", label: "Devis envoyés" },
+                { id: "closed", label: "Clôturés" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setProQuoteFilter(f.id)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 50,
+                    fontSize: ".72rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: proQuoteFilter === f.id ? "var(--green)" : "var(--surface2)",
+                    color: proQuoteFilter === f.id ? "#fff" : "var(--gray)",
+                    border: `1px solid ${proQuoteFilter === f.id ? "var(--green)" : "var(--border)"}`,
+                  }}
+                >
+                  {f.label} ({proQuotesList.filter(q => f.id === "all" || q.status === f.id).length})
+                </button>
+              ))}
+              <button type="button" onClick={loadProQuotes} style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 20, fontSize: ".75rem", fontWeight: 700, cursor: "pointer", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--gray)" }}>
+                ↻ Actualiser
+              </button>
+            </div>
+
+            {proQuotesList.filter(q => proQuoteFilter === "all" || q.status === proQuoteFilter).length === 0 ? (
+              <div className="admin-empty">
+                <p>Aucune demande de devis livraison pro{proQuoteFilter !== "all" ? ` (${PRO_QUOTE_STATUS_LABELS[proQuoteFilter] || proQuoteFilter})` : ""}.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Boutique</th>
+                      <th>Chef d&apos;entreprise</th>
+                      <th>Contact</th>
+                      <th>Volume / mois</th>
+                      <th>Mode livraison</th>
+                      <th>Statut</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proQuotesList
+                      .filter(q => proQuoteFilter === "all" || q.status === proQuoteFilter)
+                      .map((q) => (
+                        <tr key={q.id}>
+                          <td style={{ fontSize: ".72rem", whiteSpace: "nowrap" }}>
+                            {q.created_at ? new Date(q.created_at).toLocaleString("fr-FR") : "—"}
+                          </td>
+                          <td>
+                            <strong>{q.shop_name}</strong>
+                            {q.city && <div style={{ fontSize: ".68rem", color: "var(--gray)" }}>{q.city}</div>}
+                          </td>
+                          <td>{q.owner_name}</td>
+                          <td style={{ fontSize: ".72rem" }}>
+                            <div>{q.phone}</div>
+                            <a href={`mailto:${q.email}`} style={{ color: "var(--green)" }}>{q.email}</a>
+                          </td>
+                          <td>{PRO_QUOTE_VOLUME_LABELS[q.monthly_volume] || q.monthly_volume}</td>
+                          <td>{q.driver_mode === "assigned" ? "Livreur dédié" : "Pool / aléatoire"}</td>
+                          <td>
+                            <span className={`admin-badge admin-badge-${q.status === "pending" ? "yellow" : q.status === "quoted" ? "green" : q.status === "closed" ? "gray" : "blue"}`}>
+                              {PRO_QUOTE_STATUS_LABELS[q.status] || q.status}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProQuoteModal(q);
+                                setProQuoteStatus(q.status || "pending");
+                                setProQuoteAdminNotes(q.admin_notes || "");
+                              }}
+                              style={{ background: "var(--green)", color: "#fff", border: "none", padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: ".7rem", fontWeight: 700 }}
+                            >
+                              Traiter
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {proQuoteModal && (
+              <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setProQuoteModal(null)}>
+                <div className="modal modal-lg" role="dialog" aria-modal="true">
+                  <button type="button" className="modal-close" onClick={() => setProQuoteModal(null)} aria-label="Fermer">✕</button>
+                  <div className="modal-title">Demande de devis — {proQuoteModal.shop_name}</div>
+                  <p className="modal-sub">Envoyez le devis par email hors plateforme, puis mettez à jour le suivi ci-dessous.</p>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16, fontSize: ".8rem" }}>
+                    <div><strong>Boutique :</strong> {proQuoteModal.shop_name}</div>
+                    <div><strong>Chef d&apos;entreprise :</strong> {proQuoteModal.owner_name}</div>
+                    <div><strong>Téléphone :</strong> {proQuoteModal.phone}</div>
+                    <div><strong>Email :</strong> <a href={`mailto:${proQuoteModal.email}`}>{proQuoteModal.email}</a></div>
+                    <div><strong>Ville :</strong> {proQuoteModal.city || "—"}</div>
+                    <div><strong>Adresse :</strong> {proQuoteModal.address || "—"}</div>
+                    <div><strong>Volume mensuel :</strong> {PRO_QUOTE_VOLUME_LABELS[proQuoteModal.monthly_volume] || proQuoteModal.monthly_volume}</div>
+                    <div><strong>Mode :</strong> {proQuoteModal.driver_mode === "assigned" ? "Livreur dédié assigné" : "Livraisons aléatoires (pool)"}</div>
+                    {proQuoteModal.notes && (
+                      <div style={{ gridColumn: "1 / -1" }}><strong>Notes client :</strong> {proQuoteModal.notes}</div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Statut de suivi</label>
+                    <select
+                      className="form-input"
+                      value={proQuoteStatus}
+                      onChange={(e) => setProQuoteStatus(e.target.value)}
+                      disabled={!canWrite}
+                    >
+                      {Object.entries(PRO_QUOTE_STATUS_LABELS).map(([id, label]) => (
+                        <option key={id} value={id}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Notes internes admin</label>
+                    <textarea
+                      className="form-input"
+                      rows={3}
+                      placeholder="Ex. devis envoyé le 09/07, tarif négocié à 1200 FCFA/colis…"
+                      value={proQuoteAdminNotes}
+                      onChange={(e) => setProQuoteAdminNotes(e.target.value)}
+                      disabled={!canWrite}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <a
+                      href={`mailto:${proQuoteModal.email}?subject=${encodeURIComponent(`Yorix Livraison Pro — devis ${proQuoteModal.shop_name}`)}&body=${encodeURIComponent(
+                        `Bonjour ${proQuoteModal.owner_name},\n\nMerci pour votre demande livraison pro.\n\nRécapitulatif de votre demande :\n- Boutique : ${proQuoteModal.shop_name}\n- Contact : ${proQuoteModal.phone} / ${proQuoteModal.email}\n- Ville : ${proQuoteModal.city}\n- Adresse : ${proQuoteModal.address}\n- Volume : ${PRO_QUOTE_VOLUME_LABELS[proQuoteModal.monthly_volume] || proQuoteModal.monthly_volume}\n- Mode souhaité : ${proQuoteModal.driver_mode === "assigned" ? "Livreur dédié" : "Pool / aléatoire"}${proQuoteModal.notes ? `\n- Notes : ${proQuoteModal.notes}` : ""}\n\nNotre proposition :\n[Tarif et conditions à compléter]\n\nCordialement,\nL'équipe Yorix Livraison`,
+                      )}`}
+                      className="form-submit"
+                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flex: "1 1 auto" }}
+                    >
+                      📧 Ouvrir email client
+                    </a>
+                    {canWrite && (
+                      <button type="button" className="form-submit" onClick={saveProQuoteAdmin} disabled={proQuoteSaving} style={{ flex: "1 1 auto" }}>
+                        {proQuoteSaving ? "Enregistrement…" : "Enregistrer le suivi"}
+                      </button>
+                    )}
+                    <button type="button" onClick={() => setProQuoteModal(null)} style={{ padding: "11px 18px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: ".82rem", fontWeight: 600, color: "var(--gray)" }}>
+                      Fermer
                     </button>
                   </div>
                 </div>
