@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migrationSql = readFileSync(
-  new URL("../../../supabase/migrations/20260710110100_guard_seller_order_sensitive_updates.sql", import.meta.url),
+  join(process.cwd(), "supabase/migrations/20260710110100_guard_seller_order_sensitive_updates.sql"),
   "utf8",
 );
 
