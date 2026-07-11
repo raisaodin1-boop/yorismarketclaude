@@ -96,8 +96,9 @@ Deno.serve(async (req) => {
         ? body.idempotency_key
         : "";
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
+      supabaseUrl,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
@@ -126,6 +127,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (intentError) throw intentError;
     if (!intent) return ok({ error: "Checkout intent not found" }, { status: 404 });
+    if (intent.status !== "ready") {
+      if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+      return ok({ error: "CHECKOUT_INTENT_ALREADY_USED" }, { status: 409 });
+    }
 
     const payload = intent.payload || {};
     const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
@@ -133,6 +138,23 @@ Deno.serve(async (req) => {
     if (priceRes.error) return ok({ error: priceRes.error }, { status: 400 });
     const items = priceRes.lines;
     const customer = payload.customer || {};
+    const customerId = typeof intent.customer_id === "string" && uuidish(intent.customer_id)
+      ? intent.customer_id
+      : "";
+    if (customerId) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (!token) {
+        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+        return ok({ error: "Authorization requise pour ce checkout." }, { status: 401 });
+      }
+      const anon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "");
+      const { data: { user }, error: authErr } = await anon.auth.getUser(token);
+      if (authErr || !user || user.id !== customerId) {
+        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+        return ok({ error: "Session invalide ou compte différent du client." }, { status: 403 });
+      }
+    }
     const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
 
     const policy = await resolveDeliveryPolicy(supabase);
