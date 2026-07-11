@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { cwd } from "node:process";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  resolve(process.cwd(), "supabase/migrations/20260711110235_lock_finance_and_trust_writes.sql"),
+  resolve(cwd(), "supabase/migrations/20260711110235_lock_finance_and_trust_writes.sql"),
   "utf8",
 );
 
