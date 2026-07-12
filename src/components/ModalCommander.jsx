@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createCheckoutIntent, confirmCheckout } from "../lib/checkoutApi";
+import { createCheckoutIdempotencyKey } from "../lib/idempotency";
 import { creerCommandeSupabase } from "../utils/helpers";
 import { showAppToast } from "../lib/appToast";
 
@@ -13,6 +14,14 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
   const [errors, setErrors]   = useState({});
   const [done, setDone]       = useState(false);
   const [deliveryTracking, setDeliveryTracking] = useState([]);
+  const idempotencyKeyRef = useRef(null);
+
+  const getIdempotencyKey = () => {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = createCheckoutIdempotencyKey();
+    }
+    return idempotencyKeyRef.current;
+  };
 
   const validate = () => {
     const e = {};
@@ -55,6 +64,7 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
         checkout_intent_id: intent.checkout_intent_id,
         payment_method: "whatsapp_backup",
         address: userData?.adresse || userData?.ville || "",
+        idempotency_key: getIdempotencyKey(),
       });
       const codes = Array.isArray(confirmation?.delivery_tracking)
         ? confirmation.delivery_tracking

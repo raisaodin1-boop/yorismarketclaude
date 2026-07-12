@@ -28,6 +28,7 @@ import { FreeShippingProgress } from "./FreeShippingProgress";
 import { TrustStrip } from "./ui/TrustStrip";
 import { validateCoupon, recordCouponRedemption } from "../lib/couponApi";
 import { creditReferralBonusIfEligible } from "../lib/referralApi";
+import { createCheckoutIdempotencyKey } from "../lib/idempotency";
 import { explainDeliveryEta } from "../lib/logisticsAi";
 import { userFacingSuccess } from "../lib/appToast";
 import { generateAttestationPdf, generateDeliveryNotePdf, generateInvoicePdf } from "../lib/pdfDocumentGenerator";
@@ -92,10 +93,7 @@ export function CheckoutPage({
   const idempotencyKeyRef = useRef(null);
   const getIdempotencyKey = useCallback(() => {
     if (!idempotencyKeyRef.current) {
-      idempotencyKeyRef.current =
-        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : `idem-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      idempotencyKeyRef.current = createCheckoutIdempotencyKey();
     }
     return idempotencyKeyRef.current;
   }, []);

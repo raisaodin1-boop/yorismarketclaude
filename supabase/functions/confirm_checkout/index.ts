@@ -9,6 +9,19 @@ function uuidish(v: string) {
   return /^[0-9a-fA-F-]{16,}$/.test(v);
 }
 
+function checkoutIntentCustomerId(intent: Record<string, unknown>) {
+  const direct = typeof intent.customer_id === "string" ? intent.customer_id : "";
+  if (direct && uuidish(direct)) return direct;
+  const payload = intent.payload && typeof intent.payload === "object"
+    ? intent.payload as Record<string, unknown>
+    : {};
+  const customer = payload.customer && typeof payload.customer === "object"
+    ? payload.customer as Record<string, unknown>
+    : {};
+  const fromPayload = typeof customer.id === "string" ? customer.id : "";
+  return fromPayload && uuidish(fromPayload) ? fromPayload : "";
+}
+
 /**
  * Réclame une clé d'idempotency.
  * - `owned: true`  → la ligne vient d'être créée, c'est NOUS qui traitons ce checkout.
@@ -74,10 +87,13 @@ Deno.serve(async (req) => {
   // Hoistés hors du try pour rester accessibles au catch (libération de la clé).
   let supabase: ReturnType<typeof createClient> | null = null;
   let idempotencyKey = "";
+  let checkoutIntentId = "";
+  let intentClaimed = false;
+  let irreversibleStarted = false;
 
   try {
     const body = await req.json();
-    const checkoutIntentId = String(body?.checkout_intent_id || "");
+    checkoutIntentId = String(body?.checkout_intent_id || "");
     if (!checkoutIntentId || !uuidish(checkoutIntentId)) {
       return ok({ error: "Invalid checkout_intent_id" }, { status: 400 });
     }
@@ -89,37 +105,23 @@ Deno.serve(async (req) => {
     const YORIX_HQ_ADDRESS = "Yaoundé, Barrière Ahala, en face de Skymotors";
 
     // Clé d'idempotency générée côté client (une seule fois par session de
-    // checkout). Optionnelle pour rester rétrocompatible, mais le frontend
-    // l'envoie toujours : elle protège contre le double-clic / retry réseau.
+    // checkout). Obligatoire : avec le verrou sur checkout_intents.status,
+    // elle protège les retries sans recréer de commandes.
     idempotencyKey =
       typeof body?.idempotency_key === "string" && uuidish(body.idempotency_key)
         ? body.idempotency_key
         : "";
+    if (!idempotencyKey) {
+      return ok({ error: "Missing idempotency_key" }, { status: 400 });
+    }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
+      supabaseUrl,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
-    // ── Idempotency : on tente de réclamer la clé AVANT tout traitement ──────
-    // Si une confirmation identique est déjà passée, on rejoue sa réponse sans
-    // recréer la moindre commande.
-    if (idempotencyKey) {
-      const claim = await claimIdempotency(supabase, idempotencyKey);
-      if (!claim.owned) {
-        const ex = claim.existing ?? {};
-        if (ex.status === "completed" && ex.response) {
-          return ok(ex.response as Record<string, unknown>, { status: 200 });
-        }
-        // Confirmation encore en cours (doublon concurrent) : on ne recrée rien.
-        return ok(
-          { error: "CHECKOUT_IN_PROGRESS" },
-          { status: 409 },
-        );
-      }
-    }
-
-    const { data: intent, error: intentError } = await supabase
+    let { data: intent, error: intentError } = await supabase
       .from("checkout_intents")
       .select("*")
       .eq("id", checkoutIntentId)
@@ -127,21 +129,111 @@ Deno.serve(async (req) => {
     if (intentError) throw intentError;
     if (!intent) return ok({ error: "Checkout intent not found" }, { status: 404 });
 
+    const intentCustomerId = checkoutIntentCustomerId(intent as Record<string, unknown>);
+    if (intentCustomerId) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+      if (!token || !anonKey || !supabaseUrl) {
+        return ok({ error: "Session requise" }, { status: 401 });
+      }
+      const anon = createClient(supabaseUrl, anonKey);
+      const { data: { user }, error: authErr } = await anon.auth.getUser(token);
+      if (authErr || !user?.id) {
+        return ok({ error: "Session invalide ou expirée" }, { status: 401 });
+      }
+      if (user.id !== intentCustomerId) {
+        return ok({ error: "Accès refusé" }, { status: 403 });
+      }
+    } else if (paymentMethod !== "whatsapp_backup") {
+      return ok({ error: "Session requise" }, { status: 401 });
+    }
+
+    // ── Idempotency : on tente de réclamer la clé AVANT tout traitement ──────
+    // Si une confirmation identique est déjà passée, on rejoue sa réponse sans
+    // recréer la moindre commande.
+    const claim = await claimIdempotency(supabase, idempotencyKey);
+    if (!claim.owned) {
+      const ex = claim.existing ?? {};
+      if (ex.status === "completed" && ex.response) {
+        return ok(ex.response as Record<string, unknown>, { status: 200 });
+      }
+      // Confirmation encore en cours (doublon concurrent) : on ne recrée rien.
+      return ok(
+        { error: "CHECKOUT_IN_PROGRESS" },
+        { status: 409 },
+      );
+    }
+
+    const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
+
+    const { data: claimedIntent, error: claimIntentError } = await supabase
+      .from("checkout_intents")
+      .update({
+        status: "processing",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", checkoutIntentId)
+      .eq("status", "ready")
+      .select("*")
+      .maybeSingle();
+    if (claimIntentError) throw claimIntentError;
+    if (!claimedIntent) {
+      await releaseIdempotency(supabase, idempotencyKey);
+      const { data: freshIntent } = await supabase
+        .from("checkout_intents")
+        .select("status")
+        .eq("id", checkoutIntentId)
+        .maybeSingle();
+      const status = String(
+        (freshIntent as { status?: unknown } | null)?.status ??
+          (intent as { status?: unknown }).status ??
+          "",
+      );
+      if (status === "confirmed") {
+        return ok(
+          { error: "CHECKOUT_ALREADY_CONFIRMED", order_group_id: orderGroupId },
+          { status: 409 },
+        );
+      }
+      if (status === "processing") {
+        return ok({ error: "CHECKOUT_IN_PROGRESS" }, { status: 409 });
+      }
+      return ok({ error: "Checkout intent is not ready" }, { status: 409 });
+    }
+    intentClaimed = true;
+    intent = claimedIntent;
+
+    const abortBeforeCreation = async (
+      responseBody: Record<string, unknown>,
+      status: number,
+    ) => {
+      await releaseIdempotency(supabase!, idempotencyKey);
+      if (intentClaimed && !irreversibleStarted) {
+        await supabase!
+          .from("checkout_intents")
+          .update({ status: "ready", updated_at: new Date().toISOString() })
+          .eq("id", checkoutIntentId)
+          .eq("status", "processing");
+        intentClaimed = false;
+      }
+      return ok(responseBody, { status });
+    };
+
     const payload = intent.payload || {};
     const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
     const priceRes = await applyCatalogPricing(supabase, itemsRaw);
-    if (priceRes.error) return ok({ error: priceRes.error }, { status: 400 });
+    if (priceRes.error) return abortBeforeCreation({ error: priceRes.error }, 400);
     const items = priceRes.lines;
     const customer = payload.customer || {};
-    const orderGroupId = `YORIX-${checkoutIntentId.slice(0, 8).toUpperCase()}`;
 
     const policy = await resolveDeliveryPolicy(supabase);
     const totals = computeCheckoutTotals(items, policy);
     const intentSub = Math.round(Number(intent.subtotal ?? 0));
     if (intentSub !== totals.subtotalFull) {
-      return ok(
+      return abortBeforeCreation(
         { error: "Cart subtotal mismatch — refresh checkout." },
-        { status: 409 },
+        409,
       );
     }
 
@@ -218,20 +310,20 @@ Deno.serve(async (req) => {
           available?: number;
           requested?: number;
         };
-        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
-        return ok(
+        return abortBeforeCreation(
           {
             error: "STOCK_INSUFFICIENT",
             product: s.name ?? "Produit",
             available: Number(s.available ?? 0),
             requested: Number(s.requested ?? 0),
           },
-          { status: 409 },
+          409,
         );
       }
     }
 
     const ordersCreated: any[] = [];
+    irreversibleStarted = true;
     for (const item of items) {
       if (item.kind === "service") {
         const { data: booking, error: bookingError } = await supabase
@@ -391,7 +483,12 @@ Deno.serve(async (req) => {
       ordersCreated.push({ type: "order", id: order.id });
     }
 
-    await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
+    const { error: confirmIntentError } = await supabase
+      .from("checkout_intents")
+      .update({ status: "confirmed", updated_at: new Date().toISOString() })
+      .eq("id", checkoutIntentId)
+      .eq("status", "processing");
+    if (confirmIntentError) throw confirmIntentError;
 
     const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
     if (buyerId) {
@@ -448,6 +545,13 @@ Deno.serve(async (req) => {
     try {
       if (supabase && idempotencyKey) {
         await releaseIdempotency(supabase, idempotencyKey);
+      }
+      if (supabase && intentClaimed && !irreversibleStarted) {
+        await supabase
+          .from("checkout_intents")
+          .update({ status: "ready", updated_at: new Date().toISOString() })
+          .eq("id", checkoutIntentId)
+          .eq("status", "processing");
       }
     } catch { /* best-effort */ }
     // Les erreurs Postgrest (supabase-js) ne sont pas des instances d'Error —
