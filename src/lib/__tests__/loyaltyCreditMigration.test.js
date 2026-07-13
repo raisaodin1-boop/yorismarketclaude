@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 describe("loyalty credit payment hardening migration", () => {
   const sql = readFileSync(
     resolve(
-      new URL("../../../../supabase/migrations/20260713110100_harden_loyalty_credit_from_payment.sql", import.meta.url)
+      new URL("../../../supabase/migrations/20260713110100_harden_loyalty_credit_from_payment.sql", import.meta.url)
         .pathname,
     ),
     "utf8",
