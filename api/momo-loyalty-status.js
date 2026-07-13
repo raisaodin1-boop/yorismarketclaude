@@ -61,11 +61,34 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Accès refusé" });
   }
 
-  if (tx.status === "paid" || purchase.status === "credited") {
+  if (purchase.status === "credited") {
     return res.status(200).json({ status: "paid", points_credited: purchase.points });
   }
   if (tx.status === "failed") {
     return res.status(200).json({ status: "failed" });
+  }
+
+  const creditPurchase = async () => {
+    const { data: creditResult, error: creditErr } = await supabase.rpc(
+      "credit_pack_purchase_from_payment",
+      { p_purchase_id: purchaseId, p_payment_ref: referenceId },
+    );
+    if (creditErr) {
+      console.error("[momo-loyalty-status] credit RPC:", creditErr.message);
+      return res.status(200).json({ status: "paid", credit_pending: true });
+    }
+    if (creditResult?.success === false) {
+      return res.status(200).json({
+        status: "paid",
+        credit_pending: true,
+        error: creditResult.error || "Crédit fidélité en attente de vérification",
+      });
+    }
+    return res.status(200).json({ status: "paid", points_credited: creditResult?.points_credited ?? null });
+  };
+
+  if (tx.status === "paid") {
+    return creditPurchase();
   }
 
   try {
@@ -84,15 +107,7 @@ export default async function handler(req, res) {
       .eq("id", tx.id);
 
     if (finalStatus === "paid") {
-      const { data: creditResult, error: creditErr } = await supabase.rpc(
-        "credit_pack_purchase_from_payment",
-        { p_purchase_id: purchaseId, p_payment_ref: referenceId },
-      );
-      if (creditErr) {
-        console.error("[momo-loyalty-status] credit RPC:", creditErr.message);
-        return res.status(200).json({ status: "paid", credit_pending: true });
-      }
-      return res.status(200).json({ status: "paid", points_credited: creditResult?.points_credited ?? null });
+      return creditPurchase();
     }
 
     return res.status(200).json({ status: finalStatus });

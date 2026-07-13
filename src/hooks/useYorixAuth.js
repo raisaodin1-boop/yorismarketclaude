@@ -4,6 +4,12 @@ import { getUserProfile, sendEmail, emailBienvenue } from "../utils/helpers";
 import { isProfileAccessible } from "../lib/userMutations";
 import { applyReferralCode } from "../lib/referralApi";
 
+const PRO_ROLES = ["seller", "provider", "delivery"];
+
+export function requiresContractAcceptance(role, contractAccepted, contractGateBypassed = false) {
+  return PRO_ROLES.includes(role) && !contractAccepted && !contractGateBypassed;
+}
+
 function validateRegistrationFields({ nom, email, password, tel }) {
   const name = String(nom || "").trim();
   const phone = String(tel || "").trim();
@@ -201,7 +207,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
     setAuthLoading(false);
   };
 
-  const doRegister = async () => {
+  const doRegister = async ({ contractGateBypassed = false } = {}) => {
     setAuthError("");
     setAuthLoading(true);
     try {
@@ -209,8 +215,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
       if (fieldError) throw new Error(fieldError);
       if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
 
-      const PRO_ROLES = ["seller", "provider", "delivery"];
-      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
+      if (requiresContractAcceptance(selectedRole, contractAccepted, contractGateBypassed)) {
         setPendingRegistration({
           nom: authForm.nom.trim(),
           email: authForm.email.trim(),
@@ -311,9 +316,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
   const handleContractAccepted = async (_acceptanceData) => {
     setContractOpen(false);
     setContractAccepted(true);
-    setTimeout(() => {
-      doRegister();
-    }, 200);
+    await doRegister({ contractGateBypassed: true });
   };
 
   return {
