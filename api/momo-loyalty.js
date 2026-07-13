@@ -19,6 +19,12 @@ function normalizeCmMsisdn(raw) {
   return null;
 }
 
+function expectedPointsForPack(pack) {
+  const basePoints = Math.round(Number(pack?.points || 0));
+  const bonusPct = Number(pack?.bonus_pct || 0);
+  return basePoints + Math.round(basePoints * (bonusPct / 100));
+}
+
 async function getAuthenticatedUser(req) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -52,7 +58,7 @@ export default async function handler(req, res) {
 
   const { data: purchase, error: purchaseErr } = await supabase
     .from("loyalty_pack_purchases")
-    .select("id, user_id, prix_fcfa, status, pack_nom")
+    .select("id, user_id, pack_id, points, prix_fcfa, status, pack_nom")
     .eq("id", purchaseId)
     .maybeSingle();
 
@@ -68,7 +74,25 @@ export default async function handler(req, res) {
     return res.status(409).json({ error: "Cet achat a été annulé" });
   }
 
-  const amount = Math.round(Number(purchase.prix_fcfa || 0));
+  const { data: pack, error: packErr } = await supabase
+    .from("loyalty_packs")
+    .select("id, nom, points, prix_fcfa, bonus_pct, actif")
+    .eq("id", purchase.pack_id)
+    .maybeSingle();
+
+  if (packErr) return res.status(500).json({ error: packErr.message });
+  if (!pack || pack.actif === false) {
+    return res.status(409).json({ error: "Pack fidélité indisponible" });
+  }
+
+  const amount = Math.round(Number(pack.prix_fcfa || 0));
+  const purchaseAmount = Math.round(Number(purchase.prix_fcfa || 0));
+  const expectedPoints = expectedPointsForPack(pack);
+  const purchasePoints = Math.round(Number(purchase.points || 0));
+  if (purchaseAmount !== amount || purchasePoints !== expectedPoints) {
+    return res.status(409).json({ error: "Achat fidélité incohérent avec le pack sélectionné" });
+  }
+
   if (!(amount > 0)) {
     return res.status(400).json({ error: "Montant invalide" });
   }
@@ -81,7 +105,7 @@ export default async function handler(req, res) {
       orderId: orderGroupId,
       amount,
       subscriberMsisdn: msisdn,
-      description: `Pack points Yorix — ${purchase.pack_nom || "Pack"}`,
+      description: `Pack points Yorix — ${pack.nom || purchase.pack_nom || "Pack"}`,
       notifUrl,
     });
 
