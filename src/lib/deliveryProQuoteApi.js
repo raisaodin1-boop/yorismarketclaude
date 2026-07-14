@@ -45,9 +45,9 @@ export async function submitDeliveryProQuote(form, userId = null) {
     status: "pending",
   };
 
-  const { data, error } = await supabase.from("delivery_pro_quotes").insert(row).select("id").single();
+  const { error } = await supabase.from("delivery_pro_quotes").insert(row);
   if (error) throw error;
-  return { ok: true, id: data?.id, errors: {} };
+  return { ok: true, errors: {} };
 }
 
 export async function updateDeliveryProQuoteStatus(id, status, adminNotes) {
