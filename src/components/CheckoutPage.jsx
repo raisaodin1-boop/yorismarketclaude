@@ -90,6 +90,7 @@ export function CheckoutPage({
    * au lieu de créer une 2ᵉ commande. Réinitialisée uniquement après succès.
    */
   const idempotencyKeyRef = useRef(null);
+  const checkoutAttemptRef = useRef(null);
   const getIdempotencyKey = useCallback(() => {
     if (!idempotencyKeyRef.current) {
       idempotencyKeyRef.current =
@@ -118,6 +119,7 @@ export function CheckoutPage({
           });
         }
         if (e.code === "CHECKOUT_IN_PROGRESS") return t("errors.inProgress");
+        if (e.code === "PAYMENT_UNAVAILABLE") return t("errors.paymentUnavailable");
         if (e.isNetwork) return t("errors.network");
       }
       return t("errors.checkoutFailed");
@@ -136,6 +138,7 @@ export function CheckoutPage({
 
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cinetpay");
+  const [lockedPaymentMethod, setLockedPaymentMethod] = useState("");
   const [momoPhone, setMomoPhone] = useState("");
   const [momoStatus, setMomoStatus] = useState(""); // "" | "waiting" | "failed" | "timeout"
   const [locationType, setLocationType] = useState("home");
@@ -486,6 +489,14 @@ export function CheckoutPage({
     setCouponError("");
   };
 
+  const handlePaymentMethodChange = (event) => {
+    if (checkoutAttemptRef.current) {
+      setCheckoutError(t("errors.paymentMethodLocked"));
+      return;
+    }
+    setPaymentMethod(event.target.value);
+  };
+
   // Total affiché avec réduction coupon
   const couponDiscount = couponApplied?.discount || 0;
   const summaryWithDiscount = couponDiscount > 0
@@ -500,6 +511,13 @@ export function CheckoutPage({
     }
     if (!canContinueStep1) {
       setCheckoutError(t("errors.addressIncomplete"));
+      return;
+    }
+    if (
+      checkoutAttemptRef.current &&
+      checkoutAttemptRef.current.paymentMethod !== paymentMethod
+    ) {
+      setCheckoutError(t("errors.paymentMethodLocked"));
       return;
     }
     setCheckoutError("");
@@ -566,22 +584,36 @@ export function CheckoutPage({
     }
 
     try {
-      const intentPayload = buildCheckoutIntent({
-        items: effectiveCartItems,
-        user,
-        userData: mergedUserData,
-        summary: effectiveSummary,
-        couponCode: couponApplied?.code,
-      });
-      const intent = await createCheckoutIntent(intentPayload);
-      const confirmation = await confirmCheckout({
-        checkout_intent_id: intent.checkout_intent_id,
-        payment_method: paymentMethod,
-        location_type: locationType,
-        pickup_point: isPickup ? pickupPoint : undefined,
-        address: isPickup ? (pickupAddressLabel || mergedUserData.adresse) : mergedUserData.adresse,
-        idempotency_key: getIdempotencyKey(),
-      });
+      let { intent, confirmation } = checkoutAttemptRef.current || {};
+      if (!intent) {
+        const intentPayload = buildCheckoutIntent({
+          items: effectiveCartItems,
+          user,
+          userData: mergedUserData,
+          summary: effectiveSummary,
+          couponCode: couponApplied?.code,
+        });
+        intent = await createCheckoutIntent(intentPayload);
+        if (!intent?.checkout_intent_id) {
+          throw new Error(t("errors.checkoutFailed"));
+        }
+        checkoutAttemptRef.current = { intent, confirmation: null, paymentMethod };
+        setLockedPaymentMethod(paymentMethod);
+      }
+      if (!confirmation) {
+        confirmation = await confirmCheckout({
+          checkout_intent_id: intent.checkout_intent_id,
+          payment_method: paymentMethod,
+          location_type: locationType,
+          pickup_point: isPickup ? pickupPoint : undefined,
+          address: isPickup ? (pickupAddressLabel || mergedUserData.adresse) : mergedUserData.adresse,
+          idempotency_key: getIdempotencyKey(),
+        });
+        if (!confirmation?.order_group_id) {
+          throw new Error(t("errors.checkoutFailed"));
+        }
+        checkoutAttemptRef.current = { intent, confirmation, paymentMethod };
+      }
       const serverPayTotal = Math.round(
         Number(confirmation?.total ?? intent?.total ?? effectiveSummary.total),
       );
@@ -607,8 +639,8 @@ export function CheckoutPage({
         }
         // Pas d'URL de paiement → on ne peut pas encaisser. Ne PAS afficher un
         // faux succès ni vider le panier : on remonte l'erreur et on conserve
-        // la clé d'idempotency pour que le retry déduplique la commande créée.
-        throw new Error(t("errors.paymentUnavailable"));
+        // l'intent et sa confirmation pour relancer uniquement l'initialisation.
+        throw new CheckoutError("payment_unavailable", { code: "PAYMENT_UNAVAILABLE" });
       }
 
       if (!confirmation?.order_group_id) {
@@ -1095,12 +1127,23 @@ export function CheckoutPage({
               <div style={{ display: "grid", gap: 10 }}>
                 <div className="checkout-step-heading">{t("step3.heading")}</div>
                 <label className="form-label">{t("step3.method")}</label>
-                <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                <select
+                  className="form-input"
+                  value={paymentMethod}
+                  onChange={handlePaymentMethodChange}
+                  disabled={loading || Boolean(lockedPaymentMethod)}
+                  aria-describedby={lockedPaymentMethod ? "checkout-payment-method-lock" : undefined}
+                >
                   <option value="momo_direct">📱 MTN MoMo — paiement direct</option>
                   <option value="cinetpay">CinetPay — MTN MoMo, Orange Money ou carte</option>
                   <option value="cod">Espèces — paiement à la livraison</option>
                   <option value="whatsapp_backup">WhatsApp — backup & preuve manuelle</option>
                 </select>
+                {lockedPaymentMethod && (
+                  <div id="checkout-payment-method-lock" role="status" className="info-msg">
+                    {t("step3.methodLocked")}
+                  </div>
+                )}
 
                 {paymentMethod === "momo_direct" && (
                   <div className="form-group" style={{ marginBottom: 0 }}>
