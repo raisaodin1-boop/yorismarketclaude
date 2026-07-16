@@ -82,7 +82,8 @@
     "whatsapp": "WhatsApp (confirmation manuelle)",
     "placeOrder": "Confirmer et payer",
     "processing": "Traitement…",
-    "backDelivery": "← Modifier la livraison"
+    "backDelivery": "← Modifier la livraison",
+    "methodLocked": "Le moyen de paiement est verrouillé pour cette tentative. Réessayer la reprendra sans créer une autre commande."
   },
   "location": {
     "online": "Visio / téléphone / livrables numériques selon prestataire.",
@@ -99,6 +100,7 @@
     "thisProduct": "ce produit",
     "network": "Connexion interrompue. Votre panier est conservé — vérifiez votre réseau et réessayez.",
     "inProgress": "Une confirmation est déjà en cours pour cette commande. Patientez quelques secondes avant de réessayer.",
-    "paymentUnavailable": "Le paiement n'a pas pu démarrer. Choisissez un autre moyen (Espèces à la livraison ou WhatsApp) ou réessayez dans un instant."
+    "paymentMethodLocked": "Cette commande est déjà enregistrée avec le moyen de paiement sélectionné. Terminez ou réessayez ce paiement pour éviter une commande en double.",
+    "paymentUnavailable": "Le paiement n'a pas pu démarrer. Votre commande est enregistrée et le moyen de paiement est verrouillé pour éviter un doublon. Réessayez pour relancer le paiement."
   }
 }
