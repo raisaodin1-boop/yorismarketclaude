@@ -85,9 +85,9 @@ export function CheckoutPage({
 
   /**
    * Clé d'idempotency : générée UNE seule fois par session de checkout et
-   * conservée tant que la commande n'est pas confirmée. Si le réseau coupe et
-   * que l'utilisateur reclique, la même clé est renvoyée → le serveur déduplique
-   * au lieu de créer une 2ᵉ commande. Réinitialisée uniquement après succès.
+   * conservée pendant toute la tentative. Si le réseau coupe et que
+   * l'utilisateur reclique, le même intent et la même clé sont renvoyés → le
+   * serveur déduplique au lieu de créer une 2ᵉ commande.
    */
   const idempotencyKeyRef = useRef(null);
   const checkoutAttemptRef = useRef(null);
@@ -1242,7 +1242,7 @@ export function CheckoutPage({
                   </p>
                 </div>
                 <p style={{ fontSize: ".72rem", color: "var(--gray)", margin: 0, lineHeight: 1.4 }}>
-                  Si CinetPay est indisponible, choisissez WhatsApp : notre équipe valide votre paiement manuellement. Aucune commission affichée ici — uniquement votre total commande.
+                  Choisissez votre moyen de paiement avant de confirmer. Une fois la commande enregistrée, il reste verrouillé afin d’éviter tout doublon.
                 </p>
                 {checkoutError && <div className="info-msg checkout-error-banner">{checkoutError}</div>}
                 <button className="form-submit" type="button" onClick={handlePlaceOrder} disabled={loading}>
