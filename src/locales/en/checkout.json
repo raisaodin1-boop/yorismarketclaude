@@ -82,7 +82,8 @@
     "whatsapp": "WhatsApp (manual confirmation)",
     "placeOrder": "Confirm and pay",
     "processing": "Processing…",
-    "backDelivery": "← Edit delivery"
+    "backDelivery": "← Edit delivery",
+    "methodLocked": "The payment method is locked for this checkout attempt. Retrying will resume it without creating another order."
   },
   "location": {
     "online": "Video / phone / digital deliverables per provider.",
@@ -99,6 +100,7 @@
     "thisProduct": "this product",
     "network": "Connection lost. Your cart is kept — check your network and try again.",
     "inProgress": "A confirmation is already in progress for this order. Wait a few seconds before retrying.",
-    "paymentUnavailable": "Payment could not start. Choose another method (Cash on delivery or WhatsApp) or try again shortly."
+    "paymentMethodLocked": "This order is already recorded with the selected payment method. Complete or retry this payment to avoid a duplicate order.",
+    "paymentUnavailable": "Payment could not start. Your order is recorded and its payment method is locked to prevent a duplicate. Retry to resume payment."
   }
 }
