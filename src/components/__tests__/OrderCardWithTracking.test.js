@@ -47,7 +47,7 @@ describe("OrderCardWithTracking", () => {
 
   it("keeps the order detail dismissed when its close button is clicked", async () => {
     await act(async () => {
-      root.render(<OrderCardWithTracking commande={ORDER} goPage={vi.fn()} />);
+      root.render(React.createElement(OrderCardWithTracking, { commande: ORDER, goPage: vi.fn() }));
     });
 
     await act(async () => {
@@ -68,7 +68,7 @@ describe("OrderCardWithTracking", () => {
 
   it("keeps the order detail dismissed when its backdrop is clicked", async () => {
     await act(async () => {
-      root.render(<OrderCardWithTracking commande={ORDER} goPage={vi.fn()} />);
+      root.render(React.createElement(OrderCardWithTracking, { commande: ORDER, goPage: vi.fn() }));
     });
 
     await act(async () => {
