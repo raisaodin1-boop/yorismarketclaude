@@ -104,7 +104,13 @@ export function OrderDetailModal({ order, goPage, onClose }) {
   const paymentLabel = PAYMENT_LABELS[order?.payment_method] || order?.payment_method || "—";
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-overlay"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail de la commande">
         <button type="button" className="modal-close" onClick={onClose} aria-label="Fermer">✕</button>
 
