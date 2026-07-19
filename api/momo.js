@@ -22,6 +22,26 @@ function normalizeCmMsisdn(raw) {
   return null;
 }
 
+export async function resolveConfirmedOrderGroup(
+  supabase,
+  checkoutIntentId,
+  requestedOrderGroupId,
+) {
+  const { data, error } = await supabase
+    .from("checkout_idempotency")
+    .select("order_group_id")
+    .eq("status", "completed")
+    .eq("order_group_id", requestedOrderGroupId)
+    .contains("response", {
+      checkout_intent_id: checkoutIntentId,
+      order_group_id: requestedOrderGroupId,
+    })
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.order_group_id || null;
+}
+
 async function getAuthenticatedUser(req) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -46,6 +66,9 @@ export default async function handler(req, res) {
   if (!checkoutIntentId || typeof checkoutIntentId !== "string") {
     return res.status(400).json({ error: "checkout_intent_id manquant" });
   }
+  if (!orderGroupId || typeof orderGroupId !== "string") {
+    return res.status(400).json({ error: "order_group_id manquant" });
+  }
   const msisdn = normalizeCmMsisdn(phone);
   if (!msisdn) {
     return res.status(400).json({ error: "Numéro de téléphone invalide (format Cameroun attendu)" });
@@ -63,6 +86,22 @@ export default async function handler(req, res) {
   if (!intent) return res.status(404).json({ error: "Checkout introuvable" });
   if (intent.customer_id !== user.id) {
     return res.status(403).json({ error: "Cette commande n'appartient pas à cet utilisateur" });
+  }
+
+  let confirmedOrderGroupId;
+  try {
+    confirmedOrderGroupId = await resolveConfirmedOrderGroup(
+      supabase,
+      checkoutIntentId,
+      orderGroupId,
+    );
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+  if (!confirmedOrderGroupId) {
+    return res.status(409).json({
+      error: "Le groupe de commande ne correspond pas à ce checkout confirmé",
+    });
   }
 
   const amount = Math.round(Number(intent.total || 0));
@@ -85,7 +124,7 @@ export default async function handler(req, res) {
 
     await supabase.from("payment_transactions").insert({
       checkout_intent_id: checkoutIntentId,
-      order_group_id: orderGroupId || null,
+      order_group_id: confirmedOrderGroupId,
       provider: "paynote_mtn",
       provider_ref: messageId,
       payment_method: "mtn_momo",
@@ -104,7 +143,7 @@ export default async function handler(req, res) {
     try {
       await supabase.from("payment_transactions").insert({
         checkout_intent_id: checkoutIntentId,
-        order_group_id: orderGroupId || null,
+        order_group_id: confirmedOrderGroupId,
         provider: "paynote_mtn",
         provider_ref: null,
         payment_method: "mtn_momo",
