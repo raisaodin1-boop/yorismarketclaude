@@ -64,6 +64,13 @@ export function LoyaltyPackModal({ pack, user, userData, onClose, onSuccess }) {
         });
         const statusData = await statusRes.json();
         if (statusData?.status === "paid") {
+          if (statusData.credit_pending) {
+            setMomoStatus("timeout");
+            throw new Error(
+              statusData.error ||
+                "Paiement confirmé, crédit des points en cours de vérification. Contactez le support si les points n'apparaissent pas.",
+            );
+          }
           setMomoStatus("");
           return statusData.points_credited;
         }

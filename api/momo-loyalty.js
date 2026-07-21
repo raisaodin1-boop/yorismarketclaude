@@ -4,12 +4,11 @@ import { initiatePaynoteMtnPayment } from "./_lib/paynote.js";
 /*
  * MTN MoMo direct (Paynote) pour l'achat de points fidélité.
  *
- * Même garanties que api/momo.js : authentification obligatoire, montant
- * jamais pris depuis le client (relu depuis loyalty_pack_purchases.prix_fcfa),
- * tentative journalisée dans payment_transactions. La référence de commande
- * ("LOYALTY-<uuid achat>") permet à credit_pack_purchase_from_payment() de
- * vérifier qu'un paiement réellement confirmé existe avant de créditer les
- * points, sans jamais faire confiance à l'appelant.
+ * Même garanties que api/momo.js : authentification obligatoire, montant et
+ * points relus depuis le pack catalogue actif, tentative journalisée dans
+ * payment_transactions. La référence de commande ("LOYALTY-<uuid achat>")
+ * permet à credit_pack_purchase_from_payment() de vérifier le pack et le
+ * montant réellement payé avant de créditer les points.
  */
 
 function normalizeCmMsisdn(raw) {
@@ -17,6 +16,12 @@ function normalizeCmMsisdn(raw) {
   if (digits.startsWith("237") && digits.length === 12) return digits.slice(3);
   if (digits.length === 9) return digits;
   return null;
+}
+
+function expectedPointsForPack(pack) {
+  const basePoints = Math.round(Number(pack?.points || 0));
+  const bonusPct = Number(pack?.bonus_pct || 0);
+  return basePoints + Math.round(basePoints * (bonusPct / 100));
 }
 
 async function getAuthenticatedUser(req) {
@@ -52,7 +57,7 @@ export default async function handler(req, res) {
 
   const { data: purchase, error: purchaseErr } = await supabase
     .from("loyalty_pack_purchases")
-    .select("id, user_id, prix_fcfa, status, pack_nom")
+    .select("id, user_id, pack_id, points, prix_fcfa, status, pack_nom")
     .eq("id", purchaseId)
     .maybeSingle();
 
@@ -68,7 +73,24 @@ export default async function handler(req, res) {
     return res.status(409).json({ error: "Cet achat a été annulé" });
   }
 
-  const amount = Math.round(Number(purchase.prix_fcfa || 0));
+  const { data: pack, error: packErr } = await supabase
+    .from("loyalty_packs")
+    .select("id, nom, points, prix_fcfa, bonus_pct, actif")
+    .eq("id", purchase.pack_id)
+    .maybeSingle();
+
+  if (packErr) return res.status(500).json({ error: packErr.message });
+  if (!pack || pack.actif !== true) {
+    return res.status(409).json({ error: "Pack fidélité indisponible" });
+  }
+
+  const amount = Math.round(Number(pack.prix_fcfa || 0));
+  const purchaseAmount = Math.round(Number(purchase.prix_fcfa || 0));
+  const expectedPoints = expectedPointsForPack(pack);
+  const purchasePoints = Math.round(Number(purchase.points || 0));
+  if (purchaseAmount !== amount || purchasePoints !== expectedPoints) {
+    return res.status(409).json({ error: "Achat fidélité incohérent avec le pack sélectionné" });
+  }
   if (!(amount > 0)) {
     return res.status(400).json({ error: "Montant invalide" });
   }
@@ -81,7 +103,7 @@ export default async function handler(req, res) {
       orderId: orderGroupId,
       amount,
       subscriberMsisdn: msisdn,
-      description: `Pack points Yorix — ${purchase.pack_nom || "Pack"}`,
+      description: `Pack points Yorix — ${pack.nom || purchase.pack_nom || "Pack"}`,
       notifUrl,
     });
 
