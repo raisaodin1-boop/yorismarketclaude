@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import process from "node:process";
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
