@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { hasConfirmedOrderBinding } from "../_shared/confirmed_order_binding.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -23,6 +24,35 @@ Deno.serve(async (req) => {
     }
     if (!SUPABASE_URL) {
       return ok({ error: "Missing SUPABASE_URL for webhook URL" }, { status: 500 });
+    }
+
+    const supabase = createClient(
+      SUPABASE_URL,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    );
+
+    // Tous ces identifiants viennent du navigateur. Les valider et prouver leur
+    // liaison AVANT d'ouvrir une session CinetPay empêche de payer un petit
+    // intent puis d'attacher la transaction au groupe d'une autre commande.
+    const { data: intent, error: intentErr } = await supabase
+      .from("checkout_intents")
+      .select("total")
+      .eq("id", checkoutIntentId)
+      .maybeSingle();
+    if (intentErr) throw intentErr;
+    if (!intent || Math.round(Number(intent.total ?? 0)) !== Math.round(amount)) {
+      return ok(
+        { error: "Amount does not match checkout total — reload and try again." },
+        { status: 400 },
+      );
+    }
+
+    const bound = await hasConfirmedOrderBinding(supabase, checkoutIntentId, orderGroupId);
+    if (!bound) {
+      return ok(
+        { error: "Order group is not bound to this confirmed checkout." },
+        { status: 400 },
+      );
     }
 
     const txRef = `YRXPAY-${orderGroupId}-${Date.now()}`;
@@ -56,25 +86,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentUrl = result?.data?.payment_url || null;
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-    );
-
-    const { data: intent, error: intentErr } = await supabase
-      .from("checkout_intents")
-      .select("total")
-      .eq("id", checkoutIntentId)
-      .maybeSingle();
-    if (intentErr) throw intentErr;
-    if (!intent || Math.round(Number(intent.total ?? 0)) !== Math.round(amount)) {
-      return ok(
-        { error: "Amount does not match checkout total — reload and try again." },
-        { status: 400 },
-      );
-    }
-
-    await supabase.from("payment_transactions").insert({
+    const { error: transactionError } = await supabase.from("payment_transactions").insert({
       checkout_intent_id: checkoutIntentId,
       order_group_id: orderGroupId,
       provider: "cinetpay",
@@ -86,6 +98,7 @@ Deno.serve(async (req) => {
       channel: body?.channel || "ALL",
       payload: result,
     });
+    if (transactionError) throw transactionError;
 
     return ok({ transaction_ref: txRef, payment_url: paymentUrl, provider: "cinetpay" });
   } catch (e) {
