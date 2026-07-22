@@ -1,17 +1,4 @@
-type CheckoutBindingQuery = {
-  select: (columns: string) => CheckoutBindingQuery;
-  eq: (column: string, value: string) => CheckoutBindingQuery;
-  contains: (column: string, value: Record<string, string>) => CheckoutBindingQuery;
-  limit: (count: number) => CheckoutBindingQuery;
-  maybeSingle: () => Promise<{
-    data: Record<string, unknown> | null;
-    error: { message?: string } | null;
-  }>;
-};
-
-type CheckoutBindingClient = {
-  from: (table: string) => CheckoutBindingQuery;
-};
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
  * Proves that confirm_checkout completed this exact intent/order pair.
@@ -19,7 +6,7 @@ type CheckoutBindingClient = {
  * client-supplied identifiers are never sufficient evidence of a valid order.
  */
 export async function hasConfirmedOrderBinding(
-  supabase: CheckoutBindingClient,
+  supabase: SupabaseClient,
   checkoutIntentId: string,
   orderGroupId: string,
 ): Promise<boolean> {
