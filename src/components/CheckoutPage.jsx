@@ -38,6 +38,57 @@ const CITY_OPTIONS = (CITIES || []).filter((c) => c && !/^toutes/i.test(String(c
 const CINETPAY_RETURN_TX_KEY = "yorix_cinetpay_return_tx";
 /** Mis à true au moment du départ paiement ; évite une relecture automatique hors contexte retour. */
 const CINETPAY_RETURN_EXPECT_KEY = "yorix_expect_cinetpay_return";
+/** Tentative confirmée conservée après un rechargement pour ne jamais recréer la commande. */
+const CHECKOUT_ATTEMPT_STORAGE_KEY = "yorix_checkout_attempt_v1";
+
+function checkoutAttemptFingerprint(userId, items) {
+  const normalizedItems = (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      id: String(item?.id ?? ""),
+      kind: String(item?.kind || "product"),
+      qty: Math.max(1, Number(item?.qty || 1)),
+      bookingDate: String(item?.booking?.date || ""),
+      bookingTime: String(item?.booking?.time || ""),
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  return JSON.stringify({ userId: String(userId || ""), items: normalizedItems });
+}
+
+function loadCheckoutAttempt(fingerprint) {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY) || "null");
+    const valid =
+      stored?.version === 1 &&
+      stored?.fingerprint === fingerprint &&
+      typeof stored?.idempotencyKey === "string" &&
+      stored.idempotencyKey.length > 0 &&
+      typeof stored?.intent?.checkout_intent_id === "string" &&
+      stored.intent.checkout_intent_id.length > 0 &&
+      typeof stored?.paymentMethod === "string" &&
+      stored.paymentMethod.length > 0;
+    if (valid) return stored;
+    sessionStorage.removeItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+  } catch {
+    /* sessionStorage indisponible ou donnée corrompue : le ref mémoire reste utilisable */
+  }
+  return null;
+}
+
+function storeCheckoutAttempt(attempt) {
+  try {
+    sessionStorage.setItem(CHECKOUT_ATTEMPT_STORAGE_KEY, JSON.stringify(attempt));
+  } catch {
+    /* best-effort : certains navigateurs bloquent sessionStorage */
+  }
+}
+
+function removeStoredCheckoutAttempt() {
+  try {
+    sessionStorage.removeItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Numéro wa.me sans + ni espaces ; défaut +237696565654 (Yorix). */
 function waMeRecipient(configured) {
@@ -158,6 +209,13 @@ export function CheckoutPage({
   const [addressErrors, setAddressErrors] = useState({});
   const [attemptedAdvance, setAttemptedAdvance] = useState(false);
 
+  const clearCheckoutAttempt = useCallback(() => {
+    checkoutAttemptRef.current = null;
+    idempotencyKeyRef.current = null;
+    setLockedPaymentMethod("");
+    removeStoredCheckoutAttempt();
+  }, []);
+
   const checkoutType = useMemo(() => detectCheckoutType(cartItems), [cartItems]);
   const hasProducts = checkoutType !== "service_only";
   const hasServices = checkoutType !== "product_only";
@@ -175,6 +233,10 @@ export function CheckoutPage({
       (item.kind || "product") === "product" ? { ...item, fulfillmentMode: "pickup" } : item,
     );
   }, [cartItems, isPickup]);
+  const attemptFingerprint = useMemo(
+    () => checkoutAttemptFingerprint(user?.id, effectiveCartItems),
+    [user?.id, effectiveCartItems],
+  );
   const effectiveSummary = useMemo(() => {
     if (!isPickup) return summary;
     return computeCartDeliverySummary(effectiveCartItems, {
@@ -279,6 +341,15 @@ export function CheckoutPage({
 
   useEffect(() => {
     if (!user?.id || orderDone) return;
+    const stored = loadCheckoutAttempt(attemptFingerprint);
+    checkoutAttemptRef.current = stored;
+    idempotencyKeyRef.current = stored?.idempotencyKey || null;
+    setLockedPaymentMethod(stored?.paymentMethod || "");
+    if (stored?.paymentMethod) setPaymentMethod(stored.paymentMethod);
+  }, [user?.id, attemptFingerprint, orderDone]);
+
+  useEffect(() => {
+    if (!user?.id || orderDone) return;
     saveCheckoutDraft(user.id, {
       step,
       phoneLocal,
@@ -341,6 +412,7 @@ export function CheckoutPage({
       processedCinetpayReturnRef.current.add(txRef);
       setCinetpayReturnBanner("");
       clearStoredTx();
+      clearCheckoutAttempt();
       navigate(localizedCheckoutPath, { replace: true });
     }
 
@@ -419,7 +491,7 @@ export function CheckoutPage({
     return () => {
       cancelled = true;
     };
-  }, [location.search, user?.id, navigate, setCartItems, orderDone]);
+  }, [location.search, user?.id, navigate, setCartItems, orderDone, clearCheckoutAttempt]);
 
   const persistIdentityIfPossible = useCallback(async () => {
     if (typeof persistCheckoutContact !== "function" || !user?.id) return;
@@ -597,22 +669,33 @@ export function CheckoutPage({
         if (!intent?.checkout_intent_id) {
           throw new Error(t("errors.checkoutFailed"));
         }
-        checkoutAttemptRef.current = { intent, confirmation: null, paymentMethod };
+        const attempt = {
+          version: 1,
+          fingerprint: attemptFingerprint,
+          idempotencyKey: getIdempotencyKey(),
+          intent,
+          confirmation: null,
+          paymentMethod,
+        };
+        checkoutAttemptRef.current = attempt;
+        storeCheckoutAttempt(attempt);
         setLockedPaymentMethod(paymentMethod);
       }
       if (!confirmation) {
+        const attempt = checkoutAttemptRef.current;
         confirmation = await confirmCheckout({
           checkout_intent_id: intent.checkout_intent_id,
           payment_method: paymentMethod,
           location_type: locationType,
           pickup_point: isPickup ? pickupPoint : undefined,
           address: isPickup ? (pickupAddressLabel || mergedUserData.adresse) : mergedUserData.adresse,
-          idempotency_key: getIdempotencyKey(),
+          idempotency_key: attempt.idempotencyKey,
         });
         if (!confirmation?.order_group_id) {
           throw new Error(t("errors.checkoutFailed"));
         }
-        checkoutAttemptRef.current = { intent, confirmation, paymentMethod };
+        checkoutAttemptRef.current = { ...attempt, confirmation };
+        storeCheckoutAttempt(checkoutAttemptRef.current);
       }
       const serverPayTotal = Math.round(
         Number(confirmation?.total ?? intent?.total ?? effectiveSummary.total),
@@ -660,7 +743,7 @@ export function CheckoutPage({
 
       // Succès confirmé (HTTP 200) → panier vidé.
       setCartItems([]);
-      idempotencyKeyRef.current = null; // commande aboutie → clé consommée
+      clearCheckoutAttempt(); // commande aboutie → tentative consommée
 
       if (momoOutcome === "paid") {
         userFacingSuccess("✅ Paiement MTN MoMo confirmé ! Vous recevrez une notification de suivi sous peu.", 6000);

@@ -138,6 +138,7 @@ async function choosePaymentMethod(value) {
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  sessionStorage.clear();
   api.createCheckoutIntent.mockReset().mockResolvedValue({
     checkout_intent_id: INTENT_A,
     total: 10000,
@@ -161,6 +162,7 @@ afterEach(async () => {
   container?.remove();
   root = null;
   container = null;
+  sessionStorage.clear();
   delete globalThis.IS_REACT_ACT_ENVIRONMENT;
 });
 
@@ -221,6 +223,37 @@ describe("CheckoutPage confirmed-attempt retries", () => {
     expect(container.querySelector("select").disabled).toBe(true);
     expect(container.textContent).toContain("step3.methodLocked");
     expect(container.textContent).toContain("errors.paymentUnavailable");
+  });
+
+  it("restores the confirmed attempt after refresh instead of creating another order", async () => {
+    await renderCheckout();
+    await submit();
+
+    const firstConfirmationRequest = api.confirmCheckout.mock.calls[0][0];
+    await act(async () => root.unmount());
+    container.remove();
+    root = null;
+    container = null;
+
+    await renderCheckout();
+    expect(container.querySelector("select").value).toBe("cinetpay");
+    expect(container.querySelector("select").disabled).toBe(true);
+
+    await submit();
+
+    expect(api.createCheckoutIntent).toHaveBeenCalledTimes(1);
+    expect(api.confirmCheckout).toHaveBeenCalledTimes(1);
+    expect(api.initPaymentCinetPay).toHaveBeenCalledTimes(2);
+    expect(api.initPaymentCinetPay.mock.calls[1][0]).toEqual({
+      checkout_intent_id: INTENT_A,
+      order_group_id: ORDER_A,
+      amount: 10000,
+      channel: "ALL",
+    });
+    expect(firstConfirmationRequest).toMatchObject({
+      checkout_intent_id: INTENT_A,
+      payment_method: "cinetpay",
+    });
   });
 
   it("rejects a payment-method change after confirmation", async () => {
