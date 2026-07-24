@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { mapCinetPayPaymentStatus } from "../_shared/cinetpay_status.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -24,23 +25,41 @@ Deno.serve(async (req) => {
     if (txError) throw txError;
     if (!tx) return ok({ received: true, ignored: "transaction not found" });
 
-    // Optional verification step with CinetPay check endpoint.
+    // Never downgrade a settled payment on a flaky/pending provider re-check.
+    if (tx.status === "paid") {
+      return ok({ received: true, provider_ref: txRef, status: "paid" });
+    }
+
+    // Verification with CinetPay check endpoint. Without credentials we must
+    // leave the row pending — defaulting to "failed" corrupts live charges.
     const CINETPAY_API_KEY = Deno.env.get("CINETPAY_API_KEY");
     const CINETPAY_SITE_ID = Deno.env.get("CINETPAY_SITE_ID");
-    let finalStatus = "failed";
-    if (CINETPAY_API_KEY && CINETPAY_SITE_ID) {
-      const verifyResp = await fetch("https://api-checkout.cinetpay.com/v2/payment/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          apikey: CINETPAY_API_KEY,
-          site_id: CINETPAY_SITE_ID,
-          transaction_id: txRef,
-        }),
-      });
-      const verify = await verifyResp.json();
-      const paymentStatus = String(verify?.data?.status || "").toUpperCase();
-      finalStatus = paymentStatus === "ACCEPTED" ? "paid" : "failed";
+    if (!CINETPAY_API_KEY || !CINETPAY_SITE_ID) {
+      await supabase
+        .from("payment_transactions")
+        .update({ payload: body, updated_at: new Date().toISOString() })
+        .eq("id", tx.id);
+      return ok({ received: true, provider_ref: txRef, status: "pending" });
+    }
+
+    const verifyResp = await fetch("https://api-checkout.cinetpay.com/v2/payment/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apikey: CINETPAY_API_KEY,
+        site_id: CINETPAY_SITE_ID,
+        transaction_id: txRef,
+      }),
+    });
+    const verify = await verifyResp.json();
+    const finalStatus = mapCinetPayPaymentStatus(verify?.data?.status);
+
+    if (finalStatus === "pending") {
+      await supabase
+        .from("payment_transactions")
+        .update({ payload: body, updated_at: new Date().toISOString() })
+        .eq("id", tx.id);
+      return ok({ received: true, provider_ref: txRef, status: "pending" });
     }
 
     await supabase

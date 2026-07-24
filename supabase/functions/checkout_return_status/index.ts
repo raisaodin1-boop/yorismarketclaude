@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { mapCinetPayPaymentStatus } from "../_shared/cinetpay_status.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -87,34 +88,45 @@ Deno.serve(async (req) => {
         }),
       });
       const verifyJson = await verifyResp.json();
-      const paymentStatus = String(
-        verifyJson?.data?.status ?? "",
-      ).toUpperCase();
-      const finalStatus = paymentStatus === "ACCEPTED" ? "paid" : "failed";
+      const finalStatus = mapCinetPayPaymentStatus(verifyJson?.data?.status);
 
-      await supabase
-        .from("payment_transactions")
-        .update({
-          status: finalStatus,
-          payload: verifyJson,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", tx.id);
-
-      if (finalStatus === "paid" && orderGroupId) {
+      // Keep non-terminal provider states as pending so a later poll/webhook can
+      // still promote the same row to paid. Writing "failed" here permanently
+      // stops re-checks (see payStatus === "pending" guard above).
+      if (finalStatus === "pending") {
         await supabase
-          .from("orders")
+          .from("payment_transactions")
           .update({
-            payment_status: "paid",
-            escrow_status: "securise",
-            payment_provider: "cinetpay",
-            provider_tx_ref: transactionRef,
-            status: "validee",
+            payload: verifyJson,
+            updated_at: new Date().toISOString(),
           })
-          .eq("order_group_id", orderGroupId);
-      }
+          .eq("id", tx.id);
+        payStatus = "pending";
+      } else {
+        await supabase
+          .from("payment_transactions")
+          .update({
+            status: finalStatus,
+            payload: verifyJson,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", tx.id);
 
-      payStatus = finalStatus;
+        if (finalStatus === "paid" && orderGroupId) {
+          await supabase
+            .from("orders")
+            .update({
+              payment_status: "paid",
+              escrow_status: "securise",
+              payment_provider: "cinetpay",
+              provider_tx_ref: transactionRef,
+              status: "validee",
+            })
+            .eq("order_group_id", orderGroupId);
+        }
+
+        payStatus = finalStatus;
+      }
     }
 
     const { data: freshTx } = await supabase
