@@ -12,9 +12,66 @@ import { checkPaynoteMtnStatus } from "./_lib/paynote.js";
  * sont traités comme un échec définitif. Toute autre valeur (y compris
  * inconnue) est traitée comme "encore en attente" plutôt que faussement
  * marquée échouée.
+ *
+ * Important : marquer payment_transactions=paid ne suffit pas. Les commandes
+ * doivent aussi passer payment_status=paid / escrow securise. Si la synchro
+ * commandes échoue après un paiement opérateur réussi, on garde le client en
+ * "pending" pour qu'il continue à sonder et retenter la réparation — un
+ * early-return "paid" stopperait le polling CheckoutPage et laisserait les
+ * commandes impayées définitivement.
  */
 
 const KNOWN_FAILURE_STATUSES = new Set(["FAILED", "REJECTED", "CANCELLED", "CANCELED", "EXPIRED", "TIMEOUT"]);
+
+const PAID_ORDER_PATCH = {
+  payment_status: "paid",
+  escrow_status: "securise",
+  payment_provider: "paynote_mtn",
+  status: "validee",
+};
+
+/**
+ * Idempotently mark all orders in a MoMo checkout group as paid/escrowed.
+ * Returns { ok:true } only when at least one matching order is paid.
+ */
+export async function ensureMomoOrdersPaid(supabase, { orderGroupId, referenceId }) {
+  if (!orderGroupId) {
+    return { ok: false, reason: "missing_order_group" };
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from("orders")
+    .update({
+      ...PAID_ORDER_PATCH,
+      provider_tx_ref: referenceId,
+    })
+    .eq("order_group_id", orderGroupId)
+    .select("id, payment_status");
+
+  if (updateErr) {
+    return { ok: false, reason: updateErr.message };
+  }
+
+  if (updated?.length) {
+    return { ok: true, orderIds: updated.map((row) => row.id) };
+  }
+
+  const { data: existing, error: readErr } = await supabase
+    .from("orders")
+    .select("id, payment_status")
+    .eq("order_group_id", orderGroupId);
+
+  if (readErr) {
+    return { ok: false, reason: readErr.message };
+  }
+  if (!existing?.length) {
+    return { ok: false, reason: "no_orders" };
+  }
+  if (existing.every((row) => row.payment_status === "paid")) {
+    return { ok: true, orderIds: existing.map((row) => row.id) };
+  }
+  return { ok: false, reason: "orders_unpaid" };
+}
 
 async function getAuthenticatedUser(req) {
   const authHeader = req.headers.authorization || "";
@@ -63,8 +120,29 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Accès refusé" });
   }
 
-  if (tx.status === "paid" || tx.status === "failed") {
-    return res.status(200).json({ status: tx.status });
+  const respondPaidOrKeepPolling = async () => {
+    const sync = await ensureMomoOrdersPaid(supabase, {
+      orderGroupId: tx.order_group_id,
+      referenceId,
+    });
+    if (!sync.ok) {
+      console.error("[momo-status] order sync pending:", sync.reason, {
+        txId: tx.id,
+        orderGroupId: tx.order_group_id,
+        referenceId,
+      });
+      // Keep CheckoutPage polling so a later attempt can repair stranded orders.
+      return res.status(200).json({ status: "pending", orders_pending: true, reason: sync.reason });
+    }
+    return res.status(200).json({ status: "paid" });
+  };
+
+  if (tx.status === "failed") {
+    return res.status(200).json({ status: "failed" });
+  }
+
+  if (tx.status === "paid") {
+    return respondPaidOrKeepPolling();
   }
 
   try {
@@ -77,22 +155,18 @@ export default async function handler(req, res) {
 
     const finalStatus = paynoteStatus === "SUCCESSFUL" ? "paid" : "failed";
 
-    await supabase
+    const { error: txUpdateErr } = await supabase
       .from("payment_transactions")
       .update({ status: finalStatus, payload: statusData, updated_at: new Date().toISOString() })
       .eq("id", tx.id);
 
-    if (finalStatus === "paid" && tx.order_group_id) {
-      await supabase
-        .from("orders")
-        .update({
-          payment_status: "paid",
-          escrow_status: "securise",
-          payment_provider: "paynote_mtn",
-          provider_tx_ref: referenceId,
-          status: "validee",
-        })
-        .eq("order_group_id", tx.order_group_id);
+    if (txUpdateErr) {
+      console.error("[momo-status] payment_transactions update:", txUpdateErr.message);
+      return res.status(200).json({ status: "pending" });
+    }
+
+    if (finalStatus === "paid") {
+      return respondPaidOrKeepPolling();
     }
 
     return res.status(200).json({ status: finalStatus });

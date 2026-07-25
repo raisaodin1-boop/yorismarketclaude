@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       notifUrl,
     });
 
-    await supabase.from("payment_transactions").insert({
+    const { error: journalErr } = await supabase.from("payment_transactions").insert({
       checkout_intent_id: checkoutIntentId,
       order_group_id: orderGroupId || null,
       provider: "paynote_mtn",
@@ -95,6 +95,17 @@ export default async function handler(req, res) {
       channel: "momo",
       payload: { phone: msisdn, paynote: raw },
     });
+
+    // Fail closed: without a journal row, /api/momo-status can never attach
+    // the Paynote charge to orders (404). Returning success here would leave
+    // a live operator debit with no recovery path in our polling loop.
+    if (journalErr) {
+      console.error("[momo] payment_transactions insert failed after Paynote init:", journalErr.message, messageId);
+      return res.status(500).json({
+        error: `Paiement initié chez l'opérateur mais non journalisé. Contactez le support avec la référence ${messageId}`,
+        reference_id: messageId,
+      });
+    }
 
     return res.status(200).json({ reference_id: messageId, status: "pending" });
   } catch (error) {
