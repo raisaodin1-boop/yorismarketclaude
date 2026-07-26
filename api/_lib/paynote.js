@@ -1,19 +1,19 @@
 /*
  * Client Paynote (agrégateur mutualisé MTN MoMo / Orange Money — y-note.cm).
- * Doc source : documentation-paynote.html (section MTN Cameroun), fournie
- * intégralement par l'utilisateur — aucun champ deviné.
+ * Doc source : documentation officielle Paynote MTN Cameroun
+ * (https://www.paynote.africa/comment-deployer-lapi-de-webpaiement-mtn-mobile-money/)
  *
  *  - Jeton : POST https://omapi-token.ynote.africa/oauth2/token
  *            Basic(clientId:clientSecret), grant_type=client_credentials
  *  - Paiement : POST https://omapi.ynote.africa/prod/webpayment
  *            Bearer <token>, body { API_MUT: { ... } }
- *  - Statut : POST https://omapi.ynote.africa/prod/webpayment/status
- *            Bearer <token>, body { customerkey, customersecret, message_id, payment_method }
+ *  - Statut : POST https://omapi.ynote.africa/prod/webpaymentmtn/status
+ *            Bearer <token>, body { customerkey, customersecret, message_id }
  */
 
 const TOKEN_URL = "https://omapi-token.ynote.africa/oauth2/token";
 const PAYMENT_URL = "https://omapi.ynote.africa/prod/webpayment";
-const STATUS_URL = "https://omapi.ynote.africa/prod/webpayment/status";
+const STATUS_URL = "https://omapi.ynote.africa/prod/webpaymentmtn/status";
 const BALANCE_URL = "https://omapi.ynote.africa/prod/balance/";
 
 // Cache best-effort au niveau du module : utile seulement si l'instance
@@ -21,6 +21,11 @@ const BALANCE_URL = "https://omapi.ynote.africa/prod/balance/";
 // cas on redemande simplement un nouveau jeton, ce qui reste correct.
 let cachedToken = null;
 let cachedTokenExpiresAt = 0;
+
+/** Extrait MessageId selon la forme documentée (top-level) avec repli legacy. */
+export function extractPaynoteMessageId(data) {
+  return data?.MessageId || data?.parameters?.MessageId || null;
+}
 
 async function getPaynoteAccessToken() {
   if (cachedToken && Date.now() < cachedTokenExpiresAt) {
@@ -97,7 +102,8 @@ export async function initiatePaynoteMtnPayment({ orderId, amount, subscriberMsi
     );
   }
 
-  const messageId = data?.parameters?.MessageId;
+  // Doc Paynote : MessageId est au top-level (à côté de parameters), pas dedans.
+  const messageId = extractPaynoteMessageId(data);
   if (!messageId) throw new Error("Paynote webpayment: réponse sans MessageId");
 
   return { messageId, raw: data };
@@ -123,11 +129,12 @@ export async function checkPaynoteMtnStatus(messageId) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    // Doc MTN : uniquement customerkey / customersecret / message_id
+    // (pas de payment_method sur cet endpoint).
     body: JSON.stringify({
       customerkey,
       customersecret,
       message_id: messageId,
-      payment_method: "MTN_CMR",
     }),
   });
 
