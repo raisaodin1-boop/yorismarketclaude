@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { ensureCinetPayOrdersPaid } from "../_shared/cinetpay_orders.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -73,6 +74,22 @@ Deno.serve(async (req) => {
     const CINETPAY_API_KEY = Deno.env.get("CINETPAY_API_KEY");
     const CINETPAY_SITE_ID = Deno.env.get("CINETPAY_SITE_ID");
     let payStatus = String(tx.status || "pending");
+    let ordersPending = false;
+    let ordersPendingReason: string | null = null;
+    let ordersCancelled = false;
+
+    const syncPaidOrders = async () => {
+      const sync = await ensureCinetPayOrdersPaid(supabase, {
+        orderGroupId,
+        transactionRef,
+      });
+      if (!sync.ok) {
+        ordersPending = true;
+        ordersPendingReason = sync.reason;
+        return;
+      }
+      ordersCancelled = Boolean(sync.allCancelled);
+    };
 
     if (
       payStatus === "pending" && CINETPAY_API_KEY && CINETPAY_SITE_ID
@@ -92,7 +109,7 @@ Deno.serve(async (req) => {
       ).toUpperCase();
       const finalStatus = paymentStatus === "ACCEPTED" ? "paid" : "failed";
 
-      await supabase
+      const { error: txUpdateErr } = await supabase
         .from("payment_transactions")
         .update({
           status: finalStatus,
@@ -100,21 +117,17 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", tx.id);
+      if (txUpdateErr) throw txUpdateErr;
 
       if (finalStatus === "paid" && orderGroupId) {
-        await supabase
-          .from("orders")
-          .update({
-            payment_status: "paid",
-            escrow_status: "securise",
-            payment_provider: "cinetpay",
-            provider_tx_ref: transactionRef,
-            status: "validee",
-          })
-          .eq("order_group_id", orderGroupId);
+        await syncPaidOrders();
       }
 
       payStatus = finalStatus;
+    } else if (payStatus === "paid" && orderGroupId) {
+      // Prior pass may have marked the journal paid while order sync failed.
+      // Re-attempt repair on every return hydrate — do not early-return on paid.
+      await syncPaidOrders();
     }
 
     const { data: freshTx } = await supabase
@@ -150,6 +163,9 @@ Deno.serve(async (req) => {
       checkout_intent_id: freshTx?.checkout_intent_id ?? intentId ?? null,
       provider_ref: freshTx?.provider_ref ?? transactionRef,
       delivery_tracking,
+      orders_pending: ordersPending,
+      orders_pending_reason: ordersPendingReason,
+      orders_cancelled: ordersCancelled,
     });
   } catch (e) {
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
