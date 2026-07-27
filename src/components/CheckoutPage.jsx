@@ -322,6 +322,22 @@ export function CheckoutPage({
       const deliveryTracking = Array.isArray(data.delivery_tracking) ? data.delivery_tracking : [];
       const pay = String(data.payment_status || "");
 
+      // Paid journal with unsynced orders: keep cart + allow retry. Clearing the
+      // cart here would strand the buyer after a live CinetPay charge.
+      if (data.orders_pending) {
+        setCinetpayReturnBanner(
+          "Paiement reçu, finalisation des commandes en cours. Actualisez cette page dans un instant.",
+        );
+        setCheckoutError("");
+        try {
+          sessionStorage.setItem(CINETPAY_RETURN_TX_KEY, txRef);
+          sessionStorage.setItem(CINETPAY_RETURN_EXPECT_KEY, "1");
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+
       setCartItems([]);
       setCheckoutError("");
       setOrderDone({
@@ -333,6 +349,7 @@ export function CheckoutPage({
         deliveryTracking,
         amountReturned: Number(data.amount || 0),
         currencyReturned: String(data.currency || "XAF"),
+        ordersCancelled: Boolean(data.orders_cancelled),
       });
 
       processedCinetpayReturnRef.current.add(txRef);
