@@ -24,7 +24,7 @@ async function loadAllocation() {
     format: "esm",
     target: "node18",
   });
-  const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
+  const dataUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(code)}`;
   return import(dataUrl);
 }
 
