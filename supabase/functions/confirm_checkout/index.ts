@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
+import {
+  allocateCouponAcrossGrosses,
+  computeOrderFinance,
+} from "../_shared/coupon_allocation.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 import { dispatchNotificationById } from "../_shared/internal_dispatch.ts";
@@ -231,8 +235,26 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Pré-calcule la remise coupon par ligne produit pour que le ledger
+    // vendeur (montant / montant_vendeur) reste ≤ cash encaissé.
+    const productGrosses: number[] = [];
+    const productLineIndex: number[] = [];
+    items.forEach((item, idx) => {
+      if ((item.kind || "product") === "service") return;
+      const qty = Math.max(1, Number(item.qty || 1));
+      const unitPrice = Number(item.price || 0);
+      productGrosses.push(Math.round(unitPrice * qty));
+      productLineIndex.push(idx);
+    });
+    const lineDiscounts = allocateCouponAcrossGrosses(productGrosses, couponDiscount);
+    const discountByItemIndex = new Map<number, number>();
+    productLineIndex.forEach((itemIdx, i) => {
+      discountByItemIndex.set(itemIdx, lineDiscounts[i] ?? 0);
+    });
+
     const ordersCreated: any[] = [];
-    for (const item of items) {
+    for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
+      const item = items[itemIdx];
       if (item.kind === "service") {
         const { data: booking, error: bookingError } = await supabase
           .from("service_bookings")
@@ -258,9 +280,10 @@ Deno.serve(async (req) => {
 
       const qty = Math.max(1, Number(item.qty || 1));
       const unitPrice = Number(item.price || 0);
-      const gross = unitPrice * qty;
-      const commission = Math.round(gross * 0.05);
-      const net = gross - commission;
+      const gross = Math.round(unitPrice * qty);
+      const lineDiscount = discountByItemIndex.get(itemIdx) ?? 0;
+      const { montant, commission, montant_vendeur: net, line_discount } =
+        computeOrderFinance(gross, lineDiscount);
 
       const pid = String(item.id ?? "");
       const vendeurRaw = (item as { vendeur_id?: string | null }).vendeur_id;
@@ -280,8 +303,8 @@ Deno.serve(async (req) => {
           client_id: customer.id || null,
           client_nom: customer.nom || "Client Yorix",
           telephone: customer.telephone || "",
-          montant: gross,
-          commission: commission,
+          montant,
+          commission,
           montant_vendeur: net,
           status: "pending",
           livraison_status: item.fulfillmentMode === "pickup" ? "pending_pickup" : "pending",
@@ -300,7 +323,8 @@ Deno.serve(async (req) => {
           type: "seller_new_order",
           title: "Nouvelle commande Yorix",
           message:
-            `${clientNom} · groupe ${orderGroupId} · ligne ${gross.toLocaleString("fr-FR")} FCFA (commission ${commission.toLocaleString("fr-FR")} F)`,
+            `${clientNom} · groupe ${orderGroupId} · ligne ${montant.toLocaleString("fr-FR")} FCFA (commission ${commission.toLocaleString("fr-FR")} F)` +
+            (line_discount > 0 ? ` · remise coupon −${line_discount.toLocaleString("fr-FR")} F` : ""),
           link: "/dashboard",
           lu: false,
           priority: "high",
@@ -315,9 +339,14 @@ Deno.serve(async (req) => {
         product_id: item.id,
         quantity: qty,
         unit_price: unitPrice,
-        subtotal: gross,
+        subtotal: montant,
         fulfillment_mode: item.fulfillmentMode || "delivery",
-        meta: { checkout_intent_id: checkoutIntentId },
+        meta: {
+          checkout_intent_id: checkoutIntentId,
+          catalog_gross: gross,
+          coupon_discount: line_discount,
+          coupon_code: intent.coupon_code ?? null,
+        },
       });
       if (itemError) throw itemError;
 
@@ -423,9 +452,11 @@ Deno.serve(async (req) => {
       order_group_id: orderGroupId,
       created: ordersCreated,
       delivery_tracking: deliveryTracking,
-      total: intentAfter?.total ?? totals.total,
+      // Toujours le total dû (après coupon), jamais le brut catalogue.
+      total: intentAfter?.total ?? expectedTotal,
       delivery_fee: intentAfter?.delivery_fee ?? totals.deliveryFee,
       subtotal: intentAfter?.subtotal ?? totals.subtotalFull,
+      coupon_discount: couponDiscount,
     };
 
     // Idempotency : on marque la clé « completed » et on archive la réponse
