@@ -71,9 +71,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return ok({ error: "Method not allowed" }, { status: 405 });
 
-  // Hoistés hors du try pour rester accessibles au catch (libération de la clé).
+  // Hoistés hors du try pour rester accessibles au catch (libération de la clé
+  // + compensation stock / commandes partielles).
   let supabase: ReturnType<typeof createClient> | null = null;
   let idempotencyKey = "";
+  let stockReserved = false;
+  let cleanupFailed = false;
+  let reservedStockItems: { id: string; qty: number }[] = [];
+  const createdOrderIds: string[] = [];
+  const createdBookingIds: string[] = [];
 
   try {
     const body = await req.json();
@@ -195,10 +201,12 @@ Deno.serve(async (req) => {
     const adresseLivraison = addrFromBody ||
       String(customer.adresse || customer.ville || "Cameroun");
 
-    // ── Tâche 1 : vérification de stock AVANT toute création de commande ─────
-    // L'appel RPC verrouille (FOR UPDATE) les lignes produits et compare le
-    // stock disponible à la quantité demandée. Bloque la survente en amont avec
-    // un message clair (produit concerné + disponible vs demandé).
+    // ── Stock : décrément atomique AVANT toute création de commande ───────────
+    // Un checkout multi-lignes ne peut pas s'appuyer sur check + decrement
+    // par ligne : les appels REST ne partagent pas une transaction. Un concurrent
+    // qui vide un article plus tard dans le panier laissait alors des commandes
+    // / décréments orphelins pour les lignes déjà traitées. Le RPC agrège,
+    // verrouille, vérifie et décrémente tout-ou-rien.
     const stockCheckItems = items
       .filter((line) => (line.kind || "product") === "product")
       .map((line) => ({
@@ -207,11 +215,11 @@ Deno.serve(async (req) => {
       }));
 
     if (stockCheckItems.length) {
-      const { data: shortage, error: stockCheckErr } = await supabase.rpc(
-        "check_cart_stock",
+      const { data: shortage, error: stockDecrementErr } = await supabase.rpc(
+        "decrement_cart_stock",
         { p_items: stockCheckItems },
       );
-      if (stockCheckErr) throw stockCheckErr;
+      if (stockDecrementErr) throw stockDecrementErr;
       if (shortage) {
         const s = shortage as {
           name?: string;
@@ -229,9 +237,12 @@ Deno.serve(async (req) => {
           { status: 409 },
         );
       }
+      reservedStockItems = stockCheckItems;
+      stockReserved = true;
     }
 
     const ordersCreated: any[] = [];
+    const sellerNotifications: Record<string, unknown>[] = [];
     for (const item of items) {
       if (item.kind === "service") {
         const { data: booking, error: bookingError } = await supabase
@@ -252,6 +263,7 @@ Deno.serve(async (req) => {
           .select("id")
           .single();
         if (bookingError) throw bookingError;
+        createdBookingIds.push(String(booking.id));
         ordersCreated.push({ type: "service_booking", id: booking.id });
         continue;
       }
@@ -293,9 +305,10 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (orderError) throw orderError;
+      createdOrderIds.push(String(order.id));
 
       if (vendeurId) {
-        await insertNotificationAndDispatch(supabase, {
+        sellerNotifications.push({
           user_id: vendeurId,
           type: "seller_new_order",
           title: "Nouvelle commande Yorix",
@@ -320,37 +333,6 @@ Deno.serve(async (req) => {
         meta: { checkout_intent_id: checkoutIntentId },
       });
       if (itemError) throw itemError;
-
-      // ── Tâche 2 : décrémentation atomique et BLOQUANTE du stock ────────────
-      // decrement_product_stock re-vérifie sous verrou (FOR UPDATE) que
-      // stock >= qty puis décrémente — c'est la double sécurité contre une race
-      // condition survenue entre le check pré-commande et ici. En cas d'échec
-      // (stock devenu insuffisant), on NE doit pas valider : on libère la clé
-      // d'idempotency et on renvoie un 409 plutôt que d'avaler l'erreur.
-      const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
-        p_product_id: pid,
-        p_qty: qty,
-      });
-      if (stockErr) {
-        console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);
-        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
-        // Ne mapper en STOCK_INSUFFICIENT que si l'erreur vient réellement du
-        // contrôle de stock — toute autre erreur (schéma, permissions, etc.)
-        // était auparavant maquillée en "0 disponible", ce qui a déjà masqué
-        // un vrai bug de schéma. On la laisse remonter telle quelle sinon.
-        if (/stock insuffisant/i.test(stockErr.message)) {
-          return ok(
-            {
-              error: "STOCK_INSUFFICIENT",
-              product: String((item as { name_fr?: string }).name_fr || "Produit"),
-              available: 0,
-              requested: qty,
-            },
-            { status: 409 },
-          );
-        }
-        return ok({ error: stockErr.message }, { status: 500 });
-      }
 
       if (fulfillment !== "pickup") {
         const vn = String((item as { vendeur_nom?: string }).vendeur_nom || "vendeur");
@@ -394,23 +376,6 @@ Deno.serve(async (req) => {
     await supabase.from("checkout_intents").update({ status: "confirmed" }).eq("id", checkoutIntentId);
 
     const buyerId = typeof customer.id === "string" && uuidish(customer.id) ? customer.id : null;
-    if (buyerId) {
-      await insertNotificationAndDispatch(supabase, {
-        user_id: buyerId,
-        type: "buyer_order_confirmed",
-        title: "Commande confirmée",
-        message:
-          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(expectedTotal)).toLocaleString("fr-FR")} FCFA.` +
-          (pickupAddresses.size
-            ? ` Retrait sur place : ${[...pickupAddresses].join(" · ")}.`
-            : ""),
-        link: "/dashboard",
-        lu: false,
-        priority: "high",
-        category: "orders",
-        payload: { checkout_intent_id: checkoutIntentId, order_group_id: orderGroupId },
-      });
-    }
 
     const { data: intentAfter } = await supabase
       .from("checkout_intents")
@@ -442,11 +407,70 @@ Deno.serve(async (req) => {
         .eq("key", idempotencyKey);
     }
 
+    // Point of no return: intent + idempotency are durable. Clear rollback
+    // markers so a later notification failure cannot restore stock / delete
+    // real orders. Stock stays reserved until fn_cancel_order.
+    stockReserved = false;
+    createdOrderIds.length = 0;
+    createdBookingIds.length = 0;
+
+    for (const row of sellerNotifications) {
+      await insertNotificationAndDispatch(supabase, row);
+    }
+
+    if (buyerId) {
+      await insertNotificationAndDispatch(supabase, {
+        user_id: buyerId,
+        type: "buyer_order_confirmed",
+        title: "Commande confirmée",
+        message:
+          `Votre commande ${orderGroupId} est enregistrée. Total TTC ${Math.round(Number(expectedTotal)).toLocaleString("fr-FR")} FCFA.` +
+          (pickupAddresses.size
+            ? ` Retrait sur place : ${[...pickupAddresses].join(" · ")}.`
+            : ""),
+        link: "/dashboard",
+        lu: false,
+        priority: "high",
+        category: "orders",
+        payload: { checkout_intent_id: checkoutIntentId, order_group_id: orderGroupId },
+      });
+    }
+
     return ok(responseBody);
   } catch (e) {
-    // Échec non géré : on libère la clé pour autoriser une nouvelle tentative.
+    // Échec non géré : nettoyer les écritures déjà effectuées avant de libérer
+    // la clé. Sans cela, un retry pourrait doubler le décrément de stock ou
+    // laisser des commandes orphelines.
     try {
-      if (supabase && idempotencyKey) {
+      if (supabase) {
+        if (createdOrderIds.length) {
+          await supabase.from("deliveries").delete().in("order_id", createdOrderIds);
+          await supabase.from("order_items").delete().in("order_id", createdOrderIds);
+          await supabase.from("orders").delete().in("id", createdOrderIds);
+        }
+        if (createdBookingIds.length) {
+          await supabase.from("service_bookings").delete().in("id", createdBookingIds);
+        }
+        if (stockReserved && reservedStockItems.length) {
+          const { error: restoreErr } = await supabase.rpc("restore_cart_stock", {
+            p_items: reservedStockItems,
+          });
+          if (restoreErr) throw restoreErr;
+        }
+      }
+    } catch (cleanupErr) {
+      cleanupFailed = true;
+      console.error(
+        "[confirm_checkout] cleanup failed:",
+        cleanupErr instanceof Error
+          ? cleanupErr.message
+          : (cleanupErr as { message?: string })?.message || cleanupErr,
+      );
+    }
+    try {
+      // Si le cleanup a échoué, on garde la clé pour bloquer un retry qui
+      // re-décrémenterait un stock déjà partiellement réservé.
+      if (supabase && idempotencyKey && !cleanupFailed) {
         await releaseIdempotency(supabase, idempotencyKey);
       }
     } catch { /* best-effort */ }
