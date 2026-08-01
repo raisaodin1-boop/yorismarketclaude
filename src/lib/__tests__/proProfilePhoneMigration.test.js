@@ -1,12 +1,14 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 describe("enforce_pro_profile_phone migration", () => {
   const sql = readFileSync(
     resolve(
-      process.cwd(),
-      "supabase/migrations/20260801120000_enforce_pro_profile_phone.sql",
+      dirname(fileURLToPath(import.meta.url)),
+      "../../../supabase/migrations/20260801120000_enforce_pro_profile_phone.sql",
     ),
     "utf8",
   );

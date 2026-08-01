@@ -239,7 +239,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         subject: `Bienvenue sur Yorix, ${authForm.nom} ! 🎉`,
         html: emailBienvenue(authForm.nom, selectedRole),
       }).catch((e) => console.warn("Email bienvenue:", e));
-    } catch (err) {
+    } catch (_err) {
       setAuthError("Email ou mot de passe incorrect.");
     }
     setAuthLoading(false);
