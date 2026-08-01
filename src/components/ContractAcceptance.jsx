@@ -10,6 +10,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { recordContractAcceptance } from "../lib/contractAcceptanceApi";
 
 // Version du contrat — incrémenter à chaque mise à jour
 export const CONTRACT_VERSION = "v1.0";
@@ -108,38 +109,33 @@ export function ContractAcceptance({
       const userAgent = navigator.userAgent || "unknown";
       const fullName = authForm?.nom || userData?.nom || "Inconnu";
       const phone    = authForm?.tel || userData?.telephone || "Inconnu";
-
-      // Enregistrer dans Supabase (table user_contract_acceptance)
-      const { error: dbError } = await supabase
-        .from("user_contract_acceptance")
-        .insert({
-          user_id:             user?.id || null,
-          full_name:           fullName,
-          phone:               phone,
-          role:                role,
-          contract_version:    CONTRACT_VERSION,
-          accepted_at:         new Date().toISOString(),
-          ip_address:          ip,
-          user_agent:          userAgent,
-          acceptance_checkbox: true,
-          otp_verified:        false,
-          signature_type:      "checkbox_v1",
-        });
-
-      if (dbError) {
-        console.warn("Acceptance DB error:", dbError);
-        // On continue quand même, mais on log
-      }
-
-      // Callback succès
-      setSubmitting(false);
-      setConfirmModal(false);
-      onAccepted({
-        version:    CONTRACT_VERSION,
-        acceptedAt: new Date().toISOString(),
+      const acceptedAt = new Date().toISOString();
+      const acceptancePayload = {
+        version: CONTRACT_VERSION,
+        acceptedAt,
         ip,
         userAgent,
-      });
+        fullName,
+        phone,
+        role,
+      };
+
+      // RLS requires authenticated insert with user_id = auth.uid().
+      // Pre-signup acceptances are deferred and attributed after account creation.
+      if (user?.id) {
+        const { error: dbError } = await recordContractAcceptance(
+          supabase,
+          user.id,
+          acceptancePayload,
+        );
+        if (dbError) {
+          throw new Error(dbError.message || "Impossible d'enregistrer l'acceptation.");
+        }
+      }
+
+      setSubmitting(false);
+      setConfirmModal(false);
+      onAccepted(acceptancePayload);
 
     } catch (err) {
       console.error("Erreur acceptance:", err);
