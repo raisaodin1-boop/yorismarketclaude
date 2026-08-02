@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
+import { consumeCouponRedemption } from "../_shared/coupon.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 import { dispatchNotificationById } from "../_shared/internal_dispatch.ts";
@@ -149,6 +150,10 @@ Deno.serve(async (req) => {
     // une remise sur le total dû, distincte du recalcul brut depuis le panier :
     // on la ré-applique au total recalculé plutôt que de la perdre en écrasant
     // avec `totals.total`.
+    const couponCode =
+      typeof intent.coupon_code === "string" && intent.coupon_code.trim()
+        ? intent.coupon_code.trim().toUpperCase()
+        : null;
     const couponDiscount = Math.max(0, Math.round(Number(intent.coupon_discount ?? 0)));
     const expectedTotal = Math.max(0, totals.total - couponDiscount);
 
@@ -226,6 +231,29 @@ Deno.serve(async (req) => {
             available: Number(s.available ?? 0),
             requested: Number(s.requested ?? 0),
           },
+          { status: 409 },
+        );
+      }
+    }
+
+    // Burn the coupon BEFORE order writes. CinetPay leaves the browser before
+    // the client-side recordCouponRedemption call, so without this server burn
+    // a usage_limit / per-user coupon stayed reusable forever while still
+    // discounting the charged total.
+    if (couponCode && couponDiscount > 0) {
+      const buyerId =
+        typeof customer.id === "string" && uuidish(customer.id) ? customer.id : "";
+      const consumed = await consumeCouponRedemption(supabase, {
+        code: couponCode,
+        userId: buyerId,
+        orderId: orderGroupId,
+        expectedDiscount: couponDiscount,
+        cartTotal: totals.total,
+      });
+      if (!consumed.ok) {
+        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+        return ok(
+          { error: "COUPON_NO_LONGER_VALID", reason: consumed.reason },
           { status: 409 },
         );
       }
