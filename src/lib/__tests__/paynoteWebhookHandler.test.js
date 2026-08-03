@@ -36,16 +36,20 @@ function mockRes() {
 }
 
 describe("api/paynote-webhook", () => {
-  const originalEnv = { ...process.env };
+  const env = globalThis.process.env;
+  const originalEnv = { ...env };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.SUPABASE_URL = "https://example.supabase.co";
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role";
+    env.SUPABASE_URL = "https://example.supabase.co";
+    env.SUPABASE_SERVICE_ROLE_KEY = "service-role";
   });
 
   afterEach(() => {
-    process.env = { ...originalEnv };
+    for (const key of Object.keys(env)) {
+      if (!(key in originalEnv)) delete env[key];
+    }
+    Object.assign(env, originalEnv);
   });
 
   it("is registered by momo init endpoints as notifUrl", () => {

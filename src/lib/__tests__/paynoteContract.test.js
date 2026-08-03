@@ -2,20 +2,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 describe("Paynote MTN contract", () => {
-  const originalEnv = { ...process.env };
+  const env = globalThis.process.env;
+  const originalEnv = { ...env };
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     vi.resetModules();
-    process.env.PAYNOTE_CLIENT_ID = "client-id";
-    process.env.PAYNOTE_CLIENT_SECRET = "client-secret";
-    process.env.PAYNOTE_CUSTOMER_KEY = "cust-key";
-    process.env.PAYNOTE_CUSTOMER_SECRET = "cust-secret";
+    env.PAYNOTE_CLIENT_ID = "client-id";
+    env.PAYNOTE_CLIENT_SECRET = "client-secret";
+    env.PAYNOTE_CUSTOMER_KEY = "cust-key";
+    env.PAYNOTE_CUSTOMER_SECRET = "cust-secret";
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-    process.env = { ...originalEnv };
+    for (const key of Object.keys(env)) {
+      if (!(key in originalEnv)) delete env[key];
+    }
+    Object.assign(env, originalEnv);
   });
 
   it("extractPaynoteMessageId prefers documented top-level MessageId", async () => {
