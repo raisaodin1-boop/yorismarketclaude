@@ -1,14 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
-import { checkPaynoteMtnStatus } from "./_lib/paynote.js";
+import { settlePaynoteMtnPayment } from "./_lib/paynote_settle.js";
 
 /*
  * Sondage du statut d'un paiement MTN MoMo (Paynote) pour un achat de points
  * fidélité. Sur succès, crédite les points via credit_pack_purchase_from_payment
  * (RPC service_role — vérifie elle-même qu'un paiement confirmé existe avant
  * de créditer, indépendamment de ce que cet endpoint prétend).
+ *
+ * Le règlement effectif est partagé avec /api/paynote-webhook.
  */
-
-const KNOWN_FAILURE_STATUSES = new Set(["FAILED", "REJECTED", "CANCELLED", "CANCELED", "EXPIRED", "TIMEOUT"]);
 
 async function getAuthenticatedUser(req) {
   const authHeader = req.headers.authorization || "";
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
   const { data: tx, error: txErr } = await supabase
     .from("payment_transactions")
-    .select("*")
+    .select("id, order_group_id")
     .eq("provider", "paynote_mtn")
     .eq("provider_ref", referenceId)
     .maybeSingle();
@@ -61,41 +61,29 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Accès refusé" });
   }
 
-  if (tx.status === "paid" || purchase.status === "credited") {
+  if (purchase.status === "credited") {
     return res.status(200).json({ status: "paid", points_credited: purchase.points });
-  }
-  if (tx.status === "failed") {
-    return res.status(200).json({ status: "failed" });
   }
 
   try {
-    const statusData = await checkPaynoteMtnStatus(referenceId);
-    const paynoteStatus = String(statusData?.status || "").toUpperCase();
+    const result = await settlePaynoteMtnPayment(supabase, referenceId);
 
-    if (!paynoteStatus || (!KNOWN_FAILURE_STATUSES.has(paynoteStatus) && paynoteStatus !== "SUCCESSFUL")) {
-      return res.status(200).json({ status: "pending" });
+    if (result.outcome === "not_found") {
+      return res.status(404).json({ error: "Transaction introuvable" });
     }
-
-    const finalStatus = paynoteStatus === "SUCCESSFUL" ? "paid" : "failed";
-
-    await supabase
-      .from("payment_transactions")
-      .update({ status: finalStatus, payload: statusData, updated_at: new Date().toISOString() })
-      .eq("id", tx.id);
-
-    if (finalStatus === "paid") {
-      const { data: creditResult, error: creditErr } = await supabase.rpc(
-        "credit_pack_purchase_from_payment",
-        { p_purchase_id: purchaseId, p_payment_ref: referenceId },
-      );
-      if (creditErr) {
-        console.error("[momo-loyalty-status] credit RPC:", creditErr.message);
-        return res.status(200).json({ status: "paid", credit_pending: true });
-      }
-      return res.status(200).json({ status: "paid", points_credited: creditResult?.points_credited ?? null });
+    if (result.outcome === "pending") {
+      return res.status(200).json({ status: "pending", reason: result.reason });
     }
-
-    return res.status(200).json({ status: finalStatus });
+    if (result.outcome === "failed") {
+      return res.status(200).json({ status: "failed" });
+    }
+    if (result.creditPending) {
+      return res.status(200).json({ status: "paid", credit_pending: true });
+    }
+    return res.status(200).json({
+      status: "paid",
+      points_credited: purchase.points,
+    });
   } catch (error) {
     return res.status(502).json({ error: error.message });
   }
