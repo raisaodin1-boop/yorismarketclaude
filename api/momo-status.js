@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { checkPaynoteMtnStatus } from "./_lib/paynote.js";
+import { settlePaynoteMtnPayment } from "./_lib/paynote_settle.js";
 
 /*
  * Sondage du statut d'un paiement MTN MoMo initié via Paynote.
@@ -12,9 +12,20 @@ import { checkPaynoteMtnStatus } from "./_lib/paynote.js";
  * sont traités comme un échec définitif. Toute autre valeur (y compris
  * inconnue) est traitée comme "encore en attente" plutôt que faussement
  * marquée échouée.
+ *
+ * Important : marquer payment_transactions=paid ne suffit pas. Les commandes
+ * doivent aussi passer payment_status=paid / escrow securise. Si la synchro
+ * commandes échoue après un paiement opérateur réussi, on garde le client en
+ * "pending" pour qu'il continue à sonder et retenter la réparation — un
+ * early-return "paid" stopperait le polling CheckoutPage et laisserait les
+ * commandes impayées définitivement.
+ *
+ * Les commandes déjà annulées (annulee/cancelled) sont exclues de la synchro
+ * pour qu'un SUCCESSFUL tardif ne les ressuscite pas en fulfillment.
+ *
+ * Le règlement effectif (re-vérif Paynote + synchro) est partagé avec
+ * /api/paynote-webhook via settlePaynoteMtnPayment.
  */
-
-const KNOWN_FAILURE_STATUSES = new Set(["FAILED", "REJECTED", "CANCELLED", "CANCELED", "EXPIRED", "TIMEOUT"]);
 
 async function getAuthenticatedUser(req) {
   const authHeader = req.headers.authorization || "";
@@ -25,6 +36,8 @@ async function getAuthenticatedUser(req) {
   if (error || !data?.user) return null;
   return data.user;
 }
+
+export { ensureMomoOrdersPaid } from "./_lib/momo_orders.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -45,13 +58,16 @@ export default async function handler(req, res) {
 
   const { data: tx, error: txErr } = await supabase
     .from("payment_transactions")
-    .select("*")
+    .select("id, checkout_intent_id, order_group_id")
     .eq("provider", "paynote_mtn")
     .eq("provider_ref", referenceId)
     .maybeSingle();
 
   if (txErr) return res.status(500).json({ error: txErr.message });
   if (!tx) return res.status(404).json({ error: "Transaction introuvable" });
+  if (String(tx.order_group_id || "").startsWith("LOYALTY-")) {
+    return res.status(404).json({ error: "Transaction introuvable" });
+  }
 
   const { data: intent, error: intentErr } = await supabase
     .from("checkout_intents")
@@ -63,39 +79,26 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Accès refusé" });
   }
 
-  if (tx.status === "paid" || tx.status === "failed") {
-    return res.status(200).json({ status: tx.status });
-  }
-
   try {
-    const statusData = await checkPaynoteMtnStatus(referenceId);
-    const paynoteStatus = String(statusData?.status || "").toUpperCase();
+    const result = await settlePaynoteMtnPayment(supabase, referenceId);
 
-    if (!paynoteStatus || (!KNOWN_FAILURE_STATUSES.has(paynoteStatus) && paynoteStatus !== "SUCCESSFUL")) {
-      return res.status(200).json({ status: "pending" });
+    if (result.outcome === "not_found") {
+      return res.status(404).json({ error: "Transaction introuvable" });
     }
-
-    const finalStatus = paynoteStatus === "SUCCESSFUL" ? "paid" : "failed";
-
-    await supabase
-      .from("payment_transactions")
-      .update({ status: finalStatus, payload: statusData, updated_at: new Date().toISOString() })
-      .eq("id", tx.id);
-
-    if (finalStatus === "paid" && tx.order_group_id) {
-      await supabase
-        .from("orders")
-        .update({
-          payment_status: "paid",
-          escrow_status: "securise",
-          payment_provider: "paynote_mtn",
-          provider_tx_ref: referenceId,
-          status: "validee",
-        })
-        .eq("order_group_id", tx.order_group_id);
+    if (result.outcome === "pending") {
+      return res.status(200).json({
+        status: "pending",
+        orders_pending: Boolean(result.reason && result.reason !== "provider_pending"),
+        reason: result.reason,
+      });
     }
-
-    return res.status(200).json({ status: finalStatus });
+    if (result.outcome === "failed") {
+      return res.status(200).json({ status: "failed" });
+    }
+    return res.status(200).json({
+      status: "paid",
+      orders_cancelled: Boolean(result.ordersCancelled),
+    });
   } catch (error) {
     return res.status(502).json({ error: error.message });
   }

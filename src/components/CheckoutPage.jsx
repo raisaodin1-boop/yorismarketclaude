@@ -624,16 +624,25 @@ export function CheckoutPage({
           orderGroupId: confirmation.order_group_id,
           phone: momoPhoneDigits,
         });
+        // Paiement non confirmé : ne pas vider le panier ni brûler la clé
+        // d'idempotency (sinon un retry crée une 2e commande alors que
+        // l'utilisateur a peut‑être déjà validé l'USSD Paynote). Le webhook
+        // /api/paynote-webhook reste le filet de sécurité si l'onglet se ferme.
+        if (momoOutcome !== "paid") {
+          throw new Error(
+            momoOutcome === "timeout"
+              ? "Paiement MoMo non confirmé à temps. Réessayez — votre commande existante sera reprise."
+              : "Paiement MoMo refusé ou non initié. Vérifiez le numéro et réessayez.",
+          );
+        }
       }
 
-      // Succès confirmé (HTTP 200) → panier vidé.
+      // Succès confirmé (HTTP 200 / MoMo paid) → panier vidé.
       setCartItems([]);
       idempotencyKeyRef.current = null; // commande aboutie → clé consommée
 
       if (momoOutcome === "paid") {
         userFacingSuccess("✅ Paiement MTN MoMo confirmé ! Vous recevrez une notification de suivi sous peu.", 6000);
-      } else if (momoOutcome === "failed" || momoOutcome === "timeout") {
-        userFacingSuccess("Commande enregistrée — le paiement MoMo n'a pas été confirmé automatiquement, notre équipe vérifie et vous contactera.", 7000);
       } else {
         userFacingSuccess("✅ Commande confirmée ! Vous recevrez une notification de suivi sous peu.", 6000);
       }
