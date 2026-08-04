@@ -234,11 +234,49 @@ Deno.serve(async (req) => {
     const ordersCreated: any[] = [];
     for (const item of items) {
       if (item.kind === "service") {
+        // Create a settleable orders row for the service line so MoMo/CinetPay
+        // settlement (which updates orders by order_group_id) can mark payment
+        // paid. Without this, service-only checkouts leave paid money with no
+        // order row and checkout_return_status 404s after CinetPay return.
+        const qty = 1;
+        const unitPrice = Number(item.price || 0);
+        const gross = unitPrice * qty;
+        const commission = Math.round(gross * 0.05);
+        const net = gross - commission;
+        const providerId =
+          item.provider_id != null && item.provider_id !== ""
+            ? String(item.provider_id)
+            : null;
+
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert({
+            order_group_id: orderGroupId,
+            product_id: null,
+            vendeur_id: providerId,
+            client_id: customer.id || null,
+            client_nom: customer.nom || "Client Yorix",
+            telephone: customer.telephone || "",
+            montant: gross,
+            commission: commission,
+            montant_vendeur: net,
+            status: "pending",
+            livraison_status: "pending",
+            escrow_status: "pending",
+            payment_method: paymentMethod,
+            payment_status: paymentMethod === "cod" ? "cod_pending" : "pending",
+            payment_provider: paymentMethod === "cinetpay" ? "cinetpay" : "manual",
+          })
+          .select("id")
+          .single();
+        if (orderError) throw orderError;
+
         const { data: booking, error: bookingError } = await supabase
           .from("service_bookings")
           .insert({
+            order_id: order.id,
             service_id: item.id,
-            provider_id: item.provider_id || null,
+            provider_id: providerId,
             client_id: customer.id || null,
             client_nom: customer.nom || "Client Yorix",
             client_tel: customer.telephone || "",
@@ -252,7 +290,43 @@ Deno.serve(async (req) => {
           .select("id")
           .single();
         if (bookingError) throw bookingError;
-        ordersCreated.push({ type: "service_booking", id: booking.id });
+
+        const { error: itemError } = await supabase.from("order_items").insert({
+          order_id: order.id,
+          item_kind: "service",
+          service_id: item.id,
+          quantity: qty,
+          unit_price: unitPrice,
+          subtotal: gross,
+          fulfillment_mode: "booking",
+          meta: { checkout_intent_id: checkoutIntentId, service_booking_id: booking.id },
+        });
+        if (itemError) throw itemError;
+
+        if (providerId) {
+          await insertNotificationAndDispatch(supabase, {
+            user_id: providerId,
+            type: "provider_new_booking",
+            title: "Nouvelle réservation Yorix",
+            message:
+              `${clientNom} · groupe ${orderGroupId} · prestation ${gross.toLocaleString("fr-FR")} FCFA`,
+            link: "/dashboard",
+            lu: false,
+            priority: "high",
+            category: "orders",
+            payload: {
+              order_id: order.id,
+              service_booking_id: booking.id,
+              checkout_intent_id: checkoutIntentId,
+            },
+          });
+        }
+
+        ordersCreated.push({
+          type: "service_booking",
+          id: booking.id,
+          order_id: order.id,
+        });
         continue;
       }
 
