@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+import { YORIX_WA_NUMBER } from "../lib/supabase";
+import { redeemLoyaltyReward } from "../lib/loyaltyRedeemApi";
 import { showAppToast } from "../lib/appToast";
 import { ContentIcon } from "../lib/contentIcons";
 
@@ -16,33 +17,15 @@ export function LoyaltyRedeemModal({ reward, userPoints, user, onClose, onSucces
   const canAfford = userPoints >= reward.cout_points;
 
   const echanger = async () => {
-    if (!canAfford) return;
+    if (!canAfford || !user?.id) return;
     setLoading(true);
     try {
-      const newCode = `YX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      const result = await redeemLoyaltyReward(reward.id);
+      if (!result.ok) {
+        throw new Error(result.error || "Échange impossible");
+      }
 
-      const { error: errRedeem } = await supabase.from("loyalty_redemptions").insert({
-        user_id:     user.id,
-        reward_id:   reward.id,
-        reward_nom:  reward.nom,
-        cout_points: reward.cout_points,
-        code:        newCode,
-        status:      "validated",
-        expire_at:   new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      });
-      if (errRedeem) throw errRedeem;
-
-      const { error: errDebit } = await supabase.rpc("add_loyalty_points", {
-        p_user_id:        user.id,
-        p_points:         -reward.cout_points,
-        p_type:           "echange",
-        p_description:    `Échange : ${reward.nom}`,
-        p_reference_id:   null,
-        p_reference_type: "reward",
-      });
-      if (errDebit) throw errDebit;
-
-      setCode(newCode);
+      setCode(result.code);
       setDone(true);
       onSuccess?.();
     } catch (err) {
