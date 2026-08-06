@@ -1,15 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 import { initiatePaynoteMtnPayment } from "./_lib/paynote.js";
+import { initiateMomoPaymentIdempotent } from "./_lib/momo_init.js";
 
 /*
  * MTN MoMo direct (Paynote) pour l'achat de points fidélité.
  *
  * Même garanties que api/momo.js : authentification obligatoire, montant
  * jamais pris depuis le client (relu depuis loyalty_pack_purchases.prix_fcfa),
- * tentative journalisée dans payment_transactions. La référence de commande
- * ("LOYALTY-<uuid achat>") permet à credit_pack_purchase_from_payment() de
- * vérifier qu'un paiement réellement confirmé existe avant de créditer les
- * points, sans jamais faire confiance à l'appelant.
+ * initiation idempotente (claim avant Paynote) pour éviter une double charge
+ * sur retry / double POST. La référence ("LOYALTY-<uuid achat>") permet à
+ * credit_pack_purchase_from_payment() de vérifier un paiement confirmé avant
+ * de créditer les points.
  */
 
 function normalizeCmMsisdn(raw) {
@@ -76,46 +77,30 @@ export default async function handler(req, res) {
   const orderGroupId = `LOYALTY-${purchaseId}`;
   const notifUrl = `${(process.env.YORIX_SITE_URL || "https://www.yorix.cm").replace(/\/$/, "")}/api/paynote-webhook`;
 
-  try {
-    const { messageId, raw } = await initiatePaynoteMtnPayment({
+  const result = await initiateMomoPaymentIdempotent({
+    supabase,
+    initiatePayment: initiatePaynoteMtnPayment,
+    checkoutIntentId: null,
+    orderGroupId,
+    amount,
+    phone: msisdn,
+    extraPayload: { loyalty_purchase_id: purchaseId },
+    paynoteArgs: {
       orderId: orderGroupId,
       amount,
       subscriberMsisdn: msisdn,
       description: `Pack points Yorix — ${purchase.pack_nom || "Pack"}`,
       notifUrl,
-    });
+    },
+  });
 
-    await supabase.from("payment_transactions").insert({
-      checkout_intent_id: null,
-      order_group_id: orderGroupId,
-      provider: "paynote_mtn",
-      provider_ref: messageId,
-      payment_method: "mtn_momo",
-      amount,
-      currency: "XAF",
-      status: "pending",
-      channel: "momo",
-      payload: { phone: msisdn, paynote: raw, loyalty_purchase_id: purchaseId },
-    });
-
-    return res.status(200).json({ reference_id: messageId, status: "pending" });
-  } catch (error) {
-    try {
-      await supabase.from("payment_transactions").insert({
-        checkout_intent_id: null,
-        order_group_id: orderGroupId,
-        provider: "paynote_mtn",
-        provider_ref: null,
-        payment_method: "mtn_momo",
-        amount,
-        currency: "XAF",
-        status: "failed",
-        channel: "momo",
-        payload: { phone: msisdn, error: error.message, loyalty_purchase_id: purchaseId },
-      });
-    } catch {
-      /* best-effort */
-    }
-    return res.status(502).json({ error: error.message });
+  if (!result.ok) {
+    return res.status(result.httpStatus || 502).json({ error: result.error });
   }
+
+  return res.status(200).json({
+    reference_id: result.reference_id,
+    status: result.status,
+    reused: Boolean(result.reused),
+  });
 }
