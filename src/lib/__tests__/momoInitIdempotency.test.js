@@ -47,18 +47,11 @@ function mockSupabase({ existingRows = [], claimError = null, updateError = null
     eq: vi.fn().mockResolvedValue({ error: updateError }),
   }));
 
-  const selectChain = {
-    eq: vi.fn(function eq() {
-      return this;
-    }),
-    in: vi.fn(function inFn() {
-      return this;
-    }),
-    order: vi.fn(function order() {
-      return this;
-    }),
-    limit: vi.fn().mockResolvedValue({ data: existingRows, error: null }),
-  };
+  const selectChain = {};
+  selectChain.eq = vi.fn(() => selectChain);
+  selectChain.in = vi.fn(() => selectChain);
+  selectChain.order = vi.fn(() => selectChain);
+  selectChain.limit = vi.fn().mockResolvedValue({ data: existingRows, error: null });
 
   return {
     from: vi.fn(() => ({
@@ -148,25 +141,18 @@ describe("initiateMomoPaymentIdempotent", () => {
 
   it("on unique race, reuses the winner's provider_ref without a second Paynote call", async () => {
     let lookups = 0;
-    const selectChain = {
-      eq: vi.fn(function eq() {
-        return this;
-      }),
-      in: vi.fn(function inFn() {
-        return this;
-      }),
-      order: vi.fn(function order() {
-        return this;
-      }),
-      limit: vi.fn().mockImplementation(async () => {
-        lookups += 1;
-        if (lookups === 1) return { data: [], error: null };
-        return {
-          data: [{ id: "winner", status: "pending", provider_ref: "msg-winner" }],
-          error: null,
-        };
-      }),
-    };
+    const selectChain = {};
+    selectChain.eq = vi.fn(() => selectChain);
+    selectChain.in = vi.fn(() => selectChain);
+    selectChain.order = vi.fn(() => selectChain);
+    selectChain.limit = vi.fn().mockImplementation(async () => {
+      lookups += 1;
+      if (lookups === 1) return { data: [], error: null };
+      return {
+        data: [{ id: "winner", status: "pending", provider_ref: "msg-winner" }],
+        error: null,
+      };
+    });
 
     const supabase = {
       from: vi.fn(() => ({

@@ -31,14 +31,12 @@ export async function findActiveMomoTx(supabase, { checkoutIntentId = null, orde
     .from("payment_transactions")
     .select("id, status, provider_ref, checkout_intent_id, order_group_id, created_at")
     .eq("provider", "paynote_mtn")
-    .in("status", ["pending", "paid"])
-    .order("created_at", { ascending: false })
-    .limit(20);
+    .in("status", ["pending", "paid"]);
 
   if (checkoutIntentId) query = query.eq("checkout_intent_id", checkoutIntentId);
   else query = query.eq("order_group_id", orderGroupId);
 
-  const { data, error } = await query;
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
   if (error) throw error;
 
   const rows = Array.isArray(data) ? data : [];
