@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { initiatePaynoteMtnPayment } from "./_lib/paynote.js";
+import { initiateMomoPaymentIdempotent } from "./_lib/momo_init.js";
 
 /*
  * MTN MoMo via l'agrégateur mutualisé Paynote (production).
@@ -9,10 +10,9 @@ import { initiatePaynoteMtnPayment } from "./_lib/paynote.js";
  *  - Le montant n'est JAMAIS pris depuis le corps de la requête : il est relu
  *    depuis `checkout_intents.total` (déjà calculé serveur, coupon inclus),
  *    exactement comme le rail CinetPay existant.
- *  - Chaque tentative est journalisée dans `payment_transactions` (même
- *    table que CinetPay) avec un statut "pending" — le statut final est
- *    appliqué par /api/momo-status (sondage), Paynote n'ayant pas encore de
- *    callback fiable côté notre infra.
+ *  - Initiation idempotente : claim journalisé avant l'appel Paynote ; un
+ *    retry / double POST réutilise le provider_ref existant au lieu de créer
+ *    une seconde charge opérateur.
  */
 
 function normalizeCmMsisdn(raw) {
@@ -74,49 +74,29 @@ export default async function handler(req, res) {
   // final est obtenu par sondage via /api/momo-status, pas par ce callback.
   const notifUrl = `${(process.env.YORIX_SITE_URL || "https://www.yorix.cm").replace(/\/$/, "")}/api/paynote-webhook`;
 
-  try {
-    const { messageId, raw } = await initiatePaynoteMtnPayment({
+  const result = await initiateMomoPaymentIdempotent({
+    supabase,
+    initiatePayment: initiatePaynoteMtnPayment,
+    checkoutIntentId,
+    orderGroupId: orderGroupId || null,
+    amount,
+    phone: msisdn,
+    paynoteArgs: {
       orderId: checkoutIntentId,
       amount,
       subscriberMsisdn: msisdn,
       description: "Paiement Yorix",
       notifUrl,
-    });
+    },
+  });
 
-    await supabase.from("payment_transactions").insert({
-      checkout_intent_id: checkoutIntentId,
-      order_group_id: orderGroupId || null,
-      provider: "paynote_mtn",
-      provider_ref: messageId,
-      payment_method: "mtn_momo",
-      amount,
-      currency: "XAF",
-      status: "pending",
-      channel: "momo",
-      payload: { phone: msisdn, paynote: raw },
-    });
-
-    return res.status(200).json({ reference_id: messageId, status: "pending" });
-  } catch (error) {
-    // .insert() renvoie un PostgrestFilterBuilder thenable, pas une vraie
-    // Promise — pas de .catch() dessus (TypeError). On isole l'échec de ce
-    // log dans son propre try/catch pour ne jamais masquer l'erreur réelle.
-    try {
-      await supabase.from("payment_transactions").insert({
-        checkout_intent_id: checkoutIntentId,
-        order_group_id: orderGroupId || null,
-        provider: "paynote_mtn",
-        provider_ref: null,
-        payment_method: "mtn_momo",
-        amount,
-        currency: "XAF",
-        status: "failed",
-        channel: "momo",
-        payload: { phone: msisdn, error: error.message },
-      });
-    } catch {
-      /* best-effort */
-    }
-    return res.status(502).json({ error: error.message });
+  if (!result.ok) {
+    return res.status(result.httpStatus || 502).json({ error: result.error });
   }
+
+  return res.status(200).json({
+    reference_id: result.reference_id,
+    status: result.status,
+    reused: Boolean(result.reused),
+  });
 }
