@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
+import { initiateCinetPayPaymentIdempotent } from "../_shared/cinetpay_init.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -25,42 +26,14 @@ Deno.serve(async (req) => {
       return ok({ error: "Missing SUPABASE_URL for webhook URL" }, { status: 500 });
     }
 
-    const txRef = `YRXPAY-${orderGroupId}-${Date.now()}`;
-    const payload = {
-      apikey: CINETPAY_API_KEY,
-      site_id: CINETPAY_SITE_ID,
-      transaction_id: txRef,
-      amount,
-      currency: "XAF",
-      description: `Yorix checkout ${orderGroupId}`,
-      channels: body?.channel || "ALL",
-      notify_url: `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/webhook_cinetpay`,
-      return_url: `${APP_BASE_URL.replace(/\/$/, "")}/checkout?status=return&tx=${txRef}`,
-      metadata: JSON.stringify({
-        checkout_intent_id: checkoutIntentId,
-        order_group_id: orderGroupId,
-      }),
-      customer_name: body?.customer_name || "Client Yorix",
-      customer_phone_number: body?.customer_phone || "",
-      customer_email: body?.customer_email || "support@yorix.cm",
-    };
-
-    const response = await fetch("https://api-checkout.cinetpay.com/v2/payment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-    if (!response.ok || result?.code !== "201") {
-      return ok({ error: "CinetPay init failed", details: result }, { status: 400 });
-    }
-
-    const paymentUrl = result?.data?.payment_url || null;
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      SUPABASE_URL,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
     );
 
+    // Validate amount against the server intent BEFORE opening a CinetPay
+    // session — otherwise a mismatched client amount still creates a payable
+    // provider transaction that can never be safely journaled.
     const { data: intent, error: intentErr } = await supabase
       .from("checkout_intents")
       .select("total")
@@ -74,22 +47,66 @@ Deno.serve(async (req) => {
       );
     }
 
-    await supabase.from("payment_transactions").insert({
-      checkout_intent_id: checkoutIntentId,
-      order_group_id: orderGroupId,
-      provider: "cinetpay",
-      provider_ref: txRef,
-      payment_method: "cinetpay",
+    const channel = body?.channel || "ALL";
+    const result = await initiateCinetPayPaymentIdempotent({
+      supabase,
+      checkoutIntentId,
+      orderGroupId,
       amount,
-      currency: "XAF",
-      status: "pending",
-      channel: body?.channel || "ALL",
-      payload: result,
+      channel,
+      createPaymentSession: async (txRef) => {
+        const payload = {
+          apikey: CINETPAY_API_KEY,
+          site_id: CINETPAY_SITE_ID,
+          transaction_id: txRef,
+          amount,
+          currency: "XAF",
+          description: `Yorix checkout ${orderGroupId}`,
+          channels: channel,
+          notify_url: `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/webhook_cinetpay`,
+          return_url: `${APP_BASE_URL.replace(/\/$/, "")}/checkout?status=return&tx=${txRef}`,
+          metadata: JSON.stringify({
+            checkout_intent_id: checkoutIntentId,
+            order_group_id: orderGroupId,
+          }),
+          customer_name: body?.customer_name || "Client Yorix",
+          customer_phone_number: body?.customer_phone || "",
+          customer_email: body?.customer_email || "support@yorix.cm",
+        };
+
+        const response = await fetch("https://api-checkout.cinetpay.com/v2/payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const raw = await response.json();
+        if (!response.ok || raw?.code !== "201") {
+          const err = new Error("CinetPay init failed") as Error & { details?: unknown };
+          err.details = raw;
+          throw err;
+        }
+        return {
+          paymentUrl: raw?.data?.payment_url || null,
+          raw,
+        };
+      },
     });
 
-    return ok({ transaction_ref: txRef, payment_url: paymentUrl, provider: "cinetpay" });
+    if (!result.ok) {
+      return ok(
+        { error: result.error, details: result.details },
+        { status: result.httpStatus },
+      );
+    }
+
+    return ok({
+      transaction_ref: result.transaction_ref,
+      payment_url: result.payment_url,
+      provider: "cinetpay",
+      status: result.status,
+      reused: result.reused,
+    });
   } catch (e) {
     return ok({ error: e instanceof Error ? e.message : "unknown error" }, { status: 500 });
   }
 });
-
