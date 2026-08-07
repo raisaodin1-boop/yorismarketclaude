@@ -593,6 +593,22 @@ export function CheckoutPage({
           amount: serverPayTotal,
           channel: "ALL",
         });
+        // Init idempotent : un retry après timeout réutilise la même session.
+        // Si le journal est déjà "paid", ne pas rouvrir CinetPay (double paiement).
+        if (payment?.status === "paid") {
+          setCartItems([]);
+          idempotencyKeyRef.current = null;
+          userFacingSuccess("✅ Paiement CinetPay déjà confirmé ! Vous recevrez une notification de suivi sous peu.", 6000);
+          setOrderDone({
+            mode: "standard",
+            orderGroupId: confirmation.order_group_id,
+            intentId: intent.checkout_intent_id,
+            deliveryTracking: Array.isArray(confirmation?.delivery_tracking)
+              ? confirmation.delivery_tracking
+              : [],
+          });
+          return;
+        }
         if (payment?.payment_url) {
           try {
             if (payment.transaction_ref) {
