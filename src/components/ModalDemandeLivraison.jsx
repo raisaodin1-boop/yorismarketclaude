@@ -43,17 +43,17 @@ export function ModalDemandeLivraison({ user, userData, siteLocale = "fr", onClo
     try {
       const { delivery: created, code } = await creerDemandeLivraison({
         clientId: user?.id || null,
-        form: {
-          nom:               form.nom,
-          telephone:         form.telephone,
-          adresse_collecte:  form.adresse_collecte,
-          adresse_livraison: form.adresse_livraison,
-          ville:             form.ville,
-          colis_description: form.colis_description,
-          vehicule:          form.vehicule,
-          urgence:           form.urgence,
-          budget:            form.budget,
-        },
+        clientNom: form.nom,
+        clientTel: form.telephone,
+        adresseCollecte: form.adresse_collecte,
+        adresseLivraison: form.adresse_livraison,
+        ville: form.ville,
+        colisDescription: form.colis_description,
+        vehicule: form.vehicule,
+        urgence: form.urgence,
+        montant: form.budget,
+        tempsEstimeMin:
+          form.urgence === "urgent" ? 20 : form.urgence === "express" ? 15 : 40,
       });
 
       const urgenceLabel = {
