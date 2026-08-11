@@ -276,17 +276,12 @@ export function ChatUsers({
   const markPeerMessagesRead = useCallback(async (convId) => {
     if (!user?.id || !convId) return;
     try {
+      // SECURITY DEFINER RPC only — direct recipient UPDATEs were abused to forge
+      // counterparty content under the old mark-read RLS policy.
       const { error } = await supabase.rpc("mark_conversation_messages_read", {
         p_conversation_id: convId,
       });
-      if (error) {
-        await supabase
-          .from("messages")
-          .update({ is_read: true })
-          .eq("conversation_id", convId)
-          .neq("sender_id", user.id)
-          .eq("is_read", false);
-      }
+      if (error) console.warn("mark read:", error.message);
     } catch (err) {
       console.warn("mark read:", err.message);
     }
