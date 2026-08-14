@@ -26,6 +26,27 @@ describe("checkoutOrchestrator", () => {
     expect(intent.customer.email).toBe("a@b.cm");
     expect(intent.items[0].price).toBe(500);
     expect(intent.items[0].qty).toBe(2);
+    expect(intent.items[0].variant_id).toBe(null);
     expect(intent.summary).toEqual({ total: 1000 });
+  });
+
+  it("buildCheckoutIntent forwards selected variant identity", async () => {
+    const { buildCheckoutIntent } = await import("../checkoutOrchestrator.js");
+    const intent = buildCheckoutIntent({
+      items: [{
+        id: "p1",
+        kind: "product",
+        qty: 1,
+        prix: 150000,
+        variantId: "v-large",
+        variantLabel: "256 Go",
+      }],
+      user: { id: "uid" },
+      userData: {},
+      summary: { total: 150000 },
+    });
+    expect(intent.items[0].variant_id).toBe("v-large");
+    expect(intent.items[0].variant_label).toBe("256 Go");
+    expect(intent.items[0].price).toBe(150000);
   });
 });

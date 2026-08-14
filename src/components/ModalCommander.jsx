@@ -47,6 +47,8 @@ export function ModalCommander({ product, user, userData, onClose, onSuccess }) 
             vendeur_id: product.vendeur_id ?? null,
             vendeur_nom: product.vendeur_nom || "",
             ville: product.ville || "",
+            variant_id: product.variantId || product._variantId || null,
+            variant_label: product.variantLabel || product._variantLabel || null,
           },
         ],
         summary: { subtotal, delivery: 0, total: subtotal },

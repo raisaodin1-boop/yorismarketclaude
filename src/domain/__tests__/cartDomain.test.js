@@ -70,6 +70,30 @@ describe("cartDomain", () => {
     expect(out[0].kind).toBe("service");
   });
 
+  it("upsertCartItem keeps distinct variants of the same product", async () => {
+    const { upsertCartItem, withSelectedVariant } = await import("../cartDomain.js");
+    const product = { id: "p1", name_fr: "Phone", prix: 50000, vendeur_id: "s1" };
+    const red = withSelectedVariant(product, { id: "v-red", label: "Rouge", prix: 20000, stock: 2 });
+    const blue = withSelectedVariant(product, { id: "v-blue", label: "Bleu", prix: 150000, stock: 1 });
+    const a = (await import("../cartDomain.js")).makeProductCartItem(red);
+    const b = (await import("../cartDomain.js")).makeProductCartItem(blue);
+    const merged = upsertCartItem([a], b);
+    expect(merged).toHaveLength(2);
+    expect(merged.map((i) => i.variantId).sort()).toEqual(["v-blue", "v-red"]);
+    expect(merged.find((i) => i.variantId === "v-blue").prix).toBe(150000);
+  });
+
+  it("makeProductCartItem preserves variantId from the picker", async () => {
+    const { makeProductCartItem, withSelectedVariant } = await import("../cartDomain.js");
+    const product = withSelectedVariant(
+      { id: "p1", name_fr: "Phone", prix: 50000 },
+      { id: "v-large", label: "256 Go", prix: 150000, stock: 1 },
+    );
+    const item = makeProductCartItem(product);
+    expect(item.variantId).toBe("v-large");
+    expect(item.prix).toBe(150000);
+  });
+
   it("computeCartSummary returns totals for mixed cart", async () => {
     const { computeCartSummary, normalizeCartItem } = await import("../cartDomain.js");
     const items = [

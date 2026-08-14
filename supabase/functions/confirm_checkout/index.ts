@@ -201,10 +201,18 @@ Deno.serve(async (req) => {
     // un message clair (produit concerné + disponible vs demandé).
     const stockCheckItems = items
       .filter((line) => (line.kind || "product") === "product")
-      .map((line) => ({
-        id: String(line.id),
-        qty: Math.max(1, Number(line.qty || 1)),
-      }));
+      .map((line) => {
+        const variantId = String(
+          (line as { variant_id?: unknown }).variant_id
+            ?? (line as { variantId?: unknown }).variantId
+            ?? "",
+        ).trim();
+        return {
+          id: String(line.id),
+          qty: Math.max(1, Number(line.qty || 1)),
+          ...(variantId ? { variant_id: variantId } : {}),
+        };
+      });
 
     if (stockCheckItems.length) {
       const { data: shortage, error: stockCheckErr } = await supabase.rpc(
@@ -263,11 +271,16 @@ Deno.serve(async (req) => {
       const net = gross - commission;
 
       const pid = String(item.id ?? "");
-      const vendeurRaw = (item as { vendeur_id?: string | null }).vendeur_id;
-      const vendeurId =
-        vendeurRaw != null && vendeurRaw !== ""
-          ? String(vendeurRaw)
-          : vendeurByProduct.get(pid) ?? null;
+      // Seller identity comes from the catalog row, never from the client payload.
+      const vendeurId = vendeurByProduct.get(pid) ?? null;
+      const variantId = String(
+        (item as { variant_id?: unknown }).variant_id
+          ?? (item as { variantId?: unknown }).variantId
+          ?? "",
+      ).trim();
+      const variantLabel = String(
+        (item as { variant_label?: unknown }).variant_label ?? "",
+      ).trim();
 
       const fulfillment = String(item.fulfillmentMode || "delivery");
 
@@ -317,7 +330,10 @@ Deno.serve(async (req) => {
         unit_price: unitPrice,
         subtotal: gross,
         fulfillment_mode: item.fulfillmentMode || "delivery",
-        meta: { checkout_intent_id: checkoutIntentId },
+        meta: {
+          checkout_intent_id: checkoutIntentId,
+          ...(variantId ? { variant_id: variantId, variant_label: variantLabel || null } : {}),
+        },
       });
       if (itemError) throw itemError;
 
@@ -330,6 +346,7 @@ Deno.serve(async (req) => {
       const { error: stockErr } = await supabase.rpc("decrement_product_stock", {
         p_product_id: pid,
         p_qty: qty,
+        p_variant_id: variantId || null,
       });
       if (stockErr) {
         console.error(`[confirm_checkout] stock decrement ${pid}:`, stockErr.message);

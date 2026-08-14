@@ -30,6 +30,8 @@ export function buildCheckoutIntent({ items, user, userData, summary, couponCode
       vendeur_id: item.vendeur_id ?? null,
       vendeur_nom: item.vendeur_nom ?? "",
       ville: item.ville ?? "",
+      variant_id: item.variantId || item._variantId || item.variant_id || null,
+      variant_label: item.variantLabel || item._variantLabel || item.variant_label || null,
     })),
     summary,
   };

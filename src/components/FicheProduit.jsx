@@ -13,6 +13,8 @@ import { ShareProductButton } from "./conversion/ShareProductButton";
 import { ShareWhatsAppButton } from "./conversion/ShareWhatsAppButton";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";
+import { ProductVariantSelector } from "./ProductVariantSelector";
+import { withSelectedVariant } from "../domain/cartDomain";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import { YorixToast, useYorixToast } from "./ui/YorixToast";
 import { B2BOrderForm } from "./B2BOrderForm";
@@ -33,6 +35,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
   const [showChatModal, setShowChatModal]   = useState(false);
   const [showB2B, setShowB2B]               = useState(false);
   const [hasVerifiedPurchase, setHasVerifiedPurchase] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const { toast, showToast, clearToast } = useYorixToast();
 
   const parseImageUrls = (val) => {
@@ -87,6 +90,10 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     user.id !== product.vendeur_id;
 
   const buyable = isPurchasable(product);
+  const hasVariants = Boolean(
+    product?.has_variants && Array.isArray(product.variants) && product.variants.length > 0,
+  );
+  const productForPurchase = selectedVariant ? withSelectedVariant(product, selectedVariant) : product;
   const [restockState, setRestockState] = useState("idle"); // 'idle' | 'pending' | 'done' | 'error'
   const [restockError, setRestockError] = useState(null);
 
@@ -129,9 +136,17 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
     setShowChatModal(true);
   };
 
-  const displayPrice = isPromoActive(product)
-    ? effectiveProductPrice(product)
-    : product.prix;
+  const displayPrice = isPromoActive(productForPurchase)
+    ? effectiveProductPrice(productForPurchase)
+    : productForPurchase.prix;
+
+  const ensureVariantThen = (fn) => {
+    if (hasVariants && !selectedVariant) {
+      showToast(siteLocale === "en" ? "Choose a variant to continue." : "Choisissez une variante pour continuer.", "error");
+      return;
+    }
+    fn();
+  };
 
   return (
     <div className="yx-pdp-page" style={{ minHeight: "100vh", background: "var(--bg)" }}>
@@ -267,14 +282,20 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
               </div>
             )}
 
+            <ProductVariantSelector
+              product={product}
+              selectedVariantId={selectedVariant?.id}
+              onSelect={setSelectedVariant}
+            />
+
             <div className="fp-price product-price" style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--green)", marginBottom: 14 }}>
-              {isPromoActive(product) ? (
+              {isPromoActive(productForPurchase) ? (
                 <>
-                  {effectiveProductPrice(product).toLocaleString()}{" "}
+                  {effectiveProductPrice(productForPurchase).toLocaleString()}{" "}
                   <span style={{ fontSize: ".8rem", fontFamily: "var(--font-body)", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
-                  {productPromoListPrice(product) != null && (
+                  {productPromoListPrice(productForPurchase) != null && (
                     <span style={{ marginLeft: 8, fontSize: ".85rem", color: "var(--gray)", textDecoration: "line-through", fontWeight: 500 }}>
-                      {productPromoListPrice(product).toLocaleString()} FCFA
+                      {productPromoListPrice(productForPurchase).toLocaleString()} FCFA
                     </span>
                   )}
                   <span style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: ".72rem", fontWeight: 700, color: "#d4520a" }}>
@@ -283,7 +304,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 </>
               ) : (
                 <>
-                  {product.prix?.toLocaleString()}{" "}
+                  {productForPurchase.prix?.toLocaleString()}{" "}
                   <span style={{ fontSize: ".8rem", fontFamily: "var(--font-body)", fontWeight: 400, color: "var(--gray)" }}>FCFA</span>
                 </>
               )}
@@ -334,7 +355,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   opacity: buyable ? 1 : 0.55,
                   cursor: buyable ? "pointer" : "not-allowed",
                 }}
-                onClick={() => { if (buyable) setShowCmdModal(true); }}
+                onClick={() => { if (buyable) ensureVariantThen(() => setShowCmdModal(true)); }}
               >
                 {buyable ? "Commander" : "Produit indisponible"}
               </button>
@@ -343,7 +364,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                   disabled={!buyable}
                   aria-disabled={!buyable}
                   className="fp-add-cart product-add-cart"
-                  onClick={() => { if (buyable) { onAddToCart(product); onClose(); } }}
+                  onClick={() => { if (buyable) ensureVariantThen(() => { onAddToCart(productForPurchase); onClose(); }); }}
                   style={{
                     background: buyable ? "var(--green)" : "var(--surface2)",
                     color: buyable ? "#fff" : "var(--gray)",
@@ -504,7 +525,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
 
             {showCmdModal && (
               <ModalCommander
-                product={product}
+                product={productForPurchase}
                 user={user}
                 userData={userData}
                 onClose={() => setShowCmdModal(false)}
@@ -574,8 +595,10 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
                 className="yx-pdp-sticky-bar__btn yx-pdp-sticky-bar__btn--cart"
                 aria-label="Ajouter au panier"
                 onClick={() => {
-                  onAddToCart(product);
-                  onClose();
+                  ensureVariantThen(() => {
+                    onAddToCart(productForPurchase);
+                    onClose();
+                  });
                 }}
               >
                 <ShoppingCart size={18} strokeWidth={2.25} aria-hidden="true" />
@@ -584,7 +607,7 @@ export function FicheProduit({ product, user, userData, onClose, onAddToCart, si
             <button
               type="button"
               className="yx-pdp-sticky-bar__btn yx-pdp-sticky-bar__btn--primary"
-              onClick={() => setShowCmdModal(true)}
+              onClick={() => ensureVariantThen(() => setShowCmdModal(true))}
             >
               Commander
             </button>
