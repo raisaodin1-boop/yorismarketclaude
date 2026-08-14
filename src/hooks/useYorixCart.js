@@ -31,12 +31,12 @@ export function useYorixCart(commerceDeliveryPolicy) {
     setCartItems((prev) => upsertCartItem(prev, cartItem));
   }, []);
 
-  const changeQty = useCallback((id, d, kind = null) => {
-    setCartItems((prev) => updateCartQty(prev, id, kind, d));
+  const changeQty = useCallback((id, d, kind = null, variantId = null) => {
+    setCartItems((prev) => updateCartQty(prev, id, kind, d, variantId));
   }, []);
 
-  const removeItem = useCallback((id, kind = null) => {
-    setCartItems((prev) => removeCartItem(prev, id, kind));
+  const removeItem = useCallback((id, kind = null, variantId = null) => {
+    setCartItems((prev) => removeCartItem(prev, id, kind, variantId));
   }, []);
 
   const cartSummary = useMemo(

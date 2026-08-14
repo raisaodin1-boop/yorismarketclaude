@@ -55,7 +55,7 @@ export function CartPage({
             {cartItems.map((item) => {
               const subtotal = item.prix * item.qty;
               return (
-                <article key={`${item.kind}-${item.id}`} className="cart-page-item">
+                <article key={`${item.kind}-${item.id}-${item.variantId || ""}`} className="cart-page-item">
                   <div className="cart-page-thumb">
                     <OptimizedImage
                       src={item.image}
@@ -66,7 +66,10 @@ export function CartPage({
                     />
                   </div>
                   <div className="cart-page-content">
-                    <div className="cart-page-title">{item.name}</div>
+                    <div className="cart-page-title">
+                      {item.name}
+                      {item.variantLabel ? ` · ${item.variantLabel}` : ""}
+                    </div>
                     <div className="cart-page-meta">
                       <span className="ci-tag">{item.kind === "service" ? "Prestation" : "Produit"}</span>
                       {item.categorie && <span className="ci-tag">{item.categorie}</span>}
@@ -83,16 +86,16 @@ export function CartPage({
                         </span>
                       ) : (
                         <div className="ci-qty">
-                          <button className="qty-btn" onClick={() => changeQty(item.id, -1, item.kind)}>
+                          <button className="qty-btn" onClick={() => changeQty(item.id, -1, item.kind, item.variantId || null)}>
                             −
                           </button>
                           <span className="qty-val">{item.qty}</span>
-                          <button className="qty-btn" onClick={() => changeQty(item.id, 1, item.kind)}>
+                          <button className="qty-btn" onClick={() => changeQty(item.id, 1, item.kind, item.variantId || null)}>
                             +
                           </button>
                         </div>
                       )}
-                      <button className="btn-action-sm" onClick={() => removeItem(item.id, item.kind)}>
+                      <button className="btn-action-sm" onClick={() => removeItem(item.id, item.kind, item.variantId || null)}>
                         Retirer
                       </button>
                     </div>

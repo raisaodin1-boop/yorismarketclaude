@@ -18,6 +18,7 @@ import { Stars } from "./Stars";
 import { ModalCommander } from "./ModalCommander";
 import { SocialProofLine } from "./conversion/SocialProofLine";
 import { isPurchasable } from "../lib/stockStatus";
+import { withSelectedVariant } from "../domain/cartDomain";
 import { effectiveProductPrice, isPromoActive, productPromoListPrice } from "../lib/productPricing";
 import {
   productMoqLabel,
@@ -64,9 +65,7 @@ export function ProdGrid({
       setVariantPickerProd(p);
       return;
     }
-    const cartProduct = variant
-      ? { ...p, prix: variant.prix, stock: variant.stock, _variantId: variant.id, _variantLabel: variant.label }
-      : p;
+    const cartProduct = variant ? withSelectedVariant(p, variant) : p;
     onAddToCart(cartProduct);
     showAppToast(t("ui:addedToCartToast", { name: (p.name_fr || t("catalog:productDefault")).slice(0, 32) }), "success", 2200);
     setAddedIds((prev) => {

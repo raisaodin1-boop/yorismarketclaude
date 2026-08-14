@@ -43,14 +43,14 @@ export function CartDrawer({
     goPage("cart");
   };
 
-  const itemKey = (item) => `${item.kind}-${item.id}`;
+  const itemKey = (item) => `${item.kind}-${item.id}-${item.variantId || item._variantId || ""}`;
 
   const handleRemove = (item) => {
     const key = itemKey(item);
     setRemovingKey(key);
     haptic(10);
     window.setTimeout(() => {
-      removeItem(item.id, item.kind);
+      removeItem(item.id, item.kind, item.variantId || item._variantId || null);
       setRemovingKey(null);
       showAppToast(
         item.kind === "service"
@@ -68,7 +68,7 @@ export function CartDrawer({
       handleRemove(item);
       return;
     }
-    changeQty(item.id, delta, item.kind);
+    changeQty(item.id, delta, item.kind, item.variantId || item._variantId || null);
     haptic(5);
   };
 
@@ -195,7 +195,10 @@ export function CartDrawer({
                       />
                     </div>
                     <div className="ci-info">
-                      <div className="ci-name">{item.name}</div>
+                      <div className="ci-name">
+                        {item.name}
+                        {item.variantLabel ? ` · ${item.variantLabel}` : ""}
+                      </div>
                       <div className="ci-meta">
                         <span className="ci-tag">{item.kind === "service" ? "Prestation" : "Produit"}</span>
                       </div>

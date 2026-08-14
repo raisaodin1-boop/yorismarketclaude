@@ -22,15 +22,48 @@ export function saveCart(items) {
   }
 }
 
+export function variantIdOf(item) {
+  const raw = item?.variantId ?? item?._variantId ?? item?.variant_id ?? null;
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  return s === "" ? null : s;
+}
+
+export function cartItemKey(item) {
+  if (!item || item.id == null) return "";
+  const kind = item.kind || "product";
+  const variantId = variantIdOf(item) || "";
+  return `${kind}:${item.id}:${variantId}`;
+}
+
+export function withSelectedVariant(product, variant) {
+  if (!product || !variant) return product;
+  return {
+    ...product,
+    prix: Number(variant.prix ?? variant.price ?? product.prix),
+    stock: variant.stock ?? product.stock,
+    variantId: variant.id,
+    variantLabel: variant.label || "",
+    _variantId: variant.id,
+    _variantLabel: variant.label || "",
+  };
+}
+
 export function normalizeCartItem(item) {
   if (!item || !item.id) return null;
   const kind = item.kind || "product";
+  const variantId = variantIdOf(item);
+  const variantLabel = item.variantLabel || item._variantLabel || item.variant_label || null;
   return {
     ...item,
     kind,
     qty: Math.max(1, Number(item.qty || 1)),
     prix: Number(item.prix || 0),
     fulfillmentMode: item.fulfillmentMode || (kind === "service" ? "booking" : "delivery"),
+    variantId,
+    variantLabel: variantLabel || null,
+    _variantId: variantId,
+    _variantLabel: variantLabel || null,
   };
 }
 
@@ -52,6 +85,8 @@ export function makeProductCartItem(product) {
         ? imgArr[0]
         : null;
 
+  const variantId = variantIdOf(product);
+  const variantLabel = product.variantLabel || product._variantLabel || null;
   return normalizeCartItem({
     id: product.id,
     kind: "product",
@@ -67,6 +102,10 @@ export function makeProductCartItem(product) {
     promo: product.promo,
     promo_pct: product.promo_pct,
     fulfillmentMode: "delivery",
+    variantId,
+    variantLabel,
+    _variantId: variantId,
+    _variantLabel: variantLabel,
     pricingSnapshot: {
       base: Number(product.prix || 0),
       sale: effectiveProductPrice(product),
@@ -106,7 +145,8 @@ export function upsertCartItem(items, newItem) {
   const candidate = normalizeCartItem(newItem);
   if (!candidate) return items || [];
   const list = Array.isArray(items) ? items : [];
-  const idx = list.findIndex((i) => i.id === candidate.id && i.kind === candidate.kind);
+  const key = cartItemKey(candidate);
+  const idx = list.findIndex((i) => cartItemKey(i) === key);
   if (idx === -1) return [...list, candidate];
   return list.map((i, pos) =>
     pos !== idx
@@ -115,16 +155,22 @@ export function upsertCartItem(items, newItem) {
   );
 }
 
-export function updateCartQty(items, id, kind, delta) {
+export function updateCartQty(items, id, kind, delta, variantId = null) {
+  const wantedVariant = variantId == null || variantId === "" ? null : String(variantId);
   return (items || []).map((item) => {
     if (item.id !== id || (kind && item.kind !== kind)) return item;
+    if ((variantIdOf(item) || null) !== wantedVariant) return item;
     if (item.kind === "service") return { ...item, qty: 1 };
     return { ...item, qty: Math.max(1, Number(item.qty || 1) + delta) };
   });
 }
 
-export function removeCartItem(items, id, kind) {
-  return (items || []).filter((i) => !(i.id === id && (!kind || i.kind === kind)));
+export function removeCartItem(items, id, kind, variantId = null) {
+  const wantedVariant = variantId == null || variantId === "" ? null : String(variantId);
+  return (items || []).filter((i) => {
+    if (!(i.id === id && (!kind || i.kind === kind))) return true;
+    return (variantIdOf(i) || null) !== wantedVariant;
+  });
 }
 
 /** @param {unknown[]} items @param {object|number} [policyOrLegacyFee] */
