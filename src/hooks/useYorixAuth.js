@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { getUserProfile, sendEmail, emailBienvenue } from "../utils/helpers";
 import { isProfileAccessible } from "../lib/userMutations";
 import { applyReferralCode } from "../lib/referralApi";
+import { ensureZeroWallet } from "../lib/walletApi";
 
 function validateRegistrationFields({ nom, email, password, tel }) {
   const name = String(nom || "").trim();
@@ -97,6 +98,8 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
             setUserData(created);
             // Rôle exact de la base — aucune transformation
             setUserRole(created.role || "buyer");
+            // OAuth signup never inserted a wallet; create a zero-balance one.
+            ensureZeroWallet(supabase, uid).catch(() => {});
             await onProfileLoaded(uid);
           }
         }
@@ -109,6 +112,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
       setUserData(profile);
       // Rôle exact depuis profiles.role — correspond 1:1 à ce qui est en base
       setUserRole(profile.role || "buyer");
+      ensureZeroWallet(supabase, uid).catch(() => {});
       await onProfileLoaded(uid);
     },
     [onProfileLoaded, enforceProfileAccess],
@@ -258,10 +262,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         throw new Error("Impossible de créer votre profil. Réessayez ou contactez le support.");
       }
 
-      await supabase
-        .from("wallets")
-        .insert({ user_id: uid, solde: 0, total_gagne: 0, devise: "FCFA" })
-        .then((r) => r.error && console.error(r.error));
+      await ensureZeroWallet(supabase, uid);
 
       // Appliquer code de parrainage : champ du formulaire > URL > localStorage
       const refCode = authForm.refCode?.trim()
