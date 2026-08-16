@@ -19,6 +19,13 @@ function kindOf(line: Line): string {
   return String(line.kind || "product");
 }
 
+/** Seuls `product` et `service` ont un prix catalogue. Tout autre kind
+ *  laisserait le prix client intact tout en étant traité comme une commande
+ *  produit dans confirm_checkout (sous-facturation). */
+function isPricedKind(kind: string): boolean {
+  return kind === "product" || kind === "service";
+}
+
 function isPromoActiveRow(row: {
   promo?: boolean | null;
   promo_pct?: unknown;
@@ -57,6 +64,12 @@ export async function applyCatalogPricing(
   supabase: SupabaseForCatalog,
   items: Line[],
 ): Promise<{ lines: Line[]; error?: string }> {
+  for (const item of items) {
+    if (!isPricedKind(kindOf(item))) {
+      return { lines: [], error: "Invalid cart line type" };
+    }
+  }
+
   const productLines = items.filter((i) => kindOf(i) === "product") as Line[];
   const serviceLines = items.filter((i) => kindOf(i) === "service") as Line[];
 

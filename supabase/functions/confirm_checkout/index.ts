@@ -233,7 +233,12 @@ Deno.serve(async (req) => {
 
     const ordersCreated: any[] = [];
     for (const item of items) {
-      if (item.kind === "service") {
+      const lineKind = String(item.kind || "product");
+      if (lineKind !== "product" && lineKind !== "service") {
+        if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+        return ok({ error: "Invalid cart line type" }, { status: 400 });
+      }
+      if (lineKind === "service") {
         const { data: booking, error: bookingError } = await supabase
           .from("service_bookings")
           .insert({
