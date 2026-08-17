@@ -183,6 +183,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    const serviceIds = [...new Set(
+      items
+        .filter((line) => line.kind === "service")
+        .map((line) => String(line.id)),
+    )];
+    const providerByService = new Map<string, string | null>();
+    if (serviceIds.length) {
+      const { data: srows } = await supabase
+        .from("services")
+        .select("id,provider_id")
+        .in("id", serviceIds);
+      for (const r of srows || []) {
+        const row = r as { id?: string; provider_id?: string | null };
+        if (row.id) providerByService.set(String(row.id), row.provider_id ?? null);
+      }
+    }
+
     const deliveryTracking: { order_id: string; code_suivi: string }[] = [];
     const pickupAddresses = new Set<string>();
 
@@ -234,11 +251,17 @@ Deno.serve(async (req) => {
     const ordersCreated: any[] = [];
     for (const item of items) {
       if (item.kind === "service") {
+        const serviceId = String(item.id ?? "");
+        if (!providerByService.has(serviceId)) {
+          if (idempotencyKey) await releaseIdempotency(supabase, idempotencyKey);
+          return ok({ error: "Prestation introuvable" }, { status: 400 });
+        }
+        const catalogProviderId = providerByService.get(serviceId) ?? null;
         const { data: booking, error: bookingError } = await supabase
           .from("service_bookings")
           .insert({
             service_id: item.id,
-            provider_id: item.provider_id || null,
+            provider_id: catalogProviderId,
             client_id: customer.id || null,
             client_nom: customer.nom || "Client Yorix",
             client_tel: customer.telephone || "",
