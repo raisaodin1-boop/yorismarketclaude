@@ -93,10 +93,11 @@ export async function applyCatalogPricing(
   }
 
   const servicePrice = new Map<string, number>();
+  const serviceProvider = new Map<string, string | null>();
   if (serviceIds.length) {
     const { data, error } = await supabase
       .from("services")
-      .select("id,prix,disponible,actif")
+      .select("id,prix,disponible,actif,provider_id")
       .in("id", serviceIds);
     if (error) return { lines: [], error: error.message };
     const rows = (data ?? []) as {
@@ -104,6 +105,7 @@ export async function applyCatalogPricing(
       prix?: unknown;
       disponible?: boolean | null;
       actif?: boolean | null;
+      provider_id?: string | null;
     }[];
     const seen = new Set<string>();
     for (const row of rows) {
@@ -114,6 +116,7 @@ export async function applyCatalogPricing(
         return { lines: [], error: "Prestation indisponible" };
       }
       servicePrice.set(id, Number(row.prix ?? 0));
+      serviceProvider.set(id, row.provider_id ? String(row.provider_id) : null);
     }
     for (const id of serviceIds) {
       if (!seen.has(id)) return { lines: [], error: "Prestation introuvable" };
@@ -135,6 +138,11 @@ export async function applyCatalogPricing(
       if (p !== undefined) {
         line.price = p;
         line.prix = p;
+      }
+      // Never trust client provider_id — it would reassign the booking
+      // (and any later payout) to an attacker.
+      if (serviceProvider.has(sid)) {
+        line.provider_id = serviceProvider.get(sid) ?? null;
       }
     }
     return line;
