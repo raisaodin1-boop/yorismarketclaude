@@ -53,6 +53,12 @@ function effectivePriceFromRow(row: {
   return Math.round(base * (1 - pct / 100));
 }
 
+/** Prix catalogue / ligne : 0 (gratuit) OK, négatif ou NaN/Infinity refusés. */
+export function isInvalidCatalogPrice(n: unknown): boolean {
+  const price = Number(n);
+  return !Number.isFinite(price) || price < 0;
+}
+
 export async function applyCatalogPricing(
   supabase: SupabaseForCatalog,
   items: Line[],
@@ -85,7 +91,11 @@ export async function applyCatalogPricing(
       if (!id) continue;
       seen.add(id);
       if (row.actif === false) return { lines: [], error: "Produit indisponible" };
-      productPrice.set(id, effectivePriceFromRow(row));
+      const price = effectivePriceFromRow(row);
+      if (isInvalidCatalogPrice(price)) {
+        return { lines: [], error: "Prix invalide" };
+      }
+      productPrice.set(id, price);
     }
     for (const id of productIds) {
       if (!seen.has(id)) return { lines: [], error: "Produit introuvable" };
@@ -113,7 +123,11 @@ export async function applyCatalogPricing(
       if (row.disponible === false || row.actif === false) {
         return { lines: [], error: "Prestation indisponible" };
       }
-      servicePrice.set(id, Number(row.prix ?? 0));
+      const price = Number(row.prix ?? 0);
+      if (isInvalidCatalogPrice(price)) {
+        return { lines: [], error: "Prix invalide" };
+      }
+      servicePrice.set(id, price);
     }
     for (const id of serviceIds) {
       if (!seen.has(id)) return { lines: [], error: "Prestation introuvable" };
@@ -139,6 +153,12 @@ export async function applyCatalogPricing(
     }
     return line;
   });
+
+  for (const line of lines) {
+    if (isInvalidCatalogPrice(line.price ?? line.prix ?? 0)) {
+      return { lines: [], error: "Prix invalide" };
+    }
+  }
 
   return { lines };
 }
