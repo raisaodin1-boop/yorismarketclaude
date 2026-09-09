@@ -1,6 +1,10 @@
 import { supabase } from "./supabase";
 import { filterProductsByMerchHub, getMerchHub } from "./merchHubs";
 import { PRODUCT_LIST_COLUMNS } from "./productListColumns";
+import {
+  PUBLIC_CATALOG_PROFILE_COLUMNS,
+  PUBLIC_CATALOG_PROFILES_TABLE,
+} from "./publicCatalogProfiles";
 
 const HUB_FETCH_LIMIT = 180;
 
@@ -8,8 +12,8 @@ const SELLER_FILTERS = new Set(["top_sellers", "new_sellers"]);
 
 async function loadSellerProfiles() {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, role, created_at, nom")
+    .from(PUBLIC_CATALOG_PROFILES_TABLE)
+    .select(PUBLIC_CATALOG_PROFILE_COLUMNS)
     .or("role.eq.seller,role.eq.vendeur")
     .limit(3000);
   if (error) {

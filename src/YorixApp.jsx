@@ -36,6 +36,10 @@ import {
 } from "./lib/seoRoutes";
 import { SEO_URL_ALIASES, getBlogArticle } from "./lib/seoProgrammatic.js";
 import { getMerchHub } from "./lib/merchHubs.js";
+import {
+  PUBLIC_CATALOG_PROFILE_COLUMNS,
+  PUBLIC_CATALOG_PROFILES_TABLE,
+} from "./lib/publicCatalogProfiles.js";
 import { resolveCategoryFilter } from "./lib/marketplaceCategories.js";
 import { filterCatalogProducts } from "./lib/filterCatalogProducts.js";
 import { useCategoryTaxonomy } from "./hooks/useCategoryTaxonomy.js";
@@ -767,8 +771,8 @@ export default function YorixApp() {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("id, role, created_at, nom")
+        .from(PUBLIC_CATALOG_PROFILES_TABLE)
+        .select(PUBLIC_CATALOG_PROFILE_COLUMNS)
         .or("role.eq.seller,role.eq.vendeur")
         .limit(3000);
       if (!cancelled && !error) setSellerMerchProfiles(data || []);

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { PUBLIC_CATALOG_PROFILES_TABLE } from "./publicCatalogProfiles";
 
 export const REFERRAL_BONUS_AMOUNT = 5000; // FCFA
 export const REFERRAL_CONSENT_VERSION = "v1.0-2026";
@@ -25,7 +26,7 @@ async function generateUniqueCode() {
   for (let attempt = 0; attempt < 10; attempt++) {
     const code = generateRawCode();
     const { count } = await supabase
-      .from("profiles")
+      .from(PUBLIC_CATALOG_PROFILES_TABLE)
       .select("id", { count: "exact", head: true })
       .eq("referral_code", code);
     if (!count || count === 0) return code;
@@ -107,7 +108,7 @@ export async function applyReferralCode(referralCode, newUserId) {
   if (!referralCode || !newUserId) return { ok: false };
 
   const { data: referrer } = await supabase
-    .from("profiles")
+    .from(PUBLIC_CATALOG_PROFILES_TABLE)
     .select("id")
     .eq("referral_code", referralCode.trim().toUpperCase())
     .not("referral_consent_signed_at", "is", null) // doit avoir signé le consentement

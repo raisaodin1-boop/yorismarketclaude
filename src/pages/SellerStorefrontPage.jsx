@@ -3,6 +3,10 @@ import { BadgeCheck, Package, Shield, Star, Truck } from "lucide-react";
 import { ProdGrid } from "../components/ProdGrid";
 import { supabase } from "../lib/supabase";
 import { parseEntitySlug } from "../lib/seoRoutes";
+import {
+  PUBLIC_CATALOG_PROFILE_COLUMNS,
+  PUBLIC_CATALOG_PROFILES_TABLE,
+} from "../lib/publicCatalogProfiles";
 import "./sellerStorefront.css";
 
 /**
@@ -36,7 +40,11 @@ export function SellerStorefrontPage({
     let cancelled = false;
     setLoading(true);
     Promise.all([
-      supabase.from("profiles").select("*").eq("id", sellerId).maybeSingle(),
+      supabase
+        .from(PUBLIC_CATALOG_PROFILES_TABLE)
+        .select(PUBLIC_CATALOG_PROFILE_COLUMNS)
+        .eq("id", sellerId)
+        .maybeSingle(),
       supabase
         .from("products")
         .select("*")
