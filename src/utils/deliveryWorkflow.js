@@ -11,6 +11,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+import { PUBLIC_CATALOG_PROFILES_TABLE } from "../lib/publicCatalogProfiles";
 import {
   absoluteSiteUrl,
   adminDeliveriesPath,
@@ -510,7 +511,7 @@ export async function livreurRefuser({ delivery, user, userData, motif }) {
   // Notif admin : envoyer à tous les admins
   try {
     const { data: admins } = await supabase
-      .from("profiles")
+      .from(PUBLIC_CATALOG_PROFILES_TABLE)
       .select("id")
       .in("role", ["admin", "superadmin"]);
     for (const admin of admins || []) {
@@ -629,7 +630,7 @@ export async function creerDemandeLivraison({
   // Notif admin : envoyer à tous les utilisateurs avec rôle "admin"
   try {
     const { data: admins } = await supabase
-      .from("profiles")
+      .from(PUBLIC_CATALOG_PROFILES_TABLE)
       .select("id")
       .in("role", ["admin", "superadmin"]);
     for (const admin of admins || []) {

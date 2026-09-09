@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { SEO_CITIES } from "./seoRoutes";
+import { PUBLIC_CATALOG_PROFILES_TABLE } from "./publicCatalogProfiles";
 
 const FALLBACK = {
   products: 180,
@@ -36,7 +37,7 @@ export async function fetchPlatformStats() {
       .select("id", { count: "exact", head: true })
       .or("actif.eq.true,actif.is.null"),
     supabase
-      .from("profiles")
+      .from(PUBLIC_CATALOG_PROFILES_TABLE)
       .select("id", { count: "exact", head: true })
       .or("role.eq.seller,role.eq.vendeur"),
     supabase.from("orders").select("id", { count: "exact", head: true }),
