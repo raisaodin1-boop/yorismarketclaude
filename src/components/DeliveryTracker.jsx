@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase, YORIX_WA_NUMBER } from "../lib/supabase";
+import { fetchPublicDeliveryByCode } from "../lib/publicDeliveryTracking";
 
 // ─────────────────────────────────────────────────────────────
 // COMPOSANT : DELIVERY TRACKER (suivi livraison temps réel)
@@ -26,11 +27,7 @@ export function DeliveryTracker() {
     if (!searchCode) { setError("Entre un code de suivi"); return; }
     setLoading(true); setError("");
     try {
-      const { data, error: err } = await supabase
-        .from("deliveries")
-        .select("*")
-        .eq("code_suivi", searchCode)
-        .maybeSingle();
+      const { data, error: err } = await fetchPublicDeliveryByCode(supabase, searchCode);
       if (err) throw err;
       if (!data) {
         setError(`Aucune livraison trouvée pour le code "${searchCode}". Essaie avec YX-DEMO123`);
@@ -55,16 +52,14 @@ export function DeliveryTracker() {
   }, []);
 
   useEffect(() => {
-    if (!delivery?.id) return;
-    const channel = supabase
-      .channel(`delivery-${delivery.id}`)
-      .on("postgres_changes", {
-        event: "UPDATE", schema: "public", table: "deliveries",
-        filter: `id=eq.${delivery.id}`,
-      }, payload => { setDelivery(payload.new); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [delivery?.id]);
+    if (!delivery?.code_suivi) return undefined;
+    const interval = setInterval(() => {
+      fetchPublicDeliveryByCode(supabase, delivery.code_suivi).then(({ data }) => {
+        if (data) setDelivery(data);
+      });
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [delivery?.code_suivi]);
 
   useEffect(() => {
     if (!delivery?.en_route_at || delivery.statut === "livre") return;
