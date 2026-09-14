@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
             service_id: item.id,
             provider_id: item.provider_id || null,
             client_id: customer.id || null,
+            user_id: customer.id || null,
             client_nom: customer.nom || "Client Yorix",
             client_tel: customer.telephone || "",
             booking_date: item.booking?.date || null,
