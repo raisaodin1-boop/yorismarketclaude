@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
+import { payableCheckoutTotal, trustedCheckoutCoupon } from "../_shared/coupon.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
 import { dispatchNotificationById } from "../_shared/internal_dispatch.ts";
@@ -145,21 +146,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Le coupon (revalidé et figé côté serveur par create_checkout_intent) est
-    // une remise sur le total dû, distincte du recalcul brut depuis le panier :
-    // on la ré-applique au total recalculé plutôt que de la perdre en écrasant
-    // avec `totals.total`.
-    const couponDiscount = Math.max(0, Math.round(Number(intent.coupon_discount ?? 0)));
-    const expectedTotal = Math.max(0, totals.total - couponDiscount);
+    // Revalider le coupon depuis le catalogue — jamais `intent.coupon_discount`
+    // (colonne écrivable via REST tant que l'anon GRANT traîne). Un INSERT
+    // `coupon_discount = subtotal` faisait confirmer un total payable de 0 F
+    // puis CinetPay/MoMo encaissaient ce total.
+    const { code: couponCode, discount: couponDiscount } = await trustedCheckoutCoupon(
+      supabase,
+      intent,
+      customer.id,
+      totals.total,
+    );
+    const expectedTotal = payableCheckoutTotal(totals.total, couponDiscount);
 
     const del = Math.round(Number(intent.delivery_fee ?? 0));
     const tot = Math.round(Number(intent.total ?? 0));
-    if (del !== totals.deliveryFee || tot !== expectedTotal) {
+    const storedDiscount = Math.round(Number(intent.coupon_discount ?? 0));
+    const storedCode = intent.coupon_code ?? null;
+    if (
+      del !== totals.deliveryFee ||
+      tot !== expectedTotal ||
+      storedDiscount !== couponDiscount ||
+      storedCode !== couponCode
+    ) {
       const { error: patchErr } = await supabase
         .from("checkout_intents")
         .update({
           delivery_fee: totals.deliveryFee,
           total: expectedTotal,
+          coupon_code: couponCode,
+          coupon_discount: couponDiscount,
           updated_at: new Date().toISOString(),
         })
         .eq("id", checkoutIntentId);

@@ -53,3 +53,33 @@ export async function resolveCouponDiscount(
   const discount = Math.max(0, Math.min(raw, Math.max(0, cartTotal)));
   return { code: normalizedCode, discount };
 }
+
+/**
+ * Coupon used to set the payable `checkout_intents.total`.
+ * Never read `coupon_discount` from the row: leftover anon INSERT/PATCH can
+ * stamp a forged discount (e.g. code "FORGED", discount = subtotal) and
+ * confirm_checkout previously trusted that column when charging CinetPay/MoMo.
+ */
+export async function trustedCheckoutCoupon(
+  supabase: { from: (t: string) => any },
+  intent: { coupon_code?: unknown; coupon_discount?: unknown },
+  customerId: unknown,
+  cartTotal: number,
+): Promise<{ code: string | null; discount: number }> {
+  const resolved = await resolveCouponDiscount(
+    supabase,
+    intent?.coupon_code,
+    customerId,
+    cartTotal,
+  );
+  return {
+    code: resolved.code,
+    discount: Math.max(0, Math.round(Number(resolved.discount ?? 0))),
+  };
+}
+
+export function payableCheckoutTotal(catalogTotal: number, couponDiscount: number): number {
+  const total = Math.max(0, Math.round(Number(catalogTotal) || 0));
+  const discount = Math.max(0, Math.round(Number(couponDiscount) || 0));
+  return Math.max(0, total - discount);
+}
