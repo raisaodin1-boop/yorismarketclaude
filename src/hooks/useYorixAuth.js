@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { getUserProfile, sendEmail, emailBienvenue } from "../utils/helpers";
 import { isProfileAccessible } from "../lib/userMutations";
 import { applyReferralCode } from "../lib/referralApi";
+import { publicSignupRole } from "../lib/roles";
 
 function validateRegistrationFields({ nom, email, password, tel }) {
   const name = String(nom || "").trim();
@@ -37,11 +38,12 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState("login");
   const [selectedRole, _setSelectedRole] = useState(
-    () => localStorage.getItem("yorix_pending_role") || "buyer"
+    () => publicSignupRole(localStorage.getItem("yorix_pending_role"))
   );
   const setSelectedRole = (role) => {
-    localStorage.setItem("yorix_pending_role", role);
-    _setSelectedRole(role);
+    const safe = publicSignupRole(role);
+    localStorage.setItem("yorix_pending_role", safe);
+    _setSelectedRole(safe);
   };
   const [authForm, setAuthForm] = useState({
     nom: "", email: "", tel: "", password: "",
@@ -75,7 +77,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         if (oauthUserMeta) {
           // Nouvel utilisateur OAuth — créer le profil une seule fois
           // INSERT ... ON CONFLICT DO NOTHING : ne jamais écraser un profil existant
-          const pendingRole = localStorage.getItem("yorix_pending_role") || "buyer";
+          const pendingRole = publicSignupRole(localStorage.getItem("yorix_pending_role"));
           const meta = oauthUserMeta.user_metadata || {};
           await supabase.from("profiles").upsert({
             id: uid,
@@ -209,14 +211,15 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
       if (fieldError) throw new Error(fieldError);
       if (!selectedRole) throw new Error("Veuillez choisir un profil (Acheteur, Vendeur, Livreur ou Prestataire).");
 
+      const signupRole = publicSignupRole(selectedRole);
       const PRO_ROLES = ["seller", "provider", "delivery"];
-      if (PRO_ROLES.includes(selectedRole) && !contractAccepted) {
+      if (PRO_ROLES.includes(signupRole) && !contractAccepted) {
         setPendingRegistration({
           nom: authForm.nom.trim(),
           email: authForm.email.trim(),
           tel: authForm.tel.trim(),
           password: authForm.password,
-          role: selectedRole,
+          role: signupRole,
         });
         setAuthLoading(false);
         setContractOpen(true);
@@ -231,7 +234,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
             display_name: authForm.nom,
             nom: authForm.nom,
             telephone: authForm.tel,
-            role: selectedRole,
+            role: signupRole,
           },
         },
       });
@@ -245,7 +248,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
         nom: authForm.nom.trim(),
         email: authForm.email.trim(),
         telephone: authForm.tel.trim(),
-        role: selectedRole,
+        role: signupRole,
         langue: "fr",
         actif: true,
         verifie: false,
@@ -291,7 +294,7 @@ export function useYorixAuth({ goPage, setDashTab, setDemandeLivraisonOpen, setN
 
   const doGoogle = async () => {
     // Persist role so it survives the OAuth redirect
-    localStorage.setItem("yorix_pending_role", selectedRole);
+    localStorage.setItem("yorix_pending_role", publicSignupRole(selectedRole));
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: window.location.origin },

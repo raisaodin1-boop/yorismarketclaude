@@ -6,6 +6,12 @@ export const ROLE_ADMIN_PARTNER = "admin_partner";
 export const ROLES_PUBLIC_SIGNUP = ["buyer", "seller", "delivery", "provider"];
 export const ROLES_ADMIN_FULL = ["admin", "superadmin"];
 
+/** Rôles que l'inscription publique (formulaire / OAuth / metadata) peut poser. */
+export function publicSignupRole(role) {
+  const r = String(role || "").trim();
+  return ROLES_PUBLIC_SIGNUP.includes(r) ? r : "buyer";
+}
+
 /** Rôle brut stocké dans profiles.role */
 export function getProfileRole(profile) {
   return profile?.role || "buyer";
