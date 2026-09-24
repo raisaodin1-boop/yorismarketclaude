@@ -174,7 +174,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         checkoutIntentId: intentId,
         paymentMethod: _paymentMethod == _PaymentMethod.cinetpay ? 'cinetpay' : 'whatsapp_backup',
         address: _address.text.trim(),
-        idempotencyKey: _idempotencyKey ??= '${DateTime.now().millisecondsSinceEpoch}-${currentUser.id}',
+        idempotencyKey: _idempotencyKey ??= newCheckoutIdempotencyKey(),
       );
 
       final orderGroupId = confirmation['order_group_id']?.toString();

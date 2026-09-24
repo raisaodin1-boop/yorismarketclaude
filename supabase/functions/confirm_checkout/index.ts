@@ -3,6 +3,7 @@ import { corsHeaders, ok } from "../_shared/cors.ts";
 import { applyCatalogPricing } from "../_shared/catalog_prices.ts";
 import { insertAutoDelivery } from "../_shared/delivery_auto.ts";
 import { computeCheckoutTotals, resolveDeliveryPolicy } from "../_shared/delivery_policy.ts";
+import { isCheckoutIdempotencyKey } from "../_shared/idempotency_key.ts";
 import { dispatchNotificationById } from "../_shared/internal_dispatch.ts";
 
 function uuidish(v: string) {
@@ -91,8 +92,11 @@ Deno.serve(async (req) => {
     // Clé d'idempotency générée côté client (une seule fois par session de
     // checkout). Optionnelle pour rester rétrocompatible, mais le frontend
     // l'envoie toujours : elle protège contre le double-clic / retry réseau.
+    // UUID Postgres uniquement. Une clé du type timestamp-userId (app
+    // mobile) passait l'ancien filtre hex et faisait échouer l'INSERT.
     idempotencyKey =
-      typeof body?.idempotency_key === "string" && uuidish(body.idempotency_key)
+      typeof body?.idempotency_key === "string" &&
+        isCheckoutIdempotencyKey(body.idempotency_key)
         ? body.idempotency_key
         : "";
 
